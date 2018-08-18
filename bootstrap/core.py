@@ -21,6 +21,7 @@ import sys
 from pprint import pprint
 from lexer import Lexer
 from parser import Parser
+from ast import ast_trace
 
 # test_input = """
 # module foo
@@ -48,9 +49,10 @@ test_input = """
 module foo
 ;var a 7
 ;var a 5
-func t[]
+func t[a b]
     foo: 1 2
-    fiz: 3 4
+    let [a add: 1 2] @()
+;    fiz: 3 4
 """
 
 
@@ -100,7 +102,8 @@ def main(prog_name=os.path.basename(sys.argv[0]), args=None,
     if args.a:
         if len(ast.literals):
             pprint(ast.literals)
-        ast.eval()
+        # ast.eval()
+        ast_trace(ast)
     if args.g:
         pprint(parser.lr_table.grammar.__dict__)
 

@@ -130,7 +130,7 @@ class Parser():
         def singleexpr_p(p):
             """Parse one expressions"""
             print("single expression = {}".format(p))
-            return ast.Expression(p)
+            return p[0]
 
         @self.pg.production('complex_expr : functioncall')
         @self.pg.production('complex_expr : letexpr')
@@ -178,7 +178,8 @@ class Parser():
             'letexpr : LET symbol LBRACKET letpairs RBRACKET single_expr')
         def letexpr(p):
             """Let parse"""
-            return ast.Let([x for x in p if type(x) is not Token])
+            letset = [x for x in p if type(x) is not Token]
+            return ast.Let(letset)
 
         @self.pg.production('letpairs : symbol single_expr')
         @self.pg.production('letpairs : symbol single_expr COMMA letpairs')

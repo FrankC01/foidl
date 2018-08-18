@@ -26,6 +26,21 @@ class CollTypes(enum.Enum):
     SET = enum.auto()
 
 
+def ast_trace(el, indent=1):
+    print("Trace: {}> {}".format(
+        '-' * indent, el.__class__.__name__))
+    if hasattr(el, 'value'):
+        if type(el.value) is list:
+            for i in el.value:
+                indent += 1
+                ast_trace(i, indent)
+                indent -= 1
+        else:
+            pass
+    else:
+        pass
+
+
 class FoidlAst(ABC):
     """Base abstract ast class"""
 
@@ -35,15 +50,15 @@ class FoidlAst(ABC):
 
 
 class CompilationScope(FoidlAst):
-    """Scoped AST compilation unit anchor"""
+    """Scoped AST compilation unit value"""
 
     def __init__(self):
         self.literals = {}
-        self.anchor = None
+        self.value = None
 
     def build_unit(self, module):
-        """From parse, attach the module as the anchor"""
-        self.anchor = module
+        """From parse, attach the module as the value"""
+        self.value = module
         return self
 
     def build_literal(self, literal):
@@ -66,7 +81,7 @@ class CompilationScope(FoidlAst):
 
     def eval(self):
         """Traverse the tree"""
-        self.anchor[0].eval()
+        self.value[0].eval()
 
 
 class Module(FoidlAst):
@@ -245,6 +260,7 @@ class FunctionCall(FoidlAst):
     def __init__(self, csite, value):
         self.value = value
         self.call_site = csite
+        print("Registering {}".format(csite))
 
     def eval(self):
         print("CALL {} with {}".format(self.call_site, self.value))
