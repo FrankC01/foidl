@@ -41,6 +41,29 @@ def ast_trace(el, indent=1):
         pass
 
 
+class AstState():
+    def __init__(self):
+        self.literals = {}
+
+    def process_literal(self, literal):
+        """Literals are grouped and reused as needed"""
+        x = self.literals.get(literal.type)
+        idx = None
+        if not x:
+            idx = literal.type + "_0"
+            self.literals[literal.type] = {literal.value: idx}
+        else:
+            vmap = self.literals[literal.type]
+            idx = literal.type + "_" + str(len(vmap))
+            ydx = vmap.get(literal.value)
+            if not ydx:
+                vmap[literal.value] = idx
+            else:
+                idx = ydx
+        literal.value = idx
+        return literal
+
+
 class FoidlAst(ABC):
     """Base abstract ast class"""
 
@@ -60,24 +83,6 @@ class CompilationScope(FoidlAst):
         """From parse, attach the module as the value"""
         self.value = module
         return self
-
-    def build_literal(self, literal):
-        """Literals are grouped and reused as needed"""
-        x = self.literals.get(literal.type)
-        idx = None
-        if not x:
-            idx = literal.type + "_0"
-            self.literals[literal.type] = {literal.value: idx}
-        else:
-            vmap = self.literals[literal.type]
-            idx = literal.type + "_" + str(len(vmap))
-            ydx = vmap.get(literal.value)
-            if not ydx:
-                vmap[literal.value] = idx
-            else:
-                idx = ydx
-        literal.value = idx
-        return literal
 
     def eval(self):
         """Traverse the tree"""

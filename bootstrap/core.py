@@ -21,7 +21,7 @@ import sys
 from pprint import pprint
 from lexer import Lexer
 from parser import Parser
-from ast import ast_trace
+from ast import ast_trace, AstState
 
 # test_input = """
 # module foo
@@ -51,7 +51,7 @@ module foo
 ;var a 5
 func t[a b]
     foo: 1 2
-    let [a add: 1 2] @()
+    bar: 3 4
 ;    fiz: 3 4
 """
 
@@ -66,14 +66,20 @@ def create_parser(prog_name):
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     aparser.add_argument(
-        '-t',
+        '-p',
         help='target platform for bootstrap')
     aparser.add_argument(
         '-i',
         help='include path(s)')
     aparser.add_argument(
-        '-a',
+        '-e',
         help='AST evaluate - Debugging')
+    aparser.add_argument(
+        '-t',
+        help='AST trace - Debugging')
+    aparser.add_argument(
+        '-l',
+        help='AST literals - Debugging')
     aparser.add_argument(
         '-g',
         help='Dump Grammar - Debugging')
@@ -96,14 +102,16 @@ def main(prog_name=os.path.basename(sys.argv[0]), args=None,
     pg = Parser(mlex)
     pg.parse()
     parser = pg.get_parser()
-    ast = parser.parse(tokens)
+    state = AstState()
+    ast = parser.parse(tokens, state=state)
     print("AST Type {} => {}".format(type(ast), ast))
     # print("Args = {}".format(args.a))
-    if args.a:
-        if len(ast.literals):
-            pprint(ast.literals)
-        # ast.eval()
+    if args.l:
+        pprint(state.literals)
+    if args.t:
         ast_trace(ast)
+    if args.e:
+        ast.eval()
     if args.g:
         pprint(parser.lr_table.grammar.__dict__)
 
