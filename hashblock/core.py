@@ -18,41 +18,30 @@ import argparse
 # import logging
 import os
 import sys
-from pprint import pprint
-from lexer import Lexer
-from parser import Parser
-from ast import ast_trace, AstState
+from ast import ast_trace
+from parse_context import ParseContext
 
-# test_input = """
-# module foo
-
-# include [fizz bar bap]
-
-# var myreal 10.5
-# var myint 5
-# var yourint 5
-# var anint 15
-# var mystr "Sammy Davis Jr."
-# var mychar 'c'
-
-# var myvect <>
-# var mylist []
-# var mymap {}
-# var myset #{}
-
-# var mappairs {:a 5 :b 6 :c}
-
-# func t[x y z]
-# """
-
-test_input = """
-module foo
-var a 7
-var b 5
-func t[a b]
-    foo: 1 2
-;    fiz: 3 4
-"""
+tests = [
+    """
+    church asks turing price 5 purchasing.bag food.peanuts
+    """,
+    """
+    church asks turing the price for 5 purchasing.bag of food.peanuts
+    """,
+    """
+    turing tells church price
+    95768292a8fd1de17daa001fdd0000000000000000000000000000cee0bfacf900bc6b
+    10 currency.$ iso4217.USD
+    1 currency.$ iso4217.USD
+    1 purchasing.bag food.peanuts
+    """,
+    """
+    turing tells church the price
+    for 95768292a8fd1de17daa001fdd0000000000000000000000000000cee0bfacf900bc6b
+    is 10 currency.$ iso4217.USD
+    at 1 currency.$ iso4217.USD
+    for 1 purchasing.bag food.peanuts
+    """]
 
 
 def create_parser(prog_name):
@@ -65,27 +54,34 @@ def create_parser(prog_name):
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     aparser.add_argument(
-        '-p',
-        help='target platform for bootstrap')
-    aparser.add_argument(
-        '-i',
-        help='include path(s)')
-    aparser.add_argument(
         '-e',
         help='AST evaluate - Debugging')
     aparser.add_argument(
         '-t',
         help='AST trace - Debugging')
-    aparser.add_argument(
-        '-s',
-        help='AST Symbol Table - Debugging')
-    aparser.add_argument(
-        '-l',
-        help='AST literals - Debugging')
-    aparser.add_argument(
-        '-g',
-        help='Dump Grammar - Debugging')
     return aparser
+
+
+_dterms = [
+    ('PPARTNER', ['church', 'turing']),
+    ('IVERB', ['asks', 'ask']),
+    ('RVERB', ['tells', 'tell']),
+    ('CCONJS', ['price', 'prices', 'weight', 'volume', 'mass'])]
+
+_bterms = [
+    ('PREPOSITION', ['is', 'for', 'of', 'at', '@']),
+    ('ARTICLES', ['a', 'an', 'the'])]
+
+
+def process_ast(args, ast):
+    print()
+    print("Expression => {}".format(ast['expression']))
+    if args.t:
+        print("AST Trace")
+        ast_trace(ast['ast'])
+    if args.e:
+        print("AST Evaluate (print)")
+        ast['ast'].eval()
 
 
 def main(prog_name=os.path.basename(sys.argv[0]), args=None,
@@ -96,28 +92,16 @@ def main(prog_name=os.path.basename(sys.argv[0]), args=None,
         args = sys.argv[1:]
     aparser = create_parser(prog_name)
     args = aparser.parse_args(args)
-    mlex = Lexer()
-    lexer = mlex.get_lexer()
-    tokens = lexer.lex(test_input)
-    # for n in tokens:
-    #     print(n)
-    pg = Parser(mlex)
-    pg.parse()
-    parser = pg.get_parser()
-    state = AstState()
-    ast = parser.parse(tokens, state=state)
-    print("AST Type {} => {}".format(type(ast), ast))
-    # print("Args = {}".format(args.a))
-    if args.l:
-        pprint(state.literals)
-    if args.s:
-        pprint(state.scope)
-    if args.t:
-        ast_trace(ast)
-    if args.e:
-        ast.eval()
-    if args.g:
-        pprint(parser.lr_table.grammar.__dict__)
+    ParseContext.register_context('demo', _dterms, _bterms)
+    # mlex = Lexer()
+    # mlex.add_terms(_dterms, _bterms)
+    # lexer = mlex.get_lexer()
+    # pg = Parser(mlex)
+    # pg.parse()
+    # parser = pg.get_parser()
+    for t in tests:
+        process_ast(args, ParseContext.parse_expression('demo', t))
+        # parse_string(args, lexer, t, parser)
 
 
 if __name__ == '__main__':

@@ -15,19 +15,20 @@
 # ------------------------------------------------------------------------------
 
 from rply import ParserGenerator, Token
+from enums import CollTypes, SymbolTypes
 import ast
 
 
 def _collection_type(p0):
     x = None
     if p0.gettokentype() is 'LSET':
-        x = ast.CollTypes.SET
+        x = CollTypes.SET
     elif p0.gettokentype() is 'LBRACKET':
-        x = ast.CollTypes.LIST
+        x = CollTypes.LIST
     elif p0.gettokentype() is 'LBRACE':
-        x = ast.CollTypes.MAP
+        x = CollTypes.MAP
     else:
-        x = ast.CollTypes.VECTOR
+        x = CollTypes.VECTOR
     return x
 
 
@@ -69,12 +70,18 @@ class Parser():
         def program(state, p):
             return self.cscope.build_unit(p)
 
-        @self.pg.production('module : MODULE symbol')
-        @self.pg.production('module : MODULE symbol i_decl')
-        @self.pg.production('module : MODULE symbol i_decl decltypes')
-        @self.pg.production('module : MODULE symbol decltypes')
+        @self.pg.production('module : MODULE module_symbol')
+        @self.pg.production('module : MODULE module_symbol i_decl')
+        @self.pg.production('module : MODULE module_symbol i_decl decltypes')
+        @self.pg.production('module : MODULE module_symbol decltypes')
         def mod(state, p):
             return ast.Module(p[1], p[2])
+
+        @self.pg.production('module_symbol : SYMBOL')
+        def mod_sym(state, p):
+            sym = ast.SymbolList(p[0].getstr())
+            state.push_scope(sym, SymbolTypes.MODULE)
+            return sym
 
         @self.pg.production('i_decl : INCLUDE symbol')
         @self.pg.production('i_decl : INCLUDE symbol i_decl')
@@ -90,21 +97,36 @@ class Parser():
         def decltype(state, p):
             return _flatten_list(p)
 
-        @self.pg.production('var_decl : VAR symbol single_expr')
+        @self.pg.production('var_decl : VAR var_symbol single_expr')
         @self.pg.production(
-            'func_decl : FUNC symbol symbol_list multiexpression')
+            'func_decl : FUNC func_symbol symbol_list multiexpression')
         def v_decl(state, p):
             t = p.pop(0)
             if t.gettokentype() is 'VAR':
+                state.pop_scope(p[0])
                 return ast.Variable(p.pop(0), p)
             else:
+                state.pop_scope(p[0])
                 return ast.Function(p.pop(0), p)
+
+        @self.pg.production('func_symbol : SYMBOL')
+        def func_sym(state, p):
+            sym = ast.Symbol(p[0].getstr())
+            state.addsym_push(sym, SymbolTypes.FUNCTION)
+            return sym
+
+        @self.pg.production('var_symbol : SYMBOL')
+        def var_sym(state, p):
+            sym = ast.Symbol(p[0].getstr())
+            state.addsym_push(sym, SymbolTypes.VARIABLE)
+            return sym
 
         @self.pg.production('symbol_list : LBRACKET RBRACKET')
         @self.pg.production('symbol_list : LBRACKET symbol_seps RBRACKET')
         def symbol_list_1(state, p):
+            print('completing symbol list')
             if len(p) < 3:
-                return ast.EmptyCollection(ast.CollTypes.LIST)
+                return ast.EmptyCollection(CollTypes.LIST)
             else:
                 return p[1]
 
@@ -272,6 +294,7 @@ class Parser():
 
         @self.pg.production('symbol : SYMBOL')
         def symbol(state, p):
+            state.resolve_symbol(p)
             return ast.Symbol(p[0].getstr())
 
         @self.pg.error

@@ -14,36 +14,76 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-import enum
+from enums import SymbolTypes
 from abc import ABC, abstractmethod
 
 
-@enum.unique
-class CollTypes(enum.Enum):
-    VECTOR = enum.auto()
-    LIST = enum.auto()
-    MAP = enum.auto()
-    SET = enum.auto()
+class StateException(Exception):
+    pass
 
 
-def ast_trace(el, indent=1):
-    print("Trace: {}> {}".format(
-        '-' * indent, el.__class__.__name__))
-    if hasattr(el, 'value'):
-        if type(el.value) is list:
-            for i in el.value:
-                indent += 1
-                ast_trace(i, indent)
-                indent -= 1
+class SymbolTable():
+    def __init__(self, ident, stype=SymbolTypes.UNKNOWN):
+        self._scopetype = stype
+        self._ident = ident
+        self._table = {}
+
+    @property
+    def scopetype(self):
+        return self._scopetype
+
+    @property
+    def ident(self):
+        return self._ident
+
+    @property
+    def table(self):
+        return self._table
+
+    def has_symbol(self, symbol):
+        return self.table.get(symbol, False)
+
+    def addsymbol(self, symbol, stype):
+        if not self.table.get(symbol, None):
+            print("Adding symbol {}".format(symbol))
+            self.table[symbol] = stype
         else:
-            pass
-    else:
-        pass
+            raise StateException(
+                "{} exists in {} {} symbol table".
+                format(symbol, self.ident, self.scopetype))
+
+    def __repr__(self):
+        dstr = str(self.table)
+        return "SymbolTable(id={} type={} syms={})".format(
+            self.ident, self.scopetype, dstr)
 
 
 class AstState():
     def __init__(self):
         self.literals = {}
+        self.scope = []
+
+    def addsym(self, symbol, stype):
+        self.scope[-1].addsymbol(symbol.value, stype)
+
+    def resolve_symbol(self, token):
+        print("Resolving symbol {} ".format(token[0].getstr()))
+
+    def push_scope(self, symbol, stype):
+        self.scope.append(SymbolTable(symbol.value, stype))
+
+    def pop_scope(self, symbol):
+        scope = self.scope[-1]
+        if scope.ident is symbol.value:
+            self.scope.pop()
+        else:
+            raise StateException(
+                "Popping {} conflicts with {}".
+                format(symbol.value, scope.ident))
+
+    def addsym_push(self, symbol, stype):
+        self.addsym(symbol, stype)
+        self.push_scope(symbol, stype)
 
     def process_literal(self, literal):
         """Literals are grouped and reused as needed"""
@@ -296,3 +336,18 @@ class Real(FoidlAst):
 
     def eval(self):
         print("Real {}".format(self.value))
+
+
+def ast_trace(el, indent=1):
+    print("Trace: {}> {}".format(
+        '-' * indent, el.__class__.__name__))
+    if hasattr(el, 'value'):
+        if type(el.value) is list:
+            for i in el.value:
+                indent += 1
+                ast_trace(i, indent)
+                indent -= 1
+        else:
+            pass
+    else:
+        pass
