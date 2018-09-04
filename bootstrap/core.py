@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # ------------------------------------------------------------------------------
 # Copyright 2018 Frank V. Castellucci
 #
@@ -14,111 +15,76 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-import argparse
 # import logging
 import os
 import sys
-from pprint import pprint
+import cmdline as cmd
 from lexer import Lexer
 from parser import Parser
-from ast import ast_trace, AstState
+from handler import Handler, Bundle
 
-# test_input = """
-# module foo
-
-# include [fizz bar bap]
-
-# var myreal 10.5
-# var myint 5
-# var yourint 5
-# var anint 15
-# var mystr "Sammy Davis Jr."
-# var mychar 'c'
-
-# var myvect <>
-# var mylist []
-# var mymap {}
-# var myset #{}
-
-# var mappairs {:a 5 :b 6 :c}
-
-# func t[x y z]
-# """
-
-test_input = """
-module foo
-var a 7
-var b 5
-func t[a b]
-    foo: 1 2
-;    fiz: 3 4
-"""
+_tail_map = {
+    'comp': '.ll',
+    'hdr': '.defs',
+    'diag': '.diag'}
 
 
-def create_parser(prog_name):
-    """Bootstrap command line parser
-    """
-    aparser = argparse.ArgumentParser(
-        prog=prog_name,
-        description='Bootstrap FOIDL generator.',
-        epilog='This process is required to build FOIDL',
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+def execute(args):
+    """Perform verification and actions from cmdline"""
 
-    aparser.add_argument(
-        '-p',
-        help='target platform for bootstrap')
-    aparser.add_argument(
-        '-i',
-        help='include path(s)')
-    aparser.add_argument(
-        '-e',
-        help='AST evaluate - Debugging')
-    aparser.add_argument(
-        '-t',
-        help='AST trace - Debugging')
-    aparser.add_argument(
-        '-s',
-        help='AST Symbol Table - Debugging')
-    aparser.add_argument(
-        '-l',
-        help='AST literals - Debugging')
-    aparser.add_argument(
-        '-g',
-        help='Dump Grammar - Debugging')
-    return aparser
+    # Validate input file
+    srcsplit = args.source.split('.')
+    if len(srcsplit) < 2 or srcsplit[1] != 'foidl':
+        print("Input error: Source file doesn't have .foidl extension")
+        return
 
+    # Construct output file
+    outhandler = None
+    if not args.output:
+        args.output = 'stdout'
+        outhandler = sys.stdout
+    else:
+        outsplit = args.output.split('.')
+        if len(outsplit) == 1:
+            args.output = outsplit[0] + _tail_map[args.action]
+        else:
+            pass
+        outhandler = open(args.output, "wt")
 
-def main(prog_name=os.path.basename(sys.argv[0]), args=None,
-         with_loggers=True):
-    """Main entry point for parser bootstrap
-    """
-    if args is None:
-        args = sys.argv[1:]
-    aparser = create_parser(prog_name)
-    args = aparser.parse_args(args)
-    mlex = Lexer()
-    lexer = mlex.get_lexer()
-    tokens = lexer.lex(test_input)
-    # for n in tokens:
-    #     print(n)
-    pg = Parser(mlex)
-    pg.parse()
-    parser = pg.get_parser()
-    state = AstState()
-    ast = parser.parse(tokens, state=state)
-    print("AST Type {} => {}".format(type(ast), ast))
-    # print("Args = {}".format(args.a))
-    if args.l:
-        pprint(state.literals)
-    if args.s:
-        pprint(state.scope)
-    if args.t:
-        ast_trace(ast)
-    if args.e:
-        ast.eval()
-    if args.g:
-        pprint(parser.lr_table.grammar.__dict__)
+    # Read source in for all actions
+    src = ""
+    try:
+        with open(args.source, 'rt') as fsrc:
+            src = fsrc.read()
+    except OSError as err:
+        print("OS error: {}".format(err))
+        return
+
+    lexgen = Lexer()
+    tokens = lexgen.get_lexer().lex(src)
+
+    pargen = Parser(lexgen)
+    pargen.parse()
+    parser = pargen.get_parser()
+
+    handler = Handler.handler_for(
+        args.action,
+        Bundle(
+            args.source,
+            parser.parse(tokens),
+            outhandler, args.output))
+    handler.validate()
+    handler.emit()
 
 
-if __name__ == '__main__':
-    main()
+def main():
+    """Main entry point for parser bootstrap"""
+    prog_name = os.path.basename(sys.argv[0])
+    args = sys.argv[1:]
+    if not args:
+        args.append('-h')
+    cparser = cmd.create_cmd_parser(prog_name)
+    execute(cparser.parse_args(args))
+
+
+main()

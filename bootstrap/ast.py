@@ -112,7 +112,7 @@ class FoidlAst(ABC):
         pass
 
 
-class CompilationScope(FoidlAst):
+class CompilationUnit(FoidlAst):
     """Scoped AST compilation unit value"""
 
     def __init__(self):

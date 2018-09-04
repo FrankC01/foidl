@@ -1,0 +1,11 @@
+; Foidl test file
+
+module foo
+
+var a 1
+
+var b 5
+
+func t[a b]
+    foo: 1 2
+    fiz: 3 4

@@ -15,7 +15,7 @@
 # ------------------------------------------------------------------------------
 
 from rply import ParserGenerator, Token
-from enums import CollTypes, SymbolTypes
+from enums import CollTypes
 import ast
 
 
@@ -63,67 +63,62 @@ class Parser():
         self.pg = ParserGenerator(
             mlexer.get_tokens(),
             precedence=[])
-        self.cscope = ast.CompilationScope()
+        self.cscope = ast.CompilationUnit()
 
     def parse(self):
         @self.pg.production('program : module')
-        def program(state, p):
+        def program(p):
             return self.cscope.build_unit(p)
 
         @self.pg.production('module : MODULE module_symbol')
         @self.pg.production('module : MODULE module_symbol i_decl')
         @self.pg.production('module : MODULE module_symbol i_decl decltypes')
         @self.pg.production('module : MODULE module_symbol decltypes')
-        def mod(state, p):
+        def mod(p):
             return ast.Module(p[1], p[2])
 
         @self.pg.production('module_symbol : SYMBOL')
-        def mod_sym(state, p):
+        def mod_sym(p):
             sym = ast.SymbolList(p[0].getstr())
-            state.push_scope(sym, SymbolTypes.MODULE)
             return sym
 
         @self.pg.production('i_decl : INCLUDE symbol')
         @self.pg.production('i_decl : INCLUDE symbol i_decl')
         @self.pg.production('i_decl : INCLUDE symbol_list')
         @self.pg.production('i_decl : INCLUDE symbol_list i_decl')
-        def i_decl(state, p):
+        def i_decl(p):
             return ast.Include(p)
 
         @self.pg.production('decltypes : var_decl')
         @self.pg.production('decltypes : var_decl decltypes')
         @self.pg.production('decltypes : func_decl')
         @self.pg.production('decltypes : func_decl decltypes')
-        def decltype(state, p):
+        def decltype(p):
             return _flatten_list(p)
 
         @self.pg.production('var_decl : VAR var_symbol single_expr')
         @self.pg.production(
             'func_decl : FUNC func_symbol symbol_list multiexpression')
-        def v_decl(state, p):
+        def v_decl(p):
             t = p.pop(0)
             if t.gettokentype() is 'VAR':
-                state.pop_scope(p[0])
                 return ast.Variable(p.pop(0), p)
             else:
-                state.pop_scope(p[0])
                 return ast.Function(p.pop(0), p)
 
         @self.pg.production('func_symbol : SYMBOL')
-        def func_sym(state, p):
+        def func_sym(p):
             sym = ast.Symbol(p[0].getstr())
-            state.addsym_push(sym, SymbolTypes.FUNCTION)
             return sym
 
         @self.pg.production('var_symbol : SYMBOL')
-        def var_sym(state, p):
+        def var_sym(p):
             sym = ast.Symbol(p[0].getstr())
-            state.addsym_push(sym, SymbolTypes.VARIABLE)
             return sym
 
         @self.pg.production('symbol_list : LBRACKET RBRACKET')
         @self.pg.production('symbol_list : LBRACKET symbol_seps RBRACKET')
-        def symbol_list_1(state, p):
+        def symbol_list_1(p):
             print('completing symbol list')
             if len(p) < 3:
                 return ast.EmptyCollection(CollTypes.LIST)
@@ -133,7 +128,7 @@ class Parser():
         @self.pg.production('symbol_seps : symbol')
         @self.pg.production('symbol_seps : symbol symbol_seps')
         @self.pg.production('symbol_seps : symbol COMMA symbol_seps')
-        def symbol_list_2(state, p):
+        def symbol_list_2(p):
             if len(p) == 1:
                 return ast.SymbolList(p)
             else:
@@ -142,14 +137,14 @@ class Parser():
         @self.pg.production('multiexpression : simple_expr')
         @self.pg.production('multiexpression : complex_expr')
         @self.pg.production('multiexpression : simple_expr multiexpression')
-        def simple_expr_p(state, p):
+        def simple_expr_p(p):
             """Parse one or more expressions"""
             # print("multiple = {}".format(p))
             return ast.Expressions(p)
 
         @self.pg.production('single_expr : simple_expr')
         @self.pg.production('single_expr : complex_expr')
-        def singleexpr_p(state, p):
+        def singleexpr_p(p):
             """Parse one expressions"""
             # print("single expression = {}".format(p))
             return p[0]
@@ -160,7 +155,7 @@ class Parser():
         @self.pg.production('complex_expr : partialexpr')
         @self.pg.production('complex_expr : groupexpr')
         @self.pg.production('complex_expr : lambdaexpr')
-        def complex_expr(state, p):
+        def complex_expr(p):
             """Expression parse"""
             # print("complex expression = {}".format(p))
             return ast.Expression(p)
@@ -169,20 +164,20 @@ class Parser():
         @self.pg.production('simple_expr : symbol')
         @self.pg.production('simple_expr : empty_collection')
         @self.pg.production('simple_expr : collection')
-        def simple_expr(state, p):
+        def simple_expr(p):
             """Expression parse"""
             # print("simple expression = {}".format(p))
             return ast.Expression(p)
 
         @self.pg.production('functioncall : FUNC_CALL multiexpression')
-        def functioncall(state, p):
+        def functioncall(p):
             # print("func = {}".format(p))
             fcall = ast.FunctionCall(p.pop(0).getstr(), p)
             return fcall
 
         @self.pg.production('groupexpr : GROUP RPAREN')
         @self.pg.production('groupexpr : GROUP multiexpression RPAREN')
-        def group(state, p):
+        def group(p):
             """Group parse for zero or more expressions"""
             if len(p) < 3:
                 return ast.Group([])
@@ -200,26 +195,26 @@ class Parser():
             'letexpr : LET symbol LBRACKET RBRACKET single_expr')
         @self.pg.production(
             'letexpr : LET symbol LBRACKET letpairs RBRACKET single_expr')
-        def letexpr(state, p):
+        def letexpr(p):
             """Let parse"""
             letset = [x for x in p if type(x) is not Token]
             return ast.Let(letset)
 
         @self.pg.production('letpairs : symbol single_expr')
         @self.pg.production('letpairs : symbol single_expr COMMA letpairs')
-        def letpairs(state, p):
+        def letpairs(p):
             """Let parse support for zero or more local var assignments"""
             return _token_eater(p, ast.LetPairs)
 
         @self.pg.production('matchexpr : MATCH simple_expr')
         # @self.pg.production('matchexpr : MATCH simple_expr matchpairs')
-        def matchexpr(state, p):
+        def matchexpr(p):
             """Match parse"""
             return ast.Match([x for x in p if type(x) is not Token])
 
         @self.pg.production('matchpairs : simple_expr simple_expr')
         @self.pg.production('matchpairs : simple_expr simple_expr matchpairs')
-        def matchpairs(state, p):
+        def matchpairs(p):
             """Match parse support for zero or more match patterns"""
             def eater(in_list):
                 out_list = []
@@ -236,13 +231,13 @@ class Parser():
             return ast.MatchPairs(y)
 
         @self.pg.production('lambdaexpr : LAMBDA symbol_list simple_expr')
-        def lambdaexpr(state, p):
+        def lambdaexpr(p):
             """Lambda parse"""
             p.pop(0)
             return ast.Lambda(p)
 
         @self.pg.production('partialexpr : LPAREN simple_expr RPAREN')
-        def partialexpr(state, p):
+        def partialexpr(p):
             """Partial parse"""
             p.pop(2)
             p.pop(0)
@@ -252,7 +247,7 @@ class Parser():
         @self.pg.production('empty_collection : LBRACKET RBRACKET')
         @self.pg.production('empty_collection : LBRACE RBRACE')
         @self.pg.production('empty_collection : LSET RBRACE')
-        def empty_collections(state, p):
+        def empty_collections(p):
             return ast.EmptyCollection(_collection_type(p[0]))
 
         # TODO: Add map constrains of even number expressions
@@ -260,7 +255,7 @@ class Parser():
         @self.pg.production('collection : LBRACKET simple_expr_seps RBRACKET')
         @self.pg.production('collection : LBRACE simple_expr_seps RBRACE')
         @self.pg.production('collection : LSET simple_expr_seps RBRACE')
-        def collections(state, p):
+        def collections(p):
             if len(p) < 3:
                 return self.empty_collection(p)
             else:
@@ -273,7 +268,7 @@ class Parser():
         @self.pg.production('simple_expr_seps : simple_expr simple_expr_seps')
         @self.pg.production(
             'simple_expr_seps : simple_expr COMMA simple_expr_seps')
-        def expression_list(state, p):
+        def expression_list(p):
             """Parse collection expressions"""
             if len(p) == 1:
                 return ast.ExpressionList(p)
@@ -287,14 +282,15 @@ class Parser():
         @self.pg.production('literal : REAL')
         @self.pg.production('literal : STRING')
         @self.pg.production('literal : KEYWORD')
-        def literal(state, p):
-            return state.process_literal(ast.Literal(
+        def literal(p):
+            # print("Literal => {}".format(p))
+            return ast.Literal(
                 p[0].gettokentype(),
-                p[0].getstr()))
+                p[0].getstr())
 
         @self.pg.production('symbol : SYMBOL')
-        def symbol(state, p):
-            state.resolve_symbol(p)
+        def symbol(p):
+            # state.resolve_symbol(p)
             return ast.Symbol(p[0].getstr())
 
         @self.pg.error
