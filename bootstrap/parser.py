@@ -46,48 +46,64 @@ def _token_eater(in_list, base_type, out_list=None):
     return base_type(out_list)
 
 
+def _symbol_only(in_list, out_list=None):
+    if not out_list:
+        out_list = []
+    for n in in_list:
+        if type(n) is ast.Symbol:
+            out_list.append(n)
+        else:
+            out_list = _symbol_only(n.value, out_list)
+    return out_list
+
+
 def _flatten_list(in_list, out_list=None):
     if not out_list:
         out_list = []
     for n in in_list:
         if type(n) is list:
-            _flatten_list(n, out_list)
+            out_list = _flatten_list(n, out_list)
         else:
             out_list.append(n)
     return out_list
 
 
 class Parser():
-    def __init__(self, mlexer):
+    def __init__(self, mlexer, input):
         # A list of all token names accepted by the parser.
         self.pg = ParserGenerator(
             mlexer.get_tokens(),
             precedence=[])
-        self.cscope = ast.CompilationUnit()
+        self._input = input
+
+    @property
+    def input(self):
+        return self._input
 
     def parse(self):
         @self.pg.production('program : module')
         def program(p):
-            return self.cscope.build_unit(p)
+            return ast.CompilationUnit(p)
 
         @self.pg.production('module : MODULE module_symbol')
         @self.pg.production('module : MODULE module_symbol i_decl')
         @self.pg.production('module : MODULE module_symbol i_decl decltypes')
         @self.pg.production('module : MODULE module_symbol decltypes')
         def mod(p):
-            return ast.Module(p[1], p[2])
+            pp = _flatten_list(p)
+            return ast.Module(pp[1], pp[2:], pp[0], self.input)
 
         @self.pg.production('module_symbol : SYMBOL')
         def mod_sym(p):
-            sym = ast.SymbolList(p[0].getstr())
-            return sym
+            return ast.Symbol(p[0], self.input)
 
         @self.pg.production('i_decl : INCLUDE symbol')
         @self.pg.production('i_decl : INCLUDE symbol i_decl')
         @self.pg.production('i_decl : INCLUDE symbol_list')
         @self.pg.production('i_decl : INCLUDE symbol_list i_decl')
         def i_decl(p):
-            return ast.Include(p)
+            t = p.pop(0)
+            return ast.Include(_symbol_only(p), t, self.input)
 
         @self.pg.production('decltypes : var_decl')
         @self.pg.production('decltypes : var_decl decltypes')
@@ -102,24 +118,21 @@ class Parser():
         def v_decl(p):
             t = p.pop(0)
             if t.gettokentype() is 'VAR':
-                return ast.Variable(p.pop(0), p)
+                return ast.Variable(p.pop(0), p, t, self.input)
             else:
-                return ast.Function(p.pop(0), p)
+                return ast.Function(p.pop(0), p, t, self.input)
 
         @self.pg.production('func_symbol : SYMBOL')
         def func_sym(p):
-            sym = ast.Symbol(p[0].getstr())
-            return sym
+            return ast.Symbol(p[0], self.input)
 
         @self.pg.production('var_symbol : SYMBOL')
         def var_sym(p):
-            sym = ast.Symbol(p[0].getstr())
-            return sym
+            return ast.Symbol(p[0], self.input)
 
         @self.pg.production('symbol_list : LBRACKET RBRACKET')
         @self.pg.production('symbol_list : LBRACKET symbol_seps RBRACKET')
         def symbol_list_1(p):
-            print('completing symbol list')
             if len(p) < 3:
                 return ast.EmptyCollection(CollTypes.LIST)
             else:
@@ -286,17 +299,21 @@ class Parser():
             # print("Literal => {}".format(p))
             return ast.Literal(
                 p[0].gettokentype(),
-                p[0].getstr())
+                p[0].getstr(),
+                p[0],
+                self.input)
 
         @self.pg.production('symbol : SYMBOL')
         def symbol(p):
             # state.resolve_symbol(p)
-            return ast.Symbol(p[0].getstr())
+            return ast.Symbol(p[0], self.input)
 
         @self.pg.error
         def error_handle(token):
             raise ValueError(
-                "%s where it wasn't expected" % token)
+                "{} at {} where it wasn't expected".format(
+                    token,
+                    token.getsourcepos()))
 
     def get_parser(self):
         return self.pg.build()

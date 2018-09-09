@@ -2,6 +2,9 @@
 
 module foo
 
+include [pippy, pappy]
+include poppy
+
 var a 1
 
 var b 5

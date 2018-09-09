@@ -26,15 +26,17 @@ _std_comment = """
 """
 
 
-class Bundle(object):
-    """Bundle contains essential elements for action Handlers"""
+class SimpleBundle(object):
+    """SimpleBundle contains src and resulting AST"""
 
-    def __init__(self, srcfile, ast, outhandle, outfile):
+    def __init__(self, inc_paths, srcfile, ast):
+        self._inc_paths = inc_paths
         self._src_file = srcfile
         self._ast = ast
-        self._out = outhandle
-        self._out_file = outfile
-        self._triple = None
+
+    @property
+    def inc_paths(self):
+        return self._inc_paths
 
     @property
     def src_file(self):
@@ -43,6 +45,16 @@ class Bundle(object):
     @property
     def ast(self):
         return self._ast
+
+
+class Bundle(SimpleBundle):
+    """Main Bundle contains essential elements for action Handlers"""
+
+    def __init__(self, inc_paths, srcfile, ast, outhandle, outfile):
+        super().__init__(inc_paths, srcfile, ast)
+        self._out = outhandle
+        self._out_file = outfile
+        self._triple = None
 
     @property
     def out(self):
@@ -99,6 +111,7 @@ class Comp(Handler):
 
     def validate(self):
         # Load any imports
+        # Extrapolate literals
         # Generate symbol tree
         # Refactor code and identifiers
         pass
@@ -119,14 +132,14 @@ class Hdr(Handler):
 
     def emit(self):
         """Hdr.emit() generates header content"""
-        self.write("module {}".format(
-            self.bundle.ast.value[0].name.value))
-        for d in self.bundle.ast.value[0].value:
+        mod = self.bundle.ast.value[0]
+        self.write("module {}".format(mod.name))
+        for d in mod.value:
             if type(d) is ast.Variable:
-                self.write("var {} Any".format(d.name.value))
+                self.write("var {} Any".format(d.name))
             elif type(d) is ast.Function:
                 self.write("func {} [{}]".format(
-                    d.name.value,
+                    d.name,
                     ' '.join([str(s.value) for s in d.value[0].value])))
         self.complete()
 

@@ -33,11 +33,12 @@ def create_cmd_parser(prog_name):
         formatter_class=argparse.RawTextHelpFormatter)
 
     aparser.add_argument(
-        '-i',
+        '-s',
         help='foidl source',
         required=True,
         dest='source',
         metavar='<file>')
+
     aparser.add_argument(
         '-o',
         help='output file - default to stdout',
@@ -49,6 +50,14 @@ def create_cmd_parser(prog_name):
         help='target platform triple - default to host',
         dest='triple',
         metavar='triple')
+
+    aparser.add_argument(
+        '-I',
+        help='Path(s) to search for include (.defs) files',
+        dest='inc_paths',
+        nargs='*',
+        default=[],
+        metavar='<path>')
 
     aparser.add_argument(
         '-a',

@@ -14,98 +14,23 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-from enums import SymbolTypes
 from abc import ABC, abstractmethod
-
-
-class StateException(Exception):
-    pass
-
-
-class SymbolTable():
-    def __init__(self, ident, stype=SymbolTypes.UNKNOWN):
-        self._scopetype = stype
-        self._ident = ident
-        self._table = {}
-
-    @property
-    def scopetype(self):
-        return self._scopetype
-
-    @property
-    def ident(self):
-        return self._ident
-
-    @property
-    def table(self):
-        return self._table
-
-    def has_symbol(self, symbol):
-        return self.table.get(symbol, False)
-
-    def addsymbol(self, symbol, stype):
-        if not self.table.get(symbol, None):
-            print("Adding symbol {}".format(symbol))
-            self.table[symbol] = stype
-        else:
-            raise StateException(
-                "{} exists in {} {} symbol table".
-                format(symbol, self.ident, self.scopetype))
-
-    def __repr__(self):
-        dstr = str(self.table)
-        return "SymbolTable(id={} type={} syms={})".format(
-            self.ident, self.scopetype, dstr)
-
-
-class AstState():
-    def __init__(self):
-        self.literals = {}
-        self.scope = []
-
-    def addsym(self, symbol, stype):
-        self.scope[-1].addsymbol(symbol.value, stype)
-
-    def resolve_symbol(self, token):
-        print("Resolving symbol {} ".format(token[0].getstr()))
-
-    def push_scope(self, symbol, stype):
-        self.scope.append(SymbolTable(symbol.value, stype))
-
-    def pop_scope(self, symbol):
-        scope = self.scope[-1]
-        if scope.ident is symbol.value:
-            self.scope.pop()
-        else:
-            raise StateException(
-                "Popping {} conflicts with {}".
-                format(symbol.value, scope.ident))
-
-    def addsym_push(self, symbol, stype):
-        self.addsym(symbol, stype)
-        self.push_scope(symbol, stype)
-
-    def process_literal(self, literal):
-        """Literals are grouped and reused as needed"""
-        x = self.literals.get(literal.type)
-        idx = None
-        if not x:
-            idx = literal.type + "_0"
-            self.literals[literal.type] = {literal.value: idx}
-        else:
-            vmap = self.literals[literal.type]
-            idx = literal.type + "_" + str(len(vmap))
-            ydx = vmap.get(literal.value)
-            if not ydx:
-                vmap[literal.value] = idx
-            else:
-                idx = ydx
-        literal.value = idx
-        return literal
 
 
 class FoidlAst(ABC):
     """Base abstract ast class"""
+
+    def __init__(self, token, src='unknown'):
+        self._token = token
+        self._source = src
+
+    @property
+    def token(self):
+        return self._token
+
+    @property
+    def source(self):
+        return self._source
 
     @abstractmethod
     def eval(self):
@@ -115,14 +40,8 @@ class FoidlAst(ABC):
 class CompilationUnit(FoidlAst):
     """Scoped AST compilation unit value"""
 
-    def __init__(self):
-        self.literals = {}
-        self.value = None
-
-    def build_unit(self, module):
-        """From parse, attach the module as the value"""
-        self.value = module
-        return self
+    def __init__(self, value):
+        self.value = value
 
     def eval(self):
         """Traverse the tree"""
@@ -130,46 +49,73 @@ class CompilationUnit(FoidlAst):
 
 
 class Module(FoidlAst):
-    def __init__(self, mname, value):
+    def __init__(self, mname, value, token, src):
+        super().__init__(token, src)
+        self._name = mname
+        self._include = None
+        if type(value[0]) == Include:
+            self._include = value.pop(0)
         self.value = value
-        self.name = mname
+
+    @property
+    def include(self):
+        return self._include
+
+    @property
+    def name(self):
+        return self._name.value
 
     def eval(self):
-        print("Module *{}* value {}".format(self.name.value, self.value))
-        for c in self.value:
-            c.eval()
+        pass
 
 
 class Include(FoidlAst):
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, value, token, src):
+        super().__init__(token, src)
+        self._value = value
+
+    @property
+    def value(self):
+        return self._value
 
     def eval(self):
-        print("Include value {}".format(self.value))
-        for c in self.value[1:]:
-            c.eval()
+        pass
 
 
 class Variable(FoidlAst):
-    def __init__(self, vname, value):
-        self.value = value
-        self.name = vname
+    def __init__(self, vname, value, token, src):
+        super().__init__(token, src)
+        self._value = value
+        self._name = vname
+
+    @property
+    def name(self):
+        return self._name.value
+
+    @property
+    def value(self):
+        return self._value
 
     def eval(self):
-        print("VAR *{}* value {}".format(self.name.value, self.value))
-        for c in self.value:
-            c.eval()
+        pass
 
 
 class Function(FoidlAst):
-    def __init__(self, fname, value):
-        self.value = value
-        self.name = fname
+    def __init__(self, fname, value, token, src):
+        super().__init__(token, src)
+        self._value = value
+        self._name = fname
+
+    @property
+    def name(self):
+        return self._name.value
+
+    @property
+    def value(self):
+        return self._value
 
     def eval(self):
-        print("FUNCTION *{}* value {}".format(self.name.value, self.value))
-        for c in self.value:
-            c.eval()
+        pass
 
 
 class SymbolList(FoidlAst):
@@ -305,7 +251,6 @@ class FunctionCall(FoidlAst):
     def __init__(self, csite, value):
         self.value = value
         self.call_site = csite
-        print("Registering {}".format(csite))
 
     def eval(self):
         print("CALL {} with {}".format(self.call_site, self.value))
@@ -314,7 +259,8 @@ class FunctionCall(FoidlAst):
 
 
 class Literal(FoidlAst):
-    def __init__(self, ltype, lvalue):
+    def __init__(self, ltype, lvalue, token, src):
+        super().__init__(token, src)
         self.type = ltype
         self.value = lvalue
 
@@ -323,19 +269,16 @@ class Literal(FoidlAst):
 
 
 class Symbol(FoidlAst):
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, token, src):
+        super().__init__(token, src)
+        self._value = token.getstr()
+
+    @property
+    def value(self):
+        return self._value
 
     def eval(self):
-        print("Symbol {}".format(self.value))
-
-
-class Real(FoidlAst):
-    def __init__(self, value):
-        self.value = value
-
-    def eval(self):
-        print("Real {}".format(self.value))
+        pass
 
 
 def ast_trace(el, indent=1):

@@ -15,13 +15,52 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-# import logging
-import os
 import sys
+import util
+import warnings
+import logging
+from colorlog import ColoredFormatter
+
 import cmdline as cmd
 from lexer import Lexer
 from parser import Parser
 from handler import Handler, Bundle
+
+LOGGER = None
+
+
+def create_console_handler(logger, verbose_level=0):
+    clog = logging.StreamHandler()
+    clog.setFormatter(
+        ColoredFormatter(
+            "%(log_color)s[%(asctime)s %(levelname)-8s%(module)s]%(reset)s "
+            "%(white)s%(message)s",
+            datefmt="%H:%M:%S",
+            reset=True,
+            log_colors={
+                'DEBUG': 'cyan',
+                'INFO': 'green',
+                'WARNING': 'yellow',
+                'ERROR': 'red',
+                'CRITICAL': 'red',
+            }))
+
+    logger.addHandler(clog)
+    logger.propagate = False
+
+    if verbose_level == 0:
+        logger.setLevel(logging.INFO)
+    elif verbose_level == 1:
+        logger.setLevel(logging.WARN)
+    else:
+        logger.setLevel(logging.DEBUG)
+    return logger
+
+
+def setup_loggers(verbose_level):
+    logger = logging.getLogger()
+    return create_console_handler(logger, verbose_level)
+
 
 _tail_map = {
     'comp': '.ll',
@@ -31,11 +70,10 @@ _tail_map = {
 
 def execute(args):
     """Perform verification and actions from cmdline"""
-
-    # Validate input file
-    srcsplit = args.source.split('.')
-    if len(srcsplit) < 2 or srcsplit[1] != 'foidl':
-        print("Input error: Source file doesn't have .foidl extension")
+    try:
+        absfile = util.validate_file(args.source, 'foidl')
+    except IOError as err:
+        LOGGER.error("{}".format(err))
         return
 
     # Construct output file
@@ -49,40 +87,34 @@ def execute(args):
             args.output = outsplit[0] + _tail_map[args.action]
         else:
             pass
-        outhandler = open(args.output, "wt")
+        outhandler = open(args.output, "wt+")
 
-    # Read source in for all actions
-    src = ""
-    try:
-        with open(args.source, 'rt') as fsrc:
-            src = fsrc.read()
-    except OSError as err:
-        print("OS error: {}".format(err))
-        return
-
-    lexgen = Lexer()
-    tokens = lexgen.get_lexer().lex(src)
-
-    pargen = Parser(lexgen)
-    pargen.parse()
-    parser = pargen.get_parser()
+    # Supress python warnings
+    if not sys.warnoptions:
+        warnings.simplefilter("ignore")
 
     handler = Handler.handler_for(
         args.action,
         Bundle(
-            args.source,
-            parser.parse(tokens),
+            util.absolutes_path_for(args.inc_paths),
+            absfile,
+            util.parse_file(absfile, Lexer, Parser),
             outhandler, args.output))
+
     handler.validate()
     handler.emit()
 
 
-def main():
+def main(prog_name=sys.argv[0], args=sys.argv[1:]):
     """Main entry point for parser bootstrap"""
-    prog_name = os.path.basename(sys.argv[0])
-    args = sys.argv[1:]
+    global LOGGER
     if not args:
         args.append('-h')
+    else:
+        pass
+
+    LOGGER = setup_loggers(0)
+
     cparser = cmd.create_cmd_parser(prog_name)
     execute(cparser.parse_args(args))
 
