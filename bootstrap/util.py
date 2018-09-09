@@ -15,6 +15,22 @@
 # ------------------------------------------------------------------------------
 
 import os
+import logging
+
+from errors import UtilityError
+from enums import ParseLevel
+from lexer import Lexer as full_lex
+from parser import Parser as full_parse
+
+LOGGER = logging.getLogger()
+
+
+def file_exists(path, base, ext):
+    ffile = os.path.join(path, base) + '.' + ext
+    if not os.path.isfile(ffile):
+        return None
+    else:
+        return ffile
 
 
 def validate_file(infile, ext):
@@ -38,11 +54,18 @@ def absolutes_path_for(ins):
         return os.path.abspath(ins)
 
 
-def parse_file(srcfile, lexg, prsg):
+def parse_file(srcfile, level=ParseLevel.FULL):
     """Read and parse some kind of source file
 
     With relevent lexer and parser context
     """
+    if level is ParseLevel.FULL:
+        lexg = full_lex
+        prsg = full_parse
+    else:
+        LOGGER.critical("Lite parsing not implemented")
+        raise UtilityError(
+            "'{}' not implemented".format(level))
 
     src = ""
     # Read in source file
@@ -61,4 +84,4 @@ def parse_file(srcfile, lexg, prsg):
     pargen.parse()
     parser = pargen.get_parser()
 
-    return parser.parse(tokens)
+    return parser.parse(tokens).module()

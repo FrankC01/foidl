@@ -16,20 +16,19 @@
 # ------------------------------------------------------------------------------
 
 import sys
-import util
 import warnings
 import logging
 from colorlog import ColoredFormatter
 
+import util
+import errors
 import cmdline as cmd
-from lexer import Lexer
-from parser import Parser
 from handler import Handler, Bundle
 
 LOGGER = None
 
 
-def create_console_handler(logger, verbose_level=0):
+def create_console_handler(logger, verbose_level):
     clog = logging.StreamHandler()
     clog.setFormatter(
         ColoredFormatter(
@@ -48,12 +47,14 @@ def create_console_handler(logger, verbose_level=0):
     logger.addHandler(clog)
     logger.propagate = False
 
-    if verbose_level == 0:
+    if verbose_level == 1:
         logger.setLevel(logging.INFO)
-    elif verbose_level == 1:
+    elif verbose_level == 2:
+        logger.setLevel(logging.DEBUG)
+    elif verbose_level == 3:
         logger.setLevel(logging.WARN)
     else:
-        logger.setLevel(logging.DEBUG)
+        pass
     return logger
 
 
@@ -64,6 +65,7 @@ def setup_loggers(verbose_level):
 
 _tail_map = {
     'comp': '.ll',
+    'compr': '.ll',
     'hdr': '.defs',
     'diag': '.diag'}
 
@@ -72,37 +74,36 @@ def execute(args):
     """Perform verification and actions from cmdline"""
     try:
         absfile = util.validate_file(args.source, 'foidl')
-    except IOError as err:
-        LOGGER.error("{}".format(err))
-        return
-
-    # Construct output file
-    outhandler = None
-    if not args.output:
-        args.output = 'stdout'
-        outhandler = sys.stdout
-    else:
-        outsplit = args.output.split('.')
-        if len(outsplit) == 1:
-            args.output = outsplit[0] + _tail_map[args.action]
+        # Construct output file
+        outhandler = None
+        if not args.output:
+            args.output = 'stdout'
+            outhandler = sys.stdout
         else:
-            pass
-        outhandler = open(args.output, "wt+")
+            outsplit = args.output.split('.')
+            if len(outsplit) == 1:
+                args.output = outsplit[0] + _tail_map[args.action]
+            else:
+                pass
+            outhandler = open(args.output, "wt+")
 
-    # Supress python warnings
-    if not sys.warnoptions:
-        warnings.simplefilter("ignore")
+        # Supress python warnings
+        if not sys.warnoptions:
+            warnings.simplefilter("ignore")
 
-    handler = Handler.handler_for(
-        args.action,
-        Bundle(
-            util.absolutes_path_for(args.inc_paths),
-            absfile,
-            util.parse_file(absfile, Lexer, Parser),
-            outhandler, args.output))
+        handler = Handler.handler_for(
+            args.action,
+            Bundle(
+                util.absolutes_path_for(args.inc_paths),
+                absfile,
+                util.parse_file(absfile),
+                outhandler, args.output))
 
-    handler.validate()
-    handler.emit()
+        handler.validate()
+        handler.emit()
+    except (errors.PFoidlError, IOError) as err:
+        LOGGER.error("{}: {}".format(type(err).__name__, err))
+        return
 
 
 def main(prog_name=sys.argv[0], args=sys.argv[1:]):
@@ -113,10 +114,12 @@ def main(prog_name=sys.argv[0], args=sys.argv[1:]):
     else:
         pass
 
-    LOGGER = setup_loggers(0)
-
     cparser = cmd.create_cmd_parser(prog_name)
-    execute(cparser.parse_args(args))
+    argres = cparser.parse_args(args)
+
+    LOGGER = setup_loggers(argres.llevel)
+
+    execute(argres)
 
 
 main()

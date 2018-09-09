@@ -73,7 +73,11 @@ class Parser():
         # A list of all token names accepted by the parser.
         self.pg = ParserGenerator(
             mlexer.get_tokens(),
-            precedence=[])
+            precedence=[
+                ("left", ["SYMBOL", "KEYWORD"]),
+                ("left", ["SYMBOL_BANG"]),
+                ("left", ["FUNC_CALL"]),
+                ("left", ["FUNC"])])
         self._input = input
 
     @property
@@ -95,7 +99,7 @@ class Parser():
 
         @self.pg.production('module_symbol : SYMBOL')
         def mod_sym(p):
-            return ast.Symbol(p[0], self.input)
+            return ast.Symbol(p[0].getstr(), p[0], self.input)
 
         @self.pg.production('i_decl : INCLUDE symbol')
         @self.pg.production('i_decl : INCLUDE symbol i_decl')
@@ -114,6 +118,8 @@ class Parser():
 
         @self.pg.production('var_decl : VAR var_symbol single_expr')
         @self.pg.production(
+            'func_decl : FUNC func_symbol symbol_list')
+        @self.pg.production(
             'func_decl : FUNC func_symbol symbol_list multiexpression')
         def v_decl(p):
             t = p.pop(0)
@@ -122,13 +128,15 @@ class Parser():
             else:
                 return ast.Function(p.pop(0), p, t, self.input)
 
-        @self.pg.production('func_symbol : SYMBOL')
+        @self.pg.production('func_symbol : symbol_type')
         def func_sym(p):
-            return ast.Symbol(p[0], self.input)
+            return p[0]
+            # return ast.Symbol(p[0].getstr(), p[0], self.input)
 
-        @self.pg.production('var_symbol : SYMBOL')
+        @self.pg.production('var_symbol : symbol_type')
         def var_sym(p):
-            return ast.Symbol(p[0], self.input)
+            return p[0]
+            # return ast.Symbol(p[0].getstr(), p[0], self.input)
 
         @self.pg.production('symbol_list : LBRACKET RBRACKET')
         @self.pg.production('symbol_list : LBRACKET symbol_seps RBRACKET')
@@ -183,6 +191,8 @@ class Parser():
             return ast.Expression(p)
 
         @self.pg.production('functioncall : FUNC_CALL multiexpression')
+        @self.pg.production('functioncall : FUNC_BANG multiexpression')
+        @self.pg.production('functioncall : FUNC_PRED multiexpression')
         def functioncall(p):
             # print("func = {}".format(p))
             fcall = ast.FunctionCall(p.pop(0).getstr(), p)
@@ -303,16 +313,24 @@ class Parser():
                 p[0],
                 self.input)
 
+        @self.pg.production('symbol_type : SYMBOL')
+        @self.pg.production('symbol_type : SYMBOL_BANG')
+        @self.pg.production('symbol_type : SYMBOL_PRED')
+        def symbol_type(p):
+            # state.resolve_symbol(p)
+            return ast.Symbol(p[0].getstr(), p[0], self.input)
+
         @self.pg.production('symbol : SYMBOL')
         def symbol(p):
             # state.resolve_symbol(p)
-            return ast.Symbol(p[0], self.input)
+            return ast.Symbol(p[0].getstr(), p[0], self.input)
 
         @self.pg.error
         def error_handle(token):
             raise ValueError(
-                "{} at {} where it wasn't expected".format(
+                "{} at {} in {} where it wasn't expected".format(
                     token,
+                    self.input,
                     token.getsourcepos()))
 
     def get_parser(self):

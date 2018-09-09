@@ -47,6 +47,9 @@ class CompilationUnit(FoidlAst):
         """Traverse the tree"""
         self.value[0].eval()
 
+    def module(self):
+        return self.value[0]
+
 
 class Module(FoidlAst):
     def __init__(self, mname, value, token, src):
@@ -55,6 +58,8 @@ class Module(FoidlAst):
         self._include = None
         if type(value[0]) == Include:
             self._include = value.pop(0)
+        else:
+            self._include = Include([], token, src)
         self.value = value
 
     @property
@@ -269,9 +274,9 @@ class Literal(FoidlAst):
 
 
 class Symbol(FoidlAst):
-    def __init__(self, token, src):
+    def __init__(self, value, token, src):
         super().__init__(token, src)
-        self._value = token.getstr()
+        self._value = value
 
     @property
     def value(self):

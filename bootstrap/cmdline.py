@@ -14,6 +14,7 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
+import os
 import argparse
 
 """Command line parser menu"""
@@ -25,12 +26,35 @@ def create_cmd_parser(prog_name):
     aparser = argparse.ArgumentParser(
         prog=prog_name,
         description='Bootstrap FOIDL Compiler generator.',
-        epilog="""Action set (one of):
-        comp - compiles the input to LLVM-IR (default)
-        hdr  - generate a header file for input
-        diag - generate parser diagnostics
+        epilog="""
+Action (-a) set (one of):
+    comp  - compiles the input to LLVM-IR (default)
+    compr - runtime library compile to LLVM-IR
+    hdr   - generate a header file for input
+    diag  - generate parser diagnostics
+
+Message Verbosity (-v):
+    none    - Displays only critical and error messages (default)
+    -v      - Informational messages
+    -vv     - Include debug messages
+    -vvv    - Warning messages only
         """,
         formatter_class=argparse.RawTextHelpFormatter)
+
+    aparser.add_argument(
+        '-v',
+        action='count',
+        default=0,
+        dest='llevel',
+        help='Increase output sent to stderr (see Verbosity below)')
+
+    aparser.add_argument(
+        '-a',
+        help='action to take (see Action below)',
+        default='comp',
+        choices=['comp', 'compr', 'hdr', 'diag'],
+        dest='action',
+        metavar='action set')
 
     aparser.add_argument(
         '-s',
@@ -41,7 +65,7 @@ def create_cmd_parser(prog_name):
 
     aparser.add_argument(
         '-o',
-        help='output file - default to stdout',
+        help='output file - default to stdout if not set',
         dest='output',
         metavar='<file>')
 
@@ -53,18 +77,10 @@ def create_cmd_parser(prog_name):
 
     aparser.add_argument(
         '-I',
-        help='Path(s) to search for include (.defs) files',
+        help='Path(s) for include (.defs) files',
         dest='inc_paths',
         nargs='*',
-        default=[],
-        metavar='<path>')
-
-    aparser.add_argument(
-        '-a',
-        help='action to take (defaults to comp)',
-        default='comp',
-        choices=['comp', 'hdr', 'diag'],
-        dest='action',
-        metavar='action set')
+        default=[os.getcwd()],
+        metavar='<p>')
 
     return aparser

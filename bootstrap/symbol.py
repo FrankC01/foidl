@@ -14,8 +14,12 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
+import logging
 import enums
 from abc import ABC, abstractmethod
+
+
+LOGGER = logging.getLogger()
 
 
 class SymbolException(Exception):
@@ -73,14 +77,80 @@ class MatchResReference(BaseReference):
     pass
 
 
-class SymbolTable():
-    """SymbolTable exists for each complex type
-
-    This includes module, var, func, func_args, let_res, let_args, lambdas)
+class SymbolTable(object):
+    """SymbolTable exists for conmpilation and expression types
     """
-    pass
+
+    def __init__(self, name, token):
+        self._name = name
+        self._token = token
+        self._table = {}
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def token(self):
+        return self._token
+
+    def locate(self, value):
+        return self._table.get(value, None)
+
+    def insert(self, value, reference):
+        if not self.locate(value):
+            self._table[value] = reference
+        else:
+            raise SymbolException(
+                "{} already exists as {}".format(
+                    value, self._table[value]))
 
 
-class SymbolTree():
+class SymbolTree(object):
     """Manages the tree of symbols and is preserved until emit"""
-    pass
+
+    def __init__(self, context, token, tree=None):
+        self._context = context
+        if tree:
+            self._stack = tree
+            self._current = tree[-1]
+        else:
+            self._stack = []
+            self._current = None
+        first = SymbolTable(context, token)
+        self._stack.append(first)
+        self._current = first
+
+    @property
+    def context(self):
+        return self._context
+
+    @property
+    def stack(self):
+        return self._stack
+
+    @property
+    def current(self):
+        return self._current
+
+    def push_scope(self, reference, token):
+        """Pushes new scope which becomes current"""
+        table = SymbolTable(reference, token)
+        self._stack.append(table)
+        self._current = table
+        return table
+
+    def pop_scope(self):
+        """Removes and returns current scope"""
+        if self._stack:
+            table = self._stack.pop()
+            if self._stack:
+                self._current = self._stack[-1]
+            else:
+                LOGGER.warn("Symbol Stack exhausted")
+                self._current = None
+        else:
+            # Raise something
+            raise SymbolException(
+                "Attempting to pop empty Symbol Stack")
+        return table

@@ -14,8 +14,18 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
+import os
+import logging
+import functools
+
 import ast
+import util
+from errors import NotFoundError
+from enums import ParseLevel
+
 from abc import ABC, abstractmethod
+
+LOGGER = logging.getLogger()
 
 _std_comment = """
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -24,6 +34,29 @@ _std_comment = """
 ; All rights reserved
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 """
+
+
+def _build_comp(*functions):
+    """Construct composition"""
+    return functools.reduce(
+        lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
+
+
+def _lite_comp(input):
+    LOGGER.debug("Parsing {}".format(input))
+    return util.parse_file(input)
+
+
+def _top_symbols(input):
+    LOGGER.debug("Extracting symsbols from {}".format(input))
+    return input
+
+
+def _inc_to_syms():
+    return _build_comp(_top_symbols, _lite_comp)
+
+
+_HDR_PARSE = _inc_to_syms()
 
 
 class SimpleBundle(object):
@@ -79,6 +112,8 @@ class Handler(ABC):
     def handler_for(cls, action, bundle):
         if action == 'comp':
             return Comp(bundle)
+        elif action == 'compr':
+            return RTComp(bundle)
         elif action == 'hdr':
             return Hdr(bundle)
         elif action == 'diag':
@@ -105,12 +140,37 @@ class Handler(ABC):
             self.bundle.out.close()
 
 
-class Comp(Handler):
+class BaseComp(Handler):
     def __init__(self, bundle):
         super().__init__(bundle)
+        self._imports = []
+        LOGGER.info("Initiating compile")
+
+    def compute_include(self):
+        include = self.bundle.ast.include
+        # For each file include
+
+        def resolve_hdr_file(fname):
+            for p in self.bundle.inc_paths:
+                hfile = util.file_exists(p, fname, 'defs')
+                if hfile:
+                    return hfile
+            return None
+
+        inc_files = []
+        for i in include.value:
+            ffile = resolve_hdr_file(i.value)
+            if ffile:
+                inc_files.append(ffile)
+            else:
+                raise NotFoundError(
+                    "Unable to resolve include file {}".format(i.value))
+        return inc_files
 
     def validate(self):
-        # Load any imports
+        # Load any includes
+        r = [_HDR_PARSE(x) for x in self.compute_include()]
+        LOGGER.debug(r)
         # Extrapolate literals
         # Generate symbol tree
         # Refactor code and identifiers
@@ -121,18 +181,50 @@ class Comp(Handler):
         self.complete()
 
 
+class Comp(BaseComp):
+    def __init__(self, bundle):
+        super().__init__(bundle)
+        if "FOIDLC2_PATH" in os.environ:
+            self.bundle.inc_paths.insert(
+                0,
+                os.environ.get("FOIDLC2_PATH"))
+        include = self.bundle.ast.include
+        include.value.insert(
+            0,
+            ast.Symbol('langcore2', include.token, include.source))
+        include.value.insert(
+            0,
+            ast.Symbol('foidlrt2', include.token, include.source))
+
+    def validate(self):
+        # Load system imports first
+        # Load any imports
+        # Extrapolate literals
+        # Generate symbol tree
+        # Refactor code and identifiers
+        super().validate()
+        pass
+
+
+class RTComp(BaseComp):
+    def __init__(self, bundle):
+        super().__init__(bundle)
+        # Does not set runtimes
+
+
 class Hdr(Handler):
     """Header generation handler"""
 
     def __init__(self, bundle):
         super().__init__(bundle)
+        LOGGER.info("Initiating header gen")
 
     def validate(self):
         self.write(_std_comment)
 
     def emit(self):
         """Hdr.emit() generates header content"""
-        mod = self.bundle.ast.value[0]
+        mod = self.bundle.ast
         self.write("module {}".format(mod.name))
         for d in mod.value:
             if type(d) is ast.Variable:

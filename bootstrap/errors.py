@@ -14,36 +14,14 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-import enum
+
+class PFoidlError(Exception):
+    pass
 
 
-@enum.unique
-class ParseLevel(enum.Enum):
-    FULL = enum.auto()
-    LITE = enum.auto()
+class UtilityError(PFoidlError):
+    pass
 
 
-@enum.unique
-class CollTypes(enum.Enum):
-    VECTOR = enum.auto()
-    LIST = enum.auto()
-    MAP = enum.auto()
-    SET = enum.auto()
-    UNKNOWN = enum.auto()
-
-
-@enum.unique
-class SymbolTypes(enum.Enum):
-    MODULE = enum.auto()
-    VARIABLE = enum.auto()
-    FUNCTION = enum.auto()
-    FUNC_ARG = enum.auto()
-    LAMBDA = enum.auto()
-    LAMBDA_ARGS = enum.auto()
-    LET = enum.auto()
-    LET_RES = enum.auto()
-    LET_ARG = enum.auto()
-    MATCH_RES = enum.auto()
-    EXTERN_FUNC = enum.auto()
-    EXTERN_VAR = enum.auto()
-    UNKNOWN = enum.auto()
+class NotFoundError(PFoidlError):
+    pass

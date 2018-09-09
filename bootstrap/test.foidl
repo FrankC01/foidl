@@ -2,13 +2,14 @@
 
 module foo
 
-include [pippy, pappy]
-include poppy
-
 var a 1
 
 var b 5
 
+func is? [a]
+func mute! [a]
+
 func t[a b]
-    foo: 1 2
+    is?: 1
+    mute!: 1
     fiz: 3 4

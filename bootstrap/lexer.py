@@ -29,7 +29,7 @@ class Lexer():
         self.lexer.add('FUNC', r'func')
         self.lexer.add('LET', r'let')
         self.lexer.add('LAMBDA', r"\^")
-        self.lexer.add('NIL', r'nil')
+        # self.lexer.add('NIL', r'nil')
         self.lexer.add('MATCH', r'match')
         self.lexer.add('MATCH_PATTERN', r'\|')
         self.lexer.add('GROUP', r'@\(')
@@ -75,7 +75,10 @@ class Lexer():
         # self.lexer.add('RANGE', r"[0-9]+[\.]{3}[0-9]+")
         # Identifiers
         self.lexer.add('FUNC_CALL', r"[a-zA-Z][a-zA-Z0-9_]+:")
+        self.lexer.add('FUNC_BANG', r"[a-zA-Z][a-zA-Z0-9_]+!:")
+        self.lexer.add('FUNC_PRED', r"[a-zA-Z][a-zA-Z0-9_]+\?:")
         self.lexer.add('SYMBOL_BANG', r"[a-zA-Z][a-zA-Z0-9_]+!")
+        self.lexer.add('SYMBOL_PRED', r"[a-zA-Z][a-zA-Z0-9_]+\?")
         self.lexer.add('KEYWORD', r":[a-zA-Z]([a-zA-Z0-9_]*)?")
         self.lexer.add('SYMBOL', r"[a-zA-Z]([a-zA-Z0-9_]*)?")
         # Ignore comments
