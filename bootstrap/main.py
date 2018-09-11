@@ -23,6 +23,7 @@ from colorlog import ColoredFormatter
 import util
 import errors
 import cmdline as cmd
+from enums import literal_dict
 from handler import Handler, Bundle
 
 LOGGER = None
@@ -91,12 +92,14 @@ def execute(args):
         if not sys.warnoptions:
             warnings.simplefilter("ignore")
 
+        literals = literal_dict()
         handler = Handler.handler_for(
             args.action,
             Bundle(
                 util.absolutes_path_for(args.inc_paths),
                 absfile,
-                util.parse_file(absfile),
+                util.parse_file(absfile, literals),
+                literals,
                 outhandler, args.output))
 
         handler.validate()

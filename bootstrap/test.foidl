@@ -2,14 +2,11 @@
 
 module foo
 
-var a 1
-
-var b 5
+func bar []
 
 func is? [a]
-func mute! [a]
+	;not=: a b
+	>=: a *: 1 7
 
-func t[a b]
-    is?: 1
-    mute!: 1
-    fiz: 3 4
+	>=: a -: 9 10
+

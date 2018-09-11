@@ -20,8 +20,9 @@ import functools
 
 import ast
 import util
+import symbol
+import pprint
 from errors import NotFoundError
-from enums import ParseLevel
 
 from abc import ABC, abstractmethod
 
@@ -42,18 +43,32 @@ def _build_comp(*functions):
         lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
 
 
-def _lite_comp(input):
-    LOGGER.debug("Parsing {}".format(input))
-    return util.parse_file(input)
+def _parse(input):
+    """Compiles file"""
+    srcfile, symtree = input
+    LOGGER.debug("Parsing {}".format(srcfile))
+    ast = util.parse_file(srcfile, {})
+    symtree.push_scope(ast.name, srcfile)
+    return symtree, ast
 
 
 def _top_symbols(input):
-    LOGGER.debug("Extracting symsbols from {}".format(input))
+    """Extracts var and func symbol refs only"""
+    symtree, mod = input
+    LOGGER.debug("Symbol extraction for {} from {}".format(
+        symtree.current.name,
+        symtree.current.long_name))
+    for t in mod.value:
+        if type(t) is ast.Variable:
+            symtree.register_symbol(t.name, t.get_reference())
+        elif type(t) is ast.Function:
+            symtree.register_symbol(t.name, t.get_reference())
+    # LOGGER.debug("stab => {}".format(current.table))
     return input
 
 
 def _inc_to_syms():
-    return _build_comp(_top_symbols, _lite_comp)
+    return _build_comp(_top_symbols, _parse)
 
 
 _HDR_PARSE = _inc_to_syms()
@@ -83,11 +98,17 @@ class SimpleBundle(object):
 class Bundle(SimpleBundle):
     """Main Bundle contains essential elements for action Handlers"""
 
-    def __init__(self, inc_paths, srcfile, ast, outhandle, outfile):
-        super().__init__(inc_paths, srcfile, ast)
+    def __init__(self, incpath, srcfile, ast, literals, outhandle, outfile):
+        super().__init__(incpath, srcfile, ast)
+        self._literals = literals
         self._out = outhandle
         self._out_file = outfile
+        self._symtree = None
         self._triple = None
+
+    @property
+    def literals(self):
+        return self._literals
 
     @property
     def out(self):
@@ -96,6 +117,14 @@ class Bundle(SimpleBundle):
     @property
     def out_file(self):
         return self._out_file
+
+    @property
+    def symtree(self):
+        return self._symtree
+
+    @symtree.setter
+    def symtree(self, symtree):
+        self._symtree = symtree
 
 
 class Handler(ABC):
@@ -169,11 +198,14 @@ class BaseComp(Handler):
 
     def validate(self):
         # Load any includes
-        r = [_HDR_PARSE(x) for x in self.compute_include()]
-        LOGGER.debug(r)
-        # Extrapolate literals
-        # Generate symbol tree
-        # Refactor code and identifiers
+        symtree = symbol.SymbolTree(self.bundle.src_file)
+        [_HDR_PARSE((x, symtree)) for x in self.compute_include()]
+        self.bundle.symtree = symtree
+        # Create local context in symtree
+        # process ast tree
+        #   Register symbols
+        #   Refactor code and identifiers
+        self.bundle.ast.eval(symtree, None)
         pass
 
     def emit(self):
@@ -240,6 +272,37 @@ class Diag(Comp):
     def __init__(self, bundle):
         super().__init__(bundle)
 
+    def _ast_trace(self, element, indent=1):
+        """AST Hierarchy"""
+        self.write("Trace: {}> {}".format(
+            '-' * indent, element.__class__.__name__))
+        if hasattr(element, 'value'):
+            if type(element.value) is list:
+                for i in element.value:
+                    indent += 1
+                    self._ast_trace(i, indent)
+                    indent -= 1
+            else:
+                pass
+        else:
+            pass
+
     def emit(self):
         self.write(_std_comment)
+        self.write("AST Topology")
+        self.write("------------")
+        self._ast_trace(self.bundle.ast)
+        self.write('\n')
+        self.write("Literals")
+        self.write("--------")
+        self.write(pprint.pformat(self.bundle.literals))
+        self.write('\n')
+        self.write("Symbols")
+        self.write("-------")
+        for st in self.bundle.symtree.stack:
+            self.write('\n')
+            tstr = "Symbols for " + st.name
+            self.write(tstr)
+            self.write('-' * len(tstr))
+            self.write(pprint.pformat(st.table))
         self.complete()

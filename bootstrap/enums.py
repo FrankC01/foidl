@@ -33,6 +33,34 @@ class CollTypes(enum.Enum):
 
 
 @enum.unique
+class LiteralTypes(enum.Enum):
+    CHAR = enum.auto()
+    BIT = enum.auto()
+    HEX = enum.auto()
+    INTEGER = enum.auto()
+    REAL = enum.auto()
+    STRING = enum.auto()
+    KEYWORD = enum.auto()
+
+
+def literal_dict():
+    return dict([(name, {}) for name, _ in LiteralTypes.__members__.items()])
+
+
+WellKnowns = {
+    '+': 'add',
+    '-': 'sub',
+    '/': 'div',
+    '*': 'mul',
+    '=': 'eq',
+    '<': 'lt',
+    '>': 'gt',
+    '<=': 'lteq',
+    '>=': 'gteq',
+    'not=': 'neq'}
+
+
+@enum.unique
 class SymbolTypes(enum.Enum):
     MODULE = enum.auto()
     VARIABLE = enum.auto()

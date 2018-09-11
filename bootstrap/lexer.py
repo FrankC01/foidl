@@ -26,7 +26,7 @@ class Lexer():
         self.lexer.add('MODULE', r'module')
         self.lexer.add('INCLUDE', r'include')
         self.lexer.add('VAR', r'var')
-        self.lexer.add('FUNC', r'func')
+        self.lexer.add('FUNC', r'\bfunc\b')
         self.lexer.add('LET', r'let')
         self.lexer.add('LAMBDA', r"\^")
         # self.lexer.add('NIL', r'nil')
@@ -45,6 +45,13 @@ class Lexer():
         self.lexer.add('MUL_REF', r"\*")
         self.lexer.add('DIV_CALL', r"/:")
         self.lexer.add('DIV_REF', r"/")
+        # Boolean operators
+        self.lexer.add('EQ_CALL', r"=:")
+        self.lexer.add('LT_CALL', r"<:")
+        self.lexer.add('GT_CALL', r">:")
+        self.lexer.add('LTEQ_CALL', r"<=:")
+        self.lexer.add('GTEQ_CALL', r">=:")
+        self.lexer.add('NOTEQ_CALL', r"not=:")
         # Modifiers
         self.lexer.add('MOD', r'%')
         self.lexer.add('AMP', r'&')

@@ -25,3 +25,7 @@ class UtilityError(PFoidlError):
 
 class NotFoundError(PFoidlError):
     pass
+
+
+class SymbolException(PFoidlError):
+    pass

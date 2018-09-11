@@ -15,75 +15,19 @@
 # ------------------------------------------------------------------------------
 
 import logging
-import enums
-from abc import ABC, abstractmethod
+from errors import SymbolException
 
 
 LOGGER = logging.getLogger()
-
-
-class SymbolException(Exception):
-    pass
-
-
-class BaseReference(ABC):
-    """BaseReference informs type, value, intern/extern, etc"""
-
-    def __init__(self, token):
-        self._token = token
-
-    @property
-    def token(self):
-        return self._token
-
-
-class LiteralReference(BaseReference):
-    """Literal value reference"""
-    pass
-
-
-class VarReference(BaseReference):
-    """Variable Symbol Reference"""
-    pass
-
-
-class FuncArgReference(BaseReference):
-    """Function Argument Symbol Reference"""
-    pass
-
-
-class FuncReference(BaseReference):
-    """FuncReference informs name, intern/extern, arg-count"""
-    pass
-
-
-class LambdaReference(BaseReference):
-    """Lambda Reference"""
-    pass
-
-
-class LetArgReference(BaseReference):
-    """Let Argument Symbol Reference"""
-    pass
-
-
-class LetResReference(BaseReference):
-    """Let Result Symbol Reference"""
-    pass
-
-
-class MatchResReference(BaseReference):
-    """Match Result Symbol Reference"""
-    pass
 
 
 class SymbolTable(object):
     """SymbolTable exists for conmpilation and expression types
     """
 
-    def __init__(self, name, token):
-        self._name = name
-        self._token = token
+    def __init__(self, short_name, long_name):
+        self._name = short_name
+        self._long_name = long_name
         self._table = {}
 
     @property
@@ -91,25 +35,24 @@ class SymbolTable(object):
         return self._name
 
     @property
-    def token(self):
-        return self._token
+    def long_name(self):
+        return self._long_name
+
+    @property
+    def table(self):
+        return self._table
 
     def locate(self, value):
         return self._table.get(value, None)
 
     def insert(self, value, reference):
-        if not self.locate(value):
-            self._table[value] = reference
-        else:
-            raise SymbolException(
-                "{} already exists as {}".format(
-                    value, self._table[value]))
+        self._table[value] = reference
 
 
 class SymbolTree(object):
     """Manages the tree of symbols and is preserved until emit"""
 
-    def __init__(self, context, token, tree=None):
+    def __init__(self, context, make_table=False, tree=None):
         self._context = context
         if tree:
             self._stack = tree
@@ -117,9 +60,10 @@ class SymbolTree(object):
         else:
             self._stack = []
             self._current = None
-        first = SymbolTable(context, token)
-        self._stack.append(first)
-        self._current = first
+        if make_table:
+            first = SymbolTable(context)
+            self._stack.append(first)
+            self._current = first
 
     @property
     def context(self):
@@ -133,9 +77,32 @@ class SymbolTree(object):
     def current(self):
         return self._current
 
-    def push_scope(self, reference, token):
+    def reverse_stack_locate(self, value):
+        res = None
+        for lvl in self.stack:
+            res = lvl.locate(value)
+            if res:
+                break
+        return res
+
+    def resolve_symbol(self, value):
+        return self.reverse_stack_locate(value)
+
+    def register_symbol(self, value, reference):
+        ref = self.reverse_stack_locate(value)
+        if not ref:
+            self.current.insert(value, reference)
+        else:
+            LOGGER.warn(
+                "{} in {} hides same defined in {}".format(
+                    value,
+                    reference.source,
+                    ref.source))
+            self.current.insert(value, reference)
+
+    def push_scope(self, short_name, long_name):
         """Pushes new scope which becomes current"""
-        table = SymbolTable(reference, token)
+        table = SymbolTable(short_name, long_name)
         self._stack.append(table)
         self._current = table
         return table
