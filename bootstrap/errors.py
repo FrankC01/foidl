@@ -29,3 +29,7 @@ class NotFoundError(PFoidlError):
 
 class SymbolException(PFoidlError):
     pass
+
+
+class IncludeOutOfOrder(PFoidlError):
+    pass

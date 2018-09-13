@@ -54,7 +54,7 @@ def absolutes_path_for(ins):
         return os.path.abspath(ins)
 
 
-def parse_file(srcfile, literals, level=ParseLevel.FULL):
+def parse_file(srcfile, state, level=ParseLevel.FULL):
     """Read and parse some kind of source file
 
     With relevent lexer and parser context
@@ -84,4 +84,4 @@ def parse_file(srcfile, literals, level=ParseLevel.FULL):
     pargen.parse()
     parser = pargen.get_parser()
 
-    return parser.parse(tokens, state=literals).module()
+    return parser.parse(tokens, state=state).module()

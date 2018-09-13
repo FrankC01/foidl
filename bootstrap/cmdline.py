@@ -64,6 +64,13 @@ Message Verbosity (-v):
         metavar='<file>')
 
     aparser.add_argument(
+        '-r',
+        help='ignore runtime headers',
+        dest='rt',
+        default=False,
+        action='store_true')
+
+    aparser.add_argument(
         '-o',
         help='output file - default to stdout if not set',
         dest='output',

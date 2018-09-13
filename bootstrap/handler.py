@@ -45,25 +45,23 @@ def _build_comp(*functions):
 
 def _parse(input):
     """Compiles file"""
-    srcfile, symtree = input
+    srcfile, state = input
     LOGGER.debug("Parsing {}".format(srcfile))
-    ast = util.parse_file(srcfile, {})
-    symtree.push_scope(ast.name, srcfile)
-    return symtree, ast
+    fpart = os.path.split(srcfile)[1].split('.')[0]
+    state.symtree.push_scope(fpart, srcfile)
+    ast = util.parse_file(srcfile, state)
+    # state.symtree.push_scope(ast.name, srcfile)
+    return state, ast
 
 
 def _top_symbols(input):
     """Extracts var and func symbol refs only"""
-    symtree, mod = input
-    LOGGER.debug("Symbol extraction for {} from {}".format(
-        symtree.current.name,
-        symtree.current.long_name))
+    state, mod = input
     for t in mod.value:
         if type(t) is ast.Variable:
-            symtree.register_symbol(t.name, t.get_reference())
+            state.symtree.register_symbol(t.name, t.get_reference())
         elif type(t) is ast.Function:
-            symtree.register_symbol(t.name, t.get_reference())
-    # LOGGER.debug("stab => {}".format(current.table))
+            state.symtree.register_symbol(t.name, t.get_reference())
     return input
 
 
@@ -71,7 +69,92 @@ def _inc_to_syms():
     return _build_comp(_top_symbols, _parse)
 
 
-_HDR_PARSE = _inc_to_syms()
+_HDR_PARSE = _parse  # _inc_to_syms()
+
+
+def _resolve_header(fname, ipaths):
+    """_resolve_header resolves absolute file location"""
+    for p in ipaths:
+        hfile = util.file_exists(p, fname, 'defs')
+        if hfile:
+            return hfile
+    return None
+
+
+def preprocess_runtime(state, args):
+    """Pre process well known runtime includes"""
+
+    # Extend -I paths
+    if "FOIDLC2_PATH" in os.environ:
+        state.inclpath.insert(
+            0,
+            os.environ.get("FOIDLC2_PATH"))
+
+    # If not skipping run-time (used to compiler run-time)
+    # preprocess well known headers
+    if not args.rt:
+        includes = ['foidlrt2', 'langcore2']
+        inc_files = []
+        for i in includes:
+            ffile = _resolve_header(i, state.inclpath)
+            if ffile:
+                inc_files.append(ffile)
+            else:
+                raise NotFoundError(
+                    "Unable to resolve include file {}".format(i))
+        [_HDR_PARSE((x, state)) for x in inc_files]
+
+    return state
+
+
+def include_parse(state, obj):
+    inc_files = []
+    for i in obj.value:
+        ffile = _resolve_header(i.name, state.inclpath)
+        if ffile:
+            inc_files.append(ffile)
+        else:
+            raise NotFoundError(
+                "Unable to resolve include file {}".format(i))
+    [_HDR_PARSE((x, state)) for x in inc_files]
+    # print("Parsing {}".format(inc_files))
+
+
+class State(object):
+    def __init__(self, literals, symtree, inclpath, incprocessed=False):
+        self._literals = literals
+        self._symtree = symtree
+        self._inclpath = inclpath
+        self._incprocessed = incprocessed
+        self._mainsrc = None
+
+    @property
+    def literals(self):
+        return self._literals
+
+    @property
+    def symtree(self):
+        return self._symtree
+
+    @property
+    def inclpath(self):
+        return self._inclpath
+
+    @property
+    def incprocessed(self):
+        return self._incprocessed
+
+    @incprocessed.setter
+    def incprocessed(self, b):
+        self._incprocessed = b
+
+    @property
+    def mainsrc(self):
+        return self._mainsrc
+
+    @mainsrc.setter
+    def mainsrc(self, src):
+        self._mainsrc = src
 
 
 class SimpleBundle(object):
@@ -98,17 +181,16 @@ class SimpleBundle(object):
 class Bundle(SimpleBundle):
     """Main Bundle contains essential elements for action Handlers"""
 
-    def __init__(self, incpath, srcfile, ast, literals, outhandle, outfile):
+    def __init__(self, incpath, srcfile, ast, state, outhandle, outfile):
         super().__init__(incpath, srcfile, ast)
-        self._literals = literals
+        self._state = state
         self._out = outhandle
         self._out_file = outfile
-        self._symtree = None
         self._triple = None
 
     @property
     def literals(self):
-        return self._literals
+        return self._state.literals
 
     @property
     def out(self):
@@ -120,11 +202,11 @@ class Bundle(SimpleBundle):
 
     @property
     def symtree(self):
-        return self._symtree
+        return self._state.symtree
 
     @symtree.setter
     def symtree(self, symtree):
-        self._symtree = symtree
+        self._state.symtree = symtree
 
 
 class Handler(ABC):
@@ -172,7 +254,6 @@ class Handler(ABC):
 class BaseComp(Handler):
     def __init__(self, bundle):
         super().__init__(bundle)
-        self._imports = []
         LOGGER.info("Initiating compile")
 
     def compute_include(self):
@@ -197,16 +278,13 @@ class BaseComp(Handler):
         return inc_files
 
     def validate(self):
-        # Load any includes
-        symtree = symbol.SymbolTree(self.bundle.src_file)
-        [_HDR_PARSE((x, symtree)) for x in self.compute_include()]
-        self.bundle.symtree = symtree
         # Create local context in symtree
         # process ast tree
         #   Register symbols
         #   Refactor code and identifiers
-        self.bundle.ast.eval(symtree, None)
-        pass
+        parse_tree = []
+        # self.bundle.ast.eval(symtree, self.bundle.literals, parse_tree)
+        # pprint.pprint(parse_tree)
 
     def emit(self):
         self.write(_std_comment)
@@ -216,17 +294,6 @@ class BaseComp(Handler):
 class Comp(BaseComp):
     def __init__(self, bundle):
         super().__init__(bundle)
-        if "FOIDLC2_PATH" in os.environ:
-            self.bundle.inc_paths.insert(
-                0,
-                os.environ.get("FOIDLC2_PATH"))
-        include = self.bundle.ast.include
-        include.value.insert(
-            0,
-            ast.Symbol('langcore2', include.token, include.source))
-        include.value.insert(
-            0,
-            ast.Symbol('foidlrt2', include.token, include.source))
 
     def validate(self):
         # Load system imports first
@@ -264,7 +331,7 @@ class Hdr(Handler):
             elif type(d) is ast.Function:
                 self.write("func {} [{}]".format(
                     d.name,
-                    ' '.join([str(s.value) for s in d.value[0].value])))
+                    ' '.join([str(s.value) for s in d.arguments.value])))
         self.complete()
 
 
@@ -288,6 +355,7 @@ class Diag(Comp):
             pass
 
     def emit(self):
+        print(self.bundle)
         self.write(_std_comment)
         self.write("AST Topology")
         self.write("------------")

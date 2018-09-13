@@ -15,8 +15,11 @@
 # ------------------------------------------------------------------------------
 
 from rply import ParserGenerator, Token
+
 from enums import CollTypes
 import ast
+import errors
+from handler import include_parse
 
 
 def _collection_type(p0):
@@ -119,8 +122,13 @@ class Parser():
         @self.pg.production('i_decl : INCLUDE symbol_list')
         @self.pg.production('i_decl : INCLUDE symbol_list i_decl')
         def i_decl(state, p):
+            if state.incprocessed:
+                raise errors.IncludeOutOfOrder(
+                    "Include expression found after declarations")
             t = p.pop(0)
-            return ast.Include(_symbol_only(p), t, self.input)
+            i = ast.Include(_symbol_only(p), t, self.input)
+            include_parse(state, i)
+            return i
 
         @self.pg.production('decltypes : var_decl')
         @self.pg.production('decltypes : var_decl decltypes')
@@ -129,17 +137,36 @@ class Parser():
         def decltype(state, p):
             return _flatten_list(p)
 
-        @self.pg.production('var_decl : VAR var_symbol single_expr')
-        @self.pg.production(
-            'func_decl : FUNC func_symbol fsymbol_list')
-        @self.pg.production(
-            'func_decl : FUNC func_symbol fsymbol_list multiexpression')
+        @self.pg.production('var_decl : var_header single_expr')
+        @self.pg.production('func_decl : func_header')
+        @self.pg.production('func_decl : func_header multiexpression')
         def v_decl(state, p):
             t = p.pop(0)
-            if t.gettokentype() is 'VAR':
-                return ast.Variable(p.pop(0), p, t, self.input)
+            if type(t) == ast.VarHeader:
+                # return ast.Variable(p.pop(0), p, t, self.input)
+                return ast.Variable(t.name, p, t.token, self.input)
             else:
-                return ast.Function(p.pop(0), p, t, self.input)
+                return ast.Function(t, p, self.input)
+
+        @self.pg.production('var_header : VAR var_symbol')
+        def var_hdr(state, p):
+            t = p.pop(0)
+            vh = ast.VarHeader(p.pop(0), t, self.input)
+            if not state.incprocessed and state.mainsrc == self.input:
+                state.incprocessed = True
+                state.symtree.push_scope(self.input, self.input)
+            state.symtree.register_symbol(vh.name.value, vh.get_reference())
+            return vh
+
+        @self.pg.production('func_header : FUNC func_symbol fsymbol_list')
+        def func_hdr(state, p):
+            t = p.pop(0)
+            fh = ast.FuncHeader(p.pop(0), p[0], t, self.input)
+            if not state.incprocessed and state.mainsrc == self.input:
+                state.incprocessed = True
+                state.symtree.push_scope(self.input, self.input)
+            state.symtree.register_symbol(fh.name.value, fh.get_reference())
+            return fh
 
         @self.pg.production('func_symbol : symbol_type')
         def func_sym(state, p):
@@ -356,7 +383,7 @@ class Parser():
         @self.pg.production('literal : KEYWORD')
         def literal(state, p):
             # print("Literal => {}".format(p))
-            return _literal_entry(state, p[0], self.input)
+            return _literal_entry(state.literals, p[0], self.input)
 
         @self.pg.production('symbol_type : SYMBOL')
         @self.pg.production('symbol_type : SYMBOL_BANG')

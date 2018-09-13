@@ -14,8 +14,11 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
+import logging
 from enums import WellKnowns
 from abc import ABC, abstractmethod
+
+LOGGER = logging.getLogger()
 
 
 class FoidlReference(ABC):
@@ -57,7 +60,7 @@ class LiteralReference(FoidlReference):
 
     def eval(self, symtable, leader):
         print("Literal {}".format(self.literal_type))
-        pass
+        leader.append(self)
 
 
 class VarReference(FoidlReference):
@@ -71,6 +74,10 @@ class FuncReference(FoidlReference):
     def __init__(self, astmember, argcnt):
         super().__init__(astmember)
         self._argcnt = argcnt
+
+    @property
+    def argcnt(self):
+        return self._argcnt
 
 
 class FuncArgReference(FoidlReference):
@@ -150,14 +157,20 @@ class Module(FoidlAst):
     def name(self):
         return self._name.value
 
-    def eval(self, symtree, leader):
+    def eval(self, symtree, literals, ptree):
         # Register new level in symtree
         # Includes already handled
         # Walk children
         print("Module {} walk {}".format(self.name, self.value))
         symtree.push_scope(self.name, self.name)
+        children = []
         for c in self.value:
-            c.eval(symtree, leader)
+            c.eval(symtree, children)
+        ptree.append({
+            "name": self.name,
+            "type": 'module',
+            "literals": literals,
+            "decls": children})
 
 
 class Include(FoidlAst):
@@ -168,6 +181,22 @@ class Include(FoidlAst):
     @property
     def value(self):
         return self._value
+
+    def eval(self, symtree, leader):
+        pass
+
+
+class VarHeader(FoidlAst):
+    def __init__(self, vname, token, src):
+        super().__init__(token, src)
+        self._name = vname
+
+    @property
+    def name(self):
+        return self._name
+
+    def get_reference(self):
+        return VarReference(self)
 
     def eval(self, symtree, leader):
         pass
@@ -187,23 +216,47 @@ class Variable(FoidlAst):
     def value(self):
         return self._value
 
-    def get_reference(self):
-        return VarReference(self)
-
     def eval(self, symtree, leader):
         print("Variable {} eval {}".format(self.name, self.value))
+        expr = []
         # Eval children
+        for e in self.value:
+            e.eval(symtree, expr)
+        leader.append({
+            "name": self.name,
+            'type': 'var',
+            'expr': expr})
         # Register var name in symtable
         symtree.register_symbol(self.name, self.get_reference())
+
+
+class FuncHeader(FoidlAst):
+    def __init__(self, fname, args, token, src):
+        super().__init__(token, src)
+        self._name = fname
+        self._arguments = args
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def arguments(self):
+        return self._arguments
+
+    def get_reference(self):
+        return FuncReference(self, self.arguments.elements())
+
+    def eval(self, symtree, leader):
         pass
 
 
 class Function(FoidlAst):
-    def __init__(self, fname, value, token, src):
-        super().__init__(token, src)
-        self._arguments = value.pop(0)
+    def __init__(self, fhdr, value, src):
+        super().__init__(fhdr.token, src)
+        self._name = fhdr.name
+        self._arguments = fhdr.arguments
         self._value = value
-        self._name = fname
 
     @property
     def name(self):
@@ -221,7 +274,7 @@ class Function(FoidlAst):
         return FuncReference(self, self.arguments.elements())
 
     def eval(self, symtree, leader):
-        print("Function {} eval {}".format(self.name, self.value))
+        # print("Function {} eval {}".format(self.name, self.value))
         # Stack function and args in symtable
         symtree.push_scope(self.name, self.name)
         symtree.register_symbol(self.name, self.get_reference())
@@ -230,15 +283,19 @@ class Function(FoidlAst):
                 a.name,
                 FuncArgReference(a))
         # Eval children
+        expr = []
         for e in self.value:
-            e.eval(symtree, leader)
-
+            e.eval(symtree, expr)
+        leader.append({
+            "name": self.name,
+            'type': 'func',
+            'expr': expr})
         # Refactor
         # Pop stack
         symtree.pop_scope()
         # Register function symbol
         symtree.register_symbol(self.name, self.get_reference())
-        pass
+
 
 
 class CollectionAst(FoidlAst):
@@ -327,7 +384,7 @@ class Expressions(FoidlAst):
         self.value = value
 
     def eval(self, symtree, leader):
-        print("Expressions")
+        # print("Expressions")
         for e in self.value:
             e.eval(symtree, leader)
 
@@ -410,10 +467,35 @@ class FunctionCall(FoidlAst):
         self.call_site = WellKnowns.get(self.call_site, self.call_site)
 
     def eval(self, symtree, leader):
-        print("Function call {}".format(self.call_site))
-        print(symtree.resolve_symbol(self.call_site))
+        print("Processing function call {}".format(self.call_site))
+        # print(symtree.resolve_symbol(self.call_site))
+        args = []
         for e in self.value:
-            e.eval(symtree, leader)
+            e.eval(symtree, args)
+        cref = symtree.resolve_symbol(self.call_site)
+        # Temporary redistribution model
+        res = None
+        if cref.argcnt < len(args):
+            LOGGER.warn("Processing FC {} {} expect {} got {}".format(
+                self.call_site,
+                self.token.getsourcepos(),
+                cref.argcnt,
+                len(args)))
+            res = args[cref.argcnt - len(args)]
+            args = args[:(len(args) - cref.argcnt) + 1]
+            # print("Res = {}".format(res))
+            # print("Arg = {}".format(args))
+        else:
+            LOGGER.info("Processed {} {}".format(
+                self.call_site,
+                self.token.getsourcepos()))
+        leader.append({
+            'name': self.call_site,
+            'type': 'call',
+            'loc': self.token.getsourcepos(),
+            'expr': args})
+        if res:
+            leader.append(res)
 
 
 class Symbol(FoidlAst):
@@ -430,6 +512,5 @@ class Symbol(FoidlAst):
         return self._value
 
     def eval(self, symtree, leader):
-        print(symtree.resolve_symbol(self.name))
-        print("Symbol {}".format(self.name))
-        pass
+        print("Processing symbol")
+        leader.append(symtree.resolve_symbol(self.name))

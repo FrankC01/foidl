@@ -1,12 +1,16 @@
 ; Foidl test file
 
-module foo
+module test
+
+include foo
 
 func bar []
 
-func is? [a]
+func two_exp [a]
 	;not=: a b
-	>=: a *: 1 7
+	=: a *: 1 7
 
 	>=: a -: 9 10
+
+	<=: a +: 1 7
 

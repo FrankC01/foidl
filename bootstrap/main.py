@@ -24,7 +24,8 @@ import util
 import errors
 import cmdline as cmd
 from enums import literal_dict
-from handler import Handler, Bundle
+from handler import Handler, Bundle, State, preprocess_runtime
+from symbol import SymbolTree
 
 LOGGER = None
 
@@ -92,14 +93,21 @@ def execute(args):
         if not sys.warnoptions:
             warnings.simplefilter("ignore")
 
-        literals = literal_dict()
+        state = preprocess_runtime(
+            State(
+                literal_dict(),
+                SymbolTree(absfile),
+                util.absolutes_path_for(args.inc_paths)),
+            args)
+
+        state.mainsrc = absfile
         handler = Handler.handler_for(
             args.action,
             Bundle(
                 util.absolutes_path_for(args.inc_paths),
                 absfile,
-                util.parse_file(absfile, literals),
-                literals,
+                util.parse_file(absfile, state),
+                state,
                 outhandler, args.output))
 
         handler.validate()
