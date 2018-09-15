@@ -8,11 +8,8 @@ func bar []
 
 func two_exp [a]
 	;not=: a b
-	=: a *: 1 +: 6 7
+	;=: a *: 1 +: 6 7
 
-	>=: a -: 9 10
+	;>=: a -: 9 10
 
-	<=: a +: 1 7
-
-	bar:
-
+	let x [v +: 1 2 z 0] -: 9 v

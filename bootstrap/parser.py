@@ -92,8 +92,8 @@ class Parser():
             precedence=[])
         # precedence=[
         #     ("left", ["SYMBOL", "KEYWORD"]),
-        #     ("left", ["SYMBOL_BANG"]),
-        #     ("left", ["FUNC_CALL"]),
+        #     ("left", ["SYMBOL_BANG", "SYMBOL_PRED"]),
+        #     ("left", ["FUNC_CALL", "FUNC_BANG", "FUNC_PRED"]),
         #     ("left", ["FUNC"])])
         self._input = input
 
@@ -300,15 +300,17 @@ class Parser():
             'letexpr : LET symbol_type LBRACKET letpairs RBRACKET single_expr')
         def letexpr(state, p):
             """Let parse"""
+            t = p.pop(0)
             letset = [x for x in p if type(x) is not Token]
-            return ast.Let(letset)
+            return ast.Let(letset, t, self.input)
+            # return ast.Let(p, t, self.input)
 
         @self.pg.production('letpairs : symbol_type single_expr')
         @self.pg.production(
             'letpairs : symbol_type single_expr COMMA letpairs')
         def letpairs(state, p):
             """Let parse support for zero or more local var assignments"""
-            return _token_eater(p, ast.LetPairs)
+            return _token_eater(_flatten_list(p), ast.LetPairs)
 
         @self.pg.production('matchexpr : MATCH simple_expr')
         # @self.pg.production('matchexpr : MATCH simple_expr matchpairs')

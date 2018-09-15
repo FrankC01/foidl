@@ -284,9 +284,7 @@ class BaseComp(Handler):
         # process ast tree
         #   Refactor code and identifiers
         parse_tree = []
-        self.bundle.ast.eval(
-            self.bundle.state.symtree,
-            self.bundle.literals, parse_tree)
+        self.bundle.ast.eval(self.bundle, parse_tree)
         pprint.pprint(parse_tree)
         pass
 

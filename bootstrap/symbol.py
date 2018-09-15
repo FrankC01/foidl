@@ -78,19 +78,28 @@ class SymbolTree(object):
         return self._current
 
     def reverse_stack_locate(self, value):
+        if type(value) is not str:
+            LOGGER.warn("Argument passed {} is not a string".format(value))
+            value = value.value
+        LOGGER.debug("Symbol check for value {}".format(value))
         res = None
-        for lvl in self.stack:
+        for lvl in reversed(self.stack):
+            LOGGER.debug(" Checking {}".format(lvl.name))
             res = lvl.locate(value)
             if res:
+                LOGGER.debug("     Found {} in {}".format(value, lvl.name))
                 break
         return res
 
     def resolve_symbol(self, value):
+        LOGGER.debug("Asked to resolve {}".format(value))
         return self.reverse_stack_locate(value)
 
     def register_symbol(self, value, reference):
         ref = self.reverse_stack_locate(value)
         if not ref:
+            LOGGER.debug("Registering {} in {}".format(
+                value, self.current.name))
             self.current.insert(value, reference)
         else:
             LOGGER.warn(
@@ -102,6 +111,7 @@ class SymbolTree(object):
 
     def push_scope(self, short_name, long_name):
         """Pushes new scope which becomes current"""
+        LOGGER.info("Pusing symbol table {}".format(short_name))
         table = SymbolTable(short_name, long_name)
         self._stack.append(table)
         self._current = table
@@ -111,6 +121,7 @@ class SymbolTree(object):
         """Removes and returns current scope"""
         if self._stack:
             table = self._stack.pop()
+            LOGGER.info("Pop {} from symtree".format(table.name))
             if self._stack:
                 self._current = self._stack[-1]
             else:

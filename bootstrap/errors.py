@@ -37,3 +37,7 @@ class IncludeOutOfOrder(PFoidlError):
 
 class FunctionCall(PFoidlError):
     pass
+
+
+class ParseError(PFoidlError):
+    pass
