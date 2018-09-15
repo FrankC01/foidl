@@ -33,3 +33,7 @@ class SymbolException(PFoidlError):
 
 class IncludeOutOfOrder(PFoidlError):
     pass
+
+
+class FunctionCall(PFoidlError):
+    pass

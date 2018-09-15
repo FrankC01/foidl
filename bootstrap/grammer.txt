@@ -1,0 +1,81 @@
+; Grammar
+; ';' comment
+; {} optional - zero or more
+; [] zero or one
+; 'term' terminal
+; non-term (no quotes) - non terminal
+; reg_ex(...) - regular expression
+
+S =: module
+
+module =: 'module' symbol {i_decls} {decltypes}
+
+idecls =: 'include' (idecl_list | symbol_type)
+idelc_list =: '[' symbol {[,] symbol} ']'
+
+decl_types =: {var_decl | func_decl}
+
+var_decl =: 'var' symbol_type [expression]
+
+func_decl =: 'func' symbol_type symbol_list {expression}
+
+expression =: literal
+			| symbol_type
+			| collection
+			| func_call
+			| if_expr
+			| partial expr
+			| group_expr
+			| let_expr
+			| match_expr
+			| lambda_expr
+
+func_call =: func_prefix expression {expression}
+func_prefix =: symbol_type ":"
+
+partial_expr =: "(" (func_prefix | symbol_type) {expression} ")"
+
+group_expr =: "@(" expression {expression} ")"
+
+let_expr =: "let" [symbol_type] "[" symbol_type expression {symbol_type expression} "]" expression
+
+match_expr =: 'match' [symbol_type] expression match_pair
+
+match_pair =: '|' expression expression {match_pair}
+			| ':default' expression
+
+lambda_expr =: '^' symbol_list expression
+
+symbol_list =: "[" "]"
+			| "[" symbol_type {[,] symbol_type} "]"
+
+symbol_type =: symbol 							; foo
+			| reg_ex([a-zA-Z][a-zA-Z0-9_]+!)	; fo_o!
+			| reg_ex([a-zA-Z][a-zA-Z0-9_]+\?)	; f_oo?
+
+symbol =: reg_ex([a-zA-Z]([a-zA-Z0-9_]*)?)
+
+collection =: map_collection
+			| list_collection
+			| vector_collection
+			| set_collection
+
+map_collection =: "{" expression expression {[,] expression expression} "}"
+				| "{" "}"
+
+list_collection =: "[" expression {[,] expression } "]"
+				| "[" "]"
+
+set_collection =: "#{" expression {[,] expression} "}"
+				| "#{" "}"
+
+vector_collection =: "<" expression {[,] expression} ">"
+				| "<" ">"
+
+literal =: integer 	; 1234
+		| real		; 0.1, 19.52, 1.39489384938493849384983
+		| hex		; 0x9ab5
+		| bit 		; 0b01010101
+		| string 	; "Something in quotes"
+		| keyword   ; :master
+		| char 		; 'c', 'd', '1'

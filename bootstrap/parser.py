@@ -89,11 +89,12 @@ class Parser():
         # A list of all token names accepted by the parser.
         self.pg = ParserGenerator(
             mlexer.get_tokens(),
-            precedence=[
-                ("left", ["SYMBOL", "KEYWORD"]),
-                ("left", ["SYMBOL_BANG"]),
-                ("left", ["FUNC_CALL"]),
-                ("left", ["FUNC"])])
+            precedence=[])
+        # precedence=[
+        #     ("left", ["SYMBOL", "KEYWORD"]),
+        #     ("left", ["SYMBOL_BANG"]),
+        #     ("left", ["FUNC_CALL"]),
+        #     ("left", ["FUNC"])])
         self._input = input
 
     @property
@@ -212,13 +213,15 @@ class Parser():
             else:
                 return _token_eater(p, ast.SymbolList)
 
-        @self.pg.production('multiexpression : simple_expr')
-        @self.pg.production('multiexpression : complex_expr')
-        @self.pg.production('multiexpression : simple_expr multiexpression')
-        @self.pg.production('multiexpression : complex_expr multiexpression')
+        @self.pg.production('multiexpression : single_expr')
+        @self.pg.production('multiexpression : single_expr multiexpression')
         def simple_expr_p(state, p):
             """Parse one or more expressions"""
-            return _token_eater(p, ast.Expressions)
+            if len(p) == 1 and type(p[0]) is list:
+                p = p[0]
+            t = _token_eater(p, ast.Expressions)
+            # print("ME => {} -> {}".format(p, t.value))
+            return t
 
         @self.pg.production('single_expr : simple_expr')
         @self.pg.production('single_expr : complex_expr')
@@ -237,7 +240,8 @@ class Parser():
         def complex_expr(state, p):
             """Expression parse"""
             # print("complex expression = {}".format(p))
-            return ast.Expression(p)
+            return p[0]
+            # return ast.Expression(p)
 
         @self.pg.production('simple_expr : literal')
         @self.pg.production('simple_expr : symbol_type')
@@ -246,26 +250,33 @@ class Parser():
         def simple_expr(state, p):
             """Expression parse"""
             # print("simple expression = {}".format(p))
-            return ast.Expression(p)
+            return p[0]
+            # return ast.Expression(p)
 
-        @self.pg.production('functioncall : FUNC_CALL multiexpression')
-        @self.pg.production('functioncall : FUNC_BANG multiexpression')
-        @self.pg.production('functioncall : FUNC_PRED multiexpression')
-        @self.pg.production('functioncall : EQ_CALL multiexpression')
-        @self.pg.production('functioncall : LT_CALL multiexpression')
-        @self.pg.production('functioncall : GT_CALL multiexpression')
-        @self.pg.production('functioncall : LTEQ_CALL multiexpression')
-        @self.pg.production('functioncall : GTEQ_CALL multiexpression')
-        @self.pg.production('functioncall : NOTEQ_CALL multiexpression')
-        @self.pg.production('functioncall : ADD_CALL multiexpression')
-        @self.pg.production('functioncall : SUB_CALL multiexpression')
-        @self.pg.production('functioncall : MUL_CALL multiexpression')
-        @self.pg.production('functioncall : DIV_CALL multiexpression')
+        @self.pg.production('functioncall : callsig')
+        @self.pg.production('functioncall : callsig multiexpression')
         def functioncall(state, p):
-            # print("func = {}".format(p))
             t = p.pop(0)
-            fcall = ast.FunctionCall(t.getstr(), p, t, self.input)
+            fcall = ast.FunctionCall.re_factor(
+                t.getstr(), p, t, self.input, state)
+            # fcall = ast.FunctionCall(t.getstr(), p, t, self.input, state)
             return fcall
+
+        @self.pg.production('callsig : FUNC_CALL')
+        @self.pg.production('callsig : FUNC_BANG')
+        @self.pg.production('callsig : FUNC_PRED')
+        @self.pg.production('callsig : EQ_CALL')
+        @self.pg.production('callsig : LT_CALL')
+        @self.pg.production('callsig : GT_CALL')
+        @self.pg.production('callsig : LTEQ_CALL')
+        @self.pg.production('callsig : GTEQ_CALL')
+        @self.pg.production('callsig : NOTEQ_CALL')
+        @self.pg.production('callsig : ADD_CALL')
+        @self.pg.production('callsig : SUB_CALL')
+        @self.pg.production('callsig : MUL_CALL')
+        @self.pg.production('callsig : DIV_CALL')
+        def callsig(state, p):
+            return p[0]
 
         @self.pg.production('groupexpr : GROUP RPAREN')
         @self.pg.production('groupexpr : GROUP multiexpression RPAREN')

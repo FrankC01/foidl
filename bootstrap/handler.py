@@ -20,7 +20,6 @@ import functools
 
 import ast
 import util
-import symbol
 import pprint
 from errors import NotFoundError
 
@@ -201,6 +200,10 @@ class Bundle(SimpleBundle):
         return self._out_file
 
     @property
+    def state(self):
+        return self._state
+
+    @property
     def symtree(self):
         return self._state.symtree
 
@@ -278,13 +281,14 @@ class BaseComp(Handler):
         return inc_files
 
     def validate(self):
-        # Create local context in symtree
         # process ast tree
-        #   Register symbols
         #   Refactor code and identifiers
         parse_tree = []
-        # self.bundle.ast.eval(symtree, self.bundle.literals, parse_tree)
-        # pprint.pprint(parse_tree)
+        self.bundle.ast.eval(
+            self.bundle.state.symtree,
+            self.bundle.literals, parse_tree)
+        pprint.pprint(parse_tree)
+        pass
 
     def emit(self):
         self.write(_std_comment)
@@ -352,7 +356,9 @@ class Diag(Comp):
             else:
                 pass
         else:
-            pass
+            if type(element) is list:
+                for l in element:
+                    print("List => {}".format(l.value[0]))
 
     def emit(self):
         print(self.bundle)
@@ -360,17 +366,17 @@ class Diag(Comp):
         self.write("AST Topology")
         self.write("------------")
         self._ast_trace(self.bundle.ast)
-        self.write('\n')
-        self.write("Literals")
-        self.write("--------")
-        self.write(pprint.pformat(self.bundle.literals))
-        self.write('\n')
-        self.write("Symbols")
-        self.write("-------")
-        for st in self.bundle.symtree.stack:
-            self.write('\n')
-            tstr = "Symbols for " + st.name
-            self.write(tstr)
-            self.write('-' * len(tstr))
-            self.write(pprint.pformat(st.table))
+        # self.write('\n')
+        # self.write("Literals")
+        # self.write("--------")
+        # self.write(pprint.pformat(self.bundle.literals))
+        # self.write('\n')
+        # self.write("Symbols")
+        # self.write("-------")
+        # for st in self.bundle.symtree.stack:
+        #     self.write('\n')
+        #     tstr = "Symbols for " + st.name
+        #     self.write(tstr)
+        #     self.write('-' * len(tstr))
+        #     self.write(pprint.pformat(st.table))
         self.complete()

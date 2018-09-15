@@ -15,6 +15,7 @@
 # ------------------------------------------------------------------------------
 
 import logging
+import errors
 from enums import WellKnowns
 from abc import ABC, abstractmethod
 
@@ -226,8 +227,6 @@ class Variable(FoidlAst):
             "name": self.name,
             'type': 'var',
             'expr': expr})
-        # Register var name in symtable
-        symtree.register_symbol(self.name, self.get_reference())
 
 
 class FuncHeader(FoidlAst):
@@ -270,14 +269,10 @@ class Function(FoidlAst):
     def arguments(self):
         return self._arguments
 
-    def get_reference(self):
-        return FuncReference(self, self.arguments.elements())
-
     def eval(self, symtree, leader):
         # print("Function {} eval {}".format(self.name, self.value))
-        # Stack function and args in symtable
+        # Stack args in symtable
         symtree.push_scope(self.name, self.name)
-        symtree.register_symbol(self.name, self.get_reference())
         for a in self.arguments.value:
             symtree.register_symbol(
                 a.name,
@@ -293,9 +288,6 @@ class Function(FoidlAst):
         # Refactor
         # Pop stack
         symtree.pop_scope()
-        # Register function symbol
-        symtree.register_symbol(self.name, self.get_reference())
-
 
 
 class CollectionAst(FoidlAst):
@@ -462,9 +454,33 @@ class If(FoidlAst):
 class FunctionCall(FoidlAst):
     def __init__(self, csite, value, token, src):
         super().__init__(token, src)
-        self.value = value
-        self.call_site = csite[:-1]
-        self.call_site = WellKnowns.get(self.call_site, self.call_site)
+        if value and type(value[0]) is Expressions:
+            self.value = value[0].value
+        else:
+            self.value = value
+        self.call_site = csite
+
+    @classmethod
+    def re_factor(cls, csite, value, token, src, state):
+        bvalue = value[0].value if value else value
+        call_site = WellKnowns.get(csite[:-1], csite[:-1])
+        cref = state.symtree.resolve_symbol(call_site)
+        if cref.argcnt != len(bvalue):
+            if len(bvalue) < cref.argcnt:
+                raise errors.FunctionCall(
+                    "Function {} expects {} args, have {}".format(
+                        call_site,
+                        cref.argcnt,
+                        len(bvalue)))
+            else:
+                tlist = bvalue[0:cref.argcnt]
+                res = bvalue[cref.argcnt:len(bvalue)]
+                fc = FunctionCall(call_site, tlist, token, src)
+                fl = [fc]
+                fl.extend(res)
+                return fl
+        else:
+            return FunctionCall(call_site, value, token, src)
 
     def eval(self, symtree, leader):
         print("Processing function call {}".format(self.call_site))
@@ -472,23 +488,7 @@ class FunctionCall(FoidlAst):
         args = []
         for e in self.value:
             e.eval(symtree, args)
-        cref = symtree.resolve_symbol(self.call_site)
-        # Temporary redistribution model
         res = None
-        if cref.argcnt < len(args):
-            LOGGER.warn("Processing FC {} {} expect {} got {}".format(
-                self.call_site,
-                self.token.getsourcepos(),
-                cref.argcnt,
-                len(args)))
-            res = args[cref.argcnt - len(args)]
-            args = args[:(len(args) - cref.argcnt) + 1]
-            # print("Res = {}".format(res))
-            # print("Arg = {}".format(args))
-        else:
-            LOGGER.info("Processed {} {}".format(
-                self.call_site,
-                self.token.getsourcepos()))
         leader.append({
             'name': self.call_site,
             'type': 'call',
