@@ -491,19 +491,11 @@ class Let(FoidlAst):
     @classmethod
     def re_factor(cls, p, src):
         t = p.pop(0)    # Get the 'LET' token
-        lbindex = 0
-        rbindex = 1
-        # Get indexes of brackets
-        for x in p:
-            if type(x) is Token and x.gettokentype() == 'LBRACKET':
-                lbindex = p.index(x)
-            elif type(x) is Token and x.gettokentype() == 'RBRACKET':
-                    rbindex += p.index(x)
-                    break
-            else:
-                pass
 
         # Extrapolate letpairs
+        lbindex = p.index(Token('LBRACKET', '['))
+        rbindex = 1 + p.index(Token('RBRACKET', ']'))
+
         letpairs = [lp for lp in p[lbindex:rbindex]
                     if type(lp) is not Token]
         if letpairs:
