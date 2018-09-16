@@ -4,7 +4,11 @@ module test
 
 include foo
 
+var vexp *: 2 +: 9 5
+
 func bar []
+
+func myset [] #{}
 
 func two_exp [a]
 	;not=: a b
@@ -12,4 +16,8 @@ func two_exp [a]
 
 	;>=: a -: 9 10
 
-	let x [v +: 1 2 z 0] -: 9 v
+	let a []
+		vexp
+	bar:
+
+	a

@@ -14,6 +14,7 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
+import os
 import logging
 from errors import SymbolException
 
@@ -95,6 +96,21 @@ class SymbolTree(object):
         LOGGER.debug("Asked to resolve {}".format(value))
         return self.reverse_stack_locate(value)
 
+    def _var_override_msg(self, value, tref, sref):
+        ttok = tref.token.getsourcepos()
+        tsrc = os.path.split(tref.source)[1]
+        ssrc = sref.source
+        stok = sref.token.getsourcepos()
+        return "symbol '{}' at {}:{}:{} hides {} defined in {}:{}:{}".format(
+            value,
+            tsrc,
+            ttok.lineno,
+            ttok.colno,
+            sref.__class__.__name__,
+            ssrc,
+            stok.lineno,
+            stok.colno)
+
     def register_symbol(self, value, reference):
         ref = self.reverse_stack_locate(value)
         if not ref:
@@ -102,16 +118,12 @@ class SymbolTree(object):
                 value, self.current.name))
             self.current.insert(value, reference)
         else:
-            LOGGER.warn(
-                "{} in {} hides same defined in {}".format(
-                    value,
-                    reference.source,
-                    ref.source))
+            LOGGER.warn(self._var_override_msg(value, reference, ref))
             self.current.insert(value, reference)
 
     def push_scope(self, short_name, long_name):
         """Pushes new scope which becomes current"""
-        LOGGER.info("Pusing symbol table {}".format(short_name))
+        LOGGER.debug("Pushing symbol table {}".format(short_name))
         table = SymbolTable(short_name, long_name)
         self._stack.append(table)
         self._current = table
@@ -121,7 +133,7 @@ class SymbolTree(object):
         """Removes and returns current scope"""
         if self._stack:
             table = self._stack.pop()
-            LOGGER.info("Pop {} from symtree".format(table.name))
+            LOGGER.debug("Pop {} from symtree".format(table.name))
             if self._stack:
                 self._current = self._stack[-1]
             else:

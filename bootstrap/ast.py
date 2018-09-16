@@ -15,6 +15,7 @@
 # ------------------------------------------------------------------------------
 
 import logging
+from rply import Token
 import errors
 from enums import WellKnowns, CollTypes
 from abc import ABC, abstractmethod
@@ -47,8 +48,6 @@ class LiteralReference(FoidlReference):
 
     def __init__(self, id, token, src):
         super().set_individual(token, src)
-        self._literal_type = token.gettokentype()
-        self._literal_value = token.getstr()
         self._identifier = id
 
     @property
@@ -56,17 +55,24 @@ class LiteralReference(FoidlReference):
         return self._identifier
 
     @property
-    def literal_type(self):
-        return self._literal_type
+    def value(self):
+        return self.token.getstr()
 
-    def eval(self, symtable, leader):
-        print("Literal {}".format(self.literal_type))
-        leader.append(self)
+    @property
+    def literal_type(self):
+        return self.token.gettokentype()
+
+    def eval(self, bundle, leader):
+        leader.append({
+            "type": 'literal',
+            "expr": [self]})
 
 
 class VarReference(FoidlReference):
     """Variable Symbol Reference"""
-    pass
+
+    def __init__(self, astmember):
+        super().__init__(astmember)
 
 
 class FuncReference(FoidlReference):
@@ -84,6 +90,9 @@ class FuncReference(FoidlReference):
 class FuncArgReference(FoidlReference):
     """Function Argument Symbol Reference"""
 
+    def __init__(self, astmember):
+        super().__init__(astmember)
+
 
 class LambdaReference(FoidlReference):
     """Lambda Reference"""
@@ -93,18 +102,31 @@ class LambdaReference(FoidlReference):
 class LetArgReference(FoidlReference):
     """Let Argument Symbol Reference"""
 
-    def __init__(self, val):
-        self._name = val
+    def __init__(self, astmember):
+        super().__init__(astmember)
 
 
 class LetResReference(FoidlReference):
     """Let Result Symbol Reference"""
-    pass
+
+    def __init__(self, astmember):
+        super().__init__(astmember)
+
+    def eval(self, bundle, leader):
+        leader.append({
+            "type": 'let_result',
+            "expr": [self]})
 
 
 class MatchResReference(FoidlReference):
     """Match Result Symbol Reference"""
-    pass
+
+    def __init__(self, result_id):
+        self._res_id = result_id
+
+    @property
+    def id(self):
+        return self._res_id
 
 
 class FoidlAst(ABC):
@@ -167,7 +189,8 @@ class Module(FoidlAst):
         # Register new level in bundle
         bundle.symtree.push_scope(self.name, self.name)
         # Add references to nil, true, false
-        externs = {
+
+        bundle.externs = {
             "nil": bundle.symtree.resolve_symbol("nil"),
             "true": bundle.symtree.resolve_symbol("true"),
             "false": bundle.symtree.resolve_symbol("false")
@@ -178,7 +201,7 @@ class Module(FoidlAst):
         ptree.append({
             "name": self.name,
             "type": 'module',
-            "externs": externs,
+            "externs": bundle.externs,
             "literals": bundle.literals,
             "decls": children})
 
@@ -215,8 +238,15 @@ class VarHeader(FoidlAst):
 class Variable(FoidlAst):
     def __init__(self, vname, value, token, src):
         super().__init__(token, src)
-        self._value = value
         self._name = vname
+        if type(value[0]) is list:
+            value = value[0]
+        if len(value) != 1:
+            raise errors.ParseError(
+                "variable '{}' at line {} has more than 1 expression".format(
+                    vname.value,
+                    token.getsourcepos().lineno))
+        self._value = value
 
     @property
     def name(self):
@@ -264,7 +294,7 @@ class Function(FoidlAst):
         super().__init__(fhdr.token, src)
         self._name = fhdr.name
         self._arguments = fhdr.arguments
-        self._value = value
+        self._value = value if value else [_NIL]
 
     @property
     def name(self):
@@ -279,7 +309,7 @@ class Function(FoidlAst):
         return self._arguments
 
     def eval(self, bundle, leader):
-        # print("Function {} eval {}".format(self.name, self.value))
+        print("Function {} eval {}".format(self.name, self.value))
         # Stack args in symtable
         bundle.symtree.push_scope(self.name, self.name)
         for a in self.arguments.value:
@@ -289,7 +319,13 @@ class Function(FoidlAst):
         # Eval children
         expr = []
         for e in self.value:
-            e.eval(bundle, expr)
+            if type(e) is Expressions:
+                for z in e.value:
+                    LOGGER.info("Processing {}".format(z))
+                    z.eval(bundle, expr)
+            else:
+                LOGGER.info("Processing {}".format(e))
+                e.eval(bundle, expr)
         leader.append({
             "name": self.name,
             'type': 'func',
@@ -331,16 +367,31 @@ class MatchPairs(CollectionAst):
             c.eval(bundle, leader)
 
 
-class EmptyCollection(FoidlAst):
-    def __init__(self, etype):
+class EmptyCollection(CollectionAst):
+    def __init__(self, etype, value, token, src):
+        super().__init__(token, src)
         self.type = etype
-        self.value = []
+        self.value = value
 
     def elements(self):
         return 0
 
+    @classmethod
+    def get_empty_collection(cls, ct, t, src):
+        if ct is CollTypes.LIST:
+            v = Symbol('empty_list', t, src)
+        elif ct is CollTypes.VECTOR:
+            v = Symbol('empty_vector', t, src)
+        elif ct is CollTypes.SET:
+            v = Symbol('empty_set', t, src)
+        else:
+            v = Symbol('empty_map', t, src)
+        return EmptyCollection(ct, [v], t, src)
+
     def eval(self, bundle, leader):
         print("Empty collection type {}".format(self.type))
+        for e in self.value:
+            e.eval(bundle, leader)
 
 
 class Collection(CollectionAst):
@@ -404,7 +455,6 @@ class LetPairs(CollectionAst):
         return len(self.value)
 
     def eval(self, bundle, leader):
-        print("Let pairs {}".format(self.value))
         # Put symbols in table and evaluate expression
         for i, j in zip(*[iter(self.value)] * 2):
             expr = []
@@ -420,30 +470,77 @@ class LetPairs(CollectionAst):
 
 
 class Let(FoidlAst):
-    def __init__(self, value, token, src):
-        if type(value[0]) == Symbol:
-            self._id = value.pop(0).value
+    def __init__(self, symbol, lpairs, expr, token, src):
+        super().__init__(token, src)
+        self._id = symbol
+        self._letpairs = lpairs
+
+        if len(self._letpairs.value) % 2:
+            raise errors.ParseError(
+                "{}:{} un-even let pairs".format(
+                    token.getsourcepos().lineno,
+                    token.getsourcepos().colno))
+
+        self.value = expr if type(expr[0]) is not list else expr[0]
+
+        if len(self.value) > 1:
+            raise errors.ParseError(
+                "Let expects 1 expression in body, found {}".format(
+                    len(self.value)))
+
+    @classmethod
+    def re_factor(cls, p, src):
+        t = p.pop(0)    # Get the 'LET' token
+        lbindex = 0
+        rbindex = 1
+        # Get indexes of brackets
+        for x in p:
+            if type(x) is Token and x.gettokentype() == 'LBRACKET':
+                lbindex = p.index(x)
+            elif type(x) is Token and x.gettokentype() == 'RBRACKET':
+                    rbindex += p.index(x)
+                    break
+            else:
+                pass
+
+        # Extrapolate letpairs
+        letpairs = [lp for lp in p[lbindex:rbindex]
+                    if type(lp) is not Token]
+        if letpairs:
+            letpairs = letpairs[0]
         else:
-            sp = token.getsourcepos()
-            self._id = "let_" + sp.lineno + "_" + sp.colno
+            letpairs = EmptyCollection(CollTypes.LIST, [], t, src)
 
-        if type(value[0] == LetPairs):
-            self._letpairs = value.pop(0)
-            if len(self._letpairs.value) % 2:
-                raise errors.ParseError(
-                    "{}:{} un-even let pairs".format(
-                        token.getsourcepos().lineno,
-                        token.getsourcepos().colno))
+        # Remove letpair range
+        del p[lbindex:rbindex]
+
+        # Identify symbol if exists
+        if type(p[0]) is Symbol:
+            symbol = p.pop(0)
         else:
-            self._letpairs = EmptyCollection(CollTypes.LIST)
+            sp = t.getsourcepos()
+            symbol = Symbol(
+                Token(
+                    "LET_RES",
+                    "let_" + str(sp.lineno) + "_" + str(sp.colno),
+                    t.getsourcepos()), sp, src)
 
-        self.value = value
+        # If value at 0 is list, get inner list
+        if type(p[0]) is list:
+            value = p[0]
+        else:
+            value = p
 
+        # if too many elements, structure expressions
+        # so [<let> <residuals>]
         if len(value) > 1:
-            LOGGER.warn("Let has too many expressions")
+            mylet = Let(symbol, letpairs, [value.pop(0)], t, src)
+            value.insert(0, mylet)
+            return value
+        else:
+            return Let(symbol, letpairs, value, t, src)
 
     def eval(self, bundle, leader):
-        print("Let value {}".format(self.value))
         bundle.symtree.push_scope(self._id, self._id)
         # Push Let scope on bundle
         # Register any letpair vars in table
@@ -455,6 +552,9 @@ class Let(FoidlAst):
             e.eval(bundle, expr)
         # Pop scope
         bundle.symtree.pop_scope()
+        bundle.symtree.register_symbol(
+            self._id.value,
+            LetResReference(self._id))
         # Register id
         # Set let in leader
         leader.append({
@@ -556,6 +656,7 @@ class Symbol(FoidlAst):
     def __init__(self, value, token, src):
         super().__init__(token, src)
         self._value = value
+        # print("Symbol found @ {}".format(src))
 
     @property
     def value(self):
@@ -566,4 +667,21 @@ class Symbol(FoidlAst):
         return self._value
 
     def eval(self, bundle, leader):
-        leader.append(bundle.symtree.resolve_symbol(self.name))
+        LOGGER.info("Symbol processing for {}".format(self.name))
+        sym = bundle.symtree.resolve_symbol(self.name)
+        if sym:
+            if self.source != sym.source:
+                if not bundle.externs.get(self.name, None):
+                    bundle.externs[self.name] = sym
+            leader.append({
+                "type": "symbol_ref",
+                "expr": [sym]})
+        else:
+            raise errors.SymbolException(
+                "{}:{} unresolved symbol {}".format(
+                    self.token.getsourcepos().lineno,
+                    self.token.getsourcepos().colno,
+                    self.name))
+
+
+_NIL = Symbol('nil', Token("SYMBOL", "nil"), None)

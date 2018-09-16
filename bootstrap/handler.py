@@ -185,6 +185,7 @@ class Bundle(SimpleBundle):
         self._state = state
         self._out = outhandle
         self._out_file = outfile
+        self._externs = None
         self._triple = None
 
     @property
@@ -202,6 +203,14 @@ class Bundle(SimpleBundle):
     @property
     def state(self):
         return self._state
+
+    @property
+    def externs(self):
+        return self._externs
+
+    @externs.setter
+    def externs(self, externs):
+        self._externs = externs
 
     @property
     def symtree(self):

@@ -89,12 +89,12 @@ class Parser():
         # A list of all token names accepted by the parser.
         self.pg = ParserGenerator(
             mlexer.get_tokens(),
-            precedence=[])
-        # precedence=[
-        #     ("left", ["SYMBOL", "KEYWORD"]),
-        #     ("left", ["SYMBOL_BANG", "SYMBOL_PRED"]),
-        #     ("left", ["FUNC_CALL", "FUNC_BANG", "FUNC_PRED"]),
-        #     ("left", ["FUNC"])])
+            # precedence=[])
+            precedence=[
+                ("left", ["SYMBOL", "KEYWORD"]),
+                ("left", ["SYMBOL_BANG", "SYMBOL_PRED"]),
+                ("left", ["FUNC_CALL", "FUNC_BANG", "FUNC_PRED"]),
+                ("left", ["FUNC", "VAR"])])
         self._input = input
 
     @property
@@ -106,17 +106,13 @@ class Parser():
         def program(state, p):
             return ast.CompilationUnit(p)
 
-        @self.pg.production('module : MODULE module_symbol')
-        @self.pg.production('module : MODULE module_symbol i_decl')
-        @self.pg.production('module : MODULE module_symbol i_decl decltypes')
-        @self.pg.production('module : MODULE module_symbol decltypes')
+        @self.pg.production('module : MODULE symbol')
+        @self.pg.production('module : MODULE symbol i_decl')
+        @self.pg.production('module : MODULE symbol i_decl decltypes')
+        @self.pg.production('module : MODULE symbol decltypes')
         def mod(state, p):
             pp = _flatten_list(p)
             return ast.Module(pp[1], pp[2:], pp[0], self.input)
-
-        @self.pg.production('module_symbol : SYMBOL')
-        def mod_sym(state, p):
-            return ast.Symbol(p[0].getstr(), p[0], self.input)
 
         @self.pg.production('i_decl : INCLUDE symbol')
         @self.pg.production('i_decl : INCLUDE symbol i_decl')
@@ -144,12 +140,11 @@ class Parser():
         def v_decl(state, p):
             t = p.pop(0)
             if type(t) == ast.VarHeader:
-                # return ast.Variable(p.pop(0), p, t, self.input)
                 return ast.Variable(t.name, p, t.token, self.input)
             else:
                 return ast.Function(t, p, self.input)
 
-        @self.pg.production('var_header : VAR var_symbol')
+        @self.pg.production('var_header : VAR decl_symbol')
         def var_hdr(state, p):
             t = p.pop(0)
             vh = ast.VarHeader(p.pop(0), t, self.input)
@@ -159,7 +154,7 @@ class Parser():
             state.symtree.register_symbol(vh.name.value, vh.get_reference())
             return vh
 
-        @self.pg.production('func_header : FUNC func_symbol fsymbol_list')
+        @self.pg.production('func_header : FUNC decl_symbol fsymbol_list')
         def func_hdr(state, p):
             t = p.pop(0)
             fh = ast.FuncHeader(p.pop(0), p[0], t, self.input)
@@ -169,21 +164,19 @@ class Parser():
             state.symtree.register_symbol(fh.name.value, fh.get_reference())
             return fh
 
-        @self.pg.production('func_symbol : symbol_type')
-        def func_sym(state, p):
+        @self.pg.production('decl_symbol : symbol_type')
+        def decl_sym(state, p):
             return p[0]
-            # return ast.Symbol(p[0].getstr(), p[0], self.input)
-
-        @self.pg.production('var_symbol : symbol_type')
-        def var_sym(state, p):
-            return p[0]
-            # return ast.Symbol(p[0].getstr(), p[0], self.input)
 
         @self.pg.production('symbol_list : LBRACKET RBRACKET')
         @self.pg.production('symbol_list : LBRACKET symbol_seps RBRACKET')
         def symbol_list_1(state, p):
             if len(p) < 3:
-                return ast.EmptyCollection(CollTypes.LIST)
+                return ast.EmptyCollection(
+                    CollTypes.LIST,
+                    [],
+                    p[0],
+                    self.input)
             else:
                 return p[1]
 
@@ -200,7 +193,11 @@ class Parser():
         @self.pg.production('fsymbol_list : LBRACKET fsymbol_seps RBRACKET')
         def fsymbol_list_1(state, p):
             if len(p) < 3:
-                return ast.EmptyCollection(CollTypes.LIST)
+                return ast.EmptyCollection(
+                    CollTypes.LIST,
+                    [],
+                    p[0],
+                    self.input)
             else:
                 return p[1]
 
@@ -289,7 +286,6 @@ class Parser():
                 del p[0]
                 return ast.Group(p)
 
-        # TODO: Stack frame context
         @self.pg.production(
             'letexpr : LET LBRACKET RBRACKET single_expr')
         @self.pg.production(
@@ -300,10 +296,7 @@ class Parser():
             'letexpr : LET symbol_type LBRACKET letpairs RBRACKET single_expr')
         def letexpr(state, p):
             """Let parse"""
-            t = p.pop(0)
-            letset = [x for x in p if type(x) is not Token]
-            return ast.Let(letset, t, self.input)
-            # return ast.Let(p, t, self.input)
+            return ast.Let.re_factor(p, self.input)
 
         @self.pg.production('letpairs : symbol_type single_expr')
         @self.pg.production(
@@ -360,7 +353,11 @@ class Parser():
         @self.pg.production('empty_collection : LBRACE RBRACE')
         @self.pg.production('empty_collection : LSET RBRACE')
         def empty_collections(state, p):
-            return ast.EmptyCollection(_collection_type(p[0]))
+            ct = _collection_type(p[0])
+            return ast.EmptyCollection.get_empty_collection(
+                ct,
+                p[0],
+                self.input)
 
         # TODO: Add map constrains of even number expressions
         @self.pg.production('collection : LANGLE simple_expr_seps RANGLE')
@@ -395,19 +392,16 @@ class Parser():
         @self.pg.production('literal : STRING')
         @self.pg.production('literal : KEYWORD')
         def literal(state, p):
-            # print("Literal => {}".format(p))
             return _literal_entry(state.literals, p[0], self.input)
 
         @self.pg.production('symbol_type : SYMBOL')
         @self.pg.production('symbol_type : SYMBOL_BANG')
         @self.pg.production('symbol_type : SYMBOL_PRED')
         def symbol_type(state, p):
-            # state.resolve_symbol(p)
             return ast.Symbol(p[0].getstr(), p[0], self.input)
 
         @self.pg.production(' symbol : SYMBOL')
         def symbol(state, p):
-            # state.resolve_symbol(p)
             return ast.Symbol(p[0].getstr(), p[0], self.input)
 
         @self.pg.error

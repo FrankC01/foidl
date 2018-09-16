@@ -80,7 +80,7 @@ class Lexer():
         self.lexer.add('REAL', r"[0-9]+\.[0-9]+")
         self.lexer.add('INTEGER', r"[0-9]+")
         # self.lexer.add('RANGE', r"[0-9]+[\.]{3}[0-9]+")
-        # Identifiers
+        # Symbol Identifiers
         self.lexer.add('FUNC_CALL', r"[a-zA-Z][a-zA-Z0-9_]+:")
         self.lexer.add('FUNC_BANG', r"[a-zA-Z][a-zA-Z0-9_]+!:")
         self.lexer.add('FUNC_PRED', r"[a-zA-Z][a-zA-Z0-9_]+\?:")
