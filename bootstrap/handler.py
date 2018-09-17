@@ -186,6 +186,7 @@ class Bundle(SimpleBundle):
         self._out = outhandle
         self._out_file = outfile
         self._externs = None
+        self._lambdas = []
         self._triple = None
 
     @property
@@ -219,6 +220,10 @@ class Bundle(SimpleBundle):
     @symtree.setter
     def symtree(self, symtree):
         self._state.symtree = symtree
+
+    @property
+    def lambdas(self):
+        return self._lambdas
 
 
 class Handler(ABC):

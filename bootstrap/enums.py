@@ -24,6 +24,23 @@ class ParseLevel(enum.Enum):
 
 
 @enum.unique
+class ExpressionType(enum.Enum):
+    MODULE = enum.auto()
+    FUNCTION = enum.auto()
+    VARIABLE = enum.auto()
+    COLLECTION = enum.auto()
+    EMPTY_COLLECTION = enum.auto()
+    LET = enum.auto()
+    LET_RES = enum.auto()
+    LET_ARG_PAIR = enum.auto()
+    MATCH = enum.auto()
+    MATCH_RES = enum.auto()
+    IF = enum.auto()
+    LAMBDA = enum.auto()
+    LITERAL = enum.auto()
+
+
+@enum.unique
 class CollTypes(enum.Enum):
     VECTOR = enum.auto()
     LIST = enum.auto()
@@ -60,18 +77,18 @@ WellKnowns = {
     'not=': 'neq'}
 
 
-@enum.unique
-class SymbolTypes(enum.Enum):
-    MODULE = enum.auto()
-    VARIABLE = enum.auto()
-    FUNCTION = enum.auto()
-    FUNC_ARG = enum.auto()
-    LAMBDA = enum.auto()
-    LAMBDA_ARGS = enum.auto()
-    LET = enum.auto()
-    LET_RES = enum.auto()
-    LET_ARG = enum.auto()
-    MATCH_RES = enum.auto()
-    EXTERN_FUNC = enum.auto()
-    EXTERN_VAR = enum.auto()
-    UNKNOWN = enum.auto()
+# @enum.unique
+# class SymbolTypes(enum.Enum):
+#     MODULE = enum.auto()
+#     VARIABLE = enum.auto()
+#     FUNCTION = enum.auto()
+#     FUNC_ARG = enum.auto()
+#     LAMBDA = enum.auto()
+#     LAMBDA_ARGS = enum.auto()
+#     LET = enum.auto()
+#     LET_RES = enum.auto()
+#     LET_ARG = enum.auto()
+#     MATCH_RES = enum.auto()
+#     EXTERN_FUNC = enum.auto()
+#     EXTERN_VAR = enum.auto()
+#     UNKNOWN = enum.auto()

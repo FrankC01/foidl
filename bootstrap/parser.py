@@ -329,11 +329,11 @@ class Parser():
             y = eater(p)
             return ast.MatchPairs(y)
 
-        @self.pg.production('lambdaexpr : LAMBDA fsymbol_list simple_expr')
+        @self.pg.production('lambdaexpr : LAMBDA fsymbol_list single_expr')
         def lambdaexpr(state, p):
             """Lambda parse"""
-            p.pop(0)
-            return ast.Lambda(p)
+            t = p.pop(0)
+            return ast.Lambda(p.pop(0), p, t, self.input)
 
         @self.pg.production('partialexpr : LPAREN simple_expr RPAREN')
         def partialexpr(state, p):

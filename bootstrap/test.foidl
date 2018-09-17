@@ -4,7 +4,7 @@ module test
 
 include foo
 
-var vexp *: 2 +: 9 5
+var vexp ^[a b] +: a b
 
 func bar []
 
@@ -16,8 +16,7 @@ func two_exp [a]
 
 	;>=: a -: 9 10
 
-	let a []
-		vexp
-	bar:
+	let [x +: 1 2]
+        vexp
+    bar:
 
-	a
