@@ -8,6 +8,8 @@ var vexp ^[a b] +: a b
 
 func bar []
 
+func three_arg [a b c]
+
 func myset [] #{}
 
 func two_exp [a]
@@ -16,7 +18,7 @@ func two_exp [a]
 
 	;>=: a -: 9 10
 
-	let [x +: 1 2]
-        vexp
+	let [x (three_arg a 2)]
+        (x 7)
     bar:
 

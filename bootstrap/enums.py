@@ -25,6 +25,7 @@ class ParseLevel(enum.Enum):
 
 @enum.unique
 class ExpressionType(enum.Enum):
+    IGNORE = enum.auto()
     MODULE = enum.auto()
     FUNCTION = enum.auto()
     VARIABLE = enum.auto()
@@ -36,7 +37,11 @@ class ExpressionType(enum.Enum):
     MATCH = enum.auto()
     MATCH_RES = enum.auto()
     IF = enum.auto()
+    FUNCTION_CALL = enum.auto()
     LAMBDA = enum.auto()
+    PARTIAL_DECL = enum.auto()
+    PARTIAL_INVK = enum.auto()
+    SYMBOL_REF = enum.auto()
     LITERAL = enum.auto()
 
 

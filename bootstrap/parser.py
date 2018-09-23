@@ -335,12 +335,12 @@ class Parser():
             t = p.pop(0)
             return ast.Lambda(p.pop(0), p, t, self.input)
 
-        @self.pg.production('partialexpr : LPAREN simple_expr RPAREN')
+        @self.pg.production('partialexpr : LPAREN multiexpression RPAREN')
         def partialexpr(state, p):
             """Partial parse"""
             p.pop(2)
-            p.pop(0)
-            return ast.Partial(p)
+            t = p.pop(0)
+            return ast.Partial(p[0].value, t, self.input)
 
         @self.pg.production('if_expr : IF single_expr')
         def ifexpr(state, p):
@@ -368,10 +368,11 @@ class Parser():
             if len(p) < 3:
                 return self.empty_collection(p)
             else:
-                x = _collection_type(p[0])
+                t = p[0]
+                x = _collection_type(t)
                 del p[2]
                 del p[0]
-                return ast.Collection(x, p)
+                return ast.Collection(x, p, t, self.input)
 
         @self.pg.production('simple_expr_seps : simple_expr')
         @self.pg.production('simple_expr_seps : simple_expr simple_expr_seps')

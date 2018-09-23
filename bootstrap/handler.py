@@ -21,6 +21,8 @@ import functools
 import ast
 import util
 import pprint
+import ptree
+from enums import ExpressionType
 from errors import NotFoundError
 
 from abc import ABC, abstractmethod
@@ -271,7 +273,16 @@ class Handler(ABC):
 class BaseComp(Handler):
     def __init__(self, bundle):
         super().__init__(bundle)
+        self._ptree = None
         LOGGER.info("Initiating compile")
+
+    @property
+    def ptree(self):
+        return self._ptree
+
+    @ptree.setter
+    def ptree(self, ptree):
+        self._ptree = ptree
 
     def compute_include(self):
         include = self.bundle.ast.include
@@ -299,8 +310,8 @@ class BaseComp(Handler):
         #   Refactor code and identifiers
         parse_tree = []
         self.bundle.ast.eval(self.bundle, parse_tree)
-        pprint.pprint(parse_tree)
-        pass
+        self.ptree = parse_tree
+        pprint.pprint(self.ptree)
 
     def emit(self):
         self.write(_std_comment)
@@ -372,12 +383,48 @@ class Diag(Comp):
                 for l in element:
                     print("List => {}".format(l.value[0]))
 
+    def _tree_walk(self, tree, indent=1):
+        if type(tree) is list:
+            self.write("Walk: {}> ({}): {}".format(
+                '-' * indent, tree[0].name, tree[0].ptype))
+            ttree = tree[0]
+        elif type(tree) is ptree.ParseTree:
+            self.write("Walk: {}> ({}): {}".format(
+                '-' * indent, tree.name, tree.ptype))
+            ttree = tree
+        else:
+            self.write("Walk: {}> {}".format(
+                '-' * indent, tree.__class__.__name__))
+            if type(tree) is dict:
+                pprint.pprint(tree)
+            ttree = ptree.ParseTree(ExpressionType.IGNORE, [])
+
+        if ttree.ptype is ExpressionType.LET:
+            for p in ttree.pre:
+                indent += 1
+                self._tree_walk(p, indent)
+                indent -= 1
+        for i in ttree.exprs:
+            indent += 1
+            self._tree_walk(i, indent)
+            indent -= 1
+
     def emit(self):
         print(self.bundle)
         self.write(_std_comment)
         self.write("AST Topology")
         self.write("------------")
         self._ast_trace(self.bundle.ast)
+        self.write('\n')
+        self.write("Parse Tree (lambdas)")
+        self.write("--------------------")
+        self._tree_walk(self.ptree[0]['lambdas'])
+        self.write('\n')
+        self.write("Parse Tree (body)")
+        self.write("-----------------")
+        self._tree_walk(self.ptree[0]['base'])
+        # pprint.pprint(self.ptree)
+
         # self.write('\n')
         # self.write("Literals")
         # self.write("--------")
