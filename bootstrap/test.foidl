@@ -4,6 +4,8 @@ module test
 
 include foo
 
+var dt []
+
 var vexp ^[a b] +: a b
 
 func bar []

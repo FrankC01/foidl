@@ -21,7 +21,7 @@ import functools
 import ast
 import util
 import pprint
-import ptree
+from emit import LlvmGen
 from enums import ExpressionType
 from errors import NotFoundError
 
@@ -306,15 +306,17 @@ class BaseComp(Handler):
         return inc_files
 
     def validate(self):
-        # process ast tree
-        #   Refactor code and identifiers
+        # Transform ast to parse tree
         parse_tree = []
         self.bundle.ast.eval(self.bundle, parse_tree)
-        self.ptree = parse_tree
-        pprint.pprint(self.ptree)
+        self.ptree = parse_tree[0]
+        # pprint.pprint(self.ptree)
 
     def emit(self):
         self.write(_std_comment)
+        # Emit LLVM from parse tree
+        mything = LlvmGen(self.ptree['base'][0].name)
+        mything.emit(self.ptree, self.write)
         self.complete()
 
 
@@ -388,7 +390,7 @@ class Diag(Comp):
             self.write("Walk: {}> ({}): {}".format(
                 '-' * indent, tree[0].name, tree[0].ptype))
             ttree = tree[0]
-        elif type(tree) is ptree.ParseTree:
+        elif type(tree) is ast.ParseTree:
             self.write("Walk: {}> ({}): {}".format(
                 '-' * indent, tree.name, tree.ptype))
             ttree = tree
@@ -397,7 +399,7 @@ class Diag(Comp):
                 '-' * indent, tree.__class__.__name__))
             if type(tree) is dict:
                 pprint.pprint(tree)
-            ttree = ptree.ParseTree(ExpressionType.IGNORE, [])
+            ttree = ast.ParseTree(ExpressionType.IGNORE, [])
 
         if ttree.ptype is ExpressionType.LET:
             for p in ttree.pre:
@@ -418,18 +420,17 @@ class Diag(Comp):
         self.write('\n')
         self.write("Parse Tree (lambdas)")
         self.write("--------------------")
-        self._tree_walk(self.ptree[0]['lambdas'])
+        self._tree_walk(self.ptree['lambdas'])
         self.write('\n')
         self.write("Parse Tree (body)")
         self.write("-----------------")
-        self._tree_walk(self.ptree[0]['base'])
-        # pprint.pprint(self.ptree)
+        self._tree_walk(self.ptree['base'])
 
-        # self.write('\n')
-        # self.write("Literals")
-        # self.write("--------")
-        # self.write(pprint.pformat(self.bundle.literals))
-        # self.write('\n')
+        self.write('\n')
+        self.write("Literals")
+        self.write("--------")
+        self.write(pprint.pformat(self.ptree["literals"]))
+        self.write('\n')
         # self.write("Symbols")
         # self.write("-------")
         # for st in self.bundle.symtree.stack:

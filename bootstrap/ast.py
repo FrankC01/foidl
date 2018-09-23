@@ -17,11 +17,45 @@
 import logging
 from rply import Token
 import errors
-from ptree import ParseTree
 from enums import WellKnowns, CollTypes, ExpressionType
 from abc import ABC, abstractmethod
 
 LOGGER = logging.getLogger()
+
+
+class ParseTree(object):
+
+    def __init__(self, ptype, exprs, loc=None, name=None, res=None, pre=None):
+        self._ptype = ptype
+        self._exprs = exprs
+        self._loc = loc if type(loc) is not Token else loc.getsourcepos()
+        self._name = name if name else "unknown"
+        self._res = res
+        self._pre = pre if pre else []
+
+    @property
+    def ptype(self):
+        return self._ptype
+
+    @property
+    def exprs(self):
+        return self._exprs
+
+    @property
+    def loc(self):
+        return self._loc
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def res(self):
+        return self._res
+
+    @property
+    def pre(self):
+        return self._pre
 
 
 class FoidlReference(ABC):
