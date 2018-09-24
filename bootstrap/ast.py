@@ -129,8 +129,18 @@ class FuncReference(FoidlReference):
 class FuncArgReference(FoidlReference):
     """Function Argument Symbol Reference"""
 
-    def __init__(self, astmember):
+    def __init__(self, astmember, argname, argpos):
         super().__init__(astmember)
+        self._argname = argname
+        self._argpos = argpos
+
+    @property
+    def argname(self):
+        return self._argname
+
+    @property
+    def argpos(self):
+        return self._argpos
 
 
 class LambdaReference(FoidlReference):
@@ -364,10 +374,14 @@ class Function(FoidlAst):
     def eval(self, bundle, leader):
         # Stack args in symtable
         bundle.symtree.push_scope(self.name, self.name)
+        i = 0
+        argref = []
         for a in self.arguments.value:
-            bundle.symtree.register_symbol(
-                a.name,
-                FuncArgReference(a))
+            ar = FuncArgReference(a, a.name, i)
+            bundle.symtree.register_symbol(a.name, ar)
+            argref.append(ar)
+            i += 1
+
         # Eval children
         expr = []
         for e in self.value:
@@ -383,7 +397,8 @@ class Function(FoidlAst):
                 ExpressionType.FUNCTION,
                 expr,
                 self.token,
-                self.name))
+                self.name,
+                pre=argref))
         # Pop stack
         bundle.symtree.pop_scope()
 
@@ -646,10 +661,13 @@ class Lambda(FoidlAst):
 
     def eval(self, bundle, leader):
         bundle.symtree.push_scope(self.name, self.name)
+        i = 0
+        argref = []
         for a in self.arguments.value:
-            bundle.symtree.register_symbol(
-                a.name,
-                FuncArgReference(a))
+            ar = FuncArgReference(a, a.name, i)
+            bundle.symtree.register_symbol(a.name, ar)
+            argref.append(ar)
+            i += 1
         # Eval expression
         expr = []
         for e in self.value:
@@ -659,7 +677,8 @@ class Lambda(FoidlAst):
                 ExpressionType.LAMBDA,
                 expr,
                 self.token,
-                self.name.value))
+                self.name.value,
+                pre=argref))
         # Pop stack
         bundle.symtree.pop_scope()
         leader.append(LambdaReference(

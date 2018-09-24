@@ -19,6 +19,7 @@ from llvmlite import ir, binding
 from llvmlite.ir import global_context as glbctx
 
 import ast
+from enums import ExpressionType
 
 # from pprint import pformat
 
@@ -87,14 +88,45 @@ class LlvmGen(object):
                     x.linkage = "private"
                     x.align = 8
 
-    def _emit_var(self):
-        pass
+    def _emit_var(self, pvar):
+        """Emit a named variable expression"""
+        print("{} {}".format(pvar.ptype, pvar.exprs))
 
-    def _emit_fn(self):
-        pass
+    def _fn_arg_sigs(self, pfn):
+        fn = ir.Function(
+            self.module,
+            ir.FunctionType(
+                any_ptr, [any_ptr] * len(pfn.pre)),
+            pfn.name)
+        fn_args = fn.args
+        index = 0
+        for a in pfn.pre:
+            fn_args[index].name = a.argname
+            index += 1
+        return fn
 
-    def _emit_body(self):
-        pass
+    def _emit_lambda(self, ltree):
+        """Emit a Lamnda and it's expressions"""
+        if type(ltree) is list:
+            [self._emit_lambda(n) for n in ltree]
+        else:
+            self._fn_arg_sigs(ltree)
+
+    def _emit_fn(self, pfn):
+        """Emit a Function and it's expressions"""
+        self._fn_arg_sigs(pfn)
+
+    def _emit_body(self, ltree):
+        if type(ltree) is list:
+            if ltree[0].ptype is ExpressionType.MODULE:
+                [self._emit_body(n) for n in ltree[0].exprs]
+        elif type(ltree) is ast.ParseTree:
+            if ltree.ptype is ExpressionType.VARIABLE:
+                self._emit_var(ltree)
+            elif ltree.ptype is ExpressionType.FUNCTION:
+                self._emit_fn(ltree)
+        else:
+            print("Unknown type")
 
     def emit(self, ptree, wrtr):
         # Extern declarations
@@ -102,9 +134,9 @@ class LlvmGen(object):
         # Literals
         self._emit_literals(ptree['literals'])
         # Process lambdas
-        self._emit_body(ptree['lambdas'])
+        self._emit_lambda(ptree['lambdas'])
         # Process body
-
+        self._emit_body(ptree['base'])
         # Spit out the goods
         llvm_ir = str(self.module)
         mod = self.binding.parse_assembly(llvm_ir)

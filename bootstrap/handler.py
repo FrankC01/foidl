@@ -401,11 +401,15 @@ class Diag(Comp):
                 pprint.pprint(tree)
             ttree = ast.ParseTree(ExpressionType.IGNORE, [])
 
-        if ttree.ptype is ExpressionType.LET:
+        if ttree.ptype in [
+                ExpressionType.LET,
+                ExpressionType.FUNCTION,
+                ExpressionType.LAMBDA]:
             for p in ttree.pre:
-                indent += 1
+                indent += 2
                 self._tree_walk(p, indent)
-                indent -= 1
+                indent -= 2
+
         for i in ttree.exprs:
             indent += 1
             self._tree_walk(i, indent)
