@@ -16,9 +16,20 @@
 
 import logging
 from llvmlite import ir, binding
+from llvmlite.ir import global_context as glbctx
+
+import ast
+
 # from pprint import pformat
 
 LOGGER = logging.getLogger()
+
+int_64 = ir.IntType(64)
+int_32 = ir.IntType(32)
+void_ptr = ir.PointerType(ir.IntType(8))
+any_struct = glbctx.get_identified_type("Any")
+any_struct.set_body(int_64, int_64, int_64, int_32, void_ptr)
+any_ptr = any_struct.as_pointer()
 
 
 class LlvmGen(object):
@@ -52,7 +63,47 @@ class LlvmGen(object):
     def engine(self):
         return self._engine
 
+    def _emit_externs(self, extmap):
+        """Declare external fn and var references"""
+        for k, v in extmap.items():
+            if type(v) is ast.VarReference:
+                x = ir.GlobalVariable(self.module, any_ptr, k)
+                x.align = 8
+            else:
+                ir.Function(
+                    self.module,
+                    ir.FunctionType(
+                        any_ptr,
+                        [any_ptr] * v.argcnt if v.argcnt else []),
+                    k)
+
+    def _emit_literals(self, litmap):
+        """Declare private literal pointers"""
+        for (ok, ov) in litmap.items():
+            # If not an empty child map
+            if ov:
+                for (ik, iv) in ov.items():
+                    x = ir.GlobalVariable(self.module, any_ptr, iv.identifier)
+                    x.linkage = "private"
+                    x.align = 8
+
+    def _emit_var(self):
+        pass
+
+    def _emit_fn(self):
+        pass
+
+    def _emit_body(self):
+        pass
+
     def emit(self, ptree, wrtr):
+        # Extern declarations
+        self._emit_externs(ptree['externs'])
+        # Literals
+        self._emit_literals(ptree['literals'])
+        # Process lambdas
+        self._emit_body(ptree['lambdas'])
+        # Process body
 
         # Spit out the goods
         llvm_ir = str(self.module)

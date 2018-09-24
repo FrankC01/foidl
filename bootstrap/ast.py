@@ -83,7 +83,8 @@ class LiteralReference(FoidlReference):
 
     def __init__(self, id, token, src):
         super().set_individual(token, src)
-        self._identifier = id
+        base = self.source.split("/")[-1].split('.')[0]
+        self._identifier = base + "_" + self.literal_type + "_" + id
 
     @property
     def identifier(self):
@@ -135,8 +136,18 @@ class FuncArgReference(FoidlReference):
 class LambdaReference(FoidlReference):
     """Lambda Reference"""
 
-    def __init__(self, astmember):
+    def __init__(self, astmember, ident, acnt):
         super().__init__(astmember)
+        self._ident = ident
+        self._argcnt = acnt
+
+    @property
+    def ident(self):
+        return self._ident
+
+    @property
+    def argcnt(self):
+        return self._argcnt
 
 
 class LetArgReference(FoidlReference):
@@ -651,7 +662,10 @@ class Lambda(FoidlAst):
                 self.name.value))
         # Pop stack
         bundle.symtree.pop_scope()
-        leader.append(LambdaReference(self))
+        leader.append(LambdaReference(
+            self,
+            self.name.value,
+            len(self.arguments.value)))
 
 
 class Partial(FoidlAst):
@@ -727,6 +741,10 @@ class FunctionCall(FoidlAst):
         args = []
         for e in self.value:
             e.eval(bundle, args)
+        sym = bundle.symtree.resolve_symbol(self.call_site)
+        if sym and sym.source != self.source:
+            if not bundle.externs.get(self.call_site, None):
+                bundle.externs[self.call_site] = sym
         leader.append(
             ParseTree(
                 ExpressionType.FUNCTION_CALL,

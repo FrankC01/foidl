@@ -21,6 +21,7 @@ func two_exp [a]
 	;>=: a -: 9 10
 
 	let [x (three_arg a 2)]
-        (x 7)
+        (vexp 7 (x 7))
+        ;(x 7)
     bar:
 

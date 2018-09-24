@@ -387,15 +387,15 @@ class Diag(Comp):
 
     def _tree_walk(self, tree, indent=1):
         if type(tree) is list:
-            self.write("Walk: {}> ({}): {}".format(
+            self.write("Walk-l: {}> ({}): {}".format(
                 '-' * indent, tree[0].name, tree[0].ptype))
             ttree = tree[0]
         elif type(tree) is ast.ParseTree:
-            self.write("Walk: {}> ({}): {}".format(
+            self.write("Walk-p: {}> ({}): {}".format(
                 '-' * indent, tree.name, tree.ptype))
             ttree = tree
         else:
-            self.write("Walk: {}> {}".format(
+            self.write("Walk-?: {}> {}".format(
                 '-' * indent, tree.__class__.__name__))
             if type(tree) is dict:
                 pprint.pprint(tree)
@@ -425,12 +425,16 @@ class Diag(Comp):
         self.write("Parse Tree (body)")
         self.write("-----------------")
         self._tree_walk(self.ptree['base'])
-
         self.write('\n')
         self.write("Literals")
         self.write("--------")
         self.write(pprint.pformat(self.ptree["literals"]))
         self.write('\n')
+        self.write("Externs")
+        self.write("-------")
+        self.write(pprint.pformat(self.ptree['externs']))
+
+        # self.write('\n')
         # self.write("Symbols")
         # self.write("-------")
         # for st in self.bundle.symtree.stack:
