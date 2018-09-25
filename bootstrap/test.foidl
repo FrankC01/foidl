@@ -6,6 +6,8 @@ include foo
 
 var dt []
 
+var dt1 dt
+
 var vexp ^[a b] +: a b
 
 func bar []

@@ -681,10 +681,17 @@ class Lambda(FoidlAst):
                 pre=argref))
         # Pop stack
         bundle.symtree.pop_scope()
-        leader.append(LambdaReference(
-            self,
-            self.name.value,
-            len(self.arguments.value)))
+        # Do we convert this to a ParseTree object instead?
+        leader.append(
+            ParseTree(
+                ExpressionType.LAMBDA_REF,
+                [],
+                self.token,
+                self.name.value))
+        # leader.append(LambdaReference(
+        #     self,
+        #     self.name.value,
+        #     len(self.arguments.value)))
 
 
 class Partial(FoidlAst):

@@ -31,6 +31,8 @@ void_ptr = ir.PointerType(ir.IntType(8))
 any_struct = glbctx.get_identified_type("Any")
 any_struct.set_body(int_64, int_64, int_64, int_32, void_ptr)
 any_ptr = any_struct.as_pointer()
+any_ptr_ptr = any_ptr.as_pointer()
+null_val = ir.FormattedConstant(any_ptr, 'null')
 
 
 class LlvmGen(object):
@@ -51,6 +53,7 @@ class LlvmGen(object):
         backing_mod = self.binding.parse_assembly("")
         self._engine = self.binding.create_mcjit_compiler(
             backing_mod, target_machine)
+        self.vinits = []
 
     @property
     def binding(self):
@@ -87,10 +90,17 @@ class LlvmGen(object):
                     x = ir.GlobalVariable(self.module, any_ptr, iv.identifier)
                     x.linkage = "private"
                     x.align = 8
+                    x.initializer = null_val
 
     def _emit_var(self, pvar):
         """Emit a named variable expression"""
-        print("{} {}".format(pvar.ptype, pvar.exprs))
+        # print("{} {}".format(pvar.ptype, pvar.exprs))
+        x = ir.GlobalVariable(self.module, any_ptr, pvar.name)
+        x.linkage = "default"
+        x.align = 8
+        x.initializer = null_val
+        self.vinits.append(pvar)
+        print(pvar.exprs[0].ptype)
 
     def _fn_arg_sigs(self, pfn):
         fn = ir.Function(
@@ -114,34 +124,41 @@ class LlvmGen(object):
 
     def _emit_fn(self, pfn):
         """Emit a Function and it's expressions"""
-        self._fn_arg_sigs(pfn)
+        fn = self._fn_arg_sigs(pfn)
+        builder = ir.IRBuilder(fn.append_basic_block('entry'))
+        reta = builder.alloca(any_ptr, name="retcode")
+        nila = builder.load(builder.module.get_global("nil"))
+        builder.store(nila, reta)
+        iret = builder.load(reta)
+        builder.ret(iret)
+        # print(pfn.exprs)
 
-    def _emit_body(self, ltree):
+    def _emit_body(self, ltree, etype, emeth):
         if type(ltree) is list:
             if ltree[0].ptype is ExpressionType.MODULE:
-                [self._emit_body(n) for n in ltree[0].exprs]
-        elif type(ltree) is ast.ParseTree:
-            if ltree.ptype is ExpressionType.VARIABLE:
-                self._emit_var(ltree)
-            elif ltree.ptype is ExpressionType.FUNCTION:
-                self._emit_fn(ltree)
+                [self._emit_body(n, etype, emeth) for n in ltree[0].exprs]
+        elif ltree.ptype == etype:
+            emeth(ltree)
         else:
-            print("Unknown type")
+            pass
+            # print("Unknown type")
 
     def emit(self, ptree, wrtr):
         # Extern declarations
         self._emit_externs(ptree['externs'])
         # Literals
         self._emit_literals(ptree['literals'])
+        # Process body variables
+        self._emit_body(ptree['base'], ExpressionType.VARIABLE, self._emit_var)
         # Process lambdas
         self._emit_lambda(ptree['lambdas'])
         # Process body
-        self._emit_body(ptree['base'])
+        self._emit_body(ptree['base'], ExpressionType.FUNCTION, self._emit_fn)
         # Spit out the goods
         llvm_ir = str(self.module)
         mod = self.binding.parse_assembly(llvm_ir)
         mod.verify()
         self.engine.add_module(mod)
-        self.engine.finalize_object()
-        self.engine.run_static_constructors()
+        # self.engine.finalize_object()
+        # self.engine.run_static_constructors()
         wrtr(str(self.module))
