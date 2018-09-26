@@ -19,6 +19,7 @@ import logging
 import functools
 
 import ast
+from ptree import ParseTree
 import util
 import pprint
 from emit import LlvmGen
@@ -390,7 +391,7 @@ class Diag(Comp):
             self.write("Walk-l: {}> ({}): {}".format(
                 '-' * indent, tree[0].name, tree[0].ptype))
             ttree = tree[0]
-        elif type(tree) is ast.ParseTree:
+        elif type(tree) is ParseTree:
             self.write("Walk-p: {}> ({}): {}".format(
                 '-' * indent, tree.name, tree.ptype))
             ttree = tree

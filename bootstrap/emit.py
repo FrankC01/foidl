@@ -14,16 +14,30 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
+
 import logging
+from functools import singledispatch, update_wrapper
 from llvmlite import ir, binding
 from llvmlite.ir import global_context as glbctx
 
 import ast
+from ptree import *
 from enums import ExpressionType
 
 # from pprint import pformat
 
 LOGGER = logging.getLogger()
+
+
+def methdispatch(func):
+    dispatcher = singledispatch(func)
+
+    def wrapper(*args, **kw):
+        return dispatcher.dispatch(args[1].__class__)(*args, **kw)
+    wrapper.register = dispatcher.register
+    update_wrapper(wrapper, func)
+    return wrapper
+
 
 int_64 = ir.IntType(64)
 int_32 = ir.IntType(32)
@@ -92,6 +106,58 @@ class LlvmGen(object):
                     x.align = 8
                     x.initializer = null_val
 
+    @methdispatch
+    def _emit_et(self, el, builder, frame):
+        print("Unhandled ParseType {}".format(el.ptype))
+
+    @_emit_et.register(ParseFunction)
+    def _emit_func_type(self, el, builder, frame):
+        print("In FUNCTION type")
+
+    @_emit_et.register(ParseLambdaRef)
+    def _emit_lambdaref_type(self, el, builder, frame):
+        print("In LAMBDAREF type")
+
+    @_emit_et.register(ParseLet)
+    def _emit_let_type(self, el, builder, frame):
+        print("In LET type")
+
+    @_emit_et.register(ParseCall)
+    def _emit_call_type(self, el, builder, frame):
+        print("In CALL type")
+
+    @_emit_et.register(ParseEmpty)
+    def _emit_empty_type(self, el, builder, frame):
+        print("In EMPTY type")
+
+    @_emit_et.register(ParseSymbol)
+    def _emit_symbol_type(self, el, builder, frame):
+        print("In SYMBOL type")
+
+    @_emit_et.register(ParseLiteral)
+    def _emit_literal_type(self, el, builder, frame):
+        print("In LITERAL type {}", el.name)
+
+    @methdispatch
+    def _emit_type(self, el, builder, frame):
+        print("Unhandled type {}".format(el))
+
+    @_emit_type.register(ast.FoidlReference)
+    def _er(self, el, builder, frame):
+        print(" _emit_rtype el {}".format(el))
+
+    @_emit_type.register(ParseTree)
+    def _ep(self, el, builder, frame):
+        self._emit_et(el, builder, frame)
+
+    def _emit_proc(self, pvar, frame):
+        if hasattr(pvar, 'ptype'):
+            print(" _emit_proc pvar {}".format(pvar.ptype))
+            for p in pvar.exprs:
+                self._emit_proc(p, frame)
+        else:
+            print(" _emti_proc other {}".format(pvar))
+
     def _emit_var(self, pvar):
         """Emit a named variable expression"""
         # print("{} {}".format(pvar.ptype, pvar.exprs))
@@ -100,7 +166,7 @@ class LlvmGen(object):
         x.align = 8
         x.initializer = null_val
         self.vinits.append(pvar)
-        print(pvar.exprs[0].ptype)
+        # print(frame)
 
     def _fn_arg_sigs(self, pfn):
         fn = ir.Function(
@@ -127,6 +193,10 @@ class LlvmGen(object):
         fn = self._fn_arg_sigs(pfn)
         builder = ir.IRBuilder(fn.append_basic_block('entry'))
         reta = builder.alloca(any_ptr, name="retcode")
+        frame = []
+        print("Processing {}".format(pfn.name))
+        for t in pfn.exprs:
+            self._emit_type(t, builder, frame)
         nila = builder.load(builder.module.get_global("nil"))
         builder.store(nila, reta)
         iret = builder.load(reta)

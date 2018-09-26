@@ -18,44 +18,10 @@ import logging
 from rply import Token
 import errors
 from enums import WellKnowns, CollTypes, ExpressionType
+from ptree import *
 from abc import ABC, abstractmethod
 
 LOGGER = logging.getLogger()
-
-
-class ParseTree(object):
-
-    def __init__(self, ptype, exprs, loc=None, name=None, res=None, pre=None):
-        self._ptype = ptype
-        self._exprs = exprs
-        self._loc = loc if type(loc) is not Token else loc.getsourcepos()
-        self._name = name if name else "unknown"
-        self._res = res
-        self._pre = pre if pre else []
-
-    @property
-    def ptype(self):
-        return self._ptype
-
-    @property
-    def exprs(self):
-        return self._exprs
-
-    @property
-    def loc(self):
-        return self._loc
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def res(self):
-        return self._res
-
-    @property
-    def pre(self):
-        return self._pre
 
 
 class FoidlReference(ABC):
@@ -100,7 +66,7 @@ class LiteralReference(FoidlReference):
 
     def eval(self, bundle, leader):
         leader.append(
-            ParseTree(
+            ParseLiteral(
                 ExpressionType.LITERAL,
                 [self],
                 self.token,
@@ -393,7 +359,7 @@ class Function(FoidlAst):
                 LOGGER.info("Processing {}".format(e))
                 e.eval(bundle, expr)
         leader.append(
-            ParseTree(
+            ParseFunction(
                 ExpressionType.FUNCTION,
                 expr,
                 self.token,
@@ -460,7 +426,7 @@ class EmptyCollection(CollectionAst):
             e.eval(bundle, members)
 
         leader.append(
-            ParseTree(
+            ParseEmpty(
                 ExpressionType.EMPTY_COLLECTION,
                 members,
                 self.token,
@@ -631,7 +597,7 @@ class Let(FoidlAst):
         # Register id
         # Set let in leader
         leader.append(
-            ParseTree(
+            ParseLet(
                 ExpressionType.LET,
                 expr,
                 self.token,
@@ -673,7 +639,7 @@ class Lambda(FoidlAst):
         for e in self.value:
             e.eval(bundle, expr)
         bundle.lambdas.append(
-            ParseTree(
+            ParseLambda(
                 ExpressionType.LAMBDA,
                 expr,
                 self.token,
@@ -683,7 +649,7 @@ class Lambda(FoidlAst):
         bundle.symtree.pop_scope()
         # Do we convert this to a ParseTree object instead?
         leader.append(
-            ParseTree(
+            ParseLambdaRef(
                 ExpressionType.LAMBDA_REF,
                 [],
                 self.token,
@@ -772,7 +738,7 @@ class FunctionCall(FoidlAst):
             if not bundle.externs.get(self.call_site, None):
                 bundle.externs[self.call_site] = sym
         leader.append(
-            ParseTree(
+            ParseCall(
                 ExpressionType.FUNCTION_CALL,
                 args,
                 self.token,
@@ -800,7 +766,7 @@ class Symbol(FoidlAst):
             if self.source != sym.source:
                 if not bundle.externs.get(self.name, None):
                     bundle.externs[self.name] = sym
-            leader.append(ParseTree(
+            leader.append(ParseSymbol(
                 ExpressionType.SYMBOL_REF,
                 [sym],
                 self.token,
