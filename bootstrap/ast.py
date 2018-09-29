@@ -15,13 +15,26 @@
 # ------------------------------------------------------------------------------
 
 import logging
+from abc import ABC, abstractmethod
+from functools import singledispatch, update_wrapper
+
 from rply import Token
+
 import errors
 from enums import WellKnowns, CollTypes, ExpressionType
 from ptree import *
-from abc import ABC, abstractmethod
 
 LOGGER = logging.getLogger()
+
+
+def methdispatch(func):
+    dispatcher = singledispatch(func)
+
+    def wrapper(*args, **kw):
+        return dispatcher.dispatch(args[1].__class__)(*args, **kw)
+    wrapper.register = dispatcher.register
+    update_wrapper(wrapper, func)
+    return wrapper
 
 
 class FoidlReference(ABC):
@@ -57,6 +70,10 @@ class LiteralReference(FoidlReference):
         return self._identifier
 
     @property
+    def name(self):
+        return self.identifier
+
+    @property
     def value(self):
         return self.token.getstr()
 
@@ -76,20 +93,39 @@ class LiteralReference(FoidlReference):
 class VarReference(FoidlReference):
     """Variable Symbol Reference"""
 
-    def __init__(self, astmember):
+    def __init__(self, astmember, nm):
         super().__init__(astmember)
+        self._name = nm
+        self._exprs = None
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def exprs(self):
+        return self._exprs
+
+    @exprs.setter
+    def exprs(self, exprs):
+        self._exprs = exprs
 
 
 class FuncReference(FoidlReference):
     """FuncReference informs name, intern/extern, args"""
 
-    def __init__(self, astmember, argcnt):
+    def __init__(self, astmember, name, argcnt):
         super().__init__(astmember)
         self._argcnt = argcnt
+        self._name = name
 
     @property
     def argcnt(self):
         return self._argcnt
+
+    @property
+    def name(self):
+        return self._name
 
 
 class FuncArgReference(FoidlReference):
@@ -175,6 +211,20 @@ class FoidlAst(ABC):
     def eval(self, bundle, leader):
         pass
 
+    def extern_symbol(self, cname, bundle, source):
+        sym = bundle.symtree.resolve_symbol(cname)
+        if sym:
+            if sym.source != self.source:
+                if not bundle.externs.get(cname, None):
+                    bundle.externs[cname] = sym
+            return sym
+        else:
+            raise errors.SymbolException(
+                "{}:{} unresolved symbol {}".format(
+                    self.token.getsourcepos().lineno,
+                    self.token.getsourcepos().colno,
+                    self.name))
+
 
 class CompilationUnit(FoidlAst):
     """Scoped AST compilation unit value"""
@@ -251,22 +301,29 @@ class VarHeader(FoidlAst):
     def __init__(self, vname, token, src):
         super().__init__(token, src)
         self._name = vname
+        self._reference = None
 
     @property
     def name(self):
         return self._name
 
+    @property
+    def reference(self):
+        return self._reference
+
     def get_reference(self):
-        return VarReference(self)
+        self._reference = VarReference(self, self.name.value)
+        return self._reference
 
     def eval(self, bundle, leader):
         pass
 
 
 class Variable(FoidlAst):
-    def __init__(self, vname, value, token, src):
+    def __init__(self, vhdr, value, token, src):
         super().__init__(token, src)
-        self._name = vname
+        self._name = vhdr.name
+        self._vref = vhdr.reference
         if type(value[0]) is list:
             value = value[0]
         if len(value) != 1:
@@ -289,6 +346,7 @@ class Variable(FoidlAst):
         # Eval children
         for e in self.value:
             e.eval(bundle, expr)
+        self._vref.exprs = expr
         leader.append(
             ParseTree(
                 ExpressionType.VARIABLE,
@@ -312,7 +370,7 @@ class FuncHeader(FoidlAst):
         return self._arguments
 
     def get_reference(self):
-        return FuncReference(self, self.arguments.elements())
+        return FuncReference(self, self.name.value, self.arguments.elements())
 
     def eval(self, bundle, leader):
         pass
@@ -647,11 +705,10 @@ class Lambda(FoidlAst):
                 pre=argref))
         # Pop stack
         bundle.symtree.pop_scope()
-        # Do we convert this to a ParseTree object instead?
         leader.append(
             ParseLambdaRef(
                 ExpressionType.LAMBDA_REF,
-                [],
+                argref,
                 self.token,
                 self.name.value))
         # leader.append(LambdaReference(
@@ -661,30 +718,94 @@ class Lambda(FoidlAst):
 
 
 class Partial(FoidlAst):
+    _invalid_types = [ParseLiteral]
+
     def __init__(self, value, token, src):
         super().__init__(token, src)
         self.value = value
         sp = token.getsourcepos()
         self.name = "partial_" + str(sp.lineno) + "_" + str(sp.colno)
 
-    # Not sure how to determine if it is declaration or usage
-    def eval(self, bundle, leader):
-        partial = []
-        for e in self.value:
-            e.eval(bundle, partial)
-        # Check for complete arg which lifts this to a
-        # function call?
-        if partial[0].ptype is ExpressionType.SYMBOL_REF and \
-                type(partial[0].exprs[0]) is FuncReference:
-                etype = ExpressionType.PARTIAL_DECL
+    def _partial_ok(self, parray):
+        if type(parray[0]) is not ParseSymbol:
+            raise errors.SymbolException(
+                "Partial does not expect type {} in first position".format(
+                    parray[0]))
+        p0expr = parray[0].exprs[0]
+        if type(p0expr) is VarReference:
+            check = p0expr.exprs[0]
+            if type(check) is ParseSymbol:
+                check = check.exprs[0]
         else:
-            etype = ExpressionType.PARTIAL_INVK
+            check = p0expr
+
+        if type(check) in self._invalid_types:
+            raise errors.SymbolException(
+                "Partial not well formed with literal first arg")
+        return check
+
+    def _eval_call(self, name, args, bundle, leader):
+        """Optimized partial to functionc call"""
         leader.append(
-            ParseTree(
-                etype,
-                partial,
+            ParseCall(
+                ExpressionType.FUNCTION_CALL,
+                args,
                 self.token,
-                self.name))
+                name))
+
+    def _eval_decl(self, ktype, args, bundle, leader):
+        """Partial declaration"""
+        leader.append(
+            ParsePartialDecl(
+                ExpressionType.PARTIAL_DECL,
+                args,
+                self.token,
+                self.name,
+                pre=ktype))
+
+    def _eval_invk(self, ktype, args, bundle, leader):
+        """Partial invocation"""
+        leader.append(
+            ParsePartialInvk(
+                ExpressionType.PARTIAL_INVK,
+                args,
+                self.token,
+                self.name,
+                pre=ktype))
+
+    @methdispatch
+    def _eval_partial(self, ktype, array, bundle, leader):
+        print("_eval_partial unhandled {}".format(ktype))
+
+    @_eval_partial.register(FuncReference)
+    def _epfr(self, ktype, array, bundle, leader):
+        """Evaluate function reference and optimize to call"""
+        argcnt = len(array)
+        if ktype.argcnt == argcnt:
+            self._eval_call(ktype.name, array, bundle, leader)
+        else:
+            self._eval_decl(ktype, array, bundle, leader)
+
+    @_eval_partial.register(ParseLambdaRef)
+    def _eplr(self, ktype, array, bundle, leader):
+        """Evaluate lambda reference and optimize to call"""
+        argcnt = len(array)
+        if len(ktype.exprs) == argcnt:
+            self._eval_call(ktype.name, array, bundle, leader)
+        else:
+            self._eval_decl(ktype, array, bundle, leader)
+
+    @_eval_partial.register(FuncArgReference)
+    def _epfar(self, ktype, array, bundle, leader):
+        """Assume a partial invocation"""
+        self._eval_invk(ktype, array, bundle, leader)
+
+    def eval(self, bundle, leader):
+        exprs = []
+        for e in self.value:
+            e.eval(bundle, exprs)
+        first = self._partial_ok(exprs)
+        self._eval_partial(first, exprs[1:], bundle, leader)
 
 
 class If(FoidlAst):
@@ -761,6 +882,7 @@ class Symbol(FoidlAst):
     def eval(self, bundle, leader):
         LOGGER.info("Symbol processing for {}".format(self.name))
         LOGGER.info(self.name)
+        # sym = self.extern_symbol(cname, call_site.name, self.source)
         sym = bundle.symtree.resolve_symbol(self.name)
         if sym:
             if self.source != sym.source:

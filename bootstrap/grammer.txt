@@ -33,6 +33,13 @@ expression =: literal
 func_call =: func_prefix expression {expression}
 func_prefix =: symbol_type ":"
 
+; Partials are interesting:
+; 1. If the symbol type is func reference and argument counts align, then it becomes a call
+; 2. If the symbol type is func reference and arg count in partial is less, it's a partial declaration
+; 3. If the symbol type is lambda reference and argument counts align, then it becomes a call
+; 4. If the symbol type is lambda reference and arg count in partial is less, it's a partial declaration
+; 5. Otherwise they are partial invocations
+
 partial_expr =: "(" (func_prefix | symbol_type) {expression} ")"
 
 group_expr =: "@(" expression {expression} ")"

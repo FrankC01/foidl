@@ -84,6 +84,20 @@ def _literal_entry(literals, token, srcstr):
     return litref
 
 
+def math_func(token):
+    s = token.getstr()
+    if s == "+":
+        return "add"
+    elif s == "*":
+        return "mul"
+    elif s == "/":
+        return "div"
+    elif s == "-":
+        return "sub"
+    else:
+        raise ParseError("{} not recognized as math operator".format(s))
+
+
 class Parser():
     def __init__(self, mlexer, input):
         # A list of all token names accepted by the parser.
@@ -140,7 +154,7 @@ class Parser():
         def v_decl(state, p):
             t = p.pop(0)
             if type(t) == ast.VarHeader:
-                return ast.Variable(t.name, p, t.token, self.input)
+                return ast.Variable(t, p, t.token, self.input)
             else:
                 return ast.Function(t, p, self.input)
 
@@ -394,6 +408,13 @@ class Parser():
         @self.pg.production('literal : KEYWORD')
         def literal(state, p):
             return _literal_entry(state.literals, p[0], self.input)
+
+        @self.pg.production('symbol_type : ADD_REF')
+        @self.pg.production('symbol_type : SUB_REF')
+        @self.pg.production('symbol_type : MUL_REF')
+        @self.pg.production('symbol_type : DIV_REF')
+        def mathref_type(state, p):
+            return ast.Symbol(math_func(p[0]), p[0], self.input)
 
         @self.pg.production('symbol_type : SYMBOL')
         @self.pg.production('symbol_type : SYMBOL_BANG')

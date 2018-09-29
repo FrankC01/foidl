@@ -65,6 +65,14 @@ class ParseLambda(ParseTree):
     pass
 
 
+class ParsePartialDecl(ParseTree):
+    pass
+
+
+class ParsePartialInvk(ParseTree):
+    pass
+
+
 class ParseLambdaRef(ParseTree):
     pass
 

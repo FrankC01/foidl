@@ -17,12 +17,15 @@
 
 import logging
 from functools import singledispatch, update_wrapper
+
 from llvmlite import ir, binding
 from llvmlite.ir import global_context as glbctx
 
 import ast
 from ptree import *
+# from util import methdispatch
 from enums import ExpressionType
+from errors import EmitNotImplementedError
 
 # from pprint import pformat
 
@@ -47,6 +50,12 @@ any_struct.set_body(int_64, int_64, int_64, int_32, void_ptr)
 any_ptr = any_struct.as_pointer()
 any_ptr_ptr = any_ptr.as_pointer()
 null_val = ir.FormattedConstant(any_ptr, 'null')
+
+supps = [
+    ("foidl_reg_int", [int_64]),
+    ("foidl_tofuncref", [void_ptr, any_ptr]),
+    ("foidl_imbue", [any_ptr, any_ptr]),
+    ("foidl_fref_instance", [any_ptr])]
 
 
 class LlvmGen(object):
@@ -94,6 +103,14 @@ class LlvmGen(object):
                         any_ptr,
                         [any_ptr] * v.argcnt if v.argcnt else []),
                     k)
+        # Do pre-defines
+
+        def suppl_gen(name, args):
+            ir.Function(
+                self.module,
+                ir.FunctionType(any_ptr, args),
+                name)
+        [suppl_gen(nm, a) for nm, a in supps]
 
     def _emit_literals(self, litmap):
         """Declare private literal pointers"""
@@ -106,37 +123,114 @@ class LlvmGen(object):
                     x.align = 8
                     x.initializer = null_val
 
+    # Emit expression types
+
     @methdispatch
     def _emit_et(self, el, builder, frame):
-        print("Unhandled ParseType {}".format(el.ptype))
-
-    @_emit_et.register(ParseFunction)
-    def _emit_func_type(self, el, builder, frame):
-        print("In FUNCTION type")
+        """Process default when a ParseTree type not handled"""
+        if isinstance(el, ParseTree):
+            print("Unhandled type {}".format(el.ptype))
+        else:
+            print("Unhandled type {}".format(el))
+        raise EmitNotImplementedError
 
     @_emit_et.register(ParseLambdaRef)
     def _emit_lambdaref_type(self, el, builder, frame):
-        print("In LAMBDAREF type")
+        print("In LAMBDAREF type {} {}".format(el.name, el.exprs))
+        fn = builder.module.get_global(el.name)
+        mcnt = builder.call(
+            builder.module.get_global("foidl_reg_int"),
+            [ir.Constant(int_64, len(el.exprs))])
+        fref = builder.call(
+            builder.module.get_global("foidl_tofuncref"),
+            [builder.bitcast(fn, void_ptr), mcnt])
+        frame.append(fref)
+        # raise EmitNotImplementedError
 
     @_emit_et.register(ParseLet)
     def _emit_let_type(self, el, builder, frame):
         print("In LET type")
+        raise EmitNotImplementedError
 
     @_emit_et.register(ParseCall)
     def _emit_call_type(self, el, builder, frame):
-        print("In CALL type")
+        fn = builder.module.get_global(el.name)
+        args = []
+        for a in el.exprs:
+            self._emit_et(a, builder, args)
+        # print(args)
+        frame.append(builder.call(fn, args))
+
+    @_emit_et.register(ParsePartialDecl)
+    def _emit_partial_decl_type(self, el, builder, frame):
+        fn = builder.module.get_global(el.pre.name)
+        # Get the full argument count from function
+        mcnt = builder.call(
+            builder.module.get_global("foidl_reg_int"),
+            [ir.Constant(int_64, len(fn.args))])
+        fref = builder.call(
+            builder.module.get_global("foidl_tofuncref"),
+            [builder.bitcast(fn, void_ptr), mcnt])
+        for i in el.exprs:
+            myarg = [fref]
+            self._emit_et(i, builder, myarg)
+            last = builder.call(
+                builder.module.get_global("foidl_imbue"),
+                myarg)
+        frame.append(last)
+
+    @_emit_et.register(ParsePartialInvk)
+    def _emit_partial_invk_type(self, el, builder, frame):
+        # Get the full argument count from function
+        fpre = []
+        self._emit_et(el.pre, builder, fpre)
+        fref = builder.call(
+            builder.module.get_global("foidl_fref_instance"),
+            fpre)
+        for i in el.exprs:
+            myarg = [fref]
+            self._emit_et(i, builder, myarg)
+            last = builder.call(
+                builder.module.get_global("foidl_imbue"),
+                myarg)
+        frame.append(last)
 
     @_emit_et.register(ParseEmpty)
     def _emit_empty_type(self, el, builder, frame):
-        print("In EMPTY type")
+        self._emit_et(el.exprs[0], builder, frame)
+
+    @_emit_et.register(ast.VarReference)
+    def _emit_varref_type(self, el, builder, frame):
+        if not el.exprs:
+            frame.append(builder.load(builder.module.get_global(el.name)))
+        else:
+            self._emit_et(el.exprs[0], builder, frame)
+
+    @_emit_et.register(ast.FuncArgReference)
+    def _emit_funcargref_type(self, el, builder, frame):
+        """Emit function argument reference"""
+        frame.append(builder.function.args[el.argpos])
+
+    @_emit_et.register(ast.FuncReference)
+    def _emit_funcref_type(self, el, builder, frame):
+        """Emit reference to function"""
+        fn = builder.module.get_global(el.name)
+        mcnt = builder.call(
+            builder.module.get_global("foidl_reg_int"),
+            [ir.Constant(int_64, el.argcnt)])
+        fref = builder.call(
+            builder.module.get_global("foidl_tofuncref"),
+            [builder.bitcast(fn, void_ptr), mcnt])
+        frame.append(fref)
 
     @_emit_et.register(ParseSymbol)
     def _emit_symbol_type(self, el, builder, frame):
-        print("In SYMBOL type")
+        # print("Symbol {}".format(el.exprs[0]))
+        self._emit_et(el.exprs[0], builder, frame)
 
     @_emit_et.register(ParseLiteral)
     def _emit_literal_type(self, el, builder, frame):
-        print("In LITERAL type {}", el.name)
+        frame.append(builder.load(builder.module.get_global(el.exprs[0].name)))
 
     @methdispatch
     def _emit_type(self, el, builder, frame):
@@ -149,14 +243,6 @@ class LlvmGen(object):
     @_emit_type.register(ParseTree)
     def _ep(self, el, builder, frame):
         self._emit_et(el, builder, frame)
-
-    def _emit_proc(self, pvar, frame):
-        if hasattr(pvar, 'ptype'):
-            print(" _emit_proc pvar {}".format(pvar.ptype))
-            for p in pvar.exprs:
-                self._emit_proc(p, frame)
-        else:
-            print(" _emti_proc other {}".format(pvar))
 
     def _emit_var(self, pvar):
         """Emit a named variable expression"""
@@ -186,7 +272,8 @@ class LlvmGen(object):
         if type(ltree) is list:
             [self._emit_lambda(n) for n in ltree]
         else:
-            self._fn_arg_sigs(ltree)
+            self._emit_fn(ltree)
+            # self._fn_arg_sigs(ltree)
 
     def _emit_fn(self, pfn):
         """Emit a Function and it's expressions"""
@@ -194,14 +281,12 @@ class LlvmGen(object):
         builder = ir.IRBuilder(fn.append_basic_block('entry'))
         reta = builder.alloca(any_ptr, name="retcode")
         frame = []
-        print("Processing {}".format(pfn.name))
         for t in pfn.exprs:
             self._emit_type(t, builder, frame)
-        nila = builder.load(builder.module.get_global("nil"))
-        builder.store(nila, reta)
+        last = frame[-1]
+        builder.store(last, reta)
         iret = builder.load(reta)
         builder.ret(iret)
-        # print(pfn.exprs)
 
     def _emit_body(self, ltree, etype, emeth):
         if type(ltree) is list:

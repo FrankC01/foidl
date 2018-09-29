@@ -4,26 +4,26 @@ module test
 
 include foo
 
-var dt []
+var ml ^[a b] +: a b
 
-var dt1 dt
+var madd +
 
-var vexp ^[a b] +: a b
+var arb 7
 
-func bar []
+func litret [fn]  ; Return an literal
 
-func three_arg [a b c]
+func tadd [a b]
 
-func myset [] #{}
+    ; Optimized direct partials
+    (+ 1 2)
+    ; Optimized indirect partials
+    (madd 1 2)
+    (ml 1 (madd 1 2))
 
-func two_exp [a]
-	;not=: a b
-	;=: a *: 1 +: 6 7
+    ; Partial declarations (direct, indirect)
+    (+ 1)
+    (ml 1)
 
-	;>=: a -: 9 10
-
-	let [x (three_arg a 2)]
-        (vexp 7 (x 7))
-        ;(x 7)
-    bar:
+    ; Partial invocations
+    (a 2)
 

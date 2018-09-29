@@ -41,3 +41,7 @@ class FunctionCall(PFoidlError):
 
 class ParseError(PFoidlError):
     pass
+
+
+class EmitNotImplementedError(PFoidlError):
+    pass
