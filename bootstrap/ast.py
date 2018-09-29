@@ -167,6 +167,29 @@ class LetArgReference(FoidlReference):
 
     def __init__(self, astmember):
         super().__init__(astmember)
+        self._name = astmember.value
+        self._ident = None
+        self._ptr = None
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def ident(self):
+        return self._ident
+
+    @ident.setter
+    def ident(self, ident):
+        self._ident = ident
+
+    @property
+    def ptr(self):
+        return self._ptr
+
+    @ptr.setter
+    def ptr(self, pointer):
+        self._ptr = pointer
 
 
 class LetResReference(FoidlReference):
@@ -174,11 +197,20 @@ class LetResReference(FoidlReference):
 
     def __init__(self, astmember):
         super().__init__(astmember)
+        self._name = astmember.name
+        self._ident = None
 
-    def eval(self, bundle, leader):
-        leader.append({
-            "type": 'let_result',
-            "expr": [self]})
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def ident(self):
+        return self._ident
+
+    @ident.setter
+    def ident(self, ident):
+        self._ident = ident
 
 
 class MatchResReference(FoidlReference):
@@ -542,34 +574,65 @@ class Expression(FoidlAst):
 
 
 class Group(FoidlAst):
-    def __init__(self, value):
+    def __init__(self, value, token, src):
+        super().__init__(token, src)
+        self._ident = "grp_" \
+            + str(token.getsourcepos().lineno) \
+            + "_" + str(token.getsourcepos().colno)
         self.value = value
 
+    @property
+    def ident(self):
+        return self._ident
+
     def eval(self, bundle, leader):
-        print("Group value {}".format(self.value))
+        bundle.symtree.push_scope(self.ident, self.ident)
+
+        exprs = []
         for e in self.value:
-            e.eval(bundle, leader)
+            e.eval(bundle, exprs)
+        bundle.symtree.pop_scope()
+        if exprs:
+            leader.append(
+                ParseGroup(
+                    ExpressionType.GROUP,
+                    exprs,
+                    self.token,
+                    self.ident))
 
 
 class LetPairs(CollectionAst):
     def __init__(self, value):
         self.value = value
+        self._prefix = None
 
     def elements(self):
         return len(self.value)
+
+    @property
+    def prefix(self):
+        return self._prefix
+
+    @prefix.setter
+    def prefix(self, prefix):
+        self._prefix = prefix
 
     def eval(self, bundle, leader):
         # Put symbols in table and evaluate expression
         for i, j in zip(*[iter(self.value)] * 2):
             expr = []
             j.eval(bundle, expr)
+            ident = self.prefix + "_" + i.value
+            print(i)
             lar = LetArgReference(i)
+            lar.ident = ident
             bundle.symtree.register_symbol(i.value, lar)
             leader.append(
-                ParseTree(
+                ParseLetPair(
                     ExpressionType.LET_ARG_PAIR,
                     expr,
-                    name=i.value))
+                    res=lar,
+                    name=ident))
 
 
 class Let(FoidlAst):
@@ -640,9 +703,12 @@ class Let(FoidlAst):
 
     def eval(self, bundle, leader):
         bundle.symtree.push_scope(self._id, self._id)
+        unique_id = "let_" + str(self.token.getsourcepos().lineno) \
+            + "_" + str(self.token.getsourcepos().colno)
         # Push Let scope on bundle
         # Register any letpair vars in table
         preblock = []
+        self._letpairs.prefix = unique_id
         self._letpairs.eval(bundle, preblock)
         # Process
         expr = []
@@ -651,16 +717,19 @@ class Let(FoidlAst):
         # Pop scope
         bundle.symtree.pop_scope()
         lres = LetResReference(self._id)
-        bundle.symtree.register_symbol(self._id.value, lres)
+        lres.ident = "letres_" + str(self.token.getsourcepos().lineno) \
+            + "_" + str(self.token.getsourcepos().colno)
         # Register id
+        bundle.symtree.register_symbol(self._id.value, lres)
         # Set let in leader
         leader.append(
             ParseLet(
                 ExpressionType.LET,
                 expr,
                 self.token,
-                self._id.value,
-                ParseTree(ExpressionType.LET_RES, lres),
+                # self._id.value,
+                unique_id,
+                lres,
                 preblock))
 
 
@@ -696,6 +765,7 @@ class Lambda(FoidlAst):
         expr = []
         for e in self.value:
             e.eval(bundle, expr)
+        # Append Body
         bundle.lambdas.append(
             ParseLambda(
                 ExpressionType.LAMBDA,
@@ -705,16 +775,13 @@ class Lambda(FoidlAst):
                 pre=argref))
         # Pop stack
         bundle.symtree.pop_scope()
+        # Append Reference
         leader.append(
             ParseLambdaRef(
                 ExpressionType.LAMBDA_REF,
                 argref,
                 self.token,
                 self.name.value))
-        # leader.append(LambdaReference(
-        #     self,
-        #     self.name.value,
-        #     len(self.arguments.value)))
 
 
 class Partial(FoidlAst):

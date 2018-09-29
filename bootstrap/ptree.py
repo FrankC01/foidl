@@ -69,6 +69,10 @@ class ParsePartialDecl(ParseTree):
     pass
 
 
+class ParseGroup(ParseTree):
+    pass
+
+
 class ParsePartialInvk(ParseTree):
     pass
 
@@ -78,6 +82,10 @@ class ParseLambdaRef(ParseTree):
 
 
 class ParseLet(ParseTree):
+    pass
+
+
+class ParseLetPair(ParseTree):
     pass
 
 

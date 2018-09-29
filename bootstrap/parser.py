@@ -294,11 +294,11 @@ class Parser():
         def group(state, p):
             """Group parse for zero or more expressions"""
             if len(p) < 3:
-                return ast.Group([])
+                return ast.Group([], p[0], self.input)
             else:
                 del p[2]
-                del p[0]
-                return ast.Group(p)
+                t = p.pop(0)
+                return ast.Group(p, t, self.input)
 
         @self.pg.production(
             'letexpr : LET LBRACKET RBRACKET single_expr')

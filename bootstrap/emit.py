@@ -149,8 +149,30 @@ class LlvmGen(object):
 
     @_emit_et.register(ParseLet)
     def _emit_let_type(self, el, builder, frame):
-        print("In LET type")
-        raise EmitNotImplementedError
+        # Establish return value
+        reta = builder.alloca(any_ptr, name=el.res.ident)
+        lpair = []
+        # Establish letpairs
+        for lp in el.pre:
+            self._emit_et(lp, builder, lpair)
+        # Evaluate body
+        expr = []
+        for e in el.exprs:
+            self._emit_et(e, builder, expr)
+        # Set return value
+        builder.store(expr[-1], reta)
+        # Load return value
+        frame.append(builder.load(reta))
+
+    @_emit_et.register(ParseLetPair)
+    def _emit_letpair_type(self, el, builder, frame):
+        print("LetPair res {} exprs {}".format(el.res.ident, el.exprs))
+        arg = builder.alloca(any_ptr, name=el.res.ident)
+        el.res.ptr = arg
+        expr = []
+        for e in el.exprs:
+            self._emit_et(e, builder, expr)
+        builder.store(expr[-1], arg)
 
     @_emit_et.register(ParseCall)
     def _emit_call_type(self, el, builder, frame):
@@ -195,6 +217,16 @@ class LlvmGen(object):
                 myarg)
         frame.append(last)
 
+    @_emit_et.register(ParseGroup)
+    def _emit_group(self, el, builder, frame):
+        """Build a group of expressions"""
+        reta = builder.alloca(any_ptr, name=el.name + "_retcode")
+        expr = []
+        for i in el.exprs:
+            self._emit_et(i, builder, expr)
+        builder.store(expr[-1], reta)
+        frame.append(builder.load(reta))
+
     @_emit_et.register(ParseEmpty)
     def _emit_empty_type(self, el, builder, frame):
         self._emit_et(el.exprs[0], builder, frame)
@@ -210,6 +242,11 @@ class LlvmGen(object):
     def _emit_funcargref_type(self, el, builder, frame):
         """Emit function argument reference"""
         frame.append(builder.function.args[el.argpos])
+
+    @_emit_et.register(ast.LetArgReference)
+    def _emit_letargref_type(self, el, builder, frame):
+        """Emit function argument reference"""
+        frame.append(builder.load(el.ptr))
 
     @_emit_et.register(ast.FuncReference)
     def _emit_funcref_type(self, el, builder, frame):
@@ -280,11 +317,13 @@ class LlvmGen(object):
         fn = self._fn_arg_sigs(pfn)
         builder = ir.IRBuilder(fn.append_basic_block('entry'))
         reta = builder.alloca(any_ptr, name="retcode")
+        # exit_block = fn.append_basic_block("exit")
         frame = []
         for t in pfn.exprs:
             self._emit_type(t, builder, frame)
-        last = frame[-1]
-        builder.store(last, reta)
+        # builder.position_at_end(exit_block)
+        if frame:
+            builder.store(frame[-1], reta)
         iret = builder.load(reta)
         builder.ret(iret)
 
