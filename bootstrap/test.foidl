@@ -10,7 +10,7 @@ var madd +
 
 var arb 7
 
-func litret [fn]  ; Return an literal
+func tnilret [fn]  ; Return an literal
 
 func tpartial [a b]
 
@@ -35,3 +35,9 @@ func tgroup []
 
 func tlet []
     let a [b 5] +: 1 b
+    +: 7 a
+
+func tif []
+    ?: =: tgroup: 1
+        true
+        false

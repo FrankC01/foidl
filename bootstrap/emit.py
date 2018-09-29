@@ -16,6 +16,7 @@
 
 
 import logging
+import traceback
 from functools import singledispatch, update_wrapper
 
 from llvmlite import ir, binding
@@ -55,7 +56,8 @@ supps = [
     ("foidl_reg_int", [int_64]),
     ("foidl_tofuncref", [void_ptr, any_ptr]),
     ("foidl_imbue", [any_ptr, any_ptr]),
-    ("foidl_fref_instance", [any_ptr])]
+    ("foidl_fref_instance", [any_ptr]),
+    ("foidl_truthy_qmark", [any_ptr])]
 
 
 class LlvmGen(object):
@@ -151,6 +153,7 @@ class LlvmGen(object):
     def _emit_let_type(self, el, builder, frame):
         # Establish return value
         reta = builder.alloca(any_ptr, name=el.res.ident)
+        el.res.ptr = reta
         lpair = []
         # Establish letpairs
         for lp in el.pre:
@@ -166,13 +169,40 @@ class LlvmGen(object):
 
     @_emit_et.register(ParseLetPair)
     def _emit_letpair_type(self, el, builder, frame):
-        print("LetPair res {} exprs {}".format(el.res.ident, el.exprs))
         arg = builder.alloca(any_ptr, name=el.res.ident)
         el.res.ptr = arg
         expr = []
         for e in el.exprs:
             self._emit_et(e, builder, expr)
         builder.store(expr[-1], arg)
+
+    @_emit_et.register(ParseIf)
+    def _emit_if_type(self, el, builder, frame):
+        print("If id {} result {}".format(el.name, el.res))
+        print(" pred {} then {} else {}".format(
+            el.pre, el.exprs[0], el.exprs[1]))
+        result = builder.alloca(any_ptr, name=el.res)
+        bt = builder.load(builder.module.get_global("true"))
+        # Build predicate for testing
+        pr = []
+        self._emit_et(el.pre[0], builder, pr)
+        pr_res = builder.call(
+            builder.module.get_global("foidl_truthy_qmark"),
+            pr)
+        cmp = builder.icmp_unsigned("==", pr_res, bt)
+        # with builder.if_then(cmp):
+        #     pt = []
+        #     self._emit_et(el.exprs[0], builder, pt)
+        with builder.if_else(cmp) as (istrue, isfalse):
+            with istrue:
+                pt = []
+                self._emit_et(el.exprs[0], builder, pt)
+                builder.store(pt[-1], result)
+            with isfalse:
+                pt = []
+                self._emit_et(el.exprs[1], builder, pt)
+                builder.store(pt[-1], result)
+        frame.append(builder.load(result))
 
     @_emit_et.register(ParseCall)
     def _emit_call_type(self, el, builder, frame):
@@ -242,6 +272,12 @@ class LlvmGen(object):
     def _emit_funcargref_type(self, el, builder, frame):
         """Emit function argument reference"""
         frame.append(builder.function.args[el.argpos])
+
+    @_emit_et.register(ast.LetResReference)
+    def _emit_letresref_type(self, el, builder, frame):
+        """Emit function argument reference"""
+        # traceback.print_stack()
+        frame.append(builder.load(el.ptr))
 
     @_emit_et.register(ast.LetArgReference)
     def _emit_letargref_type(self, el, builder, frame):

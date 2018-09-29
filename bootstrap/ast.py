@@ -199,6 +199,7 @@ class LetResReference(FoidlReference):
         super().__init__(astmember)
         self._name = astmember.name
         self._ident = None
+        self._ptr = None
 
     @property
     def name(self):
@@ -211,6 +212,14 @@ class LetResReference(FoidlReference):
     @ident.setter
     def ident(self, ident):
         self._ident = ident
+
+    @property
+    def ptr(self):
+        return self._ptr
+
+    @ptr.setter
+    def ptr(self, pointer):
+        self._ptr = pointer
 
 
 class MatchResReference(FoidlReference):
@@ -878,12 +887,33 @@ class Partial(FoidlAst):
 class If(FoidlAst):
     def __init__(self, value, token, src):
         super().__init__(token, src)
-        self.value = value
+        self._ident = "if_" + str(token.getsourcepos().lineno) \
+            + "_" + str(token.getsourcepos().colno)
+        if len(value) != 3:
+            raise errors.SyntaxError(
+                "If expects 3 expressions: pred then else ")
+        self._pred, self._then, self._else = value
+
+    @property
+    def ident(self):
+        return self._ident
 
     def eval(self, bundle, leader):
-        print("If value {}".format(self.value))
-        for e in self.value:
-            e.eval(bundle, leader)
+
+        pred = []
+        self._pred.eval(bundle, pred)
+        exprs = []
+        self._then.eval(bundle, exprs)
+        self._else.eval(bundle, exprs)
+
+        leader.append(
+            ParseIf(
+                ExpressionType.IF,
+                exprs,
+                self.token,
+                self.ident,
+                self.ident + "_res",
+                pred))
 
 
 class FunctionCall(FoidlAst):

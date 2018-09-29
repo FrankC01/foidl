@@ -39,6 +39,10 @@ class FunctionCall(PFoidlError):
     pass
 
 
+class SyntaxError(PFoidlError):
+    pass
+
+
 class ParseError(PFoidlError):
     pass
 
