@@ -178,31 +178,32 @@ class LlvmGen(object):
 
     @_emit_et.register(ParseIf)
     def _emit_if_type(self, el, builder, frame):
-        print("If id {} result {}".format(el.name, el.res))
-        print(" pred {} then {} else {}".format(
-            el.pre, el.exprs[0], el.exprs[1]))
-        result = builder.alloca(any_ptr, name=el.res)
         bt = builder.load(builder.module.get_global("true"))
-        # Build predicate for testing
-        pr = []
-        self._emit_et(el.pre[0], builder, pr)
-        pr_res = builder.call(
-            builder.module.get_global("foidl_truthy_qmark"),
-            pr)
-        cmp = builder.icmp_unsigned("==", pr_res, bt)
-        # with builder.if_then(cmp):
-        #     pt = []
-        #     self._emit_et(el.exprs[0], builder, pt)
-        with builder.if_else(cmp) as (istrue, isfalse):
-            with istrue:
-                pt = []
-                self._emit_et(el.exprs[0], builder, pt)
-                builder.store(pt[-1], result)
-            with isfalse:
-                pt = []
-                self._emit_et(el.exprs[1], builder, pt)
-                builder.store(pt[-1], result)
-        frame.append(builder.load(result))
+        result = builder.alloca(any_ptr, name=el.res)
+        # builder.position_at_end(cb)
+        ifbb = builder.append_basic_block(el.name)
+        builder.branch(ifbb)
+        with builder.goto_block(ifbb):
+            pr = []
+            self._emit_et(el.pre[0], builder, pr)
+            pr_res = builder.call(
+                builder.module.get_global("foidl_truthy_qmark"),
+                pr)
+            cmp = builder.icmp_unsigned("==", pr_res, bt)
+            with builder.if_else(cmp) as (istrue, isfalse):
+                with istrue:
+                    pt = []
+                    self._emit_et(el.exprs[0], builder, pt)
+                    builder.store(pt[-1], result)
+                with isfalse:
+                    pt = []
+                    self._emit_et(el.exprs[1], builder, pt)
+                    builder.store(pt[-1], result)
+            lload = builder.load(result)
+            ifex = builder.append_basic_block(el.name + "_exit")
+            builder.branch(ifex)
+        builder.position_at_end(ifex)
+        frame.append(lload)
 
     @_emit_et.register(ParseCall)
     def _emit_call_type(self, el, builder, frame):

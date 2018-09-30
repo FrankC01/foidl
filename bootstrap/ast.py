@@ -543,16 +543,16 @@ class Collection(CollectionAst):
 
     def eval(self, bundle, leader):
         LOGGER.info("Collection {} value {}".format(self.type, self.value))
-        members = []
-        for c in self.value:
-            c.eval(bundle, members)
+        # members = []
+        # for c in self.value:
+        #     c.eval(bundle, members)
 
-        leader.append(
-            ParseTree(
-                ExpressionType.COLLECTION,
-                members,
-                self.token,
-                res=self.type))
+        # leader.append(
+        #     ParseTree(
+        #         ExpressionType.COLLECTION,
+        #         members,
+        #         self.token,
+        #         res=self.type))
 
 
 class ExpressionList(FoidlAst):
@@ -889,17 +889,26 @@ class If(FoidlAst):
         super().__init__(token, src)
         self._ident = "if_" + str(token.getsourcepos().lineno) \
             + "_" + str(token.getsourcepos().colno)
-        if len(value) != 3:
-            raise errors.SyntaxError(
-                "If expects 3 expressions: pred then else ")
         self._pred, self._then, self._else = value
 
     @property
     def ident(self):
         return self._ident
 
-    def eval(self, bundle, leader):
+    @classmethod
+    def re_factor(cls, value, token, src):
+        if len(value) > 3:
+            rem = value[3:]
+            el = If(value[0:3], token, src)
+            rem.insert(0, el)
+            return rem
+        elif len(value) < 3:
+            raise errors.SyntaxError(
+                "If expects 3 expressions: pred then else ")
+        else:
+            return If(value, token, src)
 
+    def eval(self, bundle, leader):
         pred = []
         self._pred.eval(bundle, pred)
         exprs = []

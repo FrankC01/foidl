@@ -41,3 +41,7 @@ func tif []
     ?: =: tgroup: 1
         true
         false
+
+    ?: =: tgroup: 3
+        false
+        true

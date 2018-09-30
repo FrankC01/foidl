@@ -97,6 +97,22 @@ class ParseEmpty(ParseTree):
     pass
 
 
+class ParseList(ParseTree):
+    pass
+
+
+class ParseSet(ParseTree):
+    pass
+
+
+class ParseMap(ParseTree):
+    pass
+
+
+class ParseVector(ParseTree):
+    pass
+
+
 class ParseLiteral(ParseTree):
     pass
 

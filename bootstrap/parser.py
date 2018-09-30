@@ -360,7 +360,8 @@ class Parser():
         def ifexpr(state, p):
             # print('if expr: {}'.format(p))
             i = p.pop(0)
-            return ast.If(_flatten_list(p), i, self.input)
+            return ast.If.re_factor(_flatten_list(p), i, self.input)
+            # return ast.If(value, i, self.input)
 
         @self.pg.production('empty_collection : LANGLE RANGLE')
         @self.pg.production('empty_collection : LBRACKET RBRACKET')
