@@ -95,7 +95,8 @@ def math_func(token):
     elif s == "-":
         return "sub"
     else:
-        raise ParseError("{} not recognized as math operator".format(s))
+        raise errors.ParseError(
+            "{} not recognized as math operator".format(s))
 
 
 class Parser():
@@ -106,9 +107,9 @@ class Parser():
             # precedence=[])
             precedence=[
                 ("left", ["SYMBOL", "KEYWORD"]),
-                ("left", ["SYMBOL_BANG", "SYMBOL_PRED"]),
-                ("left", ["FUNC_CALL", "FUNC_BANG", "FUNC_PRED"]),
-                ("left", ["FUNC", "VAR"])])
+                ("left", ["FUNC_CALL", "FUNC_BANG", "FUNC_PRED", "IF"]),
+                ("left", ["FUNC", "VAR"]),
+                ("left", ["SYMBOL_BANG", "SYMBOL_PRED"])])
         self._input = input
 
     @property
@@ -418,8 +419,8 @@ class Parser():
             return ast.Symbol(math_func(p[0]), p[0], self.input)
 
         @self.pg.production('symbol_type : SYMBOL')
-        @self.pg.production('symbol_type : SYMBOL_BANG')
         @self.pg.production('symbol_type : SYMBOL_PRED')
+        @self.pg.production('symbol_type : SYMBOL_BANG')
         def symbol_type(state, p):
             return ast.Symbol(p[0].getstr(), p[0], self.input)
 

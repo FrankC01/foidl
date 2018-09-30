@@ -8,7 +8,7 @@ var ml ^[a b] +: a b
 
 var madd +
 
-var arb 7
+var arb? 7
 
 func tnilret [fn]  ; Return an literal
 
@@ -37,11 +37,6 @@ func tlet []
     let a [b 5] +: 1 b
     +: 7 a
 
-func tif []
-    ?: =: tgroup: 1
-        true
-        false
-
-    ?: =: tgroup: 3
-        false
-        true
+func tcoll []
+    {1 2 3 4}
+    <1 2 3 4>

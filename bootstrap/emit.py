@@ -57,7 +57,15 @@ supps = [
     ("foidl_tofuncref", [void_ptr, any_ptr]),
     ("foidl_imbue", [any_ptr, any_ptr]),
     ("foidl_fref_instance", [any_ptr]),
-    ("foidl_truthy_qmark", [any_ptr])]
+    ("foidl_truthy_qmark", [any_ptr]),
+    ("map_inst_bang", []),
+    ("map_extend_bang", [any_ptr, any_ptr, any_ptr]),
+    ("list_inst_bang", []),
+    ("list_extend_bang", [any_ptr, any_ptr]),
+    ("vector_inst_bang", []),
+    ("vector_extend_bang", [any_ptr, any_ptr]),
+    ("set_inst_bang", []),
+    ("set_extend_bang", [any_ptr, any_ptr])]
 
 
 class LlvmGen(object):
@@ -178,9 +186,10 @@ class LlvmGen(object):
 
     @_emit_et.register(ParseIf)
     def _emit_if_type(self, el, builder, frame):
+        """Emit If/Then/Else statement"""
         bt = builder.load(builder.module.get_global("true"))
         result = builder.alloca(any_ptr, name=el.res)
-        # builder.position_at_end(cb)
+        # Setup and branch into if block scope
         ifbb = builder.append_basic_block(el.name)
         builder.branch(ifbb)
         with builder.goto_block(ifbb):
@@ -190,6 +199,7 @@ class LlvmGen(object):
                 builder.module.get_global("foidl_truthy_qmark"),
                 pr)
             cmp = builder.icmp_unsigned("==", pr_res, bt)
+            # Setup and process then/else constructs
             with builder.if_else(cmp) as (istrue, isfalse):
                 with istrue:
                     pt = []
@@ -199,9 +209,12 @@ class LlvmGen(object):
                     pt = []
                     self._emit_et(el.exprs[1], builder, pt)
                     builder.store(pt[-1], result)
+            # In endif capture the result
             lload = builder.load(result)
+            # Create and branch to exit
             ifex = builder.append_basic_block(el.name + "_exit")
             builder.branch(ifex)
+        # Get to last instruction
         builder.position_at_end(ifex)
         frame.append(lload)
 
@@ -296,6 +309,36 @@ class LlvmGen(object):
             builder.module.get_global("foidl_tofuncref"),
             [builder.bitcast(fn, void_ptr), mcnt])
         frame.append(fref)
+
+    def _emit_collection(self, el, builder, ic, ec, cnt=1):
+        ires = builder.call(builder.module.get_global(ic), [])
+        ecall = builder.module.get_global(ec)
+        for ve in zip(*[iter(el.exprs)] * cnt):
+            expr = [ires]
+            for e in ve:
+                self._emit_et(e, builder, expr)
+            last = builder.call(ecall, expr)
+        return last
+
+    @_emit_et.register(ParseVector)
+    def _emit_vector_type(self, el, builder, frame):
+        frame.append(self._emit_collection(
+            el, builder, "vector_inst_bang", "vector_extend_bang"))
+
+    @_emit_et.register(ParseList)
+    def _emit_list_type(self, el, builder, frame):
+        frame.append(self._emit_collection(
+            el, builder, "list_inst_bang", "list_extend_bang"))
+
+    @_emit_et.register(ParseMap)
+    def _emit_map_type(self, el, builder, frame):
+        frame.append(self._emit_collection(
+            el, builder, "map_inst_bang", "map_extend_bang", 2))
+
+    @_emit_et.register(ParseSet)
+    def _emit_set_type(self, el, builder, frame):
+        frame.append(self._emit_collection(
+            el, builder, "set_inst_bang", "set_extend_bang"))
 
     @_emit_et.register(ParseSymbol)
     def _emit_symbol_type(self, el, builder, frame):

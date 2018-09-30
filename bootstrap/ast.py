@@ -537,22 +537,42 @@ class Collection(CollectionAst):
         super().__init__(token, src)
         self.value = value
         self.type = ctype
+        self.ident = ctype.name + "_" \
+            + str(token.getsourcepos().lineno) + "_" \
+            + str(token.getsourcepos().colno)
 
     def elements(self):
         return len(self.value)
 
     def eval(self, bundle, leader):
-        LOGGER.info("Collection {} value {}".format(self.type, self.value))
-        # members = []
-        # for c in self.value:
-        #     c.eval(bundle, members)
+        print("Collection {} value {} {}".format(
+            self.type, self.value, self.ident))
+        if self.type is CollTypes.VECTOR:
+            ccls = ParseVector
+            ctyp = ExpressionType.VECTOR_COLLECTION
+        elif self.type is CollTypes.LIST:
+            ccls = ParseList
+            ctyp = ExpressionType.LIST_COLLECTION
+        elif self.type is CollTypes.MAP:
+            ccls = ParseMap
+            ctyp = ExpressionType.MAP_COLLECTION
+        elif self.type is CollTypes.SET:
+            ccls = ParseSet
+            ctyp = ExpressionType.SET_COLLECTION
+        else:
+            raise errors.SyntaxError(
+                "Unknown collection type {}".format(self.type))
 
-        # leader.append(
-        #     ParseTree(
-        #         ExpressionType.COLLECTION,
-        #         members,
-        #         self.token,
-        #         res=self.type))
+        members = []
+        for c in self.value:
+            c.eval(bundle, members)
+
+        leader.append(
+            ccls(
+                ctyp,
+                members,
+                self.token,
+                self.ident))
 
 
 class ExpressionList(FoidlAst):
@@ -632,7 +652,6 @@ class LetPairs(CollectionAst):
             expr = []
             j.eval(bundle, expr)
             ident = self.prefix + "_" + i.value
-            print(i)
             lar = LetArgReference(i)
             lar.ident = ident
             bundle.symtree.register_symbol(i.value, lar)
