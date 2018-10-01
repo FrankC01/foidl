@@ -43,6 +43,7 @@ class ExpressionType(enum.Enum):
     FUNCTION_CALL = enum.auto()
     LAMBDA = enum.auto()
     LAMBDA_REF = enum.auto()
+    CLOSURE_REF = enum.auto()
     PARTIAL_DECL = enum.auto()
     PARTIAL_INVK = enum.auto()
     GROUP = enum.auto()

@@ -36,6 +36,10 @@ class ParseTree(object):
     def exprs(self):
         return self._exprs
 
+    @exprs.setter
+    def exprs(self, exprs):
+        self._exprs = exprs
+
     @property
     def loc(self):
         return self._loc
@@ -78,6 +82,10 @@ class ParseGroup(ParseTree):
 
 
 class ParseLambdaRef(ParseTree):
+    pass
+
+
+class ParseClosureRef(ParseTree):
     pass
 
 

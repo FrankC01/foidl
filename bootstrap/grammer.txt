@@ -51,6 +51,12 @@ match_expr =: 'match' [symbol_type] expression match_pair
 match_pair =: '|' expression expression {match_pair}
 			| ':default' expression
 
+; Lambdas my be interesting:
+; 1. If the body has not references to funcargs, letargs, letresult it's straight up
+; 2. Otherwise it is a closure. Closures need free variable management:
+;	1. Each free variable inserts into the begining of the declared symbol_list
+;	2. It needs to imbue those free vars at the point of declaration
+
 lambda_expr =: '^' symbol_list expression
 
 symbol_list =: "[" "]"

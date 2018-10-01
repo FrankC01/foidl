@@ -4,7 +4,7 @@ module test
 
 include foo
 
-var ml ^[a b] +: a b
+;var ml ^[a b] +: a b
 
 var madd +
 
@@ -14,29 +14,18 @@ func tnilret [fn]  ; Return an literal
 
 func tpartial [a b]
 
-    ; Optimized direct partials
-    (+ 1 2)
-    ; Optimized indirect partials
-    (madd 1 2)
-    (ml 1 (madd 1 2))
-
-    ; Partial declarations (direct, indirect)
-    (+ 1)
-    (ml 1)
-
-    ; Partial invocations
-    (a 2)
-
-
 func tgroup []
-    @()
-    @(
-        +: 1 2)
 
-func tlet []
-    let a [b 5] +: 1 b
-    +: 7 a
+;func tlet []
+;    let a [b 5] +: 1 b
+;    +: 7 a
 
-func tcoll []
-    {1 2 3 4}
-    <1 2 3 4>
+func tcoll [arg]
+
+    let b [] +: 5 9
+
+    let a [ t +: 7 12
+            lref ^[x]
+                    tpartial: b tpartial: x tpartial: t arg]
+        (lref 2 3)
+

@@ -23,6 +23,7 @@ from rply import Token
 import errors
 from enums import WellKnowns, CollTypes, ExpressionType
 from ptree import *
+from refactor import refactor_lambda
 
 LOGGER = logging.getLogger()
 
@@ -41,8 +42,8 @@ class FoidlReference(ABC):
     """FoidlReference informs type, value, intern/extern, etc"""
 
     def __init__(self, astmember):
-        self._token = astmember.token
-        self._source = astmember.source
+        self._token = astmember.token if astmember else None
+        self._source = astmember.source if astmember else None
 
     def set_individual(self, token, src):
         self._token = token
@@ -140,9 +141,26 @@ class FuncArgReference(FoidlReference):
     def argname(self):
         return self._argname
 
+    @argname.setter
+    def argname(self, argname):
+        self._argname = argname
+
     @property
     def argpos(self):
         return self._argpos
+
+    @argpos.setter
+    def argpos(self, argpos):
+        self._argpos = argpos
+
+    @classmethod
+    def replicate(cls, otherref):
+        far = FuncArgReference(None, otherref.argname, 0)
+        far.set_individual(otherref.token, otherref.source)
+        return far
+
+    def __repr__(self):
+        return "FuncArgRef({}:{})".format(self.argname, self.argpos)
 
 
 class LambdaReference(FoidlReference):
@@ -176,33 +194,7 @@ class LetArgReference(FoidlReference):
         return self._name
 
     @property
-    def ident(self):
-        return self._ident
-
-    @ident.setter
-    def ident(self, ident):
-        self._ident = ident
-
-    @property
-    def ptr(self):
-        return self._ptr
-
-    @ptr.setter
-    def ptr(self, pointer):
-        self._ptr = pointer
-
-
-class LetResReference(FoidlReference):
-    """Let Result Symbol Reference"""
-
-    def __init__(self, astmember):
-        super().__init__(astmember)
-        self._name = astmember.name
-        self._ident = None
-        self._ptr = None
-
-    @property
-    def name(self):
+    def argname(self):
         return self._name
 
     @property
@@ -220,6 +212,46 @@ class LetResReference(FoidlReference):
     @ptr.setter
     def ptr(self, pointer):
         self._ptr = pointer
+
+    def __repr__(self):
+        return "LetArgRef({}:ptr {})".format(self.argname, self.ptr)
+
+
+class LetResReference(FoidlReference):
+    """Let Result Symbol Reference"""
+
+    def __init__(self, astmember):
+        super().__init__(astmember)
+        self._name = astmember.name
+        self._ident = None
+        self._ptr = None
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def argname(self):
+        return self.name
+
+    @property
+    def ident(self):
+        return self._ident
+
+    @ident.setter
+    def ident(self, ident):
+        self._ident = ident
+
+    @property
+    def ptr(self):
+        return self._ptr
+
+    @ptr.setter
+    def ptr(self, pointer):
+        self._ptr = pointer
+
+    def __repr__(self):
+        return "LetResRef({}:ptr {})".format(self.argname, self.ptr)
 
 
 class MatchResReference(FoidlReference):
@@ -422,15 +454,11 @@ class Function(FoidlAst):
         super().__init__(fhdr.token, src)
         self._name = fhdr.name
         self._arguments = fhdr.arguments
-        self._value = value if value else [_NIL]
+        self.value = value if value else [_NIL]
 
     @property
     def name(self):
         return self._name.value
-
-    @property
-    def value(self):
-        return self._value
 
     @property
     def arguments(self):
@@ -545,8 +573,6 @@ class Collection(CollectionAst):
         return len(self.value)
 
     def eval(self, bundle, leader):
-        print("Collection {} value {} {}".format(
-            self.type, self.value, self.ident))
         if self.type is CollTypes.VECTOR:
             ccls = ParseVector
             ctyp = ExpressionType.VECTOR_COLLECTION
@@ -683,6 +709,10 @@ class Let(FoidlAst):
                 "Let expects 1 expression in body, found {}".format(
                     len(self.value)))
 
+    @property
+    def letpairs(self):
+        return self._letpairs
+
     @classmethod
     def re_factor(cls, p, src):
         t = p.pop(0)    # Get the 'LET' token
@@ -794,22 +824,28 @@ class Lambda(FoidlAst):
         for e in self.value:
             e.eval(bundle, expr)
         # Append Body
-        bundle.lambdas.append(
-            ParseLambda(
-                ExpressionType.LAMBDA,
-                expr,
-                self.token,
-                self.name.value,
-                pre=argref))
+        plambda, plamdaref = refactor_lambda(
+            self, self.token.getsourcepos(), argref, expr,
+            [FuncArgReference, LetArgReference, LetResReference])
+        # [print("Lamb Arg {}".format(n)) for n in plambda.pre]
+        bundle.lambdas.append(plambda)
+        # bundle.lambdas.append(
+        #     ParseLambda(
+        #         ExpressionType.LAMBDA,
+        #         expr,
+        #         self.token,
+        #         self.name.value,
+        #         pre=argref))
         # Pop stack
         bundle.symtree.pop_scope()
         # Append Reference
-        leader.append(
-            ParseLambdaRef(
-                ExpressionType.LAMBDA_REF,
-                argref,
-                self.token,
-                self.name.value))
+        leader.append(plamdaref)
+        # leader.append(
+        #     ParseLambdaRef(
+        #         ExpressionType.LAMBDA_REF,
+        #         argref,
+        #         self.token,
+        #         self.name.value))
 
 
 class Partial(FoidlAst):
@@ -890,6 +926,7 @@ class Partial(FoidlAst):
         else:
             self._eval_decl(ktype, array, bundle, leader)
 
+    @_eval_partial.register(LetArgReference)
     @_eval_partial.register(FuncArgReference)
     def _epfar(self, ktype, array, bundle, leader):
         """Assume a partial invocation"""
@@ -908,6 +945,7 @@ class If(FoidlAst):
         super().__init__(token, src)
         self._ident = "if_" + str(token.getsourcepos().lineno) \
             + "_" + str(token.getsourcepos().colno)
+        self.value = value
         self._pred, self._then, self._else = value
 
     @property
@@ -994,15 +1032,11 @@ class FunctionCall(FoidlAst):
 class Symbol(FoidlAst):
     def __init__(self, value, token, src):
         super().__init__(token, src)
-        self._value = value
-
-    @property
-    def value(self):
-        return self._value
+        self.value = value
 
     @property
     def name(self):
-        return self._value
+        return self.value
 
     def eval(self, bundle, leader):
         LOGGER.info("Symbol processing for {}".format(self.name))

@@ -16,7 +16,7 @@
 
 
 import logging
-import traceback
+# import traceback
 from functools import singledispatch, update_wrapper
 
 from llvmlite import ir, binding
@@ -87,6 +87,7 @@ class LlvmGen(object):
         self._engine = self.binding.create_mcjit_compiler(
             backing_mod, target_machine)
         self.vinits = []
+        self.fowards = {}
 
     @property
     def binding(self):
@@ -146,7 +147,6 @@ class LlvmGen(object):
 
     @_emit_et.register(ParseLambdaRef)
     def _emit_lambdaref_type(self, el, builder, frame):
-        print("In LAMBDAREF type {} {}".format(el.name, el.exprs))
         fn = builder.module.get_global(el.name)
         mcnt = builder.call(
             builder.module.get_global("foidl_reg_int"),
@@ -155,15 +155,38 @@ class LlvmGen(object):
             builder.module.get_global("foidl_tofuncref"),
             [builder.bitcast(fn, void_ptr), mcnt])
         frame.append(fref)
+
+    @_emit_et.register(ParseClosureRef)
+    def _emit_closureref_type(self, el, builder, frame):
+        # print("ClosureRef {}".format(el))
+        fn = builder.module.get_global(el.name)
+        mcnt = builder.call(
+            builder.module.get_global("foidl_reg_int"),
+            [ir.Constant(int_64, len(el.pre))])
+        fref = builder.call(
+            builder.module.get_global("foidl_tofuncref"),
+            [builder.bitcast(fn, void_ptr), mcnt])
+        for i in el.exprs:
+            myarg = [fref]
+            # print("Closure arg {}".format(i))
+            self._emit_et(i, builder, myarg)
+            last = builder.call(
+                builder.module.get_global("foidl_imbue"),
+                myarg)
+        frame.append(last)
+
         # raise EmitNotImplementedError
 
     @_emit_et.register(ParseLet)
     def _emit_let_type(self, el, builder, frame):
         # Establish return value
+        # print("Let res => {}".format(el.res))
         reta = builder.alloca(any_ptr, name=el.res.ident)
         el.res.ptr = reta
         lpair = []
         # Establish letpairs
+        # print("Let res => {}".format(el.res))
+
         for lp in el.pre:
             self._emit_et(lp, builder, lpair)
         # Evaluate body
@@ -179,8 +202,10 @@ class LlvmGen(object):
     def _emit_letpair_type(self, el, builder, frame):
         arg = builder.alloca(any_ptr, name=el.res.ident)
         el.res.ptr = arg
+        # print("PLP arg =>{}".format(el))
         expr = []
         for e in el.exprs:
+            # print("Let Arg Pair {} {}".format(el.res.ident, e))
             self._emit_et(e, builder, expr)
         builder.store(expr[-1], arg)
 
@@ -223,6 +248,7 @@ class LlvmGen(object):
         fn = builder.module.get_global(el.name)
         args = []
         for a in el.exprs:
+            # print("{} expr {}".format(el.name, a))
             self._emit_et(a, builder, args)
         # print(args)
         frame.append(builder.call(fn, args))
@@ -285,17 +311,20 @@ class LlvmGen(object):
     @_emit_et.register(ast.FuncArgReference)
     def _emit_funcargref_type(self, el, builder, frame):
         """Emit function argument reference"""
+        # print("FuncArgRef =>".format(el))
         frame.append(builder.function.args[el.argpos])
 
     @_emit_et.register(ast.LetResReference)
     def _emit_letresref_type(self, el, builder, frame):
         """Emit function argument reference"""
         # traceback.print_stack()
+        # print("LRR => {}".format(el))
         frame.append(builder.load(el.ptr))
 
     @_emit_et.register(ast.LetArgReference)
     def _emit_letargref_type(self, el, builder, frame):
         """Emit function argument reference"""
+        # print("LAR => {}".format(el.ptr))
         frame.append(builder.load(el.ptr))
 
     @_emit_et.register(ast.FuncReference)
@@ -359,6 +388,8 @@ class LlvmGen(object):
 
     @_emit_type.register(ParseTree)
     def _ep(self, el, builder, frame):
+        # print("_ep {}".format(el))
+        # print("_ep function {}".format(builder.function))
         self._emit_et(el, builder, frame)
 
     def _emit_var(self, pvar):
@@ -380,21 +411,15 @@ class LlvmGen(object):
         fn_args = fn.args
         index = 0
         for a in pfn.pre:
+            # print("fn arg assign => {}".format(a))
             fn_args[index].name = a.argname
             index += 1
         return fn
 
-    def _emit_lambda(self, ltree):
-        """Emit a Lamnda and it's expressions"""
-        if type(ltree) is list:
-            [self._emit_lambda(n) for n in ltree]
-        else:
-            self._emit_fn(ltree)
-            # self._fn_arg_sigs(ltree)
-
     def _emit_fn(self, pfn):
         """Emit a Function and it's expressions"""
-        fn = self._fn_arg_sigs(pfn)
+        # fn = self._fn_arg_sigs(pfn)
+        fn = self.fowards[pfn.name]
         builder = ir.IRBuilder(fn.append_basic_block('entry'))
         reta = builder.alloca(any_ptr, name="retcode")
         # exit_block = fn.append_basic_block("exit")
@@ -407,6 +432,19 @@ class LlvmGen(object):
         iret = builder.load(reta)
         builder.ret(iret)
 
+    def _emit_lambda(self, ltree):
+        """Emit a Lamnda and it's expressions"""
+        if type(ltree) is list:
+            [self._emit_lambda(n) for n in ltree]
+        else:
+            if not self.fowards.get(ltree.name, None):
+                self._emit_frwds(ltree)
+            self._emit_fn(ltree)
+            # self._fn_arg_sigs(ltree)
+
+    def _emit_frwds(self, pfn):
+        self.fowards[pfn.name] = self._fn_arg_sigs(pfn)
+
     def _emit_body(self, ltree, etype, emeth):
         if type(ltree) is list:
             if ltree[0].ptype is ExpressionType.MODULE:
@@ -415,7 +453,6 @@ class LlvmGen(object):
             emeth(ltree)
         else:
             pass
-            # print("Unknown type")
 
     def emit(self, ptree, wrtr):
         # Extern declarations
@@ -424,6 +461,9 @@ class LlvmGen(object):
         self._emit_literals(ptree['literals'])
         # Process body variables
         self._emit_body(ptree['base'], ExpressionType.VARIABLE, self._emit_var)
+        # Forward decls functions
+        self._emit_body(
+            ptree['base'], ExpressionType.FUNCTION, self._emit_frwds)
         # Process lambdas
         self._emit_lambda(ptree['lambdas'])
         # Process body
