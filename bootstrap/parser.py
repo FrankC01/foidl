@@ -269,7 +269,7 @@ class Parser():
         @self.pg.production('functioncall : callsig multiexpression')
         def functioncall(state, p):
             t = p.pop(0)
-            fcall = ast.FunctionCall.re_factor(
+            fcall = ast.FunctionCall.generate(
                 t.getstr(), p, t, self.input, state)
             # fcall = ast.FunctionCall(t.getstr(), p, t, self.input, state)
             return fcall
@@ -311,7 +311,7 @@ class Parser():
             'letexpr : LET symbol_type LBRACKET letpairs RBRACKET single_expr')
         def letexpr(state, p):
             """Let parse"""
-            return ast.Let.re_factor(p, self.input)
+            return ast.Let.generate(p, self.input)
 
         @self.pg.production('letpairs : symbol_type single_expr')
         @self.pg.production(
@@ -320,29 +320,59 @@ class Parser():
             """Let parse support for zero or more local var assignments"""
             return _token_eater(_flatten_list(p), ast.LetPairs)
 
-        @self.pg.production('matchexpr : MATCH simple_expr')
-        # @self.pg.production('matchexpr : MATCH simple_expr matchpairs')
+        @self.pg.production('matchexpr : MATCH single_expr matchpairs')
+        @self.pg.production(
+            'matchexpr : MATCH symbol_type single_expr matchpairs')
         def matchexpr(state, p):
             """Match parse"""
-            return ast.Match([x for x in p if type(x) is not Token])
+            t = p.pop(0)
+            mres = None
+            if len(p) == 3:
+                mres = p.pop(0)
+            mpred = p.pop(0)
+            return ast.Match(
+                mres, mpred,
+                [x for x in p if type(x) is not Token], t, self.input)
 
-        @self.pg.production('matchpairs : simple_expr simple_expr')
-        @self.pg.production('matchpairs : simple_expr simple_expr matchpairs')
+        @self.pg.production(
+            'matchpairs : MATCH_PATTERN single_expr single_expr')
+        @self.pg.production(
+            'matchpairs : MATCH_PATTERN single_expr single_expr matchpairs')
+        @self.pg.production(
+            'matchpairs : MATCH_PATTERN MATCH_DEFAULT single_expr')
         def matchpairs(state, p):
             """Match parse support for zero or more match patterns"""
+            t = p.pop(0)
+
             def eater(in_list):
                 out_list = []
                 for n in in_list:
-                    if type(n) is not Token:
-                        if type(n) is ast.MatchPairs:
-                            out_list.extend(eater(n.value))
-                        else:
-                            out_list.append(n)
+                    if type(n) is ast.MatchPair:
+                        out_list.append(n)
+                    elif type(n) is ast.MatchPairs:
+                        out_list.extend(eater(n.value))
                     else:
-                        pass
+                        print("MATCH PAIRS UNKNOWN {}".format(n))
                 return out_list
-            y = eater(p)
-            return ast.MatchPairs(y)
+
+            def isdef(el):
+                return True \
+                    if type(el) is Token and \
+                    el.getstr() == ':default' else False
+
+            res = []
+            if len(p) == 2:
+                res.append(ast.MatchPair(p, t, self.input, isdef(p[0])))
+            elif len(p) > 2:
+                pattern = p.pop(0)
+                expr = p.pop(0)
+                elem = ast.MatchPair(
+                    [pattern, expr], t, self.input, isdef(pattern))
+                p.insert(0, elem)
+                res = p
+
+            y = eater(res)
+            return ast.MatchPairs(y, t, self.input)
 
         @self.pg.production('lambdaexpr : LAMBDA fsymbol_list single_expr')
         def lambdaexpr(state, p):
@@ -361,7 +391,7 @@ class Parser():
         def ifexpr(state, p):
             # print('if expr: {}'.format(p))
             i = p.pop(0)
-            return ast.If.re_factor(_flatten_list(p), i, self.input)
+            return ast.If.generate(_flatten_list(p), i, self.input)
             # return ast.If(value, i, self.input)
 
         @self.pg.production('empty_collection : LANGLE RANGLE')
@@ -370,7 +400,7 @@ class Parser():
         @self.pg.production('empty_collection : LSET RBRACE')
         def empty_collections(state, p):
             ct = _collection_type(p[0])
-            return ast.EmptyCollection.get_empty_collection(
+            return ast.EmptyCollection.generate(
                 ct,
                 p[0],
                 self.input)

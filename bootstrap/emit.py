@@ -209,6 +209,20 @@ class LlvmGen(object):
             self._emit_et(e, builder, expr)
         builder.store(expr[-1], arg)
 
+    @_emit_et.register(ParseMatch)
+    def _emit_match_type(self, el, builder, frame):
+        # Establish result
+        # Establish switch pairs (comparasson and exec expressions)
+        pass
+
+    @_emit_et.register(ParseMatchPair)
+    def _emit_matchpair_type(self, el, builder, frame):
+        pass
+
+    @_emit_et.register(ParseMatchDefault)
+    def _emit_matchdefault_type(self, el, builder, frame):
+        pass
+
     @_emit_et.register(ParseIf)
     def _emit_if_type(self, el, builder, frame):
         """Emit If/Then/Else statement"""

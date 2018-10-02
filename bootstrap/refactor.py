@@ -16,6 +16,8 @@
 
 import logging
 import copy
+
+from errors import ParseError
 from enums import ExpressionType
 from ptree import ParseSymbol, ParseLambda, ParseLambdaRef, ParseClosureRef
 
@@ -31,9 +33,7 @@ def _find_refs(argsig, srcpos, body, cntrl, clist, newlist, bexpr=None):
     said references"""
 
     def _inner(el, elref, elpos, bexpr):
-        if elref in argsig:
-            return
-        elif elpos.lineno > srcpos.lineno:
+        if elref in argsig or elpos.lineno > srcpos.lineno:
             return
         elif elpos.lineno < srcpos.lineno or elpos.colno < srcpos.colno:
             index = bexpr.index(el)
@@ -43,7 +43,9 @@ def _find_refs(argsig, srcpos, body, cntrl, clist, newlist, bexpr=None):
             newlist.append(nc)
             clist.append(el)
         else:
-            print("     UNKNOWN")
+            raise ParseError(
+                "Unhandled lambda free variable location {}".format(
+                    elpos))
 
     if type(body) is list:
         [_find_refs(

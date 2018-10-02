@@ -97,6 +97,18 @@ class ParseLetPair(ParseTree):
     pass
 
 
+class ParseMatch(ParseTree):
+    pass
+
+
+class ParseMatchPair(ParseTree):
+    pass
+
+
+class ParseMatchDefault(ParseTree):
+    pass
+
+
 class ParseIf(ParseTree):
     pass
 

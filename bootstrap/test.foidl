@@ -20,7 +20,7 @@ func tgroup []
 ;    let a [b 5] +: 1 b
 ;    +: 7 a
 
-func tcoll [arg]
+func tclosure [arg]
 
     let b [] +: 5 9
 
@@ -29,3 +29,14 @@ func tcoll [arg]
                     tpartial: b tpartial: x tpartial: t arg]
         (lref 2 3)
 
+
+func tmatch [arg]
+    match a arg
+    | 1 -: 5 tpartial: 1 2
+    | 9 10
+    | :default 7
+
+    match arg
+    | 1 -: 5 tpartial: 1 2
+    | 9 10
+    | :default 7

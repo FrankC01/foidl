@@ -217,9 +217,7 @@ class LetArgReference(FoidlReference):
         return "LetArgRef({}:ptr {})".format(self.argname, self.ptr)
 
 
-class LetResReference(FoidlReference):
-    """Let Result Symbol Reference"""
-
+class ResultReference(FoidlReference):
     def __init__(self, astmember):
         super().__init__(astmember)
         self._name = astmember.name
@@ -250,6 +248,13 @@ class LetResReference(FoidlReference):
     def ptr(self, pointer):
         self._ptr = pointer
 
+
+class LetResReference(ResultReference):
+    """Let Result Symbol Reference"""
+
+    def __init__(self, astmember):
+        super().__init__(astmember)
+
     def __repr__(self):
         return "LetResRef({}:ptr {})".format(self.argname, self.ptr)
 
@@ -257,12 +262,11 @@ class LetResReference(FoidlReference):
 class MatchResReference(FoidlReference):
     """Match Result Symbol Reference"""
 
-    def __init__(self, result_id):
-        self._res_id = result_id
+    def __init__(self, astmember):
+        super().__init__(astmember)
 
-    @property
-    def id(self):
-        return self._res_id
+    def __repr__(self):
+        return "MatchResRef({}:ptr {})".format(self.argname, self.ptr)
 
 
 class FoidlAst(ABC):
@@ -314,6 +318,11 @@ class CompilationUnit(FoidlAst):
 
 
 class Module(FoidlAst):
+    """Module AST is the top node in tree
+
+    During evluation it establishes externs, literals and
+    lambdas as part of the generation of Parse Tree """
+
     def __init__(self, mname, value, token, src):
         super().__init__(token, src)
         self._name = mname
@@ -333,8 +342,7 @@ class Module(FoidlAst):
         return self._name.value
 
     def eval(self, bundle, ptree):
-        # Includes already handled
-        # Register new level in bundle
+        # Push module scope for duration of evaluation
         bundle.symtree.push_scope(self.name, self.name)
         # Add references to nil, true, false
         bundle.externs = {
@@ -358,6 +366,8 @@ class Module(FoidlAst):
 
 
 class Include(FoidlAst):
+    """Include AST node"""
+
     def __init__(self, value, token, src):
         super().__init__(token, src)
         self._value = value
@@ -371,6 +381,8 @@ class Include(FoidlAst):
 
 
 class VarHeader(FoidlAst):
+    """Transitory in creation of true Variable AST node"""
+
     def __init__(self, vname, token, src):
         super().__init__(token, src)
         self._name = vname
@@ -393,6 +405,8 @@ class VarHeader(FoidlAst):
 
 
 class Variable(FoidlAst):
+    """Variable AST captures identity and associated expression"""
+
     def __init__(self, vhdr, value, token, src):
         super().__init__(token, src)
         self._name = vhdr.name
@@ -429,6 +443,8 @@ class Variable(FoidlAst):
 
 
 class FuncHeader(FoidlAst):
+    """Transitory in creation of true Function AST node"""
+
     def __init__(self, fname, args, token, src):
         super().__init__(token, src)
         self._name = fname
@@ -514,18 +530,6 @@ class SymbolList(CollectionAst):
             c.eval(bundle, leader)
 
 
-class MatchPairs(CollectionAst):
-    def __init__(self, value):
-        self.value = value
-
-    def elements(self):
-        return len(self.value)
-
-    def eval(self, bundle, leader):
-        for c in self.value:
-            c.eval()
-
-
 class EmptyCollection(CollectionAst):
     def __init__(self, etype, value, token, src):
         super().__init__(token, src)
@@ -536,7 +540,7 @@ class EmptyCollection(CollectionAst):
         return 0
 
     @classmethod
-    def get_empty_collection(cls, ct, t, src):
+    def generate(cls, ct, t, src):
         if ct is CollTypes.LIST:
             v = Symbol('empty_list', t, src)
         elif ct is CollTypes.VECTOR:
@@ -714,7 +718,7 @@ class Let(FoidlAst):
         return self._letpairs
 
     @classmethod
-    def re_factor(cls, p, src):
+    def generate(cls, p, src):
         t = p.pop(0)    # Get the 'LET' token
         # Identify symbol if exists
         if type(p[0]) is Symbol:
@@ -737,7 +741,7 @@ class Let(FoidlAst):
         if letpairs:
             letpairs = letpairs[0]
         else:
-            letpairs = EmptyCollection.get_empty_collection(
+            letpairs = EmptyCollection.generate(
                 CollTypes.LIST, t, src)
             # letpairs = EmptyCollection(CollTypes.LIST, [], t, src)
 
@@ -760,10 +764,11 @@ class Let(FoidlAst):
             return Let(symbol, letpairs, value, t, src)
 
     def eval(self, bundle, leader):
+        # Push Let scope on bundle
         bundle.symtree.push_scope(self._id, self._id)
+        # Generate unique_id
         unique_id = "let_" + str(self.token.getsourcepos().lineno) \
             + "_" + str(self.token.getsourcepos().colno)
-        # Push Let scope on bundle
         # Register any letpair vars in table
         preblock = []
         self._letpairs.prefix = unique_id
@@ -774,6 +779,7 @@ class Let(FoidlAst):
             e.eval(bundle, expr)
         # Pop scope
         bundle.symtree.pop_scope()
+        # Create result reference
         lres = LetResReference(self._id)
         lres.ident = "letres_" + str(self.token.getsourcepos().lineno) \
             + "_" + str(self.token.getsourcepos().colno)
@@ -791,14 +797,135 @@ class Let(FoidlAst):
                 preblock))
 
 
-class Match(FoidlAst):
-    def __init__(self, value):
-        self.value = value
+class MatchPair(FoidlAst):
+    def __init__(self, value, token, src, default=False):
+        super().__init__(token, src)
+        self._value = value
+        self._default = default
+        self._prefix = None
+
+    @property
+    def value(self):
+        return self._value
+
+    @property
+    def default(self):
+        return self._default
+
+    @property
+    def prefix(self):
+        return self._prefix
+
+    @prefix.setter
+    def prefix(self, prefix):
+        self._prefix = prefix
 
     def eval(self, bundle, leader):
-        print("Match value {}".format(self.value))
-        for e in self.value:
-            e.eval(bundle, leader)
+        expr = []
+        if self.default:
+            self.value[1].eval(bundle, expr)
+            leader.append(
+                ParseMatchDefault(
+                    ExpressionType.MATCH_PAIR,
+                    expr,
+                    self.token,
+                    "match_pair_" +
+                    str(self.token.getsourcepos().lineno) +
+                    "_" + str(self.token.getsourcepos().colno),
+                    pre=None))
+        else:
+            pre = []
+            self.value[0].eval(bundle, pre)
+            self.value[1].eval(bundle, expr)
+            leader.append(
+                ParseMatchPair(
+                    ExpressionType.MATCH_PAIR,
+                    expr,
+                    self.token,
+                    "match_pair_" +
+                    str(self.token.getsourcepos().lineno) +
+                    "_" + str(self.token.getsourcepos().colno),
+                    pre=pre))
+
+
+class MatchPairs(CollectionAst):
+    def __init__(self, value, token, src):
+        self._value = value
+        self._prefix = None
+
+    @property
+    def value(self):
+        return self._value
+
+    def elements(self):
+        return len(self.value)
+
+    @property
+    def prefix(self):
+        return self._prefix
+
+    @prefix.setter
+    def prefix(self, prefix):
+        self._prefix = prefix
+
+    def eval(self, bundle, leader):
+        for c in self.value:
+            c.eval(bundle, leader)
+
+
+class Match(FoidlAst):
+    def __init__(self, mres, mpred, value, token, src):
+        super().__init__(token, src)
+        self._predicate = mpred
+        self._value = value
+        # Identify symbol if exists
+        sp = token.getsourcepos()
+        if mres:
+            self._result = mres
+        else:
+            msym = "matchres_" + str(sp.lineno) + "_" + str(sp.colno)
+            self._result = Symbol(
+                msym,
+                Token(
+                    "MATCH_RES",
+                    msym,
+                    token.getsourcepos()), src)
+        self._ident = "match_" + str(sp.lineno) + "_" + str(sp.colno)
+
+    @property
+    def result(self):
+        return self._result
+
+    @property
+    def predicate(self):
+        return self._predicate
+
+    @property
+    def value(self):
+        return self._value
+
+    @property
+    def ident(self):
+        return self._ident
+
+    def eval(self, bundle, leader):
+        # Create result reference
+        mres = MatchResReference(self.result)
+        mres.ident = "matchres_" + str(self.token.getsourcepos().lineno) \
+            + "_" + str(self.token.getsourcepos().colno)
+        exprs = []
+        self.value[0].eval(bundle, exprs)
+        # for e in self.value:
+        #     e.eval(bundle, leader)
+        # Register result in symbol table
+        leader.append(
+            ParseMatch(
+                ExpressionType.MATCH,
+                exprs,
+                self.token,
+                self.ident,
+                mres))
+        bundle.symtree.register_symbol(self.result.value, mres)
 
 
 class Lambda(FoidlAst):
@@ -826,26 +953,14 @@ class Lambda(FoidlAst):
         # Append Body
         plambda, plamdaref = refactor_lambda(
             self, self.token.getsourcepos(), argref, expr,
-            [FuncArgReference, LetArgReference, LetResReference])
+            [FuncArgReference, LetArgReference,
+                LetResReference, MatchResReference])
         # [print("Lamb Arg {}".format(n)) for n in plambda.pre]
         bundle.lambdas.append(plambda)
-        # bundle.lambdas.append(
-        #     ParseLambda(
-        #         ExpressionType.LAMBDA,
-        #         expr,
-        #         self.token,
-        #         self.name.value,
-        #         pre=argref))
         # Pop stack
         bundle.symtree.pop_scope()
         # Append Reference
         leader.append(plamdaref)
-        # leader.append(
-        #     ParseLambdaRef(
-        #         ExpressionType.LAMBDA_REF,
-        #         argref,
-        #         self.token,
-        #         self.name.value))
 
 
 class Partial(FoidlAst):
@@ -953,7 +1068,7 @@ class If(FoidlAst):
         return self._ident
 
     @classmethod
-    def re_factor(cls, value, token, src):
+    def generate(cls, value, token, src):
         if len(value) > 3:
             rem = value[3:]
             el = If(value[0:3], token, src)
@@ -992,7 +1107,7 @@ class FunctionCall(FoidlAst):
         self.call_site = csite
 
     @classmethod
-    def re_factor(cls, csite, value, token, src, state):
+    def generate(cls, csite, value, token, src, state):
         bvalue = value[0].value if value else value
         call_site = WellKnowns.get(csite[:-1], csite[:-1])
         cref = state.symtree.resolve_symbol(call_site)

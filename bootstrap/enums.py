@@ -39,6 +39,7 @@ class ExpressionType(enum.Enum):
     LET_ARG_PAIR = enum.auto()
     MATCH = enum.auto()
     MATCH_RES = enum.auto()
+    MATCH_PAIR = enum.auto()
     IF = enum.auto()
     FUNCTION_CALL = enum.auto()
     LAMBDA = enum.auto()
