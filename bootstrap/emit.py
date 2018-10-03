@@ -213,9 +213,11 @@ class LlvmGen(object):
     def _emit_match_type(self, el, builder, frame):
         # Establish result and other variables
         bt = builder.load(builder.module.get_global("true"))
-        result = builder.alloca(any_ptr, name=el.res.ident)
-        expres = builder.alloca(any_ptr)
-        guard = builder.alloca(int_64)
+        result = builder.alloca(any_ptr, name=el.res.ident)  # Match Result
+        expres = builder.alloca(any_ptr)  # Expression result
+        guard = builder.alloca(int_64)  # Switch indexer
+        # Convenience
+        foidl_truthy = builder.module.get_global("foidl_truthy_qmark")
         # Create basic block and jump to it
         matchbb = builder.append_basic_block(el.name)
         builder.branch(matchbb)
@@ -226,8 +228,6 @@ class LlvmGen(object):
             pred = []
             self._emit_et(el.pre[0], builder, pred)
             builder.store(pred[0], expres)
-            # Convenience
-            foidl_truthy = builder.module.get_global("foidl_truthy_qmark")
             # First setup the ifs for the match guards
             index = 0
             for p in el.exprs:
@@ -239,6 +239,9 @@ class LlvmGen(object):
                     with builder.if_then(cmp):
                         builder.store(ir.Constant(int_64, index), guard)
                 index += 1
+
+            # Second, setup the switch calls
+
             sbbs = [builder.append_basic_block(x.name) for x in el.exprs
                     if type(x) is not ParseMatchDefault]
             matchdefault = builder.append_basic_block(el.exprs[-1].name)
@@ -248,13 +251,21 @@ class LlvmGen(object):
                 sw.add_case(ir.Constant(int_64, index), p)
                 index += 1
             index = 0
-            mex = builder.append_basic_block("match_exit")
+            mex = builder.append_basic_block(el.name + "_match_exit")
             for p in el.exprs:
                 if type(p) is not ParseMatchDefault:
                     with builder.goto_block(sbbs[index]):
+                        matchexpr = []
+                        self._emit_et(
+                            el.exprs[index].exprs[0], builder, matchexpr)
+                        builder.store(matchexpr[-1], result)
                         builder.branch(mex)
                 index += 1
             with builder.goto_block(matchdefault):
+                matchexpr = []
+                self._emit_et(
+                    el.exprs[-1].exprs[0], builder, matchexpr)
+                builder.store(matchexpr[-1], result)
                 builder.branch(mex)
             # Then setup the switch pattern
             with builder.goto_block(mex):

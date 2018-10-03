@@ -850,6 +850,7 @@ class MatchPair(FoidlAst):
 
 class MatchPairs(CollectionAst):
     def __init__(self, value, token, src):
+        super().__init__(token, src)
         self._value = value
         self._prefix = None
 
@@ -918,6 +919,20 @@ class Match(FoidlAst):
         self.predicate.eval(bundle, pred)
         exprs = []
         self.value[0].eval(bundle, exprs)
+        havedef = None
+        for x in range(len(exprs)):
+            if type(exprs[x]) is ParseMatchDefault:
+                havedef = exprs.pop(x)
+                exprs.append(havedef)
+                break
+
+        if not havedef:
+            mp = MatchPair(
+                [None, _NIL],
+                self.value[0].token,
+                self.value[0].source,
+                True)
+            mp.eval(bundle, exprs)
         # for e in self.value:
         #     e.eval(bundle, leader)
         # Register result in symbol table
