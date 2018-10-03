@@ -913,6 +913,9 @@ class Match(FoidlAst):
         mres = MatchResReference(self.result)
         mres.ident = "matchres_" + str(self.token.getsourcepos().lineno) \
             + "_" + str(self.token.getsourcepos().colno)
+
+        pred = []
+        self.predicate.eval(bundle, pred)
         exprs = []
         self.value[0].eval(bundle, exprs)
         # for e in self.value:
@@ -924,7 +927,8 @@ class Match(FoidlAst):
                 exprs,
                 self.token,
                 self.ident,
-                mres))
+                mres,
+                pred))
         bundle.symtree.register_symbol(self.result.value, mres)
 
 

@@ -211,9 +211,59 @@ class LlvmGen(object):
 
     @_emit_et.register(ParseMatch)
     def _emit_match_type(self, el, builder, frame):
-        # Establish result
+        # Establish result and other variables
+        bt = builder.load(builder.module.get_global("true"))
+        result = builder.alloca(any_ptr, name=el.res.ident)
+        expres = builder.alloca(any_ptr)
+        guard = builder.alloca(int_64)
+        # Create basic block and jump to it
+        matchbb = builder.append_basic_block(el.name)
+        builder.branch(matchbb)
         # Establish switch pairs (comparasson and exec expressions)
-        pass
+        with builder.goto_block(matchbb):
+            builder.store(ir.Constant(int_64, -1), guard)
+            # Process the match expression
+            pred = []
+            self._emit_et(el.pre[0], builder, pred)
+            builder.store(pred[0], expres)
+            # Convenience
+            foidl_truthy = builder.module.get_global("foidl_truthy_qmark")
+            # First setup the ifs for the match guards
+            index = 0
+            for p in el.exprs:
+                if type(p) is not ParseMatchDefault:
+                    gpred = []
+                    self._emit_et(p.pre[0], builder, gpred)
+                    pr_res = builder.call(foidl_truthy, gpred)
+                    cmp = builder.icmp_unsigned("==", pr_res, bt)
+                    with builder.if_then(cmp):
+                        builder.store(ir.Constant(int_64, index), guard)
+                index += 1
+            sbbs = [builder.append_basic_block(x.name) for x in el.exprs
+                    if type(x) is not ParseMatchDefault]
+            matchdefault = builder.append_basic_block(el.exprs[-1].name)
+            sw = builder.switch(builder.load(guard), matchdefault)
+            index = 0
+            for p in sbbs:
+                sw.add_case(ir.Constant(int_64, index), p)
+                index += 1
+            index = 0
+            mex = builder.append_basic_block("match_exit")
+            for p in el.exprs:
+                if type(p) is not ParseMatchDefault:
+                    with builder.goto_block(sbbs[index]):
+                        builder.branch(mex)
+                index += 1
+            with builder.goto_block(matchdefault):
+                builder.branch(mex)
+            # Then setup the switch pattern
+            with builder.goto_block(mex):
+                builder.store(bt, result)
+                fload = builder.load(result)
+                ifex = builder.append_basic_block(el.name + "_exit")
+                builder.branch(ifex)
+        builder.position_at_end(ifex)
+        frame.append(fload)
 
     @_emit_et.register(ParseMatchPair)
     def _emit_matchpair_type(self, el, builder, frame):

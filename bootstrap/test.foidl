@@ -15,6 +15,9 @@ func tnilret [fn]  ; Return an literal
 func tpartial [a b]
 
 func tgroup []
+    ?: =: 1 1
+        true
+        false
 
 ;func tlet []
 ;    let a [b 5] +: 1 b
@@ -36,7 +39,3 @@ func tmatch [arg]
     | 9 10
     | :default 7
 
-    match arg
-    | 1 -: 5 tpartial: 1 2
-    | 9 10
-    | :default 7
