@@ -259,7 +259,7 @@ class LetResReference(ResultReference):
         return "LetResRef({}:ptr {})".format(self.argname, self.ptr)
 
 
-class MatchResReference(FoidlReference):
+class MatchResReference(ResultReference):
     """Match Result Symbol Reference"""
 
     def __init__(self, astmember):
@@ -267,6 +267,16 @@ class MatchResReference(FoidlReference):
 
     def __repr__(self):
         return "MatchResRef({}:ptr {})".format(self.argname, self.ptr)
+
+
+class MatchExprReference(ResultReference):
+    """Match Result Symbol Reference"""
+
+    def __init__(self, astmember):
+        super().__init__(astmember)
+
+    def __repr__(self):
+        return "MatchExprRef({}:ptr {})".format(self.argname, self.ptr)
 
 
 class FoidlAst(ABC):
@@ -875,7 +885,7 @@ class MatchPairs(CollectionAst):
 
 
 class Match(FoidlAst):
-    def __init__(self, mres, mpred, value, token, src):
+    def __init__(self, mres, mpred, mexprres, value, token, src):
         super().__init__(token, src)
         self._predicate = mpred
         self._value = value
@@ -891,11 +901,25 @@ class Match(FoidlAst):
                     "MATCH_RES",
                     msym,
                     token.getsourcepos()), src)
+        if mexprres:
+            self._exprres = mexprres
+        else:
+            msym = "matchexpr_" + str(sp.lineno) + "_" + str(sp.colno)
+            self._exprres = Symbol(
+                msym,
+                Token(
+                    "MATCH_EXPR_RES",
+                    msym,
+                    token.getsourcepos()), src)
         self._ident = "match_" + str(sp.lineno) + "_" + str(sp.colno)
 
     @property
     def result(self):
         return self._result
+
+    @property
+    def exprres(self):
+        return self._exprres
 
     @property
     def predicate(self):
@@ -915,10 +939,21 @@ class Match(FoidlAst):
         mres.ident = "matchres_" + str(self.token.getsourcepos().lineno) \
             + "_" + str(self.token.getsourcepos().colno)
 
+        mexpr = MatchExprReference(self.exprres)
+        mexpr.ident = "matchexpr_" + str(self.token.getsourcepos().lineno) \
+            + "_" + str(self.token.getsourcepos().colno)
+
+        # Fetch the predicate statement
         pred = []
         self.predicate.eval(bundle, pred)
+
+        # Expose the predicate reference to lexical scope for expressions
+        bundle.symtree.push_scope(self.ident, self.ident)
+        bundle.symtree.register_symbol(self.exprres.value, mexpr)
         exprs = []
         self.value[0].eval(bundle, exprs)
+        bundle.symtree.pop_scope()
+
         havedef = None
         for x in range(len(exprs)):
             if type(exprs[x]) is ParseMatchDefault:
@@ -942,7 +977,7 @@ class Match(FoidlAst):
                 exprs,
                 self.token,
                 self.ident,
-                mres,
+                [mres, mexpr],
                 pred))
         bundle.symtree.register_symbol(self.result.value, mres)
 

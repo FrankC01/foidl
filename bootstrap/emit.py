@@ -213,8 +213,9 @@ class LlvmGen(object):
     def _emit_match_type(self, el, builder, frame):
         # Establish result and other variables
         bt = builder.load(builder.module.get_global("true"))
-        result = builder.alloca(any_ptr, name=el.res.ident)  # Match Result
-        expres = builder.alloca(any_ptr)  # Expression result
+        result = builder.alloca(any_ptr, name=el.res[0].ident)  # Result
+        expres = builder.alloca(any_ptr, name=el.res[1].ident)  # Expression
+        el.res[1].ptr = expres
         guard = builder.alloca(int_64)  # Switch indexer
         # Convenience
         foidl_truthy = builder.module.get_global("foidl_truthy_qmark")
@@ -390,10 +391,10 @@ class LlvmGen(object):
         frame.append(builder.function.args[el.argpos])
 
     @_emit_et.register(ast.LetResReference)
+    @_emit_et.register(ast.MatchResReference)
+    @_emit_et.register(ast.MatchExprReference)
     def _emit_letresref_type(self, el, builder, frame):
         """Emit function argument reference"""
-        # traceback.print_stack()
-        # print("LRR => {}".format(el))
         frame.append(builder.load(el.ptr))
 
     @_emit_et.register(ast.LetArgReference)

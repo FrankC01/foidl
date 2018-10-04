@@ -320,7 +320,8 @@ class Parser():
             """Let parse support for zero or more local var assignments"""
             return _token_eater(_flatten_list(p), ast.LetPairs)
 
-        @self.pg.production('matchexpr : MATCH single_expr matchpairs')
+        @self.pg.production(
+            'matchexpr : MATCH single_expr matchpairs')
         @self.pg.production(
             'matchexpr : MATCH symbol_type single_expr matchpairs')
         def matchexpr(state, p):
@@ -331,7 +332,24 @@ class Parser():
                 mres = p.pop(0)
             mpred = p.pop(0)
             return ast.Match(
-                mres, mpred,
+                mres, mpred, None,
+                [x for x in p if type(x) is not Token], t, self.input)
+
+        @self.pg.production(
+            'matchexpr : MATCH single_expr AS symbol_type matchpairs')
+        @self.pg.production(
+            'matchexpr : MATCH symbol_type single_expr AS symbol_type matchpairs')
+        def matchexpr_exprsym(state, p):
+            """Match parse"""
+            t = p.pop(0)
+            mres = None
+            if len(p) == 5:
+                mres = p.pop(0)
+            p.pop(1)  # Remove 'AS'
+            mexprres = p.pop(1)
+            mpred = p.pop(0)
+            return ast.Match(
+                mres, mpred, mexprres,
                 [x for x in p if type(x) is not Token], t, self.input)
 
         @self.pg.production(

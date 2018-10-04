@@ -28,6 +28,7 @@ class Lexer():
         self.lexer.add('VAR', r'var')
         self.lexer.add('FUNC', r'\bfunc\b')
         self.lexer.add('LET', r'let')
+        self.lexer.add('AS', r'as')
         self.lexer.add('MATCH', r'match')
         self.lexer.add('MATCH_DEFAULT', r':default')
         self.lexer.add('PRIVATE', r':private')

@@ -14,11 +14,6 @@ func tnilret [fn]  ; Return an literal
 
 func tpartial [a b]
 
-func tgroup []
-    ?: =: 1 1
-        true
-        false
-
 ;func tlet []
 ;    let a [b 5] +: 1 b
 ;    +: 7 a
@@ -34,8 +29,13 @@ func tclosure [arg]
 
 
 func tmatch [arg]
-    match a arg
+    match a arg as expr
     | 1 -: 5 tpartial: 1 2
-    | 9 10
+    | expr 10
     | :default 800
+
+func tif []
+    ?: =: 9 10
+        +: 8 12
+        +: 42 18
 
