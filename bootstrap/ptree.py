@@ -109,6 +109,10 @@ class ParseMatchDefault(ParseTree):
     pass
 
 
+class ParseMatchEqual(ParseTree):
+    pass
+
+
 class ParseIf(ParseTree):
     pass
 

@@ -327,6 +327,37 @@ class CompilationUnit(FoidlAst):
         return self.value[0]
 
 
+class Symbol(FoidlAst):
+    def __init__(self, value, token, src):
+        super().__init__(token, src)
+        self.value = value
+
+    @property
+    def name(self):
+        return self.value
+
+    def eval(self, bundle, leader):
+        LOGGER.info("Symbol processing for {}".format(self.name))
+        LOGGER.info(self.name)
+        # sym = self.extern_symbol(cname, call_site.name, self.source)
+        sym = bundle.symtree.resolve_symbol(self.name)
+        if sym:
+            if self.source != sym.source:
+                if not bundle.externs.get(self.name, None):
+                    bundle.externs[self.name] = sym
+            leader.append(ParseSymbol(
+                ExpressionType.SYMBOL_REF,
+                [sym],
+                self.token,
+                self.name))
+        else:
+            raise errors.SymbolException(
+                "{}:{} unresolved symbol {}".format(
+                    self.token.getsourcepos().lineno,
+                    self.token.getsourcepos().colno,
+                    self.name))
+
+
 class Module(FoidlAst):
     """Module AST is the top node in tree
 
@@ -357,6 +388,7 @@ class Module(FoidlAst):
         # Add references to nil, true, false
         bundle.externs = {
             "nil": bundle.symtree.resolve_symbol("nil"),
+            "eq": bundle.symtree.resolve_symbol("eq"),
             "true": bundle.symtree.resolve_symbol("true"),
             "false": bundle.symtree.resolve_symbol("false")
         }
@@ -808,11 +840,16 @@ class Let(FoidlAst):
 
 
 class MatchPair(FoidlAst):
+    _singular = [
+        Symbol, LiteralReference, FuncArgReference, LetResReference,
+        MatchResReference, MatchExprReference]
+
     def __init__(self, value, token, src, default=False):
         super().__init__(token, src)
         self._value = value
         self._default = default
         self._prefix = None
+        print("Match Pair {}".format(value))
 
     @property
     def value(self):
@@ -832,30 +869,38 @@ class MatchPair(FoidlAst):
 
     def eval(self, bundle, leader):
         expr = []
+        self.value[1].eval(bundle, expr)
+        pre = []
+        mpairname = "match_pair_" + \
+            str(self.token.getsourcepos().lineno) + \
+            "_" + str(self.token.getsourcepos().colno)
         if self.default:
-            self.value[1].eval(bundle, expr)
             leader.append(
                 ParseMatchDefault(
                     ExpressionType.MATCH_PAIR,
                     expr,
                     self.token,
-                    "match_pair_" +
-                    str(self.token.getsourcepos().lineno) +
-                    "_" + str(self.token.getsourcepos().colno),
+                    mpairname,
                     pre=None))
         else:
-            pre = []
             self.value[0].eval(bundle, pre)
-            self.value[1].eval(bundle, expr)
-            leader.append(
-                ParseMatchPair(
-                    ExpressionType.MATCH_PAIR,
-                    expr,
-                    self.token,
-                    "match_pair_" +
-                    str(self.token.getsourcepos().lineno) +
-                    "_" + str(self.token.getsourcepos().colno),
-                    pre=pre))
+            if type(self.value[0]) in self._singular:
+                leader.append(
+                    ParseMatchEqual(
+                        ExpressionType.MATCH_PAIR,
+                        expr,
+                        self.token,
+                        mpairname,
+                        pre=pre))
+            else:
+                print("Eval pre on match {}".format(pre))
+                leader.append(
+                    ParseMatchPair(
+                        ExpressionType.MATCH_PAIR,
+                        expr,
+                        self.token,
+                        mpairname,
+                        pre=pre))
 
 
 class MatchPairs(CollectionAst):
@@ -979,6 +1024,7 @@ class Match(FoidlAst):
                 self.ident,
                 [mres, mexpr],
                 pred))
+        print("Leader {}".format(leader))
         bundle.symtree.register_symbol(self.result.value, mres)
 
 
@@ -1196,37 +1242,6 @@ class FunctionCall(FoidlAst):
                 args,
                 self.token,
                 self.call_site))
-
-
-class Symbol(FoidlAst):
-    def __init__(self, value, token, src):
-        super().__init__(token, src)
-        self.value = value
-
-    @property
-    def name(self):
-        return self.value
-
-    def eval(self, bundle, leader):
-        LOGGER.info("Symbol processing for {}".format(self.name))
-        LOGGER.info(self.name)
-        # sym = self.extern_symbol(cname, call_site.name, self.source)
-        sym = bundle.symtree.resolve_symbol(self.name)
-        if sym:
-            if self.source != sym.source:
-                if not bundle.externs.get(self.name, None):
-                    bundle.externs[self.name] = sym
-            leader.append(ParseSymbol(
-                ExpressionType.SYMBOL_REF,
-                [sym],
-                self.token,
-                self.name))
-        else:
-            raise errors.SymbolException(
-                "{}:{} unresolved symbol {}".format(
-                    self.token.getsourcepos().lineno,
-                    self.token.getsourcepos().colno,
-                    self.name))
 
 
 _NIL = Symbol('nil', Token("SYMBOL", "nil"), None)

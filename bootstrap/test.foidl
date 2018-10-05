@@ -30,12 +30,7 @@ func tclosure [arg]
 
 func tmatch [arg]
     match a arg as expr
-    | 1 -: 5 tpartial: 1 2
-    | expr 10
+    | 1 -: 5 tpartial: expr 2
     | :default 800
 
-func tif []
-    ?: =: 9 10
-        +: 8 12
-        +: 42 18
 

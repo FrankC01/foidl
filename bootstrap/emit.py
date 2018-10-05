@@ -209,6 +209,47 @@ class LlvmGen(object):
             self._emit_et(e, builder, expr)
         builder.store(expr[-1], arg)
 
+    @methdispatch
+    def _emit_match(self, el, builder, frame, pre=False):
+        """Process default when a ParseTree type not handled"""
+        if isinstance(el, ParseTree):
+            print("MATCH {} Unhandled type {}".format(el, el.ptype))
+        else:
+            print("MATCH Unhandled type {}".format(el))
+        raise EmitNotImplementedError
+
+    @_emit_match.register(ParseMatchPair)
+    def _emit_matchpair_type(self, el, builder, frame, pre=None):
+        expr = []
+        if pre:
+            self._emit_et(el.pre[0], builder, expr)
+            frame.append(expr[0])
+        else:
+            self._emit_et(el.exprs[0], builder, expr)
+            frame.append(expr[0])
+
+    @_emit_match.register(ParseMatchDefault)
+    def _emit_matchdefault_type(self, el, builder, frame, pre=None):
+        expr = []
+        if pre:
+            raise EmitNotImplementedError("Calling default with pre")
+        else:
+            self._emit_et(el.exprs[0], builder, expr)
+            frame.append(expr[0])
+
+    @_emit_match.register(ParseMatchEqual)
+    def _emit_matchequal_type(self, el, builder, frame, pre=None):
+        foidl_equal = builder.module.get_global("eq")
+        expr = []
+        if pre:
+            self._emit_et(el.pre[0], builder, expr)
+            expr.append(builder.load(pre))
+            frame.append(builder.call(foidl_equal, expr))
+        else:
+            print("Equal expr {}".format(el.exprs))
+            self._emit_et(el.exprs[0], builder, expr)
+            frame.append(expr[0])
+
     @_emit_et.register(ParseMatch)
     def _emit_match_type(self, el, builder, frame):
         # Establish result and other variables
@@ -225,27 +266,27 @@ class LlvmGen(object):
         # Establish switch pairs (comparasson and exec expressions)
         with builder.goto_block(matchbb):
             builder.store(ir.Constant(int_64, -1), guard)
+            mdefault = el.exprs.pop()     # Remove default from list
             # Process the match expression
             pred = []
             self._emit_et(el.pre[0], builder, pred)
             builder.store(pred[0], expres)
-            # First setup the ifs for the match guards
+            # First setup the ifs for the match guards derived
+            # from each expressions 'pre'
             index = 0
             for p in el.exprs:
-                if type(p) is not ParseMatchDefault:
-                    gpred = []
-                    self._emit_et(p.pre[0], builder, gpred)
-                    pr_res = builder.call(foidl_truthy, gpred)
-                    cmp = builder.icmp_unsigned("==", pr_res, bt)
-                    with builder.if_then(cmp):
-                        builder.store(ir.Constant(int_64, index), guard)
+                gpred = []
+                self._emit_match(p, builder, gpred, expres)
+                pr_res = builder.call(foidl_truthy, gpred)
+                cmp = builder.icmp_unsigned("==", pr_res, bt)
+                with builder.if_then(cmp):
+                    builder.store(ir.Constant(int_64, index), guard)
                 index += 1
 
             # Second, setup the switch calls
 
-            sbbs = [builder.append_basic_block(x.name) for x in el.exprs
-                    if type(x) is not ParseMatchDefault]
-            matchdefault = builder.append_basic_block(el.exprs[-1].name)
+            sbbs = [builder.append_basic_block(x.name) for x in el.exprs]
+            matchdefault = builder.append_basic_block(mdefault.name)
             sw = builder.switch(builder.load(guard), matchdefault)
             index = 0
             for p in sbbs:
@@ -253,19 +294,20 @@ class LlvmGen(object):
                 index += 1
             index = 0
             mex = builder.append_basic_block(el.name + "_match_exit")
+            # Process normal guard expressions
             for p in el.exprs:
-                if type(p) is not ParseMatchDefault:
-                    with builder.goto_block(sbbs[index]):
-                        matchexpr = []
-                        self._emit_et(
-                            el.exprs[index].exprs[0], builder, matchexpr)
-                        builder.store(matchexpr[-1], result)
-                        builder.branch(mex)
+                with builder.goto_block(sbbs[index]):
+                    print("{} post pre".format(p))
+                    matchexpr = []
+                    self._emit_match(
+                        el.exprs[index], builder, matchexpr)
+                    builder.store(matchexpr[-1], result)
+                    builder.branch(mex)
                 index += 1
+            # Process default guard
             with builder.goto_block(matchdefault):
                 matchexpr = []
-                self._emit_et(
-                    el.exprs[-1].exprs[0], builder, matchexpr)
+                self._emit_match(mdefault, builder, matchexpr)
                 builder.store(matchexpr[-1], result)
                 builder.branch(mex)
             # Then setup the switch pattern
@@ -276,14 +318,6 @@ class LlvmGen(object):
                 builder.branch(ifex)
         builder.position_at_end(ifex)
         frame.append(fload)
-
-    @_emit_et.register(ParseMatchPair)
-    def _emit_matchpair_type(self, el, builder, frame):
-        pass
-
-    @_emit_et.register(ParseMatchDefault)
-    def _emit_matchdefault_type(self, el, builder, frame):
-        pass
 
     @_emit_et.register(ParseIf)
     def _emit_if_type(self, el, builder, frame):
@@ -389,6 +423,11 @@ class LlvmGen(object):
         """Emit function argument reference"""
         # print("FuncArgRef =>".format(el))
         frame.append(builder.function.args[el.argpos])
+
+    @_emit_et.register(ast.LiteralReference)
+    def _emit_litref(self, el, builder, frame):
+        frame.append(
+            builder.load(builder.module.get_global(el.name)))
 
     @_emit_et.register(ast.LetResReference)
     @_emit_et.register(ast.MatchResReference)
