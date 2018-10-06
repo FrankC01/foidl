@@ -38,6 +38,12 @@ def methdispatch(func):
     return wrapper
 
 
+def expand_symbol(instr):
+    return instr.replace(
+        "?", "_qmark").replace(
+        "!", "_bang").replace("*", "_bang")
+
+
 class FoidlReference(ABC):
     """FoidlReference informs type, value, intern/extern, etc"""
 
@@ -94,14 +100,19 @@ class LiteralReference(FoidlReference):
 class VarReference(FoidlReference):
     """Variable Symbol Reference"""
 
-    def __init__(self, astmember, nm):
+    def __init__(self, astmember, nm, ident):
         super().__init__(astmember)
         self._name = nm
+        self._ident = ident
         self._exprs = None
 
     @property
     def name(self):
         return self._name
+
+    @property
+    def ident(self):
+        return self._ident
 
     @property
     def exprs(self):
@@ -115,10 +126,11 @@ class VarReference(FoidlReference):
 class FuncReference(FoidlReference):
     """FuncReference informs name, intern/extern, args"""
 
-    def __init__(self, astmember, name, argcnt):
+    def __init__(self, astmember, name, ident, argcnt):
         super().__init__(astmember)
         self._argcnt = argcnt
         self._name = name
+        self._ident = ident
 
     @property
     def argcnt(self):
@@ -127,6 +139,10 @@ class FuncReference(FoidlReference):
     @property
     def name(self):
         return self._name
+
+    @property
+    def ident(self):
+        return self._ident
 
 
 class FuncArgReference(FoidlReference):
@@ -428,6 +444,7 @@ class VarHeader(FoidlAst):
     def __init__(self, vname, token, src):
         super().__init__(token, src)
         self._name = vname
+        self._ident = expand_symbol(vname.value)
         self._reference = None
 
     @property
@@ -435,11 +452,15 @@ class VarHeader(FoidlAst):
         return self._name
 
     @property
+    def ident(self):
+        return self._ident
+
+    @property
     def reference(self):
         return self._reference
 
     def get_reference(self):
-        self._reference = VarReference(self, self.name.value)
+        self._reference = VarReference(self, self.name.value, self.ident)
         return self._reference
 
     def eval(self, bundle, leader):
@@ -453,6 +474,7 @@ class Variable(FoidlAst):
         super().__init__(token, src)
         self._name = vhdr.name
         self._vref = vhdr.reference
+        self._ident = vhdr.ident
         if type(value[0]) is list:
             value = value[0]
         if len(value) != 1:
@@ -465,6 +487,10 @@ class Variable(FoidlAst):
     @property
     def name(self):
         return self._name.value
+
+    @property
+    def ident(self):
+        return self._ident
 
     @property
     def value(self):
@@ -481,7 +507,7 @@ class Variable(FoidlAst):
                 ExpressionType.VARIABLE,
                 expr,
                 self.token,
-                self.name))
+                self.ident))
 
 
 class FuncHeader(FoidlAst):
@@ -491,17 +517,26 @@ class FuncHeader(FoidlAst):
         super().__init__(token, src)
         self._name = fname
         self._arguments = args
+        self._ident = expand_symbol(fname.value)
 
     @property
     def name(self):
         return self._name
 
     @property
+    def ident(self):
+        return self._ident
+
+    @property
     def arguments(self):
         return self._arguments
 
     def get_reference(self):
-        return FuncReference(self, self.name.value, self.arguments.elements())
+        return FuncReference(
+            self,
+            self.name.value,
+            self.ident,
+            self.arguments.elements())
 
     def eval(self, bundle, leader):
         pass
@@ -511,12 +546,17 @@ class Function(FoidlAst):
     def __init__(self, fhdr, value, src):
         super().__init__(fhdr.token, src)
         self._name = fhdr.name
+        self._ident = fhdr.ident
         self._arguments = fhdr.arguments
         self.value = value if value else [_NIL]
 
     @property
     def name(self):
         return self._name.value
+
+    @property
+    def ident(self):
+        return self._ident
 
     @property
     def arguments(self):
@@ -548,7 +588,7 @@ class Function(FoidlAst):
                 ExpressionType.FUNCTION,
                 expr,
                 self.token,
-                self.name,
+                self.ident,
                 pre=argref))
         # Pop stack
         bundle.symtree.pop_scope()
@@ -849,7 +889,6 @@ class MatchPair(FoidlAst):
         self._value = value
         self._default = default
         self._prefix = None
-        print("Match Pair {}".format(value))
 
     @property
     def value(self):

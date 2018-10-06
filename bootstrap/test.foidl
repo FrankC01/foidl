@@ -2,13 +2,12 @@
 
 module test
 
-include foo
 
-;var ml ^[a b] +: a b
-
-var madd +
-
-var arb? 7
+var vkw :keyword
+var vstr "strng"
+var arb? true
+var vev <1>
+var vfb tpartial
 
 func tnilret [fn]  ; Return an literal
 
@@ -20,9 +19,9 @@ func tpartial [a b]
 
 func tclosure [arg]
 
-    let b [] +: 5 9
+    let b [] arb?
 
-    let a [ t +: 7 12
+    let a [ t +: 7 20
             lref ^[x]
                     tpartial: b tpartial: x tpartial: t arg]
         (lref 2 3)
