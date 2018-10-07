@@ -48,6 +48,10 @@ class ParseTree(object):
     def name(self):
         return self._name
 
+    @name.setter
+    def name(self, newname):
+        self._name = newname
+
     @property
     def res(self):
         return self._res

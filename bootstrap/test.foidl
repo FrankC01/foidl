@@ -8,6 +8,9 @@ var vstr "strng"
 var arb? true
 var vev <1>
 var vfb tpartial
+var thx 0xfe05
+var tbt 0b10011001
+var tchr 'a'
 
 func tnilret [fn]  ; Return an literal
 
@@ -31,5 +34,9 @@ func tmatch [arg]
     match a arg as expr
     | 1 -: 5 tpartial: expr 2
     | :default 800
+
+
+func main [args]
+    tmatch: first: args
 
 

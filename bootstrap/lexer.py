@@ -36,7 +36,6 @@ class Lexer():
         # self.lexer.add('NIL', r'nil')
         self.lexer.add('MATCH_PATTERN', r'\|')
         self.lexer.add('GROUP', r'@\(')
-        self.lexer.add('MAIN', r'main')
         self.lexer.add('IF', r'\?:')
         self.lexer.add('IF_REF', r'\?')
         # Sugar for built-ins
@@ -77,7 +76,7 @@ class Lexer():
         self.lexer.add('STRING', r'\"(.+?)\"')
         self.lexer.add('CHAR', r'\'(.{1})\'')
         # Numbers
-        self.lexer.add('BIT', r"0b[0-9a-fA-F]+")
+        self.lexer.add('BIT', r"0b[0-1]+")
         self.lexer.add('HEX', r"0x[0-9a-fA-F]+")
         # self.lexer.add('REAL', r"([0-9]+(?:\.[0-9]+)?)")
         self.lexer.add('REAL', r"[0-9]+\.[0-9]+")

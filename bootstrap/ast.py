@@ -932,7 +932,6 @@ class MatchPair(FoidlAst):
                         mpairname,
                         pre=pre))
             else:
-                print("Eval pre on match {}".format(pre))
                 leader.append(
                     ParseMatchPair(
                         ExpressionType.MATCH_PAIR,
@@ -1033,9 +1032,11 @@ class Match(FoidlAst):
 
         # Expose the predicate reference to lexical scope for expressions
         bundle.symtree.push_scope(self.ident, self.ident)
+        # Register result in symbol table
         bundle.symtree.register_symbol(self.exprres.value, mexpr)
         exprs = []
         self.value[0].eval(bundle, exprs)
+        # Deregister scope symbol table
         bundle.symtree.pop_scope()
 
         havedef = None
@@ -1052,9 +1053,7 @@ class Match(FoidlAst):
                 self.value[0].source,
                 True)
             mp.eval(bundle, exprs)
-        # for e in self.value:
-        #     e.eval(bundle, leader)
-        # Register result in symbol table
+
         leader.append(
             ParseMatch(
                 ExpressionType.MATCH,
@@ -1063,7 +1062,6 @@ class Match(FoidlAst):
                 self.ident,
                 [mres, mexpr],
                 pred))
-        print("Leader {}".format(leader))
         bundle.symtree.register_symbol(self.result.value, mres)
 
 

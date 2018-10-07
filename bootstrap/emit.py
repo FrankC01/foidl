@@ -47,6 +47,7 @@ int_64 = ir.IntType(64)
 int_32 = ir.IntType(32)
 int_8 = ir.IntType(8)
 void_ptr = ir.PointerType(ir.IntType(8))
+void_ptr_ptr = ir.PointerType(void_ptr)
 any_struct = glbctx.get_identified_type("Any")
 any_struct.set_body(int_64, int_64, int_64, int_32, void_ptr)
 any_ptr = any_struct.as_pointer()
@@ -54,6 +55,8 @@ any_ptr_ptr = any_ptr.as_pointer()
 null_val = ir.FormattedConstant(any_ptr, 'null')
 
 supps = [
+    ("foidl_convert_mainargs", [int_32, void_ptr_ptr, void_ptr_ptr]),
+    ("foidl_reg_character", [int_64]),
     ("foidl_reg_integer", [int_64]),
     ("foidl_reg_keyword", [void_ptr]),
     ("foidl_reg_string", [void_ptr]),
@@ -89,6 +92,7 @@ class LlvmGen(object):
         backing_mod = self.binding.parse_assembly("")
         self._engine = self.binding.create_mcjit_compiler(
             backing_mod, target_machine)
+        self._main = False
         self.vinits = []
         self.fowards = {}
 
@@ -103,6 +107,14 @@ class LlvmGen(object):
     @property
     def engine(self):
         return self._engine
+
+    @property
+    def main(self):
+        return self._main
+
+    @main.setter
+    def main(self, flag):
+        self._main = flag
 
     def _reg_global_var(self, vname):
         """Create a global variable with null pointer"""
@@ -168,13 +180,16 @@ class LlvmGen(object):
 
     def _emit_linits(self, litmap):
         """Emits registration calls for literals of all types"""
-        fn = self._reg_global_voidfunc(self.source + "_linits", 0)
+        linitname = self.source + "_linits"
+        fn = self._reg_global_voidfunc(linitname, 0)
+        fn.linkage = "private"
         builder = ir.IRBuilder(fn.append_basic_block('entry'))
 
         clook = {
             "STRING": builder.module.get_global("foidl_reg_string"),
             "KEYWORD": builder.module.get_global("foidl_reg_keyword"),
-            "INTEGER": builder.module.get_global("foidl_reg_integer")}
+            "INTEGER": builder.module.get_global("foidl_reg_integer"),
+            "CHAR": builder.module.get_global("foidl_reg_character")}
 
         # Strings and Keywords
         strdict = {**litmap['STRING'], **litmap['KEYWORD']}
@@ -198,24 +213,37 @@ class LlvmGen(object):
                     for x, y in litmap.items()
                     if x in ['KEYWORD', 'STRING']}.items()]
 
-        # Integers
-        for k, v in litmap["INTEGER"].items():
+        # Integers, Bin, and Hex
+        intdict = {**litmap['INTEGER'], **litmap['HEX'], **litmap['BIT']}
+        for k, v in intdict.items():
             rcall = builder.call(
                 clook["INTEGER"],
-                [ir.Constant(int_64, int(k))])
+                [ir.Constant(int_64, int(k, 0))])
             builder.store(rcall, builder.module.get_global(v.name))
+
+        # Chars
+        for k, v in litmap["CHAR"].items():
+            rcall = builder.call(
+                clook["CHAR"],
+                [ir.Constant(int_64, ord(k[1]))])
+            builder.store(rcall, builder.module.get_global(v.name))
+
         # Close
         builder.ret_void()
+        return linitname
 
     def _emit_vinits(self):
         """Emits the variable initializers"""
-        fn = self._reg_global_voidfunc(self.source + "vinits", 0)
+        vinitname = self.source + "_vinits"
+        fn = self._reg_global_voidfunc(vinitname, 0)
+        fn.linkage = "private"
         builder = ir.IRBuilder(fn.append_basic_block('entry'))
         for pvar in self.vinits:
             expr = []
             self._emit_et(pvar.exprs[0], builder, expr)
             builder.store(expr[-1], builder.module.get_global(pvar.name))
         builder.ret_void()
+        return vinitname
 
     # Emit expression types
 
@@ -335,7 +363,6 @@ class LlvmGen(object):
             expr.append(builder.load(pre))
             frame.append(builder.call(foidl_equal, expr))
         else:
-            print("Equal expr {}".format(el.exprs))
             self._emit_et(el.exprs[0], builder, expr)
             frame.append(expr[0])
 
@@ -387,7 +414,6 @@ class LlvmGen(object):
             # Process normal guard expressions
             for p in el.exprs:
                 with builder.goto_block(sbbs[index]):
-                    print("{} post pre".format(p))
                     matchexpr = []
                     self._emit_match(
                         el.exprs[index], builder, matchexpr)
@@ -655,6 +681,9 @@ class LlvmGen(object):
 
     def _emit_frwds(self, pfn):
         """Cache function and lambda signatures"""
+        if pfn.name == 'main':
+            pfn.name = 'user_main'
+            self.main = True
         self.fowards[pfn.name] = self._fn_arg_sigs(pfn)
 
     def _emit_body(self, ltree, etype, emeth):
@@ -667,27 +696,52 @@ class LlvmGen(object):
         else:
             pass
 
+    def _emit_main(self):
+        fn = ir.Function(
+            self.module,
+            ir.FunctionType(
+                ir.VoidType(),
+                [int_32, void_ptr_ptr, void_ptr_ptr]),
+            "main")
+        fn.args[0].name = 'argc'
+        fn.args[1].name = 'argv'
+        fn.args[2].name = 'envp'
+        builder = ir.IRBuilder(fn.append_basic_block('entry'))
+        last = builder.call(
+            builder.module.get_global("foidl_convert_mainargs"),
+            fn.args)
+        builder.call(
+            builder.module.get_global("user_main"),
+            [last])
+        builder.ret_void()
+
     def emit(self, ptree, wrtr):
         """Emit entry point"""
         # Extern declarations
         self._emit_externs(ptree['externs'])
-        # Literals
+        # Literal declarations
         self._emit_literals(ptree['literals'])
-        # Process body variables
+        # Variable declarations
         self._emit_body(ptree['base'], ExpressionType.VARIABLE, self._emit_var)
-        # Forward decls functions
+        # Forward declarations
         self._emit_body(
             ptree['base'], ExpressionType.FUNCTION, self._emit_frwds)
-        # Process lambdas
+        # Emit lambda definitions
         self._emit_lambda(ptree['lambdas'])
-        # Process body
+        # Emit function definitions
         self._emit_body(ptree['base'], ExpressionType.FUNCTION, self._emit_fn)
-        # Generate the literal initializers
-        self._emit_linits(ptree['literals'])
-        # Generate the variable initializers
-        self._emit_vinits()
+        # Emit literal registrations
+        linits = self._emit_linits(ptree['literals'])
+        # Emit variable initializers
+        vinits = self._emit_vinits()
+        # Main processing
+        if self.main:
+            self._emit_main()
+        # Module ctor initializers
+
         # Spit out the goods
         llvm_ir = str(self.module)
+
         mod = self.binding.parse_assembly(llvm_ir)
         mod.verify()
         self.engine.add_module(mod)
