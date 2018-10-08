@@ -131,6 +131,3 @@ def main(prog_name=sys.argv[0], args=sys.argv[1:]):
     LOGGER = setup_loggers(argres.llevel)
 
     execute(argres)
-
-
-main()

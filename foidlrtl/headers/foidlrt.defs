@@ -1,0 +1,285 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; foidlrt
+; Foidl core runtime
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module foidlrt
+
+; Global Types
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;	Scalar constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+var true  			Type
+var false 			Type
+var nil   			Type
+
+var zero  			Type
+var one 			Type
+var two 			Type
+var three 			Type
+var four 			Type
+var five 			Type
+var six 			Type
+var seven 			Type
+var eight 			Type
+var nine 			Type
+var ten  			Type
+var eleven 			Type
+var twelve 			Type
+var thirteen 		Type
+var fourteen 		Type
+var fifteen 		Type
+var sixteen 		Type
+
+var infinite 		Type 	;	Series
+
+var space_string 	Type
+var empty_string 	Type
+
+var empty_list 		Type
+var empty_set		Type
+var empty_map 		Type
+var empty_vector 	Type
+
+var chr0 	 Type
+var chr1 	 Type
+var chr2 	 Type
+var chr3 	 Type
+var chr4 	 Type
+var chr5 	 Type
+var chr6 	 Type
+var chr7 	 Type
+var chr8 	 Type
+var chr9 	 Type
+
+var digits 	 Type
+
+var tbchr 	 Type
+var nlchr 	 Type
+var crchr 	 Type
+var spchr 	 Type
+var exchr 	 Type 	;  !
+var semichr  Type 	;	;
+var colonchr Type 	;	:
+var qmchr 	 Type 	;  ?
+var eqchr 	 Type 	;  =
+var tmchr 	 Type 	;	*
+var addchr 	 Type 	; 	+
+var subchr 	 Type 	;	-
+var divchr 	 Type 	; 	/
+var orchr 	 Type 	;  |
+var sqchr	 Type 	;	'
+var dqchr 	 Type 	;	""
+var eschr 	 Type 	;	\
+var carchr 	 Type 	;	^
+var atchr 	 Type   ; 	@
+var pctchr 	 Type 	; 	%
+var tildchr  Type   ; 	~
+var lbracket Type 	;	[
+var rbracket Type 	;	]
+var lparen 	 Type  	; 	(
+var rparen 	 Type 	; 	)
+var langle 	 Type 	;	<
+var rangle 	 Type 	;	>
+var comma	 Type 	;	,
+var lbrace 	 Type 	;	{
+var rbrace 	 Type 	;	}
+var meta	 Type 	;	#
+var prchr 	 Type 	; 	.
+
+var whitespace		Type
+var boundarySet 	Type
+var boundarySetLite Type
+
+var cin 	Type
+var cout 	Type
+var cerr 	Type
+
+var byte_type 		Type
+var int_type 		Type
+var char_type 		Type
+var bool_type 		Type
+var func_type 		Type
+var str_type 		Type
+var kwd_type 		Type
+
+var real_type 		Type 	;	Not yet
+
+var file_type		Type
+var url_type		Type
+var ip_type			Type
+var mem_type 		Type
+
+var list_type 		Type
+var vector_type 	Type
+var set_type 		Type
+var map_type 		Type
+var mapentry_type	Type
+var linknode_type 	Type
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Runtime Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+var   foidl_env 	Type
+func  foidl_retain 		[obj]
+func  foidl_release 	[obj]
+func  foidl_heap_setup 	[]
+func  foidl_fail 		[]
+;func  foidl_failWith 	[msg] - REMOVE FROM ASM
+;func  foidl_system_getenv [x]
+
+func  foidl_fref_instance [fn]
+func  foidl_imbue [fni val]
+func  foidl_dispatch0 [fn]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Basic Math Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func  foidl_add [x, y]
+func  foidl_sub [x, y]
+func  foidl_div [x, y]
+func  foidl_mul [x, y]
+func  foidl_mod [x, y]
+func  foidl_inc [x]
+func  foidl_dec [x]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Predicate Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func  foidl_truthy? 	  [arg]
+func  foidl_falsey? 	  [arg]
+func  foidl_collection?   [arg]
+func  foidl_extendable?   [arg]
+func  foidl_empty? 		  [arg]
+func  foidl_valid_symbol  [arg]
+func  foidl_valid_keyword [arg]
+func  foidl_valid_number  [arg]
+func  foidl_categorize_num [arg]
+func  foidl_categorize 	  [arg]
+
+func  foidl_equal? 		[x, y]
+func  foidl_not_equal?	[x, y]
+func  foidl_lt?  		[x, y]
+func  foidl_gt?  		[x, y]
+func  foidl_lteq? 		[x, y]
+func  foidl_gteq? 		[x, y]
+func  foidl_and 		[x, y]
+func  foidl_or 			[x, y]
+func  foidl_not 		[x]
+
+func  foidl_byte? 		[x]
+func  foidl_char? 		[x]
+func  foidl_integer? 	[x]
+func  foidl_string? 	[x]
+func  foidl_keyword? 	[x]
+
+func  foidl_list? 		[x]
+func  foidl_map? 		[x]
+func  foidl_mapEntry? 	[x]
+func  foidl_set? 		[x]
+func  foidl_vector? 	[x]
+func  foidl_series? 	[x]
+
+func  foidl_function? 	[x]
+func  foidl_scalar? 	[x]
+func  foidl_io? 		[x]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Type and Coerce Function
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func 	foidl_type 			[arg]
+func 	foidl_isType? 		[arg with]
+func 	foidl_c2i 			[arg]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Fundemental String Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func 	foidl_trim 	  [str]
+func 	foidl_conjstr [args]
+func 	foidl_hasChar [str chr]
+func 	foidl_strb [arg]
+func 	foidl_collc2str [coll]
+func 	foidl_strcatnc [str cnt chr]
+func 	foidl_strcatns [str cnt chs]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Fundemental Collection Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func  	foidl_count  [coll]
+func  	foidl_first  [coll]
+func  	foidl_second [coll]
+func  	foidl_rest   [coll]
+func 	foidl_last 	 [coll]
+func  	foidl_getd 	 [coll, arg, def]
+
+func 	foidl_reverse 	[coll]
+func 	foidl_flatten 	[coll]
+func  	foidl_apply	 	[fn coll]
+func  	foidl_map 		[fn coll]
+func  	foidl_reduce 	[fn args]
+func 	foidl_fold 		[fn accum args]
+func 	foidl_reduced 	[arg]
+
+func  	foidl_extend  	[coll args]
+func  	foidl_extendKV  [coll k v]
+func 	foidl_update  	[coll k arg]
+func 	foidl_remove  	[coll arg]
+func 	foidl_pop 		[coll]
+func 	foidl_push 		[coll arg]
+func 	foidl_drop	  	[arg coll]
+func 	foidl_dropFor 	[fn coll]
+func 	foidl_dropLast 	[coll]
+func 	foidl_take	  	[arg coll]
+func 	foidl_split   	[coll delim]
+func 	foidl_series 	[start stop step]
+
+func 	foidl_key 		[me]
+func 	foidl_value 	[me]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; IO
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;	File oriented
+func 	foidl_fexists? [fname]
+
+;	Functions
+func 	foidl_open!				[argmap]
+func 	foidl_read!				[channel]
+func 	foidl_unread!			[channel]
+func 	foidl_write!			[channel data]
+func 	foidl_close!			[channel]
+func 	foidl_take_until! 		[channel pred]
+func 	foidl_take_string! 		[channel]
+func 	foidl_take_qchar!		[channel]
+func 	foidl_peek? 			[channel arg]
+func 	foidl_skipto! 			[channel exp]
+func 	foidl_skipwhile! 		[channel pred]
+func 	foidl_countto 			[channel exp]
+func 	foidl_countnotto 		[channel exp]
+func 	foidl_io_line 			[channel]
+func 	foidl_io_pos 			[channel]
+

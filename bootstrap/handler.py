@@ -95,7 +95,7 @@ def preprocess_runtime(state, args):
     # If not skipping run-time (used to compiler run-time)
     # preprocess well known headers
     if not args.rt:
-        includes = ['foidlrt2', 'langcore2']
+        includes = ['foidlrt', 'langcore']
         inc_files = []
         for i in includes:
             ffile = _resolve_header(i, state.inclpath)

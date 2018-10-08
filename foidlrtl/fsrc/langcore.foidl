@@ -1,0 +1,358 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; langcore
+; Foidl language runtime
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module langcore
+
+include foidlrt
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Type and Coercion/Cast functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;	TBD
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Constant vars
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+var nldelim #{nlchr,crchr}
+var tbspdelim #{tbchr,spchr}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Identity function returns argument
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func 	id [t]
+	t
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Early use predicates
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func empty? [arg]
+	foidl_empty?: arg
+
+func collection? [x]
+	foidl_collection?: x
+
+func extendable? [x]
+	foidl_extendable?: x
+
+func  eq [x, y]
+	foidl_equal?: x y
+
+func nil? [arg]
+	=: arg nil
+
+func true? [arg]
+	=: arg true
+
+func false? [arg]
+	=: arg false
+
+func not [arg]
+	foidl_not: arg
+
+func or [arg1 arg2]
+	foidl_or: arg1 arg2
+
+func falsey? [arg]
+	foidl_falsey?: arg
+
+func truthy? [arg]
+	foidl_truthy?: arg
+
+func and [arg1 arg2]
+	foidl_and: arg1 arg2
+
+func notNil? [arg]
+	not: nil?: arg
+
+func  neq [x, y]
+	foidl_not_equal?: x y
+
+func  lt [x, y]
+	foidl_lt?: x y
+
+func  lteq [x, y]
+	foidl_lteq?: x y
+
+func  gt [x, y]
+	foidl_gt?: x y
+
+func  gteq [x, y]
+	foidl_gteq?: x y
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; IO functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func fileExists? [fname]
+	foidl_fexists?: fname
+
+func open! [argmap]
+	foidl_open!: argmap
+
+func read! [channel]
+	foidl_read!: channel
+
+func unread! [channel]
+	foidl_unread!: channel
+
+func write! [channel data]
+	foidl_write!: channel data
+
+func skip_to! [channel exp]
+	foidl_skipto!: channel exp
+
+func peek?  [channel arg]
+	foidl_peek?: channel arg
+
+func skip_while! [channel exp]
+	foidl_skipwhile!: channel exp
+
+func skip_whileWS! [channel]
+	foidl_skipwhile!: channel tbspdelim
+
+func skip_toNL! [channel]
+	foidl_skipto!: channel nlchr
+
+func take_until! [coll pred]
+	foidl_take_until!: coll pred
+
+func take_string! [channel]
+	foidl_take_string!: channel
+
+func take_qchar! [channel]
+	foidl_take_qchar!: channel
+
+func take_untilNL! [coll]
+	foidl_take_until!: coll nlchr
+
+func take_untilWS! [coll]
+	foidl_take_until!: coll whitespace
+
+func close! [channel]
+	foidl_close!: channel
+
+func print! [s]
+	write!: cout s
+
+func printnl! [s]
+	write!: cout s
+	write!: cout nlchr
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Process functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func  fail 		[]
+	foidl_fail:
+
+func  failWith 	[msg]
+	write!: cerr msg
+	fail:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Math functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func add [x, y]
+	foidl_add: x y
+
+func sub [x, y]
+	foidl_sub: x y
+
+func div [x, y]
+	foidl_div: x y
+
+func mul [x, y]
+	foidl_mul: x y
+
+func mod [x, y]
+	foidl_mod: x y
+
+func inc [x]
+	foidl_inc: x
+
+func dec [x]
+	foidl_dec: x
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Collection functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func count [coll]
+	foidl_count: coll
+
+func count_to [channel exp]
+	foidl_countto: channel exp
+
+func count_notto [channel exp]
+	foidl_countnotto: channel exp
+
+func first [coll]
+	foidl_first: coll
+
+func second [coll]
+	foidl_second: coll
+
+func peek  [coll]
+	first: coll
+
+func rest [coll]
+	foidl_rest: coll
+
+func last [coll]
+	foidl_last: coll
+
+func key [me]
+	foidl_key: me
+
+func value [me]
+	foidl_value: me
+
+func getd [coll, arg, def]
+	foidl_getd: coll arg def
+
+func get [coll, arg]
+	foidl_getd: coll arg nil
+
+func flatten [coll]
+	foidl_flatten: coll
+
+func map [fn, coll]
+	foidl_map: fn coll
+
+func reduce [fn coll]
+	foidl_reduce: fn coll
+
+func fold [fn accum coll]
+	foidl_fold: fn accum coll
+
+func reduced [arg]
+	foidl_reduced: arg
+
+func extend [coll args]
+	foidl_extend: coll args
+
+func extendKV [coll k v]
+	foidl_extendKV: coll k v
+
+func 	pop  [coll]
+	foidl_pop: coll
+
+func 	push [coll arg]
+	foidl_push: coll arg
+
+func update [coll k arg]
+	foidl_update: coll k arg
+
+func remove [coll arg]
+	foidl_remove: coll arg
+
+func drop  [arg coll]
+	foidl_drop: arg coll
+
+func dropFor [fn coll]
+	foidl_dropFor: fn coll
+
+func dropLast [coll]
+	foidl_dropLast: coll
+
+func take [arg coll]
+	foidl_take: arg coll
+
+func split [s delim]
+	foidl_split: s delim
+
+func series [start stop step]
+	foidl_series: start stop step
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; String functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func trim [x]
+	foidl_trim: x
+
+func strb [arg]
+	foidl_strb: arg
+
+func hasChar [s chr]
+	foidl_hasChar: s chr
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Predicate functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func ws? [val]
+	get: whitespace val
+
+func nl? [val]
+	get: nldelim val
+
+func tabOrSpace? [val]
+	get: tbspdelim val
+
+func digit? [val]
+	getd: digits val false
+
+func byte? [x]
+	foidl_byte?: x
+
+func char? [x]
+	foidl_char?: x
+
+func integer? [x]
+	foidl_integer?: x
+
+func string? [x]
+	foidl_string?: x
+
+func keyword? [x]
+	foidl_keyword?: x
+
+func list? [x]
+	foidl_list?: x
+
+func map? [x]
+	foidl_map?: x
+
+func mapEntry? [x]
+	foidl_mapEntry?: x
+
+func set? [x]
+	foidl_set?: x
+
+func vector? [x]
+	foidl_vector?: x
+
+func series? [x]
+	foidl_series?: x
+
+func scalar? 	[x]
+	foidl_scalar?: x
+
+func io? 	[x]
+	foidl_io?: x
+
+func function? 	[x]
+	foidl_function?: x

@@ -1251,22 +1251,26 @@ class FunctionCall(FoidlAst):
         bvalue = value[0].value if value else value
         call_site = WellKnowns.get(csite[:-1], csite[:-1])
         cref = state.symtree.resolve_symbol(call_site)
-        if cref.argcnt != len(bvalue):
-            if len(bvalue) < cref.argcnt:
-                raise errors.FunctionCall(
-                    "Function {} expects {} args, have {}".format(
-                        call_site,
-                        cref.argcnt,
-                        len(bvalue)))
+        if cref:
+            if cref.argcnt != len(bvalue):
+                if len(bvalue) < cref.argcnt:
+                    raise errors.FunctionCall(
+                        "Function {} expects {} args, have {}".format(
+                            call_site,
+                            cref.argcnt,
+                            len(bvalue)))
+                else:
+                    tlist = bvalue[0:cref.argcnt]
+                    res = bvalue[cref.argcnt:len(bvalue)]
+                    fc = FunctionCall(call_site, tlist, token, src)
+                    fl = [fc]
+                    fl.extend(res)
+                    return fl
             else:
-                tlist = bvalue[0:cref.argcnt]
-                res = bvalue[cref.argcnt:len(bvalue)]
-                fc = FunctionCall(call_site, tlist, token, src)
-                fl = [fc]
-                fl.extend(res)
-                return fl
+                return FunctionCall(call_site, value, token, src)
         else:
-            return FunctionCall(call_site, value, token, src)
+            raise errors.SymbolException(
+                "Can not resolve {} function".format(call_site))
 
     def eval(self, bundle, leader):
         args = []

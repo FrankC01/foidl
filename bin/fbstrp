@@ -23,7 +23,6 @@ sys.path.insert(0, os.path.join(
     'bootstrap/'))
 
 
-from main import main
-
 if __name__ == '__main__':
+    from main import main
     main()
