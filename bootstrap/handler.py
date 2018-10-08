@@ -86,13 +86,7 @@ def _resolve_header(fname, ipaths):
 def preprocess_runtime(state, args):
     """Pre process well known runtime includes"""
 
-    # Extend -I paths
-    if "FOIDLC2_PATH" in os.environ:
-        state.inclpath.insert(
-            0,
-            os.environ.get("FOIDLC2_PATH"))
-
-    # If not skipping run-time (used to compiler run-time)
+    # If not skipping run-time (used for compiler run-time)
     # preprocess well known headers
     if not args.rt:
         includes = ['foidlrt', 'langcore']
