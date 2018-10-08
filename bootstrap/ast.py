@@ -45,7 +45,7 @@ def expand_symbol(instr):
 
 
 class FoidlReference(ABC):
-    """FoidlReference informs type, value, intern/extern, etc"""
+    """FoidlReference abstraction for all Reference types"""
 
     def __init__(self, astmember):
         self._token = astmember.token if astmember else None
@@ -124,7 +124,7 @@ class VarReference(FoidlReference):
 
 
 class FuncReference(FoidlReference):
-    """FuncReference informs name, intern/extern, args"""
+    """FuncReference informs name, intern/extern, arg count"""
 
     def __init__(self, astmember, name, ident, argcnt):
         super().__init__(astmember)
@@ -180,7 +180,7 @@ class FuncArgReference(FoidlReference):
 
 
 class LambdaReference(FoidlReference):
-    """Lambda Reference"""
+    """Lambda Reference acts similar to function reference"""
 
     def __init__(self, astmember, ident, acnt):
         super().__init__(astmember)
@@ -234,6 +234,7 @@ class LetArgReference(FoidlReference):
 
 
 class ResultReference(FoidlReference):
+    """Base Result Reference type"""
     def __init__(self, astmember):
         super().__init__(astmember)
         self._name = astmember.name
@@ -286,7 +287,7 @@ class MatchResReference(ResultReference):
 
 
 class MatchExprReference(ResultReference):
-    """Match Result Symbol Reference"""
+    """Match Expression Symbol Reference"""
 
     def __init__(self, astmember):
         super().__init__(astmember)
@@ -296,7 +297,7 @@ class MatchExprReference(ResultReference):
 
 
 class FoidlAst(ABC):
-    """Base abstract ast class"""
+    """Base abstract AST class"""
 
     def __init__(self, token, src='unknown'):
         self._token = token
@@ -344,6 +345,8 @@ class CompilationUnit(FoidlAst):
 
 
 class Symbol(FoidlAst):
+    """Symbol AST type"""
+
     def __init__(self, value, token, src):
         super().__init__(token, src)
         self.value = value

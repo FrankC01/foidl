@@ -54,6 +54,7 @@ any_ptr = any_struct.as_pointer()
 any_ptr_ptr = any_ptr.as_pointer()
 null_val = ir.FormattedConstant(any_ptr, 'null')
 
+# Well known foidl run-time functions used in generation
 supps = [
     ("foidl_convert_mainargs", [int_32, void_ptr_ptr, void_ptr_ptr]),
     ("foidl_reg_character", [int_64]),
@@ -76,7 +77,7 @@ supps = [
 
 class LlvmGen(object):
     def __init__(self, source, triple=None):
-        # Compilation unit
+        # Compilation unit name
         self.source = source
         # Setup bindings
         self._binding = binding
@@ -92,7 +93,7 @@ class LlvmGen(object):
         backing_mod = self.binding.parse_assembly("")
         self._engine = self.binding.create_mcjit_compiler(
             backing_mod, target_machine)
-        self._main = False
+        self._main = False  # Is main function declared?
         self.vinits = []
         self.fowards = {}
 
@@ -148,13 +149,13 @@ class LlvmGen(object):
             fname)
 
     def _emit_externs(self, extmap):
-        """Declare external fn and var references"""
+        """Declare external runtime fn and var references"""
         for k, v in extmap.items():
             if type(v) is ast.VarReference:
                 self._reg_global_var(k)
             else:
                 self._reg_global_func(k, v.argcnt)
-        # Do pre-defines
+        # Do foidl run-time pre-defines declarations
         [self._reg_global_func_wargs(nm, a) for nm, a in supps]
 
     def _emit_literals(self, litmap):
