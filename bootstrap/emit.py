@@ -134,10 +134,15 @@ class LlvmGen(object):
 
     def _reg_global_func_wargs(self, fname, args):
         """Create a global function with explicit args"""
-        return ir.Function(
-            self.module,
-            ir.FunctionType(any_ptr, args),
-            fname)
+
+        try:
+            self.module.get_global(fname)
+            return None
+        except KeyError:
+            return ir.Function(
+                self.module,
+                ir.FunctionType(any_ptr, args),
+                fname)
 
     def _reg_global_voidfunc(self, fname, argcnt):
         """Create a global function with arg count"""

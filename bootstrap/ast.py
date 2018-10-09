@@ -122,6 +122,9 @@ class VarReference(FoidlReference):
     def exprs(self, exprs):
         self._exprs = exprs
 
+    def __repr__(self):
+        return "VarRef({}:{})".format(self.name, self.ident)
+
 
 class FuncReference(FoidlReference):
     """FuncReference informs name, intern/extern, arg count"""
@@ -143,6 +146,9 @@ class FuncReference(FoidlReference):
     @property
     def ident(self):
         return self._ident
+
+    def __repr__(self):
+        return "FuncRef({}:{})".format(self.name, self.ident)
 
 
 class FuncArgReference(FoidlReference):
@@ -235,6 +241,7 @@ class LetArgReference(FoidlReference):
 
 class ResultReference(FoidlReference):
     """Base Result Reference type"""
+
     def __init__(self, astmember):
         super().__init__(astmember)
         self._name = astmember.name
@@ -364,6 +371,7 @@ class Symbol(FoidlAst):
             if self.source != sym.source:
                 if not bundle.externs.get(self.name, None):
                     bundle.externs[self.name] = sym
+            # print("Symbol = {}".format(sym))
             leader.append(ParseSymbol(
                 ExpressionType.SYMBOL_REF,
                 [sym],
@@ -405,12 +413,15 @@ class Module(FoidlAst):
         # Push module scope for duration of evaluation
         bundle.symtree.push_scope(self.name, self.name)
         # Add references to nil, true, false
-        bundle.externs = {
-            "nil": bundle.symtree.resolve_symbol("nil"),
-            "eq": bundle.symtree.resolve_symbol("eq"),
-            "true": bundle.symtree.resolve_symbol("true"),
-            "false": bundle.symtree.resolve_symbol("false")
-        }
+        if not bundle.runtime:
+            bundle.externs = {
+                "nil": bundle.symtree.resolve_symbol("nil"),
+                "eq": bundle.symtree.resolve_symbol("eq"),
+                "true": bundle.symtree.resolve_symbol("true"),
+                "false": bundle.symtree.resolve_symbol("false")
+            }
+        else:
+            bundle.externs = {}
         # Walk children
         children = []
         for c in self.value:
@@ -535,11 +546,13 @@ class FuncHeader(FoidlAst):
         return self._arguments
 
     def get_reference(self):
-        return FuncReference(
+        fref = FuncReference(
             self,
             self.name.value,
             self.ident,
             self.arguments.elements())
+        # print(fref)
+        return fref
 
     def eval(self, bundle, leader):
         pass
@@ -1279,13 +1292,13 @@ class FunctionCall(FoidlAst):
         sym = bundle.symtree.resolve_symbol(self.call_site)
         if sym and sym.source != self.source:
             if not bundle.externs.get(self.call_site, None):
-                bundle.externs[self.call_site] = sym
+                bundle.externs[sym.ident] = sym
         leader.append(
             ParseCall(
                 ExpressionType.FUNCTION_CALL,
                 args,
                 self.token,
-                self.call_site))
+                expand_symbol(self.call_site)))
 
 
 _NIL = Symbol('nil', Token("SYMBOL", "nil"), None)

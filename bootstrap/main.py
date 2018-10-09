@@ -108,7 +108,7 @@ def execute(args):
                 absfile,
                 util.parse_file(absfile, state),
                 state,
-                outhandler, args.output))
+                outhandler, args.output, args.rt))
 
         handler.validate()
         handler.emit()

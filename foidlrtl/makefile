@@ -16,44 +16,76 @@
 
 CC      = g++
 LT      = libtool
-LLC     = llc
+LLLT 	= llvm-ar
 CLC 	= clang
+LLC     = llc
 BSTRP 	= ../bin/fbstrp
 
 
 # FOIDL Runtime generation settings
 
-FSRC  	= fsrc/
-SRC  	= src/
-INC 	= includes/
-LLS 	= ll/
-OBJ 	= obj/
-LIB 	= lib/
-HDRS   	= headers/
+FSRC  	:= fsrc/
+SRC  	:= src/
+INC 	:= includes/
+LLS 	:= ll/
+OBJS 	:= objs/
+LIB 	:= lib/
+HDRS   	:= headers/
 
-FHRDS 	= .defs
-FOIDLS  = .foidl
+FDEFS 	:= .defs
+FOIDL  	:= .foidl
+LL 		:= .ll
+OBJ 	:= .o
+CSRC	:= .c
+
+foildrt_NAME := foidlrt
+foidlrt_LIB  := libfoidlrt.a
+STATIC_LIB   := $(LIB)$(foidlrt_LIB)
+
+# Flags for compilation of all types
+
+BHDRFLAGS := -I $(HDRS) -r -a hdr
+BCFLAGS := -I $(HDRS) -r
+CLFLAG   = -Wall -c -I$(INC)
+LLCFLAGS = -march=x86-64 -x86-asm-syntax=intel -relocation-model=pic -O3 -filetype=obj
+
+# Substitutions for recipe patterns
+
+FSRCS 	:= $(wildcard $(FSRC)*$(FOIDL))
+FHRDS   := $(subst $(FSRC), $(HDRS), $(FSRCS:$(FOIDL)=$(FDEFS)))
+FLLS	:= $(subst $(FSRC), $(LLS), $(FSRCS:$(FOIDL)=$(LL)))
+FOBJS	:= $(subst $(FSRC), $(OBJS), $(FSRCS:$(FOIDL)=$(OBJ)))
+
+SRCS	:= $(wildcard $(SRC)*$(CSRC))
+SOBJS	:= $(subst $(SRC), $(OBJS), $(SRCS:$(CSRC)=$(OBJ)))
+
+all: $(STATIC_LIB)
+
+$(STATIC_LIB): $(FOBJS) $(SOBJS) | $(LIB)
+	$(info $(SRCS))
+	$(LLLT) --format=default -ru $(STATIC_LIB) $(FOBJS) $(SOBJS)
+
+$(LIB):
+	mkdir lib
+
+$(FHRDS):$(FSRCS)
+	$(BSTRP) -s $< $(BHDRFLAGS) -o $@
+
+$(FLLS):$(FSRCS) | $(FHRDS) $(LLS)
+	$(BSTRP) -s $< $(BCFLAGS) -o $@
+
+$(LLS):
+	mkdir ll
+
+$(FOBJS):$(FLLS) | $(OBJS)
+	$(LLC) $< $(LLCFLAGS) -o $@
+
+$(SOBJS):$(SRCS) | $(OBJS)
+	$(CLC) $< $(CLFLAG) -o $@
+
+$(OBJS):
+	mkdir objs
 
 
-CLFLAG   = -g -Wall -c -I$(G2CINC)
-LLFLAGS  = -L $(LIBS) -mllvm --x86-asm-syntax=intel -l$(foildrt_NAME) -Wall -g -L. -Wl,-pie -I. -I$(INCS)
-G2LLFLAGS  = -L $(G2LIBS) -mllvm --x86-asm-syntax=intel -l$(foildrt2_NAME) -Wall -g -L. -Wl,-pie -I. -I$(INCS)
-
-LLCFLAGS = -march=x86-64 -x86-asm-syntax=intel -relocation-model=pic
-LLALAGS  = -c -mllvm --x86-asm-syntax=intel -Wall -g -I. -I$(INCS)
-
-# all: $(STATIC_LIB)
-
-# $(STATIC2_LIB): $(COREH) $(G2COREMH) $(G2COREASM) $(G2COREMASM) $(COBJS)
-# 	$(LT) -static -s -o $(STATIC2_LIB) $(ASMOBJS) $(G2COREASM) $(G2COREMASM) $(COBJS)
-
-# Invocation wrapper
-
-$(HDRS)langcore$(FHRDS): $(FSRC)langcore$(FOIDLS)
-	$(BSTRP) -s $< -I $(HDRS) -r -a hdr -o $@
-
-$(HDRS)langcorem$(FHRDS): $(FSRC)langcorem$(FOIDLS)
-	$(BSTRP) -s $< -I $(HDRS) -r -a hdr -o $@
-
-#clean:
-#	$(RM) $(ASMOBJS) $(AGLLOBJS) $(G2COREASM) $(FOC2S) $(G2COREH) $(G2CORELL) $(G2COREMASM) $(FOC2MS) $(G2COREMH) $(G2COREMLL) $(STATIC2_LIB)
+clean:
+	$(RM) -r $(FHRDS) $(LLS) $(OBJS) $(LIB)

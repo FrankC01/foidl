@@ -156,10 +156,11 @@ class State(object):
 class SimpleBundle(object):
     """SimpleBundle contains src and resulting AST"""
 
-    def __init__(self, inc_paths, srcfile, ast):
+    def __init__(self, inc_paths, srcfile, ast, rtime):
         self._inc_paths = inc_paths
         self._src_file = srcfile
         self._ast = ast
+        self._runtime = rtime
 
     @property
     def inc_paths(self):
@@ -173,12 +174,17 @@ class SimpleBundle(object):
     def ast(self):
         return self._ast
 
+    @property
+    def runtime(self):
+        return self._runtime
+
 
 class Bundle(SimpleBundle):
     """Main Bundle contains essential elements for action Handlers"""
 
-    def __init__(self, incpath, srcfile, ast, state, outhandle, outfile):
-        super().__init__(incpath, srcfile, ast)
+    def __init__(
+            self, incpath, srcfile, ast, state, outhandle, outfile, rtime):
+        super().__init__(incpath, srcfile, ast, rtime)
         self._state = state
         self._out = outhandle
         self._out_file = outfile
