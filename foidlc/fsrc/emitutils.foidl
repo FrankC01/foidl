@@ -1,0 +1,187 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_emitutils
+; Level 1 Gen 3 Self Hosted Compiler - Emit utils
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module g3_emitutils
+include g3_state
+include g3_irgentypes
+
+var emitState* {:out nil :err cerr :edspFn nil }
+
+var datalayout "target datalayout = "
+var triplayout "target triple = "
+var dlayoutstr "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
+
+var anytype "%struct.FRTAny  = type {i64, i64, i64, i32, i8*}
+
+%VPAT = type { i32, void ()*, i8* }
+@llvm.global_ctors = appending global [1 x %VPAT]
+	[%VPAT { i32 65535, void ()* @foidl_module_inits, i8* null }]
+
+declare void @foidl_rtl_init()
+declare %struct.FRTAny* @foidl_reg_integer(i64)
+declare %struct.FRTAny* @foidl_reg_keyword(i8*)
+declare %struct.FRTAny* @foidl_reg_string(i8*)
+declare %struct.FRTAny* @foidl_reg_character(i64)
+declare %struct.FRTAny* @foidl_tofuncref(i8*,%struct.FRTAny*)
+declare %struct.FRTAny* @foidl_convert_mainargs(i32,i8**,i8**)
+"
+
+var minits0 "define internal void @foidl_module_inits() section "
+var minits1 "__TEXT,__StaticInit,regular,pure_instructions"
+var minits2 "{"
+
+var stdMain "define i32 @main(i32, i8**,i8**) {
+    %4 = alloca i32, align 4
+    store i32 0, i32* %4, align 4
+    %5 = call %struct.FRTAny* @foidl_convert_mainargs(i32 %0, i8** %1,i8** %2)
+    %6 = call %struct.FRTAny* @user_main(%struct.FRTAny* %5)
+    ret i32 0
+}
+"
+
+var noargMain "define i32 @main(i32, i8**,i8**) {
+    %4 = alloca i32, align 4
+    store i32 0, i32* %4, align 4
+    %5 = call %struct.FRTAny* @foidl_convert_mainargs(i32 %0, i8** %1,i8** %2)
+    %6 = call %struct.FRTAny* @user_main()
+    ret i32 0
+}
+"
+
+var  anyPtr 	"%struct.FRTAny*"
+var  callAnyR 	"call %struct.FRTAny* "
+var  callAnyV 	"call void "
+var  lclPvtPtr	" = private global %struct.FRTAny* null,align 8"
+var  lclPtr 	" = default global %struct.FRTAny* null,align 8"
+var  extPtr 	" = external global %struct.FRTAny*,align 8"
+var  funcDeclRet "declare %struct.FRTAny* "
+var  defVoidFn  "define void "
+var  defFn 		"define %struct.FRTAny* "
+var  defFnPrv 	"define private %struct.FRTAny* "
+var  emptyArg 	"() {"
+var  allocaAny 	" = alloca %struct.FRTAny*, align 8"
+var  allocStrg0 " = alloca [ "
+var  allocStrg1 "  x i8 ]"
+var  bcStoV0    " = bitcast [ "
+var  bcStoV1 	"  x i8 ]* "
+var  bcToV 		" to i8* "
+var  bcToSt2 	" to [ "
+
+var  storeAny   "store %struct.FRTAny* "
+var  storeStrg0 "store [ "
+var  storeStrg1 "  x i8 ] c"
+var  fromAny  	", %struct.FRTAny** "
+var  loadAny    " = load %struct.FRTAny* "
+var  assign 	" = "
+var  return 	"ret "
+var  returnVoid "ret void"
+var  endFunc 	"}"
+var  align8 	" ,align 8"
+var  fnCtoV0 	" i8* bitcast (%struct.FRTAny* "
+var  fnCtoV2 	" to i8*) "
+var  cmpEqStr 	" = icmp eq %struct.FRTAny* "
+var  cmpLabel   " label "
+var  brnchLbl 	"br label "
+var  brnchCond  "br i1 "
+
+var  typeMap {
+	:i8p 		" i8* "
+	:integer 	" i64 "
+	:character  " i64 "
+	:any 		"%struct.FRTAny* "
+}
+
+func dispatchEmit [tac]
+	let: [ emFn get: emitState* :edspFn ]
+		(emFn tac )
+
+func foldEmit [ign tac]
+	dispatchEmit: tac
+
+func spit* [s]
+	write*: get: emitState* :out s
+
+func spitNL* []
+	write*: get: emitState* :out nlchr
+
+func spitWithNL* [s]
+	write*: get: emitState* :out s
+	write*: get: emitState* :out nlchr
+
+func spitWith* [ldr tac indx]
+	spit*: ldr
+	spit*: get: tac indx
+
+func spitAtOne* [tac]
+	spitWith*: atchr tac one
+
+func spitAtTwo* [tac]
+	spitWith*: atchr tac two
+
+func spitRegOne* [tac]
+	spitWith*: pctchr tac one
+
+func spitRegTwo* [tac]
+	spitWith*: pctchr tac two
+
+func spitRegThree* [tac]
+	spitWith*: pctchr tac three
+
+func spitModuleComment []
+	spitNL*:
+	spit*: semichr
+	spit*: space_string
+	spit*: get: context* :module
+	spitWithNL*: ".foidl"
+	spit*: datalayout
+	spit*: dqchr
+	spit*: dlayoutstr
+	spitWithNL*: dqchr
+	spit*: triplayout
+	spit*: dqchr
+	spit*: get: foidl_env "MACHTYPE"
+	spitWithNL*: dqchr
+	spitNL*:
+	spitWithNL*: anytype
+
+func emitAnyCnt [mcnt indx]
+	?: =: indx mcnt
+		nil
+		@(	spit*: anyPtr
+			?: =: inc: indx mcnt
+				nil
+				spit*: comma
+			emitAnyCnt: mcnt inc: indx
+		)
+
+func emitImmediate	[tac]
+	spit*: get: tac one
+	?: =: rparen get: tac one
+		spitNL*:
+		nil
+
+func emitExtFn  [tac]
+	spit*: funcDeclRet
+	spitAtOne*: tac
+	dispatchEmit: immedLP
+	emitAnyCnt: get: tac two zero
+	dispatchEmit: immedRP
+
+func emitExtRef [tac]
+	spitAtOne*: tac
+	spitWithNL*: extPtr
+
+func emitLitDecl [tac]
+	spitAtOne*: tac
+	spitWithNL*: lclPvtPtr
+
+func emitVarDecl [tac]
+	spitAtOne*: tac
+	?: get: tac two
+		spitWithNL*: lclPvtPtr
+		spitWithNL*: lclPtr

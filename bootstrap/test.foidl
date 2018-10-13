@@ -2,41 +2,17 @@
 
 module test
 
+func vnext []
 
-var vkw :keyword
-var vstr "strng"
-var arb? true
-var vev <1>
-var vfb tpartial
-var thx 0xfe05
-var tbt 0b10011001
-var tchr 'a'
+func vexpect [kwarg]
+    kwarg
 
-func tnilret [fn]  ; Return an literal
+func extend! [mmap val]
 
-func tpartial [a b]
-
-;func tlet []
-;    let a [b 5] +: 1 b
-;    +: 7 a
-
-func tclosure [arg]
-
-    let b [] arb?
-
-    let a [ t +: 7 20
-            lref ^[x]
-                    tpartial: b tpartial: x tpartial: t arg]
-        (lref 2 3)
-
-
-func tmatch [arg]
-    match a arg as expr
-    | 1 -: 5 tpartial: expr 2
-    | :default 800
-
-
-func main [args]
-    tmatch: first: args
-
-
+func astIf [symb, par]
+        ?: symb
+            @(
+                vnext:
+                extend!: get: par :children symb
+            )
+            vnext:

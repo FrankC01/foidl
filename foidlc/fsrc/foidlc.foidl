@@ -1,0 +1,130 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; foidlc
+; Level 1 Gen 3 Self Hosted Compiler
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module foidlc 
+include foidlc_utils
+include g3_scanner
+include g3_genhdr
+include g3_state
+include g3_tvalidate
+include g3_symbolmgmt
+include g3_incproc
+include g3_astgen
+include g3_astprint
+include g3_irgen
+include g3_emit
+
+func includeHandler [accum argv argc]
+	map_extend*: accum :includes 
+		extend*: getd: accum :includes <> get: argv +: argc 1
+
+func outputHandler [accum argv argc]
+	map_extend*: accum :output get: argv +: argc 1
+
+func cmdline [accum argv argc]
+	match a: getd: argv argc :done
+	| =: %0 "-c" cmdline: map_extend*: accum :compile true argv +: argc 1
+	| =: %0 "-g" cmdline: map_extend*: accum :genhdr true argv +: argc 1
+	| =: %0 "-i" cmdline: includeHandler: accum argv argc  argv +: argc 2
+	| =: %0 "-o" cmdline: outputHandler: accum argv argc argv +: argc 2
+	| =: %0 "-h" cmdline: map_extend*: accum :help true argv +: argc 1
+	| =: %0 "-v" cmdline: map_extend*: accum :version true argv +: argc 1
+	| =: %0 "-pt" cmdline: map_extend*: accum :printtoks true argv +: argc 1
+	| =: %0 "-pa" cmdline: map_extend*: accum :printast true argv +: argc 1
+	| =: %0 "-pi" cmdline: map_extend*: accum :printir true argv +: argc 1
+	| =: %0 :done accum
+	| :default cmdline: map_extend*: accum :source %0 argv +: argc 1
+
+func failEnvironment [src elm]
+	write*: cerr "Unable to resolve "
+	write*: cerr elm
+	write*: cerr " in environment settings"
+	write*: cerr nlchr
+	fail:
+
+func nowork [cmap]
+	?: get: cmap :version 
+		printnl*: version
+		?: get: cmap :help 
+			printnl*: "Help not setup yet"
+			nil 
+
+func foldTDump [acc val]
+	printnl*: val 
+	val 
+
+func printTokens [tokens]
+	fold: foldTDump nil tokens 	
+	print*: "Total tokens produced = "
+	printnl*: count: tokens 
+
+func hdrCompile [cmap tokens]
+	genhdr: get: cmap :outchannel tokens 
+
+func standardHdrFold [accum val]
+	extend*: accum val 
+
+func fullCompile [cmap tokens]
+	fold: subsMain nil tokens 	
+	processIncludes: get: cmap :includes 
+		filterIncludes: tokens fold: standardHdrFold <> hdrPreDefs	
+	valSyntax: tokens		
+	let: [	ast 	genAst: 
+		   	ir  	genIR: ast ]
+		@(
+			?: get: cmap :printast
+				astPrint: ast 
+				nil
+			?: get: cmap :printir
+				irPrint: ir
+				nil
+			emit: get: cmap :outchannel ir 
+		)		
+
+func processTokens [cmap tokens]	
+	let tail: []
+		?: get: cmap :compile
+			".ll"
+			".defs"
+	prepareOutput: cmap get: first: tokens :lexeme tail
+	;	Debugging aid
+	?: get: cmap :printtoks 
+		printTokens: tokens 
+		nil
+	; Real deal 
+	?: get: cmap :genhdr
+		hdrCompile: cmap tokens 
+		?: get: cmap :compile
+			fullCompile: cmap tokens
+			nil
+	; Close it up
+	endCompile: cmap
+	
+func process [cmap]		
+	?: and: or: get: cmap :compile get: cmap :genhdr get: cmap :source		
+		processTokens: cmap scanner: get: cmap :source 
+		nowork: cmap
+
+func main [argv]
+	process: 
+		cmdline: 
+			{
+				:compile 	false 
+				:genhdr  	false 
+				:help 	 	false
+				:version 	false
+				:source 	nil
+				:output 	nil	
+				:outchannel nil
+				:printtoks 	false
+				:printast 	false
+				:printir 	false 
+				:includes extend*: <> 
+					getd: foidl_env "FOIDLC2_PATH" failEnvironment
+			} 
+			argv 1

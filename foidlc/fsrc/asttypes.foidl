@@ -1,0 +1,312 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; asttypes
+; AST Type Model
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module asttypes
+
+include state
+
+var lname ".lambda."
+
+func genLambdaName [ctxt]
+	extend: extend: ctxt lname lmdCnt:
+
+func genAstRoot [mname]
+	{
+		:type 		:module
+		:context 	mname
+		:fname 		mname
+		:literals 	foidl_map_inst!:
+		:externs 	foidl_map_inst!:
+		:lambdas 	foidl_vector_inst!:
+		:children	foidl_vector_inst!:
+	}
+
+func genAstCollection [mname ctype]
+	{
+		:type 		:collection
+		:context 	mname
+		:fname 		mname
+		:subtype 	ctype
+		:uid 		zero
+		:count 		zero
+		:children	foidl_vector_inst!:
+	}
+
+func genAstLiteral [mname fname stype indx]
+	{
+		:type 		:literal
+		:context 	mname
+		:fname 		fname
+		:subtype 	stype
+		:uid 		indx
+		:fqn 		extend: extend: mname prchr indx
+		:children	<>
+	}
+
+func genAstLitCopy [lit]
+	{
+		:type 		:literal
+		:context 	get: lit :context
+		:fname 		get: lit :fname
+		:subtype 	get: lit :subtype
+		:uid 		get: lit :uid
+		:fqn 		get: lit :fqn
+		:children	<>
+	}
+
+func genAstVariable [mname fname]
+	{
+		:type 		:variable
+		:context 	mname
+		:fname 		fname
+		:vtype 		nil
+		:private 	false
+		:uid 		zero
+		:children	foidl_vector_inst!:
+	}
+
+func genAstVarRef [mname fname vtype]
+	{
+		:type 		:varref
+		:module 	mname
+		:context 	mname
+		:fname 		fname
+		:vtype 		vtype
+		:uid 		zero
+		:children	<>
+	}
+
+func genAstFunction [mname fname ]
+	{
+		:type 		:function
+		:context 	mname
+		:fname 		fname
+		:uid 		zero
+		:args 		nil
+		:private 	false
+		:children	foidl_vector_inst!:
+	}
+
+func genAstFuncRef [mname fname argcnt]
+	{
+		:type 		:funcref
+		:module 	mname
+		:context 	mname
+		:fname 		fname
+		:argcnt 	argcnt
+		:uid 		zero
+		:children	<>
+	}
+
+func genAstFuncArg [fname aname ord]
+	{
+		:type 		:funcarg
+		:context 	fname
+		:fname 		aname
+		:ordinal 	ord
+		:uid 		ord
+		:children	<>
+	}
+
+func genAstIf [mname]
+	{
+		:type 		:if
+		:context 	mname
+		:fname 		nil
+		:refid 		exprCnt:
+		:uid 		zero
+		:children	foidl_vector_inst!:
+	}
+
+func genAstLambda [mname]
+	{
+		:type 		:lambda
+		:context 	mname
+		:fname 		genLambdaName: mname
+		:args 		nil
+		:uid 		zero
+		:private 	true
+		:children	foidl_vector_inst!:
+	}
+
+func genAstLambdaArg [fname aname ord]
+	{
+		:type 		:lambarg
+		:context 	fname
+		:fname 		aname
+		:uid 		ord
+		:children	<>
+	}
+
+func genAstLet [fname]
+	{
+		:type 		:let
+		:context 	fname
+		:fname 		fname
+		:result 	nil
+		:refid 		exprCnt:
+		:uid 		zero
+		:args 		foidl_vector_inst!:
+		:children	foidl_vector_inst!:
+	}
+
+func genAstLetResult [fname aname]
+	{
+		:type 		:letresult
+		:context 	fname
+		:fname 		aname
+		:refid 		peekRefID!:
+		:uid 		zero
+		:children	<>
+	}
+
+func genAstLetResultRef [letres]
+	{
+		:type 		:letresultref
+		:context 	get: letres :context
+		:fname 		get: letres :fname
+		:refid 		get: letres :refid
+		:varref 	letres
+		:uid 		zero
+		:children	<>
+	}
+
+func genAstLetVar [mname aname]
+	{
+		:type 		:letvar
+		:context 	mname
+		:fname 		aname
+		:refid 		exprCnt:
+		:uid 		zero
+		:children	foidl_vector_inst!:
+	}
+
+func genAstLetVarRef [letvar]
+	{
+		:type 		:letvarref
+		:context 	get: letvar :context
+		:fname 		get: letvar :fname
+		:refid 		get: letvar :refid
+		:varref 	letvar
+		:uid 		zero
+		:children	<>
+	}
+
+func genAstMatch [fname]
+	{
+		:type 		:match
+		:context 	fname
+		:fname 		fname
+		:result 	nil
+		:refid 		exprCnt:
+		:uid 		zero
+		:children	foidl_vector_inst!:
+	}
+
+func genAstMatchResult [fname aname]
+	{
+		:type 		:matchresult
+		:context 	fname
+		:fname 		aname
+		:refid 		peekRefID!:
+		:uid 		zero
+		:children	<>
+	}
+
+func genAstMatchResultRef [matchres]
+	{
+		:type 		:matchresultref
+		:context 	get: matchres :context
+		:fname 		get: matchres :fname
+		:refid 		get: matchres :refid
+		:varref 	matchres
+		:uid 		zero
+		:children	<>
+	}
+
+func genAstMatchPred [fname]
+	{
+		:type 		:matchpred
+		:context 	fname
+		:fname 		fname
+		:refid 		peekRefID!:
+		:uid 		zero
+		:children 	foidl_vector_inst!:
+	}
+
+func genAstMatchGuard [mname uid]
+	{
+		:type 		:guard
+		:context	mname
+		:fname 		mname
+		:refid 		peekRefID!:
+		:uid 		uid
+		:children 	foidl_vector_inst!:
+	}
+
+func genAstMatchPredRef [mname]
+	{
+		:type 		:matchpredref
+		:context 	mname
+		:fname 		mname
+		:refid 		peekRefID!:
+		:uid 		zero
+		:children	<>
+	}
+
+func genAstGroup [mname]
+	{
+		:type 		:group
+		:context 	mname
+		:fname 		mname
+		:uid 		zero
+		:children	foidl_vector_inst!:
+	}
+
+func genAstPartial [mname]
+	{
+		:type 		:partial
+		:context 	mname
+		:fname 		mname
+		:uid 		zero
+		:children	foidl_vector_inst!:
+	}
+
+func genAstCall [fname aname ref]
+	{
+		:type 		:call
+		:context 	fname
+		:fname 		aname
+		:reference 	ref
+		:uid 		zero
+		:children	foidl_vector_inst!:
+	}
+
+func copyAstRefType [node]
+	{
+		:type 		get: node :type
+		:context 	get: node :context
+		:fname 		get: node :fname
+		:uid 		get: node :uid
+		:refid 		get: node :refid
+		:varref 	get: node :varref
+		:argcnt 	get: node :argcnt
+		:children	<>
+	}

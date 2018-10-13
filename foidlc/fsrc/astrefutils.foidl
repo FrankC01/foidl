@@ -1,0 +1,72 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; astreutils
+; AST Refactor utilities
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module  astrefutils
+
+include astutils
+include	asttypes
+include state
+include errors
+
+func exchangeClosure [node cnt]
+	foidl_extendKV!: node :type  :lambarg
+	foidl_extendKV!: node :uid  cnt
+	foidl_extendKV!: node :fname extend: lambdaArgPrefix cnt
+
+func insertClosures [res node ]
+	extend!: get: res :copy copyAstRefType: node
+	extend!: get: res :args exchangeClosure: node count: get: res :args
+
+func liftClosures [accum node]
+	match: get: node :type
+	| =: %0 :let accum 									;	Ignore digging in
+	| =: %0 :funcref nil
+	| get: referenceSet %0 insertClosures: accum node
+	| :default fold: liftClosures accum get: node :children
+	accum
+
+func mergeList [ accum oarg ]
+	extend!: accum foidl_extendKV!: oarg :uid count: accum
+
+func cvrtLambdaToFuncRef [fname fcnt]
+	let: [lfref genAstFuncRef: get: astRoot! :context fname fcnt ]
+		@(
+			insertIntoContext: lfref
+			promoteLiteralCount: fcnt
+			lfref
+		)
+
+func processLambdaRefactor [res node]
+	?: =: count: get: res :copy zero
+		cvrtLambdaToFuncRef: get: node :fname get: get: node :args :count
+		let: [cp get: res :copy
+			  ar get: res :args
+			  oa get: node :args
+			  nc +: get: oa :count count: ar
+			  na fold: mergeList ar get: oa :children
+			  pt genAstPartial: get: astRoot! :context ]
+			@(
+				foidl_extendKV!: oa :count nc
+				foidl_extendKV!: oa :children na
+				extend!: get: pt :children cvrtLambdaToFuncRef: get: node :fname nc
+				fold: mergeList get: pt :children cp
+				pt
+			)
+

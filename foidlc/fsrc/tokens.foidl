@@ -1,0 +1,143 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_tokens
+; Level 1 Gen 3 various token/scanner declarations
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module g3_tokens
+
+var skipSet 	#{spchr comma tbchr}
+var mathSet0 	#{addchr subchr}
+var mathSet 	#{addchr subchr exchr eqchr langle rangle qmchr}
+var factorSet 	#{tmchr divchr}
+var collSet 	#{lbracket rbracket lbrace rbrace lparen rparen}
+var letmatchSet #{:let :match }
+
+var generalTok 	 {:type :unknown :line zero :colnum zero :lexeme nil :state :public }
+var includeTok 	 {:type :include :line zero :colnum zero :lexeme "include" :state :public }
+var listStartTok {:type :liststart :line zero :colnum zero :lexeme "[" :state :public :count zero}
+var listEndTok 	 {:type :listend :line zero :colnum zero :lexeme "]" :state :public }
+var vecStartTok  {:type :vectorstart :line zero :colnum zero :lexeme "#[" :state :public :count zero }
+var mapStartTok  {:type :mapstart :line zero :colnum zero :lexeme "{" :state :public :count zero }
+var setStartTok  {:type :setstart :line zero :colnum zero :lexeme "#{" :state :public :count zero }
+var mapEndTok 	 {:type :mapend :line zero :colnum zero :lexeme "}" :state :public }
+var symbolTok 	 {:type :symbol :line zero :colnum zero :lexeme nil :state :public }
+var keywordTok 	 {:type :keyword :line zero :colnum zero :lexeme nil :state :public }
+var lambdaTok 	 {:type :lambda :line zero :colnum zero :lexeme "^" :state :public }
+var letTok 	 	 {:type :let :line zero :colnum zero :lexeme "let" :state :public }
+var matTok 	 	 {:type :match :line zero :colnum zero :lexeme "match" :state :public }
+var ifTok 	 	 {:type :if :line zero :colnum zero :lexeme "if" :state :public }
+var guardTok 	 {:type :guard :line zero :colnum zero :lexeme "|" :state :public }
+var parStartTok  {:type :partialstart :line zero :colnum zero :lexeme "(" :state :public :count zero }
+var parEndTok  	 {:type :partialend :line zero :colnum zero :lexeme ")" :state :public }
+var groupTok 	 {:type :group :line zero :colnum zero :lexeme "@(" :state :public :count zero}
+var deferTok 	 {:type :defer :line zero :colnum zero :lexeme "~(" :state :public :count zero}
+var anonTok 	 {:type :anon  :line zero :colnum zero :lexeme "%" :state :public }
+var callTok 	 {:type :call  :line zero :colnum zero :lexeme nil :state :public }	
+var endTok 	 	 {:type :end :line zero :colnum zero :lexeme "eof" :state :public }
+
+var postCallMap {	
+	"*" 	"mul"
+	"/" 	"div"
+	"+"		"add"
+	"-" 	"sub"
+	"!" 	"not"
+	"=" 	"eq"
+	"!=" 	"neq"
+	">" 	"gt"
+	">=" 	"gteq"
+	"!>" 	"ngt"
+	"!>=" 	"ngte"
+	"<" 	"lt"
+	"<="   	"lteq"
+	"!<" 	"nlt"
+	"!<=" 	"nlte"
+}
+
+var declTermMap {'m' "odule" 'i' "nclude" 'v' "ar" 'f' "unc"}
+var literalTypeSet {:integer :hexadecimal :real :string :character :keyword }
+var collectionTypeSet {:liststart :mapstart :vectorstart :setstart }
+
+var collTokMap {
+	'[' 	listStartTok
+	']' 	listEndTok
+	'{' 	mapStartTok
+	'}' 	mapEndTok
+	'(' 	parStartTok
+	')' 	parEndTok
+}
+
+var exprTokMap {
+	"?" 		ifTok
+	"let" 		letTok
+	"let:" 		letTok 
+	"match" 	matTok
+	"match:"	matTok 	
+}
+
+var astCountList <
+	{:type :integer :lexeme "0"}
+	{:type :integer :lexeme "1"}
+	{:type :integer :lexeme "2"}
+	{:type :integer :lexeme "3"}
+	{:type :integer :lexeme "4"}
+	{:type :integer :lexeme "5"}
+	{:type :integer :lexeme "6"}
+	{:type :integer :lexeme "7"}
+	{:type :integer :lexeme "8"}
+	{:type :integer :lexeme "9"}
+	{:type :integer :lexeme "10"}
+	{:type :integer :lexeme "11"}
+	{:type :integer :lexeme "12"}
+	{:type :integer :lexeme "13"}
+	{:type :integer :lexeme "14"}
+	{:type :integer :lexeme "15"}
+	{:type :integer :lexeme "16"}
+>
+
+var astExternList [
+	{:type :symbol :lexeme "empty_list"}
+	{:type :symbol :lexeme "list_inst*"}
+	{:type :symbol :lexeme "list_extend*"}
+	{:type :symbol :lexeme "empty_vector"}
+	{:type :symbol :lexeme "vector_inst*"}
+	{:type :symbol :lexeme "vector_extend*"}
+	{:type :symbol :lexeme "empty_map"}	
+	{:type :symbol :lexeme "map_inst*"}
+	{:type :symbol :lexeme "map_extend*"}
+	{:type :symbol :lexeme "empty_set"}	
+	{:type :symbol :lexeme "set_inst*"}
+	{:type :symbol :lexeme "set_extend*"}
+	{:type :symbol :lexeme "foidl_fref_instance"}
+	{:type :symbol :lexeme "foidl_imbue"}
+	{:type :symbol :lexeme "nil"}
+	{:type :symbol :lexeme "true"}
+	{:type :symbol :lexeme "false"}
+	{:type :symbol :lexeme "zero"}
+	{:type :symbol :lexeme "eq"}
+	{:type :symbol :lexeme "foidl_truthy?"}
+	{:type :symbol :lexeme "empty_string"}
+	{:type :symbol :lexeme "space_string"}	
+]
+
+var astLiteralList [
+	{:type :keyword :lexeme ":default" }
+]
+
+var collectionEndMap {
+	:liststart 		:listend
+	:vectorstart	:listend
+	:mapstart 		:mapend
+	:setstart 		:mapend
+}
+
+var collectionTypeMap {
+	:liststart 		:list
+	:vectorstart	:vector
+	:mapstart 		:map
+	:setstart 		:set
+}
+
+

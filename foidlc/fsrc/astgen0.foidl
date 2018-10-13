@@ -1,0 +1,98 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; astgen0
+; AST Processing annex
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module astgen0
+
+include	asttypes
+include astutils
+include state
+include astrefactor
+include errors
+include foidlrtm
+include langcorem
+
+func astModule []
+	vexpect: :module
+
+func astInclude []
+	?: get: astEndSet vcurrent_type:
+		nil
+		@(
+			vnext:
+			astInclude:
+		)
+
+func astLiteral []
+	addAstChildNode: promoteLiteral: vcurrent:
+	vnext:
+
+func astSymbolDupe [node]
+	?: get: referenceSet get: node :type
+		copyAstRefType: node
+		node
+
+func astSymbol []
+	let [symb  promoteExtern: vcurrent: ]
+		?: symb
+			@(
+				vexpect: :symbol
+				addAstChildNode: astSymbolDupe: symb
+			)
+			astFailRef: "astSymbol"
+
+func astAnon []
+	vexpect: :anon
+	addAstChildNode: genAstMatchPredRef: get: astRoot! :context
+
+; Let and Match Expressions
+
+func astExprSymbolResult [token node result resref]
+	insertSymbolInTop: token resref
+	vexpect: :symbol
+	foidl_extendKV!: node :result result
+
+func astLetSetup [node]
+	pushRefID!: get: node :refid
+	?: =: vcurrent_type: :symbol
+		let [ares genAstLetResult: get: astRoot! :context get: vcurrent: :lexeme ]
+			astExprSymbolResult: vcurrent: node ares genAstLetResultRef: ares
+		node
+
+func astLetExit []
+	popAstChildren:
+	popFromSymStack:
+	popRefID!:
+
+func astMatchSetup [node]
+	pushRefID!: get: node :refid
+	let [frst vcurrent:
+		  scnd get: vpeek: :type ]
+		?: =: scnd :guard
+			node
+			?: =: get: frst :type :symbol
+				let [ares genAstMatchResult: get: astRoot! :context get: frst :lexeme ]
+					astExprSymbolResult: frst node ares genAstMatchResultRef: ares
+				node
+
+func astMatchExit [node]
+	popAstChildren:
+	popRefID!:
+	refactorMatch: node
+	addAstChildNode: node 				;	Add to astRoot

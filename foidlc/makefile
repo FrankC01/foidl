@@ -25,12 +25,11 @@ BSTRP 	= ../bin/fbstrp
 # FOIDL Runtime generation settings
 
 FSRC  	:= fsrc/
-SRC  	:= src/
-INC 	:= includes/
 LLS 	:= ll/
 OBJS 	:= objs/
-LIB 	:= lib/
+BIN 	:= bin/
 HDRS   	:= headers/
+RTHDRS  := ../foidlrtl/headers
 
 FDEFS 	:= .defs
 FOIDL  	:= .foidl
@@ -41,12 +40,13 @@ CSRC	:= .c
 foildrt_NAME := foidlrt
 foidlrt_LIB  := libfoidlrt.a
 STATIC_LIB   := $(LIB)$(foidlrt_LIB)
+foidlc_NAME	 := foidlc
+FOIDLC		 := $(BIN)$(foidlc_NAME)
 
 # Flags for compilation of all types
 
-BHDRFLAGS := -I $(HDRS) -r -a hdr
-BCFLAGS := -I $(HDRS) -r
-CLFLAG   = -Wall -c -I$(INC)
+BHDRFLAGS := -I $(HDRS) $(RTHDRS) -a hdr
+BCFLAGS := -I $(HDRS) $(RTHDRS)
 LLCFLAGS = -march=x86-64 -x86-asm-syntax=intel -relocation-model=pic -O3 -filetype=obj
 
 # Substitutions for recipe patterns
@@ -56,19 +56,13 @@ FHRDS   := $(subst $(FSRC), $(HDRS), $(FSRCS:$(FOIDL)=$(FDEFS)))
 FLLS	:= $(subst $(FSRC), $(LLS), $(FSRCS:$(FOIDL)=$(LL)))
 FOBJS	:= $(subst $(FSRC), $(OBJS), $(FSRCS:$(FOIDL)=$(OBJ)))
 
-SRCS	:= $(wildcard $(SRC)*$(CSRC))
-SOBJS	:= $(subst $(SRC), $(OBJS), $(SRCS:$(CSRC)=$(OBJ)))
+all: $(FOIDLC) | $(FHRDS) $(FLLS)
 
-all: $(STATIC_LIB) | $(FLLS) $(OBJS)
+$(FOIDLC): $(FLLS) $(FHRDS) | $(BIN) $(OBJS) $(LLS)
+	$(info Building executable)
 
-$(STATIC_LIB): $(FOBJS) $(SOBJS) | $(LIB)
-	$(info $(SRCS))
-	$(LLLT) --format=default -ru $(STATIC_LIB) $(FOBJS) $(SOBJS)
-
-$(LIB):
-	mkdir lib
-
-# FOIDL Source -> headers and -> ll
+$(BIN):
+	mkdir bin
 
 headers/%.defs : fsrc/%.foidl
 	$(BSTRP) -s $< $(BHDRFLAGS) -o $@
@@ -81,21 +75,14 @@ $(FLLS):$(FSRCS) | $(FHRDS) $(LLS)
 $(LLS):
 	mkdir ll
 
-objs/%.o : ll/%.ll
-	$(LLC) $< $(LLCFLAGS) -o $@
-
+# $(LLC) $< $(LLCFLAGS) -o $@
 $(FOBJS):$(FLLS) | $(OBJS)
+	$(info making llvm-objs $@)
 
-# C file compilations
-
-objs/%.o : src/%.c
-	$(CLC) $< $(CLFLAG) -o $@
-
-$(SOBJS):$(SRCS) | $(OBJS)
 
 $(OBJS):
 	mkdir objs
 
 
 clean:
-	$(RM) -r $(FHRDS) $(LLS) $(OBJS) $(LIB)
+	$(RM) -r $(FHRDS) $(LLS) $(OBJS) $(BIN)

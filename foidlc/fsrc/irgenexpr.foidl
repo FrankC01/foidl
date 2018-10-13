@@ -1,0 +1,167 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_irgenexpr
+; Level 1 Gen 3 Self Hosted Compiler - IR expressions
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module g3_irgenexpr
+include g3_irgenexpr0
+include g3_irgenutils
+include g3_irgenutils0
+include g3_irgentypes
+
+
+var  irCollMap {
+	:list 	[ "list_inst_bang" "list_extend_bang" ]
+	:vector [ "vector_inst_bang" "vector_extend_bang" ]
+	:map 	[ "map_inst_bang" "map_extend_bang" ]
+	:set 	[ "set_inst_bang" "set_extend_bang" ]
+}
+
+func genIRCollection [node]	
+	fold: irFoldExpression nil get: node :children
+	let: [ 	mcnt  count: get: node :children
+			csbtp get: node :subtype			
+			ord   nextIROrdCnt: 
+			cmap  get: irCollMap csbtp
+			mcall get: cmap  zero 
+			icall get: cmap  one ]
+		@(
+			toIRContext: call: ord mcall
+			toIRContext: immedLP
+			toIRContext: immedRP
+			toIRContext: store: ord get: node :uid 
+			;toIRContext: store: irFnRef get: node :uid 
+			?: =: csbtp :map
+				buildExtendTwoCall: ord icall get: node :children mcnt zero
+				fold: (buildExtendOneCall ord icall ) nil get: node :children
+
+			foidl_extendKV*: node :refid ord
+		)
+
+func genIRGroup [node]
+	let: [	ord 	get: node :uid
+			chld 	get: node :children 
+			lchld   get: chld dec: count: chld ]
+		@(
+			fold: irFoldExpression nil chld
+			genPrefetch: nil lchld 			
+			toIRContext: dstore: get: lchld :refid ord "group"
+		)
+
+func genIRPartial 		[node]
+	let: [	ord 	get: node :uid 
+			chld 	get: node :children 
+			fchld   first: chld
+			cnt 	count: chld ]
+		@(
+			;	Do the fref instance first
+			irExpression: fchld
+			genPrefetch: nil fchld
+			toIRContext: call: nextIROrdCnt: "foidl_fref_instance"
+			toIRContext: immedLP
+			toIRContext: callargr: :any get: fchld :refid 			
+			toIRContext: immedRP
+			toIRContext: store: getLastIROrdCnt: ord
+			
+			;	Do the children imbues
+			?: >: cnt one
+				@(
+					genIRPartialVal: ord chld cnt one
+					toIRContext: store: getLastIROrdCnt: ord
+				)
+				
+				nil
+			;	Store the fref instance
+		)
+
+func genIRCall 	[node]
+	fold: irFoldExpression nil get: node :children	
+	let: [  chld 	get: node :children
+			ign 	fold: genPrefetch nil chld 
+			fnm 	get: get: node :reference :fname
+			ord 	nextIROrdCnt: 
+		   ]
+		@(			
+			toIRContext: call: ord fnm 
+			toIRContext: immedLP
+			buildCallArg: chld count: chld zero
+			toIRContext: immedRP
+			toIRContext: dstore: ord get: node :uid fnm			
+			foidl_extendKV*: node :refid ord
+		)
+
+
+func genIRMatch [node]
+	let: [ 	chld 	get: node :children
+			cnt 	dec: count: chld 
+			fchld 	first: chld
+			muid    get: node :uid
+			slab 	makeLabel: irMatch muid irStart
+			elab 	makeLabel: irMatch muid irEnd ]
+		@(
+			toIRContext: branch: slab
+			toIRContext: label: slab
+			irExpression: fchld
+			fold: (genIRGuard chld cnt muid ) nil infinite
+			toIRContext: label: elab
+		)
+
+func genIRLet 	[node]
+	let: [ 	args 	get: get: node :args :children
+			chld 	first: get: node :children ]
+		@(
+			fold: irFoldExpression nil args
+			irExpression: chld			
+			genPrefetch: nil chld 
+			?: get: node :result
+				toIRContext: store: get: chld :refid get: get: node :result :uid
+				nil
+			toIRContext: store: get: chld :refid get: node :uid			
+		)
+
+func genIRIf 	[node]	
+	let: [ 	slab makeLabel: irIf get: node :uid irStart 
+			chld  get: node :children
+			fchld first: chld ]
+		@(
+			toIRContext: branch: slab
+			toIRContext: label: slab
+			genThenElsePred: chld fchld irIf get: node :uid irEnd
+		)
+
+var irExprMap {
+	:literal 		genIRLiteral
+	:funcref 		genIRFuncRef
+	:varref			genIRVarRef
+	:collection 	genIRCollection
+	:if 			genIRIf
+	:group 			genIRGroup
+	:partial 		genIRPartial
+	:call 			genIRCall
+	:funcarg 		genIRFuncArg
+	:lambarg 		genIRFuncArg
+	:match 			genIRMatch
+	:matchpred 		genIRPred
+	:guard 			genIRGuard
+	:let 			genIRLet 	
+	:letvar 		genIRLetVar
+	:letvarref 		genIRRef
+	:matchresultref	genIRRef 
+	:matchpredref 	genIRRef
+	:letresultref 	genIRRef
+
+}
+
+func irUnknown [n]
+	print*: "IR GEN NOT HANDLING "
+	printnl*: get: n :type
+	fail:
+
+func genIRExpr [node]
+	let: [fn get: irExprMap get: node :type ]
+		?: fn 
+			(fn node)
+			irUnknown: node

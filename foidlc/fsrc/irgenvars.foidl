@@ -1,0 +1,56 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_irgenvars
+; Level 1 Gen 3 Self Hosted Compiler - IR variables
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module g3_irgenvars
+include g3_state
+include g3_irgenutils
+include g3_irgentypes
+
+func genIRVarExpression [node]
+	irExpression: node
+	toIRContext: load: nextIROrdCnt: get: node :uid
+
+func genIRVar [node]
+	let: [	pv 		get: node :private 
+			sv 		get: getSymbolFor: get: node :fname :fname 
+			chld 	first: get: node :children ]
+		@(
+			toIRExterns: defv: sv pv
+			match: get: node :vtype
+				| =: %0 :literal irExpression: chld 
+				| =: %0 :funcref irExpression: chld 
+				| =: %0 :varref  irExpression: chld
+				| :default genIRVarExpression: chld
+			toIRContext: storev: getLastIROrdCnt: sv 
+		)
+
+func variableIR [acc node]
+	?: =: get: node :type :variable
+		genIRVar: node
+		nil
+	acc
+
+func varStackIRCnt [acc node]
+	?: =: get: node :type :variable
+		fold: stackAllocCount acc get: node :children
+		acc
+
+func varAllocs [acc node]
+	toIRContext: alloca: node
+	acc 
+
+func genIRVariables [ast]
+	foidl_extendKV*: irBase* :ordcnt one
+	foidl_extendKV*: irBase* :context toIRVarInit
+	let: [ 	acnt fold: varStackIRCnt one get: ast :children 
+	       	lcnt getIROrdCnt: ]
+    	?: >: -: lcnt one zero			
+			fold: varAllocs nil series: one inc: acnt  nil
+			nil	
+	fold: variableIR nil get: ast :children
+

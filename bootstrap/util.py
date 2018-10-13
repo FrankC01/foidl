@@ -20,17 +20,17 @@ import logging
 from errors import UtilityError
 from enums import ParseLevel
 from lexer import Lexer as full_lex
+from hlexer import HLexer as lite_lex
 from parser import Parser as full_parse
+from hparser import HParser as lite_parse
 
 LOGGER = logging.getLogger()
 
 
 def file_exists(path, base, ext):
     ffile = os.path.join(path, base) + '.' + ext
-    if not os.path.isfile(ffile):
-        return None
-    else:
-        return ffile
+    LOGGER.debug("         checking for {}".format(ffile))
+    return ffile if os.path.isfile(ffile) else None
 
 
 def validate_file(infile, ext):
@@ -63,9 +63,8 @@ def parse_file(srcfile, state, level=ParseLevel.FULL):
         lexg = full_lex
         prsg = full_parse
     else:
-        LOGGER.critical("Lite parsing not implemented")
-        raise UtilityError(
-            "'{}' not implemented".format(level))
+        lexg = lite_lex
+        prsg = lite_parse
 
     src = ""
     # Read in source file
@@ -83,5 +82,4 @@ def parse_file(srcfile, state, level=ParseLevel.FULL):
     pargen = prsg(lexgen, srcfile)
     pargen.parse()
     parser = pargen.get_parser()
-
     return parser.parse(tokens, state=state).module()

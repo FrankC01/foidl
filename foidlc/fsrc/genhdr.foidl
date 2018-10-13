@@ -1,0 +1,67 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_genhdr
+; Level 1 Gen 3 Self Hosted Compiler - Header generation
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module g3_genhdr
+include g3_tvalidate
+
+func hrdmodule [accum token]
+	extend*: 
+		extend*: 
+			extend*: accum "module "
+			get: token :lexeme
+		nlchr 
+
+func hdrvar [tokens cntr accum token]
+	valVarLite: tokens cntr
+	?: =: get: token :state :private
+		accum
+		extend*: 
+			extend*: 
+				extend*: 
+					extend*: accum "var " 
+					get: token :lexeme
+				" Type "
+			nlchr
+
+func hdreatargs [tokens accum cntr]
+	let: [token get: tokens cntr]
+		match: get: token :type
+		| =: %0 :liststart extend*: accum " [ " 
+		| =: %0 :symbol extend*: extend*: accum get: token :lexeme spchr
+		| =: %0 :listend reduced: extend*: extend*: accum "]" nlchr
+		| :default fail:
+
+func hdrfunc [tokens cntr accum token]
+	funcVarLite: tokens cntr
+	?: =: get: token :state :private
+		accum
+		fold: 
+			(hdreatargs tokens)
+			extend*: extend*: accum "func " get: token :lexeme
+			series: inc: cntr nil nil 
+
+func ghdr [tokens accum cntr]
+	let: [token get: tokens cntr ]
+	match: get: token :type  
+		| =: %0 :module hrdmodule: accum token 
+		| =: %0 :variable hdrvar: tokens cntr accum token
+		| =: %0 :function hdrfunc: tokens cntr accum token 
+		| =: %0 :end reduced: accum 
+		| :default accum
+
+func writer [channel val]
+	write*: channel val 
+	channel
+
+func genhdr [channel tokens]
+	firstmodule: tokens
+	write*: channel "; FOIDL Generated Header "
+	write*: channel nlchr
+	write*: channel nlchr
+	let: [ps fold: (ghdr tokens) vector_inst*: infinite ] 
+		fold: writer channel ps

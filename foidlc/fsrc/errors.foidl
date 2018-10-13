@@ -1,0 +1,82 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_errors
+; Level 1 Gen 3 Self Hosted Compiler - Compiler errors
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module errors
+include state
+
+var notExpectf "Found token '"
+var notExpectd "' when expecting "
+
+func tokenErrorBase [hdr token]
+	write!: cerr "error: foidlc."
+	write!: cerr hdr
+	write!: cerr colonchr
+	write!: cerr get: context! :module
+	write!: cerr ".foidl"
+	write!: cerr colonchr
+	write!: cerr get: token :line
+	write!: cerr colonchr
+	write!: cerr get: token :colnum
+	write!: cerr colonchr
+
+func failMap [token cnt]
+	tokenErrorBase: "lexer" token
+	write!: cerr "found ("
+	write!: cerr cnt
+	write!: cerr ") entries but map requires even number of entries"
+	write!: cerr nlchr
+	fail:
+
+func failVerify []
+	write!: cerr nlchr
+	fail:
+
+func tokenNotExpected [desired found]
+	tokenErrorBase: "lexer" found
+	write!: cerr notExpectf
+	write!: cerr get: found :type
+	write!: cerr notExpectd
+	write!: cerr desired
+	failVerify:
+
+func failString! [s]
+	write!: cerr s
+	failVerify:
+
+func expected [ typeKw ]
+	tokenNotExpected: typeKw get: syntax! :token
+
+func expected_in [ coll ign ]
+	expected: coll
+
+func astFailRef [ctxt]
+	print!: "foidlc.astgen:"
+	print!: ctxt
+	print!: ": Unable to resolve reference to "
+	printnl!: get: vcurrent: :lexeme
+	fail:
+
+func astFailPartial [fname ecnt hcnt]
+	write!: cerr "foidlc.astgen:partial: Function '"
+	write!: cerr fname
+	write!: cerr "' takes a maximum of "
+	write!: cerr ecnt
+	write!: cerr " arguments but is being passed "
+	write!: cerr hcnt
+	write!: cerr nlchr
+	fail:
+
+func astWarnMidGuard [fcnt mcnt]
+	write!: cerr "warning: foidlc.astgen:match: Default match guard at position "
+	write!: cerr fcnt
+	write!: cerr " of "
+	write!: cerr mcnt
+	write!: cerr " hides remaining matches "
+	write!: cerr nlchr
+
+

@@ -1,0 +1,98 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_tvalutil
+; Level 1 Gen 3 Self Hosted Compiler - validation utils
+;	Note: Includes light and heavy weight validation
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module  g3_tvalutil
+include g3_state
+include g3_errors
+
+var generalErr "General verification error"
+var emptyToks "No tokens presented for validation"
+var modFirst "Module declaration required as first non-comment line"
+var tooManyArgs " exceeds maximum argument count of 16 "
+
+
+func valNext []
+	;printnl*: "valNext"
+	vnext:
+
+func valSymbol []
+	;printnl*: "valSymbol"
+	vexpect: :symbol 
+
+;	:liststart already processed
+
+func valArgList []	
+	?: =: vcurrent_type: :listend
+		nil
+		@(
+			valSymbol:
+			valArgList:
+		)
+		
+
+func valLetArgList []
+	?: =: vcurrent_type: :listend
+		nil
+		@(
+			valSymbol:
+			foidl_dispatch0: get: syntax* :exprjmp
+			valLetArgList:
+		)
+
+func valCollection [ stopKw scnt ]
+	?: =: vcurrent_type: stopKw 
+		scnt 
+		@(
+			foidl_dispatch0: get: syntax* :exprjmp
+			valCollection: stopKw inc: scnt
+		 )
+
+func valVector []
+	;printnl*: "valVector"
+	vexpect: :vectorstart
+	valCollection: :listend zero
+	vexpect: :listend
+
+func valList []
+	;printnl*: "valList"
+	vexpect: :liststart
+	valCollection: :listend zero
+	vexpect: :listend
+
+func valSet []
+	;printnl*: "valSet"
+	vexpect: :setstart
+	valCollection: :mapend zero
+	vexpect: :mapend
+
+func validateMap [token cnt]
+	?: =: mod: cnt two zero
+		token 
+		failMap: token cnt
+
+func valMap []
+	;printnl*: "valMap"
+	let ct: [] vcurrent:
+	vexpect: :mapstart
+	validateMap: ct valCollection: :mapend zero
+	vexpect: :mapend
+
+func valPartial []
+	;printnl*: "valPartial"
+	vexpect: :partialstart
+	valCollection: :partialend zero 
+	vexpect: :partialend
+
+func valIf []
+	;printnl*: "valIf"
+	vexpect: :if
+	foidl_dispatch0: get: syntax* :exprjmp
+	foidl_dispatch0: get: syntax* :exprjmp
+
+

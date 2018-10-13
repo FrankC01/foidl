@@ -23,7 +23,7 @@ from ptree import ParseTree, ParseSymbol
 import util
 import pprint
 from emit import LlvmGen
-from enums import ExpressionType
+from enums import ExpressionType, ParseLevel
 from errors import NotFoundError
 
 from abc import ABC, abstractmethod
@@ -38,6 +38,8 @@ _std_comment = """
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 """
 
+_cached_includes = {}
+
 
 def _build_comp(*functions):
     """Construct composition"""
@@ -47,23 +49,28 @@ def _build_comp(*functions):
 
 def _parse(input):
     """Compiles file"""
-    srcfile, state = input
-    LOGGER.debug("Parsing {}".format(srcfile))
+    srcfile, state, level = input
+    LOGGER.debug("Include Parsing {}".format(srcfile))
     fpart = os.path.split(srcfile)[1].split('.')[0]
     state.symtree.push_scope(fpart, srcfile)
-    ast = util.parse_file(srcfile, state)
-    # state.symtree.push_scope(ast.name, srcfile)
-    return state, ast
+    cached = _cached_includes.get(srcfile, None)
+    if cached:
+        return state, cached, False
+    else:
+        ast = util.parse_file(srcfile, state, level)
+        _cached_includes[srcfile] = ast
+        return state, ast, True
 
 
 def _top_symbols(input):
     """Extracts var and func symbol refs only"""
-    state, mod = input
-    for t in mod.value:
-        if type(t) is ast.Variable:
-            state.symtree.register_symbol(t.name, t.get_reference())
-        elif type(t) is ast.Function:
-            state.symtree.register_symbol(t.name, t.get_reference())
+    state, mod, consume = input
+    if consume:
+        for t in mod.value:
+            if type(t) is ast.Variable:
+                state.symtree.register_symbol(t.name, t.reference)
+            elif type(t) is ast.Function:
+                state.symtree.register_symbol(t.name, t.reference)
     return input
 
 
@@ -72,6 +79,7 @@ def _inc_to_syms():
 
 
 _HDR_PARSE = _parse  # _inc_to_syms()
+_IHDR_PARSE = _inc_to_syms()
 
 
 def _resolve_header(fname, ipaths):
@@ -98,30 +106,34 @@ def preprocess_runtime(state, args):
             else:
                 raise NotFoundError(
                     "Unable to resolve include file {}".format(i))
-        [_HDR_PARSE((x, state)) for x in inc_files]
+        [_IHDR_PARSE((x, state, ParseLevel.LITE)) for x in inc_files]
 
     return state
 
 
 def include_parse(state, obj):
     inc_files = []
+    LOGGER.debug("Include parse for {}".format(obj.value))
     for i in obj.value:
+        LOGGER.debug("     filename: {}".format(i.value))
         ffile = _resolve_header(i.name, state.inclpath)
         if ffile:
             inc_files.append(ffile)
         else:
             raise NotFoundError(
-                "Unable to resolve include file {}".format(i))
-    [_HDR_PARSE((x, state)) for x in inc_files]
-    # print("Parsing {}".format(inc_files))
+                "Unable to resolve include file {}".format(i.name))
+    [_IHDR_PARSE((x, state, ParseLevel.LITE)) for x in inc_files]
 
 
 class State(object):
-    def __init__(self, literals, symtree, inclpath, incprocessed=False):
+    def __init__(
+            self,
+            literals, symtree, inclpath, headergen=False, incprocessed=False):
         self._literals = literals
         self._symtree = symtree
         self._inclpath = inclpath
         self._incprocessed = incprocessed
+        self._headergen = headergen
         self._mainsrc = None
 
     @property
@@ -143,6 +155,10 @@ class State(object):
     @incprocessed.setter
     def incprocessed(self, b):
         self._incprocessed = b
+
+    @property
+    def headergen(self):
+        return self._headergen
 
     @property
     def mainsrc(self):

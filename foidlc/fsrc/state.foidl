@@ -1,0 +1,232 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; state
+; Token state machine
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module state
+include errors
+
+var vDeclSet #{:include :function :variable :end }
+var vEndSet #{:guard :listend :mapend :variable :function :end :partialend }
+
+func nop [ign0 ign1]
+	nil
+
+func goodExit [ign0 ign1]
+	nop
+
+;	Holds the token model, used from validation through AST gen. It is restored
+;	to the token context of the compilation unit after include processing
+
+var syntax! {:tokens nil :cnt zero :token nil :index zero :exprjmp nil }
+
+var oobRead  "Attempting to 'vnext' beyond token stream"
+
+var badHit { :anon 		tokenNotExpected
+			 :variable 	tokenNotExpected
+			 :function 	tokenNotExpected
+			 :module 	tokenNotExpected
+			 :include 	tokenNotExpected
+			 :end 		tokenNotExpected
+			}
+
+func texpect [expKW token ]
+	?: =: get: token :type expKW
+		token
+		tokenNotExpected: expKW token
+
+func vindex []
+	get: syntax! :index
+
+func vcurrent []
+	get: syntax! :token
+
+func vcurrent_type []
+	get: vcurrent: :type
+
+func vpeek []
+	?: =: vcurrent_type: :end
+		:end
+		get: get: syntax! :tokens inc: vindex:
+
+func vnext []
+	?: =>: inc: vindex:  get: syntax! :cnt
+		failString!: oobRead
+		let: [ ci inc: vindex:
+			   tk get: get: syntax! :tokens ci ]
+			@(
+				foidl_extendKV!: foidl_extendKV!: syntax! :token tk :index ci
+				tk
+			)
+
+func vaccept [ typeKw ]
+	?: =: vcurrent_type: typeKw
+		vnext:
+		false
+
+func vexpect [ typeKw ]
+	let: [ vn vaccept: typeKw ]
+		?: =: vn false
+			expected: typeKw
+			vn
+
+func vexpect_in [ vSet ]
+	getd: vSet vcurrent_type: expected_in
+
+func valprint [s]
+	print!: s
+	printnl!: vcurrent:
+
+func resetSetup! [fnExpJmp]
+	foidl_extendKV!:
+		foidl_extendKV!:
+			foidl_extendKV!: syntax! :token get: get: syntax! :tokens zero
+		:index zero
+	:exprjmp fnExpJmp
+
+func syntaxSetup! [tokens fnExpJmp]
+	foidl_extendKV!:
+		foidl_extendKV!:
+			foidl_extendKV!: syntax! :tokens tokens
+			:cnt count: tokens
+		:token get: tokens zero
+	foidl_extendKV!:
+		foidl_extendKV!: syntax! :exprjmp fnExpJmp
+		:index zero
+
+
+
+; 	Holds the stack of symbol tables, the top being that of the
+;	compilation unit prior to AST gen operations. During AST gen,
+;	the stack grows and shrinks based on scope context
+
+var symbolStack! foidl_list_inst!:
+
+var collide0 "warning:foidlc.symbol:"
+var collide1 "' declaration in "
+var collide2 " hides same declaration in "
+
+func hidesCheck [fnd token node]
+	?: fnd
+		@(
+			write!: cerr collide0
+			write!: cerr get: token :line
+			write!: cerr colonchr
+			write!: cerr get: token :colnum
+			write!: cerr spchr
+			write!: cerr sqchr
+			write!: cerr get: token :lexeme
+			write!: cerr collide1
+			write!: cerr get: node :context
+			write!: cerr collide2
+			write!: cerr get: fnd :context
+			write!: cerr nlchr
+		)
+		nil
+
+;	Used during symbol table management. Post will contain
+;	the compilation units module name
+
+var context! {:module nil :symtable nil :ignorep false }
+
+func popFromSymStack []
+	pop!: symbolStack!
+
+func peekSymStack []
+	peek: symbolStack!
+
+func pushInSymStack [symMap]
+	push!: symbolStack! symMap
+
+
+var name_ext {qmchr "_qmark", tmchr "_bang"}
+
+func genName [s]
+	let: [	c last: s
+			ll get: name_ext c ]
+		?: ll
+			extend: dropLast: s ll
+			s
+
+func findInSymtable [s accum vmap]
+	let: [x get: vmap s ]
+		?: nil?: x
+			accum
+			reduced: x
+
+func getSymbolFor [s]
+	fold: ( findInSymtable s ) nil symbolStack!
+
+func inContextSymbols? [s]
+	let: [ fnd get: get: context! :symtable s ]
+	?: fnd
+		fnd
+		getSymbolFor: s
+
+func insertIntoContext [ref]
+	foidl_extendKV!: get: context! :symtable get: ref :fname ref
+
+func insertSymbolInTop [token node]
+	let: [	lxm get: token :lexeme
+			fnd getSymbolFor: lxm ]
+		@(
+			hidesCheck: fnd token node
+			foidl_extendKV!: peekSymStack: lxm node
+		)
+
+;	AST used/useful stuff
+
+var lambdaArgPrefix "lambarg"
+var foidltruthy 	"foidl_truthy?"
+var foidlequals 	"eq"
+var foidlnil 		"nil"
+
+var astCntrs! {:litcnt zero :lmdcnt zero :exprcnt zero  }
+var astRefStack! foidl_list_inst!:
+
+func pushRefID! [refid]
+	push!: astRefStack! refid
+
+func popRefID! []
+	pop!: astRefStack!
+
+func peekRefID! []
+	peek: astRefStack!
+
+func litCnt []
+	let: [lcnt get: astCntrs! :litcnt ]
+		@(
+			foidl_extendKV!: astCntrs! :litcnt inc: lcnt
+			lcnt
+		)
+
+func lmdCnt []
+	let: [lcnt get: astCntrs! :lmdcnt ]
+		@(
+			foidl_extendKV!: astCntrs! :lmdcnt inc: lcnt
+			lcnt
+		)
+
+func exprCnt []
+	let: [lcnt get: astCntrs! :exprcnt ]
+		@(
+			foidl_extendKV!: astCntrs! :exprcnt inc: lcnt
+			lcnt
+		)
+
+var astEndSet #{ :variable :function :end }

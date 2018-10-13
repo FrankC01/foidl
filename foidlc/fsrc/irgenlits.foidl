@@ -1,0 +1,111 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_irgenlits
+; Level 1 Gen 3 Self Hosted Compiler - IR literals
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module g3_irgenlits
+include g3_irgenutils
+include g3_irgentypes
+
+var  strtail foidl_collc2str: [eschr chr0 chr0]
+
+func storeAdjustedString [mlen cstr]
+	let: [ nsz 	inc: count: cstr 
+		   tstr extend: cstr strtail ]
+		?: =: mlen nsz 
+			toIRLitInit: stores: mlen tstr one
+			@(
+				toIRLitInit: bcasts2s: nextIROrdCnt: mlen nsz one	
+				toIRLitInit: stores: nsz tstr getLastIROrdCnt: 
+			)
+
+func regResultToLitVar [lstats lfqn]
+	;	store result in register
+	toIRLitInit: store: getLastIROrdCnt: get: lstats :resord 
+	;	load to register
+	toIRLitInit: load: nextIROrdCnt: get: lstats :resord					
+	;	store to global
+	toIRLitInit: storev: getLastIROrdCnt: lfqn 
+
+func registerLiteral [funcname parm1 parm2 argtype]
+	toIRLitInit: call: nextIROrdCnt: funcname
+	toIRLitInit: immedLP
+	toIRLitInit: (argtype parm1 parm2)
+	toIRLitInit: immedRP
+
+var  litStrTypeMap 
+	{
+		:string "foidl_reg_string"
+		:keyword "foidl_reg_keyword"
+	}
+
+func genLitIR [lstats accum lentry]	
+	let: [	lval 	value: lentry 
+			ltyp 	get: lval :subtype 
+			lfqn 	get: lval :fqn
+			lname	get: lval :fname
+			cargi 	callargi
+			mlen 	get: lstats :strmlen ]
+		@(
+			toIRExterns: deflit: lfqn
+			match: ltyp
+			| get: litStrTypeMap %0			
+				@(					
+					storeAdjustedString: mlen lname
+					registerLiteral: get: litStrTypeMap %0 :i8p three callargr
+					regResultToLitVar: lstats lfqn
+				)
+			| =: ltyp :integer 		
+				@(
+					registerLiteral: "foidl_reg_integer" ltyp lname cargi
+					regResultToLitVar: lstats lfqn
+				)
+			| =: ltyp :character 		
+				@(
+					registerLiteral: "foidl_reg_character" ltyp foidl_c2i: lname cargi
+					regResultToLitVar: lstats lfqn
+				)
+			| :default 
+				@(
+					print*: "Unknown ltyp in genLitIR = "
+					printnl*: lentry
+					fail:
+				)
+		)
+	accum
+
+func initLitFrame [maxsb mname]
+	let: [ lname extend: mname ".linits" ]
+		@(
+			toIRLitInit: deflitinitfn: lname
+			toIRInit: callv: lname zero
+			toIRInit: immedLP
+			toIRInit: immedRP
+		)
+	?: >: maxsb zero
+		@(
+			toIRLitInit: allocas: nextIROrdCnt: inc: maxsb
+			toIRLitInit: alloca: nextIROrdCnt: 
+			toIRLitInit: bcasts: nextIROrdCnt: inc: maxsb one
+			inc: maxsb
+		)
+		@(
+			toIRLitInit: alloca: nextIROrdCnt:
+			maxsb
+		)
+
+func genLiteralsIR [litmap mname]
+	foidl_extendKV*: irBase* :ordcnt one
+	let: [ 	lstats foidl_literal_map_stats: litmap ]
+		@(
+			foidl_extendKV*: lstats :strmlen 
+				initLitFrame: get: lstats :strmlen mname
+			?: =: get: lstats :strmlen zero
+				foidl_extendKV*: lstats :resord one
+				foidl_extendKV*: lstats :resord two
+			fold: (genLitIR lstats) nil litmap
+			toIRLitInit: retv
+		) 

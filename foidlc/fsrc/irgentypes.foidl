@@ -1,0 +1,128 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_irgentypes
+; Level 1 Gen 3 Self Hosted Compiler - IR types
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module g3_irgentypes
+include g3_irgenutils
+
+;	Convenience strings
+
+;	Prefixes
+var irInits ".inits"
+var irFnRef ".funcref"
+var irMatch "match."
+var irLet   "let."
+var irIf 	"if."
+var irSwtch "switch."
+
+; 	Suffixes
+var irStart 	".start"
+var irThen 		".then"
+var irElse 		".else"
+var irEnd 		".end"
+var irTrue 		".true"
+var irFalse 	".false"
+var irDefault 	".default"
+var irGuard 	".guard."
+
+func makeLabel [pre ident suf] extend: extend: pre ident suf 
+
+func guardLabel [base ident] 
+	extend:
+		extend: 
+			extend: irMatch base 
+			irGuard 
+		ident
+
+func guardDefaultLabel [base ident] 
+	extend: extend: extend: extend: irMatch base irGuard ident irDefault
+
+func guardNextLabel [mcnt indx base ident]
+	?: <: inc: indx mcnt
+		guardLabel: base inc: ident
+		guardDefaultLabel: base inc: ident
+
+;	Convenience commands
+
+var  immedLP  	[ :immed lparen ]
+var  immedRP  	[ :immed rparen ]
+var  immedComma [ :immed comma ]
+
+
+;	Psuedo operators
+
+func deflitinitfn [ident] 	[ :deflitinitfn ident ]
+func defvarinitfn [ident] 	[ :defvarinitfn ident ]
+func definitfn 	  [ident] 	[ :definitfn extend: ident irInits ]
+func label 		  [ident] 	[ :label ident ]
+
+;	Declarations (externs)
+
+func declv   [ident]		[ :decextv ident ]
+func declfn  [ident acnt] 	[ :decextfn ident acnt ]
+func declfnr [ident] 		[ :decextfnr extend: ident irFnRef ]
+
+;	Definitions
+
+func deflit [ident]  			[ :deflit ident ]
+func defv 	[ident vis] 		[ :defv ident vis ]
+func deffn 	[ident acnt vis] 	[ :deffn ident acnt vis ]
+
+;	Allocations
+
+func alloca  [ord] 			[ :alloca ord ]
+func allocat [ord atype] 	[ :allocat ord atype ]
+func allocas [ord sz] 		[ :allocas ord sz ]
+
+func dalloca  [ord comm] 			[ :dalloca ord comm ]
+func dallocat [ord atype comm] 		[ :dallocat ord atype comm ]
+func dallocas [ord sz comm] 		[ :dallocas ord sz comm ]
+
+;	Bitcasts
+func bcasts  	[ord msz srcord]  		[ :bcasts ord srcord msz ]
+func bcasts2s	[ord msz nsz srcord]	[ :bcasts2s ord srcord msz nsz ]
+
+; 	Branches
+func branch  [ident] 		[ :branch ident ]
+func cbranch [ident b1 b2]  [ :cbranch ident b1 b2 ]
+
+;	Call 
+
+func call   [ord fname] [:call ord fname ]
+func callir [fname] 	[:callir fname ]
+func callv  [fname] 	[:callv fname ]
+
+;	Call arguments
+
+func callargr 		[itype rval] 		[:callargr itype rval ]
+func callargi 		[itype ival]  		[:callargi itype ival ]
+func callargbcfni8 	[itype src acnt] 	[:callargbcfni8 :i8p src acnt ]
+
+func comparei 		[ord lhs rhs] 		[:comparei ord lhs rhs ]
+
+;	Loads
+
+func load  [ord srcord] 	[:load  ord srcord ]
+func loadv [ord gvar]		[:loadv ord gvar ]
+
+func dload  [ord srcord comm] 	[:dload  ord srcord comm ]
+func dloadv [ord gvar comm]		[:dloadv ord gvar comm ]
+
+;	Returns
+
+var  retv 	  		[ :returnv :void ]
+func ret  [ord]	  	[ :return :any ord ]
+
+; 	Stores
+
+func store  	[sord tord] 	[:store sord tord ]
+func stores 	[mlen str ord]  [:stores mlen str ord  ]
+func storev 	[sord tvar] 	[:storev sord tvar  ]
+
+func dstore  [sord tord comm] 	[:dstore sord tord comm ]
+func dstores [mlen str comm]    [:dstores mlen str one comm ]
+func dstorev [sord tvar comm] 	[:dstorev sord tvar comm  ]

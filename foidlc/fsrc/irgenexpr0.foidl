@@ -1,0 +1,69 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_irgenexpr0
+; Level 1 Gen 3 Self Hosted Compiler - IR expressions
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module g3_irgenexpr0
+include g3_irgenutils
+include g3_irgenutils0
+include g3_irgentypes
+
+func genIRLiteral [node]
+	let: [ord nextIROrdCnt: ]
+		@(
+			toIRContext: loadv: ord get: node :fqn
+			foidl_extendKV*: node :refid ord
+		)
+
+func genIRFuncRef [node]	
+	let: [ 	ac 		get: node :argcnt
+			sv 		get: node :fname 
+			lac 	getCountLiteral: ac
+			svfr	extend: sv irFnRef ]
+		@(
+			irExpression: lac			
+			toIRContext: call: nextIROrdCnt: "foidl_tofuncref"
+			toIRContext: immedLP
+			toIRContext: callargbcfni8: :i8p sv ac  
+			toIRContext: immedComma
+			toIRContext: callargr: :any get: lac :refid
+			toIRContext: immedRP
+			foidl_extendKV*: node :refid getLastIROrdCnt:
+		)
+			
+func genIRFuncArg [node]
+	foidl_extendKV*: node :refid get: node :uid
+
+func genIRVarRef [node]
+	let: [ord nextIROrdCnt: ]
+		@(
+			toIRContext: loadv: ord get: node :fname			
+			foidl_extendKV*: node :refid ord
+		)
+
+func genIRPred [node]
+	let: [ fchld first: get: node :children ]
+		@(
+			irExpression: fchld
+			toIRContext: store: get: fchld :refid get: node :uid 
+		)
+
+func genIRRef [node]
+	let: [ord nextIROrdCnt: ]
+		@(
+			toIRContext: load: ord get: get: node :varref :uid
+			foidl_extendKV*: node :refid ord
+		)
+
+func genIRLetVar 	[node]	
+	let: [	fchld first: get: node :children 
+			fnm   get: node :fname ]
+		@(
+			irExpression: fchld
+			genPrefetch: nil fchld
+			toIRContext: store: get: fchld :refid get: node :uid			
+		)
+

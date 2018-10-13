@@ -318,6 +318,32 @@ class FoidlAst(ABC):
     def source(self):
         return self._source
 
+    @classmethod
+    def dump(cls, el, indent=1):
+        if isinstance(el, FoidlAst):
+            if hasattr(el, "token"):
+                LOGGER.warn("Trace: {}> {} {}".format(
+                    '-' * indent, el.__class__.__name__,
+                    el.token.getsourcepos()))
+            else:
+                LOGGER.warn("Trace: {}> {}".format(
+                    '-' * indent, el.__class__.__name__)),
+        else:
+            LOGGER.warn("Trace: {}> {}".format(
+                '-' * indent, el.__class__.__name__)),
+        if hasattr(el, 'value'):
+            if type(el.value) is list:
+                for i in el.value:
+                    indent += 1
+                    cls.dump(i, indent)
+                    indent -= 1
+            else:
+                pass
+        else:
+            if type(el) is list:
+                for l in el:
+                    cls.dump(l, indent)
+
     @abstractmethod
     def eval(self, bundle, leader):
         pass
@@ -489,6 +515,7 @@ class Variable(FoidlAst):
         self._name = vhdr.name
         self._vref = vhdr.reference
         self._ident = vhdr.ident
+        self._reference = vhdr.get_reference()
         if type(value[0]) is list:
             value = value[0]
         if len(value) != 1:
@@ -509,6 +536,10 @@ class Variable(FoidlAst):
     @property
     def value(self):
         return self._value
+
+    @property
+    def reference(self):
+        return self._reference
 
     def eval(self, bundle, leader):
         expr = []
@@ -564,6 +595,7 @@ class Function(FoidlAst):
         self._name = fhdr.name
         self._ident = fhdr.ident
         self._arguments = fhdr.arguments
+        self._reference = fhdr.get_reference()
         self.value = value if value else [_NIL]
 
     @property
@@ -577,6 +609,10 @@ class Function(FoidlAst):
     @property
     def arguments(self):
         return self._arguments
+
+    @property
+    def reference(self):
+        return self._reference
 
     def eval(self, bundle, leader):
         # Stack args in symtable
@@ -1228,8 +1264,11 @@ class If(FoidlAst):
             rem.insert(0, el)
             return rem
         elif len(value) < 3:
+            LOGGER.warn("If")
+            cls.dump(value, 2)
             raise errors.SyntaxError(
-                "If expects 3 expressions: pred then else ")
+                "If expects 3 expressions: pred then else {} got {}".format(
+                    token.getsourcepos(), value))
         else:
             return If(value, token, src)
 
@@ -1302,3 +1341,4 @@ class FunctionCall(FoidlAst):
 
 
 _NIL = Symbol('nil', Token("SYMBOL", "nil"), None)
+NIL = _NIL

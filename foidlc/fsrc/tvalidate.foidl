@@ -1,0 +1,267 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_tvalidate
+; Level 1 Gen 3 Self Hosted Compiler - Token validation
+;	Note: Includes light and heavy weight validation
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module  g3_tvalidate
+include g3_tvalutil
+include g3_symbolmgmt
+include g3_state
+include g3_errors
+
+;	Token management
+
+func firstmodule [tokens]
+	?: =: count: tokens zero
+		failString*: emptyToks
+		let: [mtok get: tokens zero ]
+			?: =: get: mtok :type :module 
+				foidl_extendKV*: context* :module get: mtok :lexeme
+				failString*: modFirst
+	
+func valSymbolArgs [tokens acc val]
+	let: [token get: tokens val ]
+		match: get: token  :type 		
+		| =: %0 :symbol inc: acc 
+		| =: %0 :listend reduced: acc
+		| :default tokenNotExpected: :symbol token
+
+func valVarLite [tokens cnt]
+	let: [token get: tokens inc: cnt
+		  fn 	getd: badHit get: token :type goodExit ]
+		  (fn :expression token)	
+
+func valFuncArgCnt [lxm strtc endc]		
+	?: >: -: endc strtc 16
+		@(
+			write*: cerr lxm 
+			failString*: tooManyArgs
+		)
+		-: endc strtc
+
+func funcVarLite [tokens cnt]	
+	let: [ 	lxm 	get: get: tokens cnt :lexeme
+			sp		inc: cnt 		;	Skips to expected place for :liststart
+		   	token 	texpect: :liststart get: tokens sp		   	
+			lp 		fold: (valSymbolArgs tokens) sp series: inc: sp nil nil	
+			at      valFuncArgCnt: lxm sp lp ]
+		map_extend*: token :count at
+
+var vGrdMap {
+	:symbol 		valNext
+	:string 		valNext
+	:real 			valNext
+	:hexidecimal 	valNext
+	:integer 		valNext
+	:character 		valNext
+	:keyword 		valNext	
+	:liststart 		valList
+	:setstart 		valSet
+	:mapstart 		valMap
+	:vectorstart 	valVector
+	}
+
+func valGuard []	
+	?: =: vcurrent_type: :guard
+		@(
+			vexpect: :guard 
+			?: get: vGrdMap vcurrent_type:
+				foidl_dispatch0: get: vGrdMap vcurrent_type: 	; lhs 
+				foidl_dispatch0: get: syntax* :exprjmp 			; lhs					
+			foidl_dispatch0: get: syntax* :exprjmp  ;   RHS
+			valGuard:
+		) 
+		nil
+		
+
+func valMatch []
+	;printnl*: "valMatch"
+	vexpect: :match
+	;	If there is a guard and no predicate
+	?: =: vcurrent_type: :guard 
+		expected: #{:symbol :expression }
+		nil
+
+	; If first is symbol (may be predicate as well)
+	?: =: vcurrent_type: :symbol 
+		valSymbol:
+		nil 
+	; Check next position, may have 'match symbol pred guard'
+	?: =: vcurrent_type: :guard 
+		nil
+		foidl_dispatch0: get: syntax* :exprjmp 	
+	; Finally, do the guard run or fail
+	?: =: vcurrent_type: :guard 
+		valGuard:
+		expected: :guard 	
+
+func valLet []
+	;printnl*: "valLet"
+	vexpect: :let 
+	?: =: vcurrent_type: :symbol 
+		valSymbol:
+		nil 
+	vexpect: :liststart
+	valLetArgList:	
+	vexpect: :listend
+	foidl_dispatch0: get: syntax* :exprjmp
+
+func vexpConsumer [] 
+	let: [ ct vcurrent_type: ]
+		?: get: vEndSet ct
+			nil
+			@(
+				foidl_dispatch0: get: syntax* :exprjmp
+				vexpConsumer:		
+			)
+
+func vCallExpr [mcnt indx]
+	?: =: mcnt indx 
+		nil
+		let: [ ct vcurrent_type: ]
+			?: get: vEndSet ct
+				nil
+				@(
+					foidl_dispatch0: get: syntax* :exprjmp
+					vCallExpr: mcnt inc: indx		
+				)
+
+;	TODO: Enhance by changing compilation unit 
+; 	validation to occur after includes and 
+;	symbol table building
+
+func valCall []	
+	let: [ 	curr 	vcurrent: 
+			symref	inContextSymbols?: get: curr :lexeme ]
+		@(			
+			vexpect: :call 
+			?: symref
+				?: =: get: symref :type :funcref
+					vCallExpr: get: symref :argcnt zero 
+					nil
+				@(
+					tokenErrorBase: "tvalidate" curr
+					fail:
+				)
+		)
+	
+	
+
+func valGroup []
+	;printnl*: "valGroup"
+	vexpect: :group 
+	vexpConsumer:	
+	;valprint: "	back to valGroup with current = "	
+	vexpect: :partialend
+
+func valLambda [  ]
+	;printnl*: "valLambda "	
+	vexpect: :lambda
+	vexpect: :liststart
+	valArgList:	
+	vexpect: :listend
+	foidl_dispatch0: get: syntax* :exprjmp
+
+
+func valDefer []
+	vexpect: :defer
+
+var vExprMap {
+	:symbol 		valNext
+	:string 		valNext
+	:real 			valNext
+	:hexidecimal 	valNext
+	:integer 		valNext
+	:character 		valNext
+	:keyword 		valNext
+	:anon 			valNext
+	:liststart 		valList
+	:setstart 		valSet
+	:mapstart 		valMap
+	:vectorstart 	valVector
+	:if  			valIf
+	:let 			valLet
+	:match 			valMatch
+	:call 			valCall
+	:group 			valGroup
+	:lambda 		valLambda
+	:partialstart 	valPartial
+	}
+
+func valExpression [ ]
+	let: [ ct 	vcurrent_type:
+		   st 	get: vDeclSet ct ]
+		@(
+			;print*: "Dispatching valExpression type = "
+			;printnl*: vcurrent:
+			?: st 
+				st 
+				foidl_dispatch0: getd: vExprMap ct expected_in
+		)
+
+func valFuncBody []
+	?: get: vDeclSet vcurrent_type:
+		nil
+		@(
+			foidl_dispatch0: get: syntax* :exprjmp
+			valFuncBody:
+		 )
+
+func valFunction [  ]	
+	let: [ 	token 	vcurrent:
+			lxm 	get: token :lexeme ]
+		@(			
+			vexpect: :function
+			vexpect: :liststart
+			let strt: [] vindex:	
+			valArgList:
+			let: [cnt valFuncArgCnt: lxm strt vindex: ]
+				@(
+					vexpect: :listend	
+					insertFunctionIntoSymbolTable: token cnt
+					valFuncBody:
+				)
+		)
+
+func valVariable [  ]
+	let: [ 	token 	vcurrent: ]
+		@(
+			vexpect: :variable
+			insertVariableIntoSymbolTable: token
+			foidl_dispatch0: get: syntax* :exprjmp
+		)
+	
+func valInclude [  ]	
+	vexpect: :include 
+	vexpect: :liststart
+	valArgList:	
+	vexpect: :listend
+
+var vDeclMap {:include valInclude :function valFunction :variable valVariable :end :end }
+
+func valDecl [ ign ]
+	let: [fn vexpect_in: vDeclMap ]
+		?: =: fn :end
+			nil 
+			valDecl: foidl_dispatch0: fn
+
+func valModule []	
+	vexpect: :module 
+	valDecl: nil
+
+func valSyntax [tokens]
+	firstmodule: tokens
+	syntaxSetup*: tokens valExpression
+	let: [ sm 	readySymbolMap: get: tokens zero ]
+		@(
+			valModule:
+			vexpect: :end 
+			;print*: " Local symbol map "
+			;printnl*: sm 
+			pushInSymStack: sm
+		)
+

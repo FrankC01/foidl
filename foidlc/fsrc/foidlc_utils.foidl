@@ -1,0 +1,44 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; foidlc_utils
+; Level 1 Gen 3 Self Hosted Compiler
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module foidlc_utils
+
+var version "FOIDL compiler version = 0.1.3 - Level 1 Bootstrap Generation 3"
+var hdrPreDefs <"foidlrtm2" "foidlrt2" "langcorem2" "langcore2">
+
+;	Miscellaneous functions for compiler initialization
+
+func subsMain [acc token]
+	?: =: get: token :type :function
+		?: =: get: token :lexeme "main"
+			foidl_extendKV*: token :lexeme "user_main"
+			nil
+		nil
+	acc
+
+func buildOutName  [base isdir mname tail]
+	?: =: isdir divchr
+		extend: extend: base mname tail 
+		extend: base tail
+
+func prepareOutput [cmap mname tail]
+	?: get: cmap :output
+		let: [ 	outp 	get: cmap :output ]
+			foidl_extendKV*: cmap :outchannel 
+					open*: {
+						:channel buildOutName: outp last: outp mname tail
+						:open :w
+						:buffer :block
+						:write_handler :char }
+		foidl_extendKV*: cmap :outchannel cout 
+
+func endCompile [cmap]
+	?: =: get: cmap :outchannel cout
+		nil
+		close*: get: cmap :outchannel
+

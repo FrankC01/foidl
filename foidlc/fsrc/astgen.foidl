@@ -1,0 +1,275 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; astgen
+; AST Processing
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module 	astgen
+
+include astgen0
+include	asttypes
+include astutils
+include state
+include astrefactor
+include errors
+include foidlrtm
+include langcorem
+
+;	If processing
+func astIf []
+	vexpect: :if
+	let [ifa genAstIf: get: astRoot! :context ]
+		@(
+			addAstChildNode: ifa 				;	Add to astRoot
+			pushAstChilden: ifa
+			wrapIfPredicate:
+			foidl_dispatch0: get: syntax! :exprjmp ; then
+			foidl_dispatch0: get: syntax! :exprjmp ; else
+			popAstChildren:
+		)
+
+; 	Let processing
+
+func astLet []
+	vexpect: :let
+	let [leta  astLetSetup: genAstLet: get: astRoot! :context
+		  lac 	genAstCollection: get: astRoot! :context :list ]
+		@(
+			;	Create a namespace context
+			pushInSymStack: foidl_map_inst!:
+
+			foidl_extendKV!: leta :args lac 	;	Save collection for args
+			pushAstChilden: lac  				;	Position for local vars
+			vexpect: :liststart 				;	If not error
+			foidl_extendKV!: lac :count astLetArgs: zero
+			vexpect: :listend
+			popAstChildren:
+
+			addAstChildNode: leta 				;	Add to astRoot
+			pushAstChilden: leta
+			foidl_dispatch0: get: syntax! :exprjmp ; Expression
+			; Finally, pop our symbol map
+			astLetExit:
+		)
+
+;	Match processing
+
+func astMatch []
+	vexpect: :match
+	let [	mata  astMatchSetup: genAstMatch: get: astRoot! :context
+			mpred genAstMatchPred: get: astRoot! :context ]
+		@(
+			pushAstChilden: mata  				;	Position for exprs
+			pushAstChilden: mpred
+			foidl_dispatch0: get: syntax! :exprjmp ; Predicate
+			popAstChildren:
+			addAstChildNode: mpred
+			astMatchGuards: zero					; Guards
+			astMatchExit: mata
+		)
+
+; 	Group processing
+
+func astGroup []
+	vexpect: :group
+	?: =: vcurrent_type: :partialend
+		vexpect: :partialend
+		let [ grp genAstGroup: get: astRoot! :context ]
+			astRegisterAndFetchUntil: grp :partialend nil
+
+;	Partial processing
+
+func astPartial []
+	vexpect: :partialstart
+	?: =: vcurrent_type: :partialend
+		vexpect: :partialend
+		let [par  genAstPartial: get: astRoot! :context
+			  symb astPartialSymbol: ]
+			@(
+				?: symb
+					@(
+						vnext:
+						extend!: get: par :children symb
+					)
+					nil
+				astRegisterAndFetchUntil: par :partialend refactorPartial
+			)
+
+; 	Call processing
+func astCall []
+	let [	symb promoteExtern: vcurrent:
+			call genAstCall: get: astRoot! :context nil symb ]
+		?: symb
+		@(
+			vexpect: :call
+			addAstChildNode: call 				;	Add to astRoot
+			pushAstChilden: call
+			astDispatchCountOrType: :partialend zero get: symb :argcnt
+			popAstChildren:
+		)
+		astFailRef: "astCall"
+
+;	Lambda Processing
+
+func astLambda []
+	;	Create a namespace context
+	pushInSymStack: foidl_map_inst!:
+	;	Create our AST instance
+	let pf [	fast 	genAstLambda: get: astRoot! :context
+				fac 	genAstCollection: get: fast :fname :list ]
+		@(
+			;	Start function processing
+			vexpect: :lambda
+			;	Argument processing
+			astFuncArgs: fac genAstLambdaArg
+			;	Function processing
+			foidl_extendKV!: fast :args fac 	;	Args
+			pushAstChilden: fast
+			foidl_dispatch0: get: syntax! :exprjmp ; Expression
+			popAstChildren:
+			addAstChildNode: refactorLambda: fast ;	Add to scope
+		)
+	; Finally, pop our symbol map
+	popFromSymStack:
+
+;	Push children vector onto children stack
+
+func astFunction []
+	;	Create a namespace context
+	pushInSymStack: foidl_map_inst!:
+	;	Create our AST instance
+	let pf [ 	modstr 	get: astRoot! :context
+				fname 	get: vcurrent: :lexeme
+				pvt   	get: vcurrent: :state
+				fac 	genAstCollection: fname :list
+				fast 	genAstFunction: modstr fname ]
+		@(
+			;	Start function processing
+			vexpect: :function
+			?: =: pvt :private
+				foidl_extendKV!: fast :private true
+				nil
+
+			;	Argument processing
+			astFuncArgs: fac genAstFuncArg
+
+			;	Function processing
+			foidl_extendKV!: fast :args fac 	;	Args
+			promoteLiteralCount: get: fac :count
+			addAstChildNode: fast 				;	Add to astRoot
+			pushAstChilden: fast
+			astDispatchUntilEndSet:
+			popAstChildren:
+			?: =: count: get: fast :children zero
+				extend!: get: fast :children getSymbolFor: "nil"
+				nil
+
+		)
+	; Finally, pop our symbol map
+	popFromSymStack:
+
+;	Var processing
+
+func astVar []
+
+	let pf [ modstr get: astRoot! :context
+			  pvt   get: vcurrent: :state
+			  vname get: vcurrent: :lexeme
+			  vast 	genAstVariable: modstr vname ]
+		@(
+			vexpect: :variable
+			?: =: pvt :private
+				foidl_extendKV!: vast :private true
+				nil
+			addAstChildNode: vast
+			pushAstChilden: vast
+			foidl_dispatch0: get: syntax! :exprjmp
+			popAstChildren:
+			?: >: count: get: vast :children one
+				@(
+					print!: "astVar: expected one expression "
+					printnl!: get: vast :children
+					fail:
+				)
+				foidl_extendKV!: vast :vtype
+					get: first: get: vast :children :type
+
+		)
+
+var  astFnMap
+{
+	:module 		astModule
+	:include 		astInclude
+	:function 		astFunction
+	:integer 		astLiteral
+	:string 		astLiteral
+	:keyword 		astLiteral
+	:character 		astLiteral
+	:hexidecimal	astLiteral
+	:real 			astLiteral
+	:symbol 		astSymbol
+	:liststart 		astCollection
+	:mapstart 		astCollection
+	:vectorstart 	astCollection
+	:setstart 		astCollection
+	:variable 		astVar
+	:if 			astIf
+	:partialstart 	astPartial
+	:group 			astGroup
+	:call 			astCall
+	:let 			astLet
+	:match 			astMatch
+	:anon 			astAnon
+	:lambda 		astLambda
+}
+
+;	AST dispatcher
+
+func astOneShot []
+	let [ fn get: astFnMap vcurrent_type: ]
+	?: =: fn nil
+		@(
+			print!: "astOneShot: no handler for type "
+			printnl!: vcurrent:
+		)
+		foidl_dispatch0: fn
+
+;	Main token looper
+func astExprs []
+	?: =: vcurrent_type: :end
+		nil
+		let [ fn get: astFnMap vcurrent_type: ]
+			?: =: fn nil
+				@(  print!: " no handler for type "
+					printnl!: vcurrent_type:
+					vnext: astExprs: )
+				@(
+					foidl_dispatch0: fn
+					astExprs: )
+
+;	Come in knowing that the token state resides for
+;	our compilation unit but we 'reset' to include our
+;	expression table
+
+func genAst []
+	foidl_extendKV!: astRoot! :context get: context! :module
+	resetSetup!: astOneShot
+	initAstDefaults:
+	pushAstChilden: astRoot!
+	astExprs:
+	popAstChildren:
+	id: astRoot!

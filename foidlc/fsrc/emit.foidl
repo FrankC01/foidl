@@ -1,0 +1,35 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_emit
+; Level 1 Gen 3 Self Hosted Compiler - Code emit
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module g3_emit
+include g3_state
+include g3_emitutils
+include g3_emitwalk
+
+func emitHeader []
+	spitModuleComment:
+
+func emit [ochan fir]
+
+	;	Setup outchannel
+	foidl_extendKV*: emitState* :out ochan 
+	foidl_extendKV*: emitState* :edspFn emitDispatch 
+
+	;	Spit comments and header
+	emitHeader:
+	emitWalk: get: fir :externs
+	emitWalk: get: fir :linits
+	emitWalk: get: fir :vinits	
+	emitWalk: get: fir :body	
+	emitWalk: get: fir :main
+	?: >: count: get: fir :main zero
+		?: =: get: first: get: fir :main two zero
+			spit*: noargMain
+			spit*: stdMain
+		nil
+	emitWalk: get: fir :inits

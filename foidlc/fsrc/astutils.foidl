@@ -1,0 +1,217 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; astutils
+; AST assorted utilities
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module astutils
+
+include tokens
+include	asttypes
+include state
+include astrefactor
+include errors
+
+var astRoot! genAstRoot: nil
+var astCStack! foidl_list_inst!:
+
+var referenceSet #{
+	:letresult :letresultref :letvarref
+	:matchpredref :matchresultref
+	:funcarg :varref :funcref }
+
+func pushAstChilden [node]
+	push!: astCStack! get: node :children
+
+func popAstChildren []
+	pop!: astCStack!
+
+func addAstChildNode [node]
+	extend!: peek: astCStack! node
+
+;	Promote a literal to a separate block to ease
+;	downstreaam/efficient IR/Emit generation
+
+func promoteLiteral [lit_tok]
+	let: [ 	modstr 	get: astRoot! :context
+			litstr get: lit_tok  :lexeme
+			litmap get: astRoot! :literals
+			litast get: litmap   litstr ]
+	?: litast 		;	Does it exist in core
+		genAstLitCopy: litast 		; 	If so, return it
+		let: [mlit genAstLiteral: modstr litstr get: lit_tok :type litCnt: ]
+		@(
+			foidl_extendKV!: litmap litstr mlit
+			genAstLitCopy: mlit
+		)
+
+func promoteLiteralCount [cnt]
+	promoteLiteral: get: astCountList cnt
+
+func literalForCount [cnt]
+	let: [	ltok 	get: astCountList cnt
+			litstr 	get: ltok :lexeme ]
+		genAstLitCopy:  get: get: astRoot! :literals litstr
+
+;	Check if function
+
+func promoteExtern1 [sref]
+	let: [	modstr 	get: astRoot! :context
+			estr 	get: sref :fname
+			styp 	get: sref :type
+			etyp 	or: =: styp :varref =: styp :funcref
+			lcl 	=: get: sref :module modstr
+			extmap 	get: astRoot! :externs
+			exast 	get: extmap estr ]
+	?: or: lcl exast						;	If local or present
+		sref
+		?: etyp
+			@(
+				foidl_extendKV!: extmap estr sref
+				sref
+			)
+			sref
+
+func promoteExtern [e_tok]
+	promoteExtern1: getSymbolFor: get: e_tok :lexeme
+
+func initAstDefaults []
+	fold: ^[a c] promoteExtern: c nil astExternList
+	fold: ^[a c] promoteLiteral: c nil astLiteralList
+	fold: ^[a c] promoteLiteral: c nil astCountList
+
+;	Dispatch utilities
+
+func astDispatchUntilEndSet []
+	?: get: astEndSet vcurrent_type:
+		nil
+		@(
+			foidl_dispatch0: get: syntax! :exprjmp
+			astDispatchUntilEndSet:
+		)
+
+func astDispatchUntilType [ttype]
+	?: =: ttype vcurrent_type:
+		nil
+		@(
+			foidl_dispatch0: get: syntax! :exprjmp
+			astDispatchUntilType: ttype
+		)
+
+func astDispatchCountOrType [ttype icnt mcnt]
+	?: or: =: ttype vcurrent_type: =: icnt mcnt
+		icnt
+		@(
+			foidl_dispatch0: get: syntax! :exprjmp
+			astDispatchCountOrType: ttype inc: icnt mcnt
+		)
+
+func astRegisterAndFetchUntil [node endtype acFn]
+	pushAstChilden: node  				;	Position for children
+	astDispatchUntilType: endtype
+	popAstChildren:
+	vexpect: endtype
+	?: nil?: acFn
+		addAstChildNode: node 				;	Add to current children
+		(acFn node)
+
+;	All collection handling
+
+func astCollection []
+	let: [ 	ct 		vcurrent_type:
+			et 		get: collectionEndMap ct
+		   	coll genAstCollection:
+		   			get: astRoot! :context
+		   			get: collectionTypeMap ct ]
+		@(
+			vexpect: ct
+			astRegisterAndFetchUntil: coll et nil
+			foidl_extendKV!: coll :count count: get: coll :children
+		)
+
+; For function/lambda arguments
+
+func getArgObject [aFn ctxt lxm cnt]
+	( aFn ctxt lxm cnt )
+
+func astSymbolFunctionArgs [aFn scnt]
+	?: =: get: vcurrent: :type :listend
+		scnt
+		let: [	token vcurrent:
+				anode getArgObject:
+						aFn
+						get: astRoot! :context
+						get: token :lexeme
+						scnt ]
+			@(
+				vexpect: :symbol
+				insertSymbolInTop: token anode
+				addAstChildNode: anode
+				astSymbolFunctionArgs: aFn inc: scnt
+			)
+
+func astFuncArgs [coll aFn]
+	;	Argument processing
+	pushAstChilden: coll  				;	Position for children
+	vexpect: :liststart 				;	If not error
+	foidl_extendKV!: coll :count astSymbolFunctionArgs: aFn zero
+	vexpect: :listend
+	popAstChildren:
+
+; For let local variables
+
+func astLetArgs [scnt]
+	?: =: get: vcurrent: :type :listend
+		scnt
+		let: [	token vcurrent:
+				anode  genAstLetVar: get: astRoot! :context get: token :lexeme ]
+			@(
+				vexpect: :symbol
+				insertSymbolInTop: token genAstLetVarRef: anode
+				pushAstChilden: anode 			;	Collect the expression
+				foidl_dispatch0: get: syntax! :exprjmp
+				popAstChildren: 				;	Completed expression
+				addAstChildNode: anode 			;	Add as child to context
+				astLetArgs: inc: scnt
+			)
+
+; 	For match guard walking
+
+func astMatchGuards [scnt]
+	?: =: get: vcurrent: :type :guard
+		let: [ 	ctxt 	get: astRoot! :context
+				mg 		genAstMatchGuard: ctxt  scnt ]
+			@(
+				vexpect: :guard
+				pushAstChilden:  mg 			;	Collect the lhs
+				foidl_dispatch0: get: syntax! :exprjmp
+				refactorGuard: get: mg :children
+				foidl_dispatch0: get: syntax! :exprjmp
+				popAstChildren: 				;	Completed expression
+				addAstChildNode: mg 			;	Add as child to context
+				astMatchGuards: inc: scnt
+			)
+		scnt
+
+;	Partial Processing
+func astPartialSymbol []
+	?: =: vcurrent_type: :call
+		promoteExtern: vcurrent:
+		?: get: literalTypeSet vcurrent_type:
+			promoteLiteral: vcurrent:
+			getSymbolFor: get: vcurrent: :lexeme
+

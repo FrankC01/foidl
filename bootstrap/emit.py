@@ -64,7 +64,9 @@ supps = [
     ("foidl_tofuncref", [void_ptr, any_ptr]),
     ("foidl_imbue", [any_ptr, any_ptr]),
     ("foidl_fref_instance", [any_ptr]),
-    ("foidl_truthy_qmark", [any_ptr]),
+    ("foidl_truthy_qmark", [any_ptr])]
+
+coresupps = [
     ("map_inst_bang", []),
     ("map_extend_bang", [any_ptr, any_ptr, any_ptr]),
     ("list_inst_bang", []),
@@ -153,7 +155,7 @@ class LlvmGen(object):
                 [any_ptr] * argcnt if argcnt else []),
             fname)
 
-    def _emit_externs(self, extmap):
+    def _emit_externs(self, extmap, srcfile):
         """Declare external runtime fn and var references"""
         for k, v in extmap.items():
             if type(v) is ast.VarReference:
@@ -162,6 +164,8 @@ class LlvmGen(object):
                 self._reg_global_func(k, v.argcnt)
         # Do foidl run-time pre-defines declarations
         [self._reg_global_func_wargs(nm, a) for nm, a in supps]
+        if srcfile != 'langcorem':
+            [self._reg_global_func_wargs(nm, a) for nm, a in coresupps]
 
     def _emit_literals(self, litmap):
         """Declare private literal pointers"""
@@ -724,7 +728,7 @@ class LlvmGen(object):
     def emit(self, ptree, wrtr):
         """Emit entry point"""
         # Extern declarations
-        self._emit_externs(ptree['externs'])
+        self._emit_externs(ptree['externs'], ptree['base'][0].name)
         # Literal declarations
         self._emit_literals(ptree['literals'])
         # Variable declarations

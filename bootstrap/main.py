@@ -23,7 +23,7 @@ from colorlog import ColoredFormatter
 import util
 import errors
 import cmdline as cmd
-from enums import literal_dict
+from enums import literal_dict, ParseLevel
 from handler import Handler, Bundle, State, preprocess_runtime
 from symbol import SymbolTree
 
@@ -92,12 +92,14 @@ def execute(args):
         # Supress python warnings
         if not sys.warnoptions:
             warnings.simplefilter("ignore")
-
+        lvl = ParseLevel.LITE if args.action == 'hdr' else ParseLevel.FULL
+        hdronly = True if args.action == 'hdr' else False
         state = preprocess_runtime(
             State(
                 literal_dict(),
                 SymbolTree(absfile),
-                util.absolutes_path_for(args.inc_paths)),
+                util.absolutes_path_for(args.inc_paths),
+                hdronly),
             args)
 
         state.mainsrc = absfile
@@ -106,7 +108,7 @@ def execute(args):
             Bundle(
                 util.absolutes_path_for(args.inc_paths),
                 absfile,
-                util.parse_file(absfile, state),
+                util.parse_file(absfile, state, lvl),
                 state,
                 outhandler, args.output, args.rt))
 
@@ -131,3 +133,7 @@ def main(prog_name=sys.argv[0], args=sys.argv[1:]):
     LOGGER = setup_loggers(argres.llevel)
 
     execute(argres)
+
+
+if __name__ == "__main__":
+    main()

@@ -35,6 +35,10 @@ def _collection_type(p0):
     return x
 
 
+def collection_type(p0):
+    return _collection_type(p0)
+
+
 def _token_eater(in_list, base_type, out_list=None):
     if not out_list:
         out_list = []
@@ -49,6 +53,10 @@ def _token_eater(in_list, base_type, out_list=None):
     return base_type(out_list)
 
 
+def token_eater(in_list, base_type, out_list=None):
+    return _token_eater(in_list, base_type, out_list=None)
+
+
 def _symbol_only(in_list, out_list=None):
     if not out_list:
         out_list = []
@@ -60,6 +68,10 @@ def _symbol_only(in_list, out_list=None):
     return out_list
 
 
+def symbol_only(in_list, out_list=None):
+    return _symbol_only(in_list, out_list)
+
+
 def _flatten_list(in_list, out_list=None):
     if not out_list:
         out_list = []
@@ -69,6 +81,10 @@ def _flatten_list(in_list, out_list=None):
         else:
             out_list.append(n)
     return out_list
+
+
+def flatten_list(in_list, out_list=None):
+    return _flatten_list(in_list, out_list=None)
 
 
 def _literal_entry(literals, token, srcstr):
@@ -106,7 +122,7 @@ class Parser():
             mlexer.get_tokens(),
             # precedence=[])
             precedence=[
-                ("left", ["SYMBOL", "KEYWORD"]),
+                ("left", ["SYMBOL", "KEYWORD", "AS"]),
                 ("left", ["FUNC_CALL", "FUNC_BANG", "FUNC_PRED", "IF"]),
                 ("left", ["FUNC", "VAR"]),
                 ("left", ["SYMBOL_BANG", "SYMBOL_PRED"])])
@@ -139,6 +155,10 @@ class Parser():
                     "Include expression found after declarations")
             t = p.pop(0)
             i = ast.Include(_symbol_only(p), t, self.input)
+            # print("Produced {} with flag {}".format(i, state.headergen))
+            # if not state.headergen:
+            #     print(" parsing {}".format(i.value))
+            #     include_parse(state, i)
             include_parse(state, i)
             return i
 
@@ -406,11 +426,12 @@ class Parser():
             return ast.Partial(p[0].value, t, self.input)
 
         @self.pg.production('if_expr : IF single_expr')
+        @self.pg.production('if_expr : IF symbol_type single_expr single_expr')
+        @self.pg.production('if_expr : IF single_expr single_expr')
         def ifexpr(state, p):
             # print('if expr: {}'.format(p))
             i = p.pop(0)
             return ast.If.generate(_flatten_list(p), i, self.input)
-            # return ast.If(value, i, self.input)
 
         @self.pg.production('empty_collection : LANGLE RANGLE')
         @self.pg.production('empty_collection : LBRACKET RBRACKET')

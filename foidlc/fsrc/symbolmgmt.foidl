@@ -1,0 +1,68 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; g3_symbolmgmt
+; Level 1 Gen 3 Self Hosted Compiler - Token validation 
+; support
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module g3_symbolmgmt
+include g3_state
+include g3_asttypes
+
+func insertInContext [fnd token node]
+	hidesCheck: fnd token node	
+	foidl_extendKV*: get: context* :symtable get: token :lexeme node 	
+
+func insertFunctionIntoSymbolTable [token cnt]
+	let: [ nm genName: get: token :lexeme ]
+		insertInContext:
+			inContextSymbols?: nm
+			token
+			genAstFuncRef: get: context* :module nm cnt
+
+func funcToSymbolTable [token cnt]
+	?: and: =: get: token :state :private =: get: context* :ignorep false
+		nil
+		insertFunctionIntoSymbolTable: token cnt
+
+func insertVariableIntoSymbolTable [token]
+	let: [ nm genName: get: token :lexeme ]
+		insertInContext:
+			inContextSymbols?: nm
+			token
+			genAstVarRef: get: context* :module nm :unknown
+
+func varToSymbolTable [token]
+	?: and: =: get: token :state :private =: get: context* :ignorep false
+		nil
+		insertVariableIntoSymbolTable: token
+
+func readySymbolMap [mtoken]
+	foidl_extendKV*: context* :module get: mtoken :lexeme
+	foidl_extendKV*: context* :symtable foidl_map_inst*:	 
+	get: context* :symtable
+
+func includeList [coll]
+	?: =: vcurrent_type: :listend
+		coll
+		@(
+			extend*: coll get: vcurrent: :lexeme
+			vnext:
+			includeList: coll
+		)
+
+func includeExtract [coll]
+	match: get: vnext: :type 
+	| =: %0 :include @( vexpect: :include
+						vexpect: :liststart
+						includeExtract: includeList: coll )	
+	| =: %0 :end coll
+	| :default includeExtract: coll
+
+func filterIncludes [tokens coll]
+	syntaxSetup*: tokens nil
+	includeExtract: coll
+
+

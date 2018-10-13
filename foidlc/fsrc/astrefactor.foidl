@@ -1,0 +1,170 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; astrefactor
+; AST Reorganize for emit and optimizations
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module  astrefactor
+
+include astrefutils
+include astutils
+include	asttypes
+include state
+include errors
+
+;	Lambda processing
+;	1.Generate a unique name for lambda and reclassify as a function
+;	2. Reclassify existing args as function args
+;	3. If find any 'closure' type:
+;		1. Create a unique function arg ref in a list
+;		2. Substitute the found location with the arg ref
+;		3. Append existing arg list to #1
+;		4. Generate a partial (to return)
+
+
+func refactorLambda [node]
+	foidl_extendKV!: node :type :function
+	foidl_extend!: get: astRoot! :lambdas node
+	processLambdaRefactor:
+		fold: liftClosures
+				{:copy vector_inst!: :args vector_inst!: }
+			 	get: node :children
+		node
+
+
+;	Partial processing
+;	Eliminate exact function call wrapping
+
+var refScalarSet #{:literal :collection }
+var refSingleSet #{:literal :varref :funcref :collection
+				:letvarref :funcarg :letresult :matchresult }
+
+func partialToCall [node fchl chld ]
+	let: [ dcnt dec: count: chld
+		   ctxt get: node :context ]
+		match: get: fchl :argcnt
+		| =: %0 dcnt
+			let: [ call genAstCall: ctxt ctxt fchl
+				   cchl get: call :children ]
+				@(
+					fold: ^[a i] extend!: a i cchl rest: chld
+					call
+				)
+
+		| >: dcnt %0 astFailPartial: get: fchl :fname %0 dcnt
+		| :default node
+
+func refactorPartial [node]
+	let: [	chld get: node :children
+			cnt  count: chld
+			fchl first: chld ]
+		?: =: get: fchl :type :funcref
+			addAstChildNode: partialToCall: node fchl chld
+			?: and: =: cnt one get: refScalarSet get: fchl :type
+				addAstChildNode: fchl
+				addAstChildNode: node
+
+; If condition wrapper in "foidl_truthy"
+
+func wrapIfPredicate []
+	let: [	ctxt get: astRoot! :context
+			ftc genAstCall: ctxt ctxt getSymbolFor: foidltruthy ]
+		@(
+			pushAstChilden: ftc
+			foidl_dispatch0: get: syntax! :exprjmp ; Predicate
+			popAstChildren:
+			addAstChildNode: ftc
+		)
+
+; Match Guard processing
+;	Takes the guard lhs and checks if single, if so it expands to include
+;	an "=:" construct and wraps in a truthy call, otherwise returns a
+;	truthy call wrapper.
+;	Ignores if ':default'
+
+func guardDefault? [fchld]
+	and:
+		and: =: get: fchld :type :literal  =: get: fchld :subtype :keyword
+		=: get: fchld :fname :default
+
+func wrapInTruthy [ftc node]
+	extend!: get: ftc :children node
+	ftc
+
+func guardToCall [ftc node ctxt]
+	let: [	cref genAstCall: ctxt ctxt getSymbolFor: foidlequals
+			cren get: cref :children
+			mgp  genAstMatchPredRef: ctxt ]
+		@(
+			foidl_extendKV!: mgp :refid get: node :refid
+			extend!: cren mgp 	;	Match predicate as arg 1
+			extend!: cren node	;	original node as arg 2
+			wrapInTruthy: ftc cref
+		)
+
+func refactorGuard [chld]
+	?: guardDefault?: first: chld
+		chld
+		let: [ 	node 	first: chld
+				ign	 	foidl_droplast!: chld
+				ctxt 	get: astRoot! :context
+				ftc 	genAstCall: ctxt ctxt getSymbolFor: foidltruthy ]
+			?: get: refSingleSet get: node :type
+				extend!: chld guardToCall: ftc node ctxt
+				extend!: chld wrapInTruthy: ftc node
+
+; Match processing
+
+func predRefExtension [acc node]
+	?: =: get: node :type :matchpredref
+		foidl_extendKV!: node :varref acc
+		fold: predRefExtension acc get: node :children
+	acc
+
+func defaultLocator [chld acc idx ]
+	?: guardDefault?: first: get: get: chld idx :children
+		reduced: idx
+		acc
+
+func insertDefault [node chld scnt]
+	let: [	grd genAstMatchGuard: get: astRoot! :context scnt
+			gch get: grd :children ]
+		@(
+			foidl_extendKV!: grd :refid get: node :refid
+			extend!: gch get: get: astRoot! :literals :default
+			extend!: gch getSymbolFor: foidlnil
+			extend!: chld grd
+		)
+
+func refactorMatch [node]
+	let: [	ch get: node :children
+			ct count: ch
+			dct dec: ct
+			dl fold: (defaultLocator ch) false series: one ct nil ]
+		?: and: dl <: dl dct
+			@(
+				astWarnMidGuard: dl dct
+				drop!: ch -: dct dl
+			)
+			?: =: dl false
+				insertDefault: node ch dct
+				node
+			node
+	fold: predRefExtension first: get: node :children get: node :children
+	node
+
+
