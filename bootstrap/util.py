@@ -17,7 +17,6 @@
 import os
 import logging
 
-from errors import UtilityError
 from enums import ParseLevel
 from lexer import Lexer as full_lex
 from hlexer import HLexer as lite_lex

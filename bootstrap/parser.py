@@ -252,14 +252,14 @@ class Parser():
             if len(p) == 1 and type(p[0]) is list:
                 p = p[0]
             t = _token_eater(p, ast.Expressions)
-            # print("ME => {} -> {}".format(p, t.value))
+            print("ME => {} -> {}".format(p, t.value))
             return t
 
-        @self.pg.production('single_expr : simple_expr')
         @self.pg.production('single_expr : complex_expr')
+        @self.pg.production('single_expr : simple_expr')
         def singleexpr_p(state, p):
             """Parse one expressions"""
-            # print("single expression = {}".format(p))
+            print("single expression = {}".format(p[0]))
             return p[0]
 
         @self.pg.production('complex_expr : functioncall')
@@ -292,6 +292,7 @@ class Parser():
             fcall = ast.FunctionCall.generate(
                 t.getstr(), p, t, self.input, state)
             # fcall = ast.FunctionCall(t.getstr(), p, t, self.input, state)
+            print("FCall return = {}".format(fcall))
             return fcall
 
         @self.pg.production('callsig : FUNC_CALL')
@@ -346,30 +347,14 @@ class Parser():
             'matchexpr : MATCH symbol_type single_expr matchpairs')
         def matchexpr(state, p):
             """Match parse"""
+            print("Match expr {}".format(p))
             t = p.pop(0)
             mres = None
             if len(p) == 3:
                 mres = p.pop(0)
             mpred = p.pop(0)
             return ast.Match(
-                mres, mpred, None,
-                [x for x in p if type(x) is not Token], t, self.input)
-
-        @self.pg.production(
-            'matchexpr : MATCH single_expr AS symbol_type matchpairs')
-        @self.pg.production(
-            'matchexpr : MATCH symbol_type single_expr AS symbol_type matchpairs')
-        def matchexpr_exprsym(state, p):
-            """Match parse"""
-            t = p.pop(0)
-            mres = None
-            if len(p) == 5:
-                mres = p.pop(0)
-            p.pop(1)  # Remove 'AS'
-            mexprres = p.pop(1)
-            mpred = p.pop(0)
-            return ast.Match(
-                mres, mpred, mexprres,
+                mres, mpred,
                 [x for x in p if type(x) is not Token], t, self.input)
 
         @self.pg.production(
@@ -380,6 +365,7 @@ class Parser():
             'matchpairs : MATCH_PATTERN MATCH_DEFAULT single_expr')
         def matchpairs(state, p):
             """Match parse support for zero or more match patterns"""
+            print("Match Pair {}".format(p))
             t = p.pop(0)
 
             def eater(in_list):
@@ -492,6 +478,10 @@ class Parser():
         @self.pg.production('symbol_type : SYMBOL_BANG')
         def symbol_type(state, p):
             return ast.Symbol(p[0].getstr(), p[0], self.input)
+
+        @self.pg.production('symbol_type : MATCH_EXPRREF')
+        def matchexpr_type(state, p):
+            return ast.MatchExpressionRef(p[0].getstr(), p[0], self.input)
 
         @self.pg.production(' symbol : SYMBOL')
         def symbol(state, p):

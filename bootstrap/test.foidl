@@ -2,17 +2,7 @@
 
 module test
 
-func vnext []
-
-func vexpect [kwarg]
-    kwarg
-
-func extend! [mmap val]
-
 func astIf [symb, par]
-        ?: symb
-            @(
-                vnext:
-                extend!: get: par :children symb
-            )
-            vnext:
+
+    match 5
+    | =: %0 15 "Funky"

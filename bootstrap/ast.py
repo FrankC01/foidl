@@ -931,10 +931,33 @@ class Let(FoidlAst):
                 preblock))
 
 
+class MatchExpressionRef(FoidlAst):
+    def __init__(self, value, token, src):
+        super().__init__(token, src)
+        self._value = value
+
+    @property
+    def value(self):
+        return self._value
+
+    @property
+    def name(self):
+        return self._value
+
+    def eval(self, bundle, leader):
+        sym = bundle.symtree.resolve_symbol(self.name)
+        if sym:
+            leader.append(sym)
+        else:
+            raise errors.ParseError(
+                "Can not result match expression reference {}".format(
+                    self.name))
+
+
 class MatchPair(FoidlAst):
     _singular = [
         Symbol, LiteralReference, FuncArgReference, LetResReference,
-        MatchResReference, MatchExprReference]
+        MatchResReference, MatchExprReference, MatchExpressionRef]
 
     def __init__(self, value, token, src, default=False):
         super().__init__(token, src)
@@ -1020,7 +1043,8 @@ class MatchPairs(CollectionAst):
 
 
 class Match(FoidlAst):
-    def __init__(self, mres, mpred, mexprres, value, token, src):
+    def __init__(self, mres, mpred, value, token, src):
+        # def __init__(self, mres, mpred, mexprres, value, token, src):
         super().__init__(token, src)
         self._predicate = mpred
         self._value = value
@@ -1036,16 +1060,13 @@ class Match(FoidlAst):
                     "MATCH_RES",
                     msym,
                     token.getsourcepos()), src)
-        if mexprres:
-            self._exprres = mexprres
-        else:
-            msym = "matchexpr_" + str(sp.lineno) + "_" + str(sp.colno)
-            self._exprres = Symbol(
+        msym = "%0"
+        self._exprres = Symbol(
+            msym,
+            Token(
+                "MATCH_EXPRREF",
                 msym,
-                Token(
-                    "MATCH_EXPR_RES",
-                    msym,
-                    token.getsourcepos()), src)
+                token.getsourcepos()), src)
         self._ident = "match_" + str(sp.lineno) + "_" + str(sp.colno)
 
     @property

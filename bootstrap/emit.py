@@ -485,7 +485,6 @@ class LlvmGen(object):
         fn = builder.module.get_global(el.name)
         args = []
         for a in el.exprs:
-            # print("{} expr {}".format(el.name, a))
             self._emit_et(a, builder, args)
         # print(args)
         frame.append(builder.call(fn, args))

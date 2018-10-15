@@ -1,0 +1,29 @@
+; Foidl test file
+
+module test
+
+include foo
+
+var a
+var a!
+var a?
+
+func b! []
+func b? []
+
+func c []
+    let a! [b! +: 1 1]
+        +: 9 10
+    let a? [b! +: 1 1]
+        +: 9 10
+    let [c ^[a b] +: a b]
+        c: 9 10
+    ?: a
+        true
+        ?: t
+            false
+            @(
+                +: 1 1
+                +: 2 2)
+
+

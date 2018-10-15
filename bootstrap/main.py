@@ -90,8 +90,8 @@ def execute(args):
             outhandler = open(args.output, "wt+")
 
         # Supress python warnings
-        if not sys.warnoptions:
-            warnings.simplefilter("ignore")
+        # if not sys.warnoptions:
+        #     warnings.simplefilter("ignore")
         lvl = ParseLevel.LITE if args.action == 'hdr' else ParseLevel.FULL
         hdronly = True if args.action == 'hdr' else False
         state = preprocess_runtime(
