@@ -2,7 +2,10 @@
 
 module test
 
-func astIf [symb, par]
+func foobar [s, t]
 
-    match 5
-    | =: %0 15 "Funky"
+func :private a []
+
+    match b +: 1 1
+        | 2 true
+        | :default +: 0 9

@@ -421,7 +421,7 @@ class Module(FoidlAst):
         super().__init__(token, src)
         self._name = mname
         self._include = None
-        if type(value[0]) == Include:
+        if value and type(value[0]) == Include:
             self._include = value.pop(0)
         else:
             self._include = Include([], token, src)
@@ -481,9 +481,10 @@ class Include(FoidlAst):
 class VarHeader(FoidlAst):
     """Transitory in creation of true Variable AST node"""
 
-    def __init__(self, vname, token, src):
+    def __init__(self, vname, token, src, private=False):
         super().__init__(token, src)
         self._name = vname
+        self._private = private
         self._ident = expand_symbol(vname.value)
         self._reference = None
 
@@ -494,6 +495,10 @@ class VarHeader(FoidlAst):
     @property
     def ident(self):
         return self._ident
+
+    @property
+    def private(self):
+        return self._private
 
     @property
     def reference(self):
@@ -513,16 +518,20 @@ class Variable(FoidlAst):
     def __init__(self, vhdr, value, token, src):
         super().__init__(token, src)
         self._name = vhdr.name
+        self._private = vhdr.private
         self._vref = vhdr.reference
         self._ident = vhdr.ident
         self._reference = vhdr.get_reference()
-        if type(value[0]) is list:
-            value = value[0]
-        if len(value) != 1:
-            raise errors.ParseError(
-                "variable '{}' at line {} has more than 1 expression".format(
-                    vname.value,
-                    token.getsourcepos().lineno))
+        if value:
+            if type(value[0]) is list:
+                value = value[0]
+            if len(value) != 1:
+                raise errors.ParseError(
+                    "variable '{}' at line {} has more than 1 expression".format(
+                        vname.value,
+                        token.getsourcepos().lineno))
+        else:
+            value = [_NIL]
         self._value = value
 
     @property
@@ -532,6 +541,10 @@ class Variable(FoidlAst):
     @property
     def ident(self):
         return self._ident
+
+    @property
+    def private(self):
+        return self._private
 
     @property
     def value(self):
@@ -558,10 +571,11 @@ class Variable(FoidlAst):
 class FuncHeader(FoidlAst):
     """Transitory in creation of true Function AST node"""
 
-    def __init__(self, fname, args, token, src):
+    def __init__(self, fname, args, token, src, private=False):
         super().__init__(token, src)
         self._name = fname
         self._arguments = args
+        self._private = private
         self._ident = expand_symbol(fname.value)
 
     @property
@@ -571,6 +585,10 @@ class FuncHeader(FoidlAst):
     @property
     def ident(self):
         return self._ident
+
+    @property
+    def private(self):
+        return self._private
 
     @property
     def arguments(self):
@@ -595,6 +613,7 @@ class Function(FoidlAst):
         self._name = fhdr.name
         self._ident = fhdr.ident
         self._arguments = fhdr.arguments
+        self._private = fhdr.private
         self._reference = fhdr.get_reference()
         self.value = value if value else [_NIL]
 
@@ -613,6 +632,10 @@ class Function(FoidlAst):
     @property
     def reference(self):
         return self._reference
+
+    @property
+    def private(self):
+        return self._private
 
     def eval(self, bundle, leader):
         # Stack args in symtable
