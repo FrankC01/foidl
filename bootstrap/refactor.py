@@ -82,6 +82,7 @@ def refactor_lambda(astref, srcpos, argsig, body, cntrl):
                 body,
                 astref.token,
                 astref.name.value,
+                True,
                 pre=newfa),
             ParseClosureRef(
                 ExpressionType.CLOSURE_REF,
@@ -96,6 +97,7 @@ def refactor_lambda(astref, srcpos, argsig, body, cntrl):
                 body,
                 astref.token,
                 astref.name.value,
+                True,
                 pre=argsig),
             ParseLambdaRef(
                 ExpressionType.LAMBDA_REF,

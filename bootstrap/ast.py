@@ -565,7 +565,8 @@ class Variable(FoidlAst):
                 ExpressionType.VARIABLE,
                 expr,
                 self.token,
-                self.ident))
+                self.ident,
+                self.private))
 
 
 class FuncHeader(FoidlAst):
@@ -664,6 +665,7 @@ class Function(FoidlAst):
                 expr,
                 self.token,
                 self.ident,
+                self.private,
                 pre=argref))
         # Pop stack
         bundle.symtree.pop_scope()

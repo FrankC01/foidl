@@ -650,12 +650,16 @@ class LlvmGen(object):
         x.linkage = "default"
         x.align = 8
         x.initializer = null_val
+        if pvar.res:
+            x.linkage = "private"
         # Store for post processing vinits
         self.vinits.append(pvar)
 
     def _fn_arg_sigs(self, pfn):
         """Setup function signature for Func/Lambda types"""
         fn = self._reg_global_func(pfn.name, len(pfn.pre))
+        if pfn.res:
+            fn.linkage = "private"
         fn_args = fn.args
         index = 0
         for a in pfn.pre:
