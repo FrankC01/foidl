@@ -383,6 +383,7 @@ class LlvmGen(object):
         bt = builder.load(builder.module.get_global("true"))
         result = builder.alloca(any_ptr, name=el.res[0].ident)  # Result
         expres = builder.alloca(any_ptr, name=el.res[1].ident)  # Expression
+        el.res[0].ptr = result
         el.res[1].ptr = expres
         guard = builder.alloca(int_64)  # Switch indexer
         # Convenience
@@ -411,7 +412,6 @@ class LlvmGen(object):
                 index += 1
 
             # Second, setup the switch calls
-
             sbbs = [builder.append_basic_block(x.name) for x in el.exprs]
             matchdefault = builder.append_basic_block(mdefault.name)
             sw = builder.switch(builder.load(guard), matchdefault)
@@ -438,7 +438,7 @@ class LlvmGen(object):
                 builder.branch(mex)
             # Then setup the switch pattern
             with builder.goto_block(mex):
-                builder.store(bt, result)
+                # builder.store(bt, result)
                 fload = builder.load(result)
                 ifex = builder.append_basic_block(el.name + "_exit")
                 builder.branch(ifex)
