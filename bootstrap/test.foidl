@@ -1,11 +1,19 @@
 ; Foidl test file
+; Xinnn
 
-module test
+module test ; connnebt
 
-func foobar [s, t]
+var a 5
+var b 6
 
-func :private a []
+func emptyarg []
 
-    match b +: 1 1
-        | 2 true
-        | :default +: 0 9
+func foo [c d]
+
+func fiz [kwd]
+
+func bar []
+    fiz: :myword
+    foo: 9 10
+    +: 9 10
+

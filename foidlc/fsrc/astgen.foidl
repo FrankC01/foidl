@@ -34,13 +34,13 @@ func astIf []
 	vexpect: :if
 	let [ifa genAstIf: get: astRoot! :context ]
 		@(
-			addAstChildNode: ifa 				;	Add to astRoot
+			addAstChildNode: ifa
 			pushAstChilden: ifa
 			wrapIfPredicate:
-			foidl_dispatch0: get: syntax! :exprjmp ; then
-			foidl_dispatch0: get: syntax! :exprjmp ; else
+			foidl_dispatch0: get: syntax! :exprjmp
+			foidl_dispatch0: get: syntax! :exprjmp
 			popAstChildren:
-		)
+			)
 
 ; 	Let processing
 

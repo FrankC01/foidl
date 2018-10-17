@@ -122,10 +122,11 @@ class Parser():
             mlexer.get_tokens(),
             # precedence=[])
             precedence=[
-                ("left", ["SYMBOL", "KEYWORD", "AS"]),
-                ("left", ["FUNC_CALL", "FUNC_BANG", "FUNC_PRED", "IF"]),
-                ("left", ["FUNC", "VAR"]),
-                ("left", ["SYMBOL_BANG", "SYMBOL_PRED"])])
+                ("left", ["SYMBOL", "KEYWORD"]),
+                ("left", ["SYMBOL_BANG", "SYMBOL_PRED"]),
+                ("left", ["FUNC", "VAR", "INCLUDE"]),
+                ("left", ["MATCH", "LET", "LAMBDA", "GROUP", "PARIAL", "IF"]),
+                ("left", ["FUNC_CALL", "FUNC_BANG", "FUNC_PRED"])])
         self._input = input
 
     @property
@@ -220,6 +221,8 @@ class Parser():
         @self.pg.production('expression : literal')
         @self.pg.production('expression : collection')
         @self.pg.production('expression : function_call')
+        # @self.pg.production('expression : math_call')
+        @self.pg.production('expression : logic_call')
         @self.pg.production('expression : partial')
         @self.pg.production('expression : group')
         @self.pg.production('expression : lambda')
@@ -237,31 +240,45 @@ class Parser():
             """Parse one or more expressions"""
             if len(p) == 1 and type(p[0]) is list:
                 p = p[0]
+            print("Expressions = {}".format(p))
             t = _token_eater(p, ast.Expressions)
             return t
 
         @self.pg.production('function_call : call_signature')
         def function_call(state, p):
+            print("FC p {}".format(p))
+            if len(p) == 1 and type(p[0]) is list:
+                p = p[0]
+            # p = p[0]
+            t = p.pop(0)
+            p = [expressions(state, p)]
+            print("FC p 1 {}".format(p[0].value))
+            fcall = ast.FunctionCall.generate(
+                t.getstr(), p, t, self.input, state)
+            # print("FC returning {}".format(fcall))
+            return fcall
+
+        @self.pg.production('call_signature : MATH_CALL expression expression')
+        @self.pg.production('call_signature : FUNC_CALL expressions')
+        @self.pg.production('call_signature : FUNC_BANG expressions')
+        @self.pg.production('call_signature : FUNC_PRED expressions')
+        def call_signature(state, p):
+            print("CS {}".format(p))
+            return p
+
+        @self.pg.production('logic_call : LT_CALL expression expression')
+        @self.pg.production('logic_call : GT_CALL expression expression')
+        @self.pg.production('logic_call : LTEQ_CALL expression expression')
+        @self.pg.production('logic_call : GTEQ_CALL expression expression')
+        @self.pg.production('logic_call : NOTEQ_CALL expression expression')
+        @self.pg.production('logic_call : EQ_CALL expression expression')
+        def logic_call(state, p):
             p = p[0]
             t = p.pop(0)
             fcall = ast.FunctionCall.generate(
                 t.getstr(), p, t, self.input, state)
             # print("FC returning {}".format(fcall))
             return fcall
-
-        @self.pg.production('call_signature : MATH_CALL expressions')
-        @self.pg.production('call_signature : EQ_CALL expressions')
-        @self.pg.production('call_signature : LT_CALL expressions')
-        @self.pg.production('call_signature : GT_CALL expressions')
-        @self.pg.production('call_signature : LTEQ_CALL expressions')
-        @self.pg.production('call_signature : GTEQ_CALL expressions')
-        @self.pg.production(
-            'call_signature : NOTEQ_CALL expression expressions')
-        @self.pg.production('call_signature : FUNC_CALL expressions')
-        @self.pg.production('call_signature : FUNC_BANG expressions')
-        @self.pg.production('call_signature : FUNC_PRED expressions')
-        def call_signature(state, p):
-            return p
 
         @self.pg.production('partial : LPAREN expressions RPAREN')
         def partial(state, p):
@@ -287,25 +304,26 @@ class Parser():
             t = p.pop(0)
             return ast.Lambda(p.pop(0), p, t, self.input)
 
-        @self.pg.production('if : IF expressions')
+        @self.pg.production('if : IF expression expression expression')
         def ifexpr(state, p):
             """If parse"""
             i = p.pop(0)
-            return ast.If.generate(_flatten_list(p[0].value), i, self.input)
+            return ast.If.generate(_flatten_list(p), i, self.input)
 
-        @self.pg.production('let : LET LBRACKET RBRACKET expression')
-        @self.pg.production('let : LET LBRACKET letpairs RBRACKET expression')
+        @self.pg.production('let : LET let_locals expression')
         @self.pg.production(
-            'let : LET strict_symbol LBRACKET RBRACKET expression')
-        @self.pg.production(
-            'let : LET strict_symbol LBRACKET letpairs RBRACKET expression')
+            'let : LET strict_symbol let_locals expression')
         def letexpr(state, p):
             """Let parse"""
-            return ast.Let.generate(p, self.input)
+            return ast.Let.generate(_flatten_list(p), self.input)
+
+        @self.pg.production("let_locals : LBRACKET RBRACKET")
+        @self.pg.production("let_locals : LBRACKET letpairs RBRACKET")
+        def let_locals(state, p):
+            return p
 
         @self.pg.production('letpairs : strict_symbol expression')
-        @self.pg.production(
-            'letpairs : strict_symbol expression COMMA letpairs')
+        @self.pg.production('letpairs : strict_symbol expression letpairs')
         def letpairs(state, p):
             """Let parse support for zero or more local var assignments"""
             return _token_eater(_flatten_list(p), ast.LetPairs)

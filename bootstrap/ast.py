@@ -1353,8 +1353,9 @@ class FunctionCall(FoidlAst):
             if cref.argcnt != len(bvalue):
                 if len(bvalue) < cref.argcnt:
                     raise errors.FunctionCall(
-                        "Function {} expects {} args, have {}".format(
+                        "Function {} @ {} expects {} args, have {}".format(
                             call_site,
+                            token.getsourcepos(),
                             cref.argcnt,
                             len(bvalue)))
                 else:

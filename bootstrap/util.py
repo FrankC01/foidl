@@ -16,6 +16,7 @@
 
 import os
 import logging
+import pprint
 
 from enums import ParseLevel
 from lexer import Lexer as full_lex
@@ -81,4 +82,6 @@ def parse_file(srcfile, state, level=ParseLevel.FULL):
     pargen = prsg(lexgen, srcfile)
     pargen.parse()
     parser = pargen.get_parser()
+    # if level is ParseLevel.FULL:
+    #     pprint.pprint(parser.lr_table.grammar.__dict__)
     return parser.parse(tokens, state=state).module()
