@@ -14,12 +14,30 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
+import logging
+import pprint
+from functools import singledispatch, update_wrapper
+
 from rply import ParserGenerator, Token
 
 from enums import CollTypes
 import ast
 import errors
 from handler import include_parse
+from foidl_token import *
+
+
+LOGGER = logging.getLogger()
+
+
+def methdispatch(func):
+    dispatcher = singledispatch(func)
+
+    def wrapper(*args, **kw):
+        return dispatcher.dispatch(args[1].__class__)(*args, **kw)
+    wrapper.register = dispatcher.register
+    update_wrapper(wrapper, func)
+    return wrapper
 
 
 def _collection_type(p0):
@@ -526,3 +544,166 @@ class Parser():
 
     def get_parser(self):
         return self.pg.build()
+
+
+class AParser():
+    _collection_end = {
+        "{": "}",
+        "#{": "}",
+        "<": ">",
+        "[": "]"}
+
+    def __init__(self, mlexer, input):
+        self._input = input
+        self._tokens = None
+        self._state = None
+
+    @property
+    def input(self):
+        return self._input
+
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, state):
+        self._state = state
+
+    @property
+    def tokens(self):
+        return self._tokens
+
+    @tokens.setter
+    def tokens(self, tokens):
+        self._tokens = tokens
+
+    @methdispatch
+    def _parse(self, token, frame):
+        print("{} not handled yet".format(token))
+        # return None
+        frame.insert(0, token)
+        return frame
+
+    @_parse.register(MODULE)
+    def parse_module(self, token, frame):
+        print("Handling Module: {}".format(token))
+        frame.insert(0, token)
+        return frame
+
+    @_parse.register(INCLUDE)
+    def parse_include(self, token, frame):
+        print("Handling include: {}".format(token.getstr()))
+        frame.insert(0, token)
+        return frame
+
+    @_parse.register(VAR)
+    def parse_variable(self, token, frame):
+        print("Handling variable: {}".format(frame))
+        frame.insert(0, token)
+        return frame
+
+    @_parse.register(FUNC)
+    def parse_function(self, token, frame):
+        frame.insert(0, token)
+        return frame
+
+    def _process_call(self, token, frame):
+        fcall = ast.FunctionCall.generate(
+            token.token.getstr(),
+            frame, token.token, self.input, self.state)
+        if isinstance(fcall, ast.FoidlAst):
+            return [fcall]
+        else:
+            return fcall
+
+    @_parse.register(FUNC_CALL)
+    @_parse.register(FUNC_BANG)
+    @_parse.register(FUNC_PRED)
+    @_parse.register(EQ_CALL)
+    @_parse.register(LT_CALL)
+    @_parse.register(GT_CALL)
+    @_parse.register(LTEQ_CALL)
+    @_parse.register(GTEQ_CALL)
+    @_parse.register(NOTEQ_CALL)
+    @_parse.register(MATH_CALL)
+    def parse_call(self, token, frame):
+        return self._process_call(token, frame)
+
+    @_parse.register(LANGLE)
+    @_parse.register(LBRACKET)
+    @_parse.register(LBRACE)
+    @_parse.register(LSET)
+    def parse_collection_start(self, token, frame):
+        """Parse collection types"""
+        rhs = self._collection_end[token.getstr()]
+        ctype = _collection_type(token)
+        index = next(
+            (i for i, item in enumerate(frame)
+                if hasattr(item, 'getstr')
+                if item.getstr() == rhs), -1)
+        if index < 0:
+            # This is an exception
+            raise IOError
+        elif index == 0:
+            frame.pop(0)
+            item = ast.EmptyCollection.generate(ctype, token, self.input)
+        else:
+            value = frame[0:index]
+            frame = frame[index + 1:]
+            item = ast.Collection(ctype, value, token, self.input)
+        frame.insert(0, item)
+        return frame
+
+    @_parse.register(RANGLE)
+    @_parse.register(RBRACKET)
+    @_parse.register(RBRACE)
+    def parse_collection_stop(self, token, frame):
+        frame.insert(0, token)
+        return frame
+
+    @_parse.register(IF_REF)
+    @_parse.register(EQ_REF)
+    @_parse.register(LT_REF)
+    @_parse.register(GT_REF)
+    @_parse.register(LTEQ_REF)
+    @_parse.register(GTEQ_REF)
+    @_parse.register(NOTEQ_REF)
+    @_parse.register(SYMBOL)
+    @_parse.register(SYMBOL_BANG)
+    @_parse.register(SYMBOL_PRED)
+    def parse_symbol(self, token, frame):
+        frame.insert(0, ast.Symbol(token.getstr(), token.token, self.input))
+        return frame
+
+    @_parse.register(STRING)
+    @_parse.register(CHAR)
+    @_parse.register(BIT)
+    @_parse.register(HEX)
+    @_parse.register(REAL)
+    @_parse.register(KEYWORD)
+    @_parse.register(INTEGER)
+    def parse_literal(self, token, frame):
+        entry = _literal_entry(self.state.literals, token.token, self.input)
+        frame.insert(0, entry)
+        return frame
+
+    @_parse.register(COMMA)
+    def parse_ignore(self, token, frame):
+        return frame
+
+    def parse(self, tokens=None, state=None):
+        if tokens:
+            self.tokens = FoidlTokenStream(tokens)
+            self.state = state
+            ar = []
+            while self.tokens.ismore:
+                ar = self._parse(next(self.tokens), ar)
+                if not ar:
+                    break
+            pprint.pprint(ar)
+        else:
+            return self
+
+    def get_parser(self):
+        return self

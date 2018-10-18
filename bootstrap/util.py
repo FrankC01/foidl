@@ -21,7 +21,7 @@ import pprint
 from enums import ParseLevel
 from lexer import Lexer as full_lex
 from hlexer import HLexer as lite_lex
-from parser import Parser as full_parse
+from parser import AParser as full_parse
 from hparser import HParser as lite_parse
 
 LOGGER = logging.getLogger()

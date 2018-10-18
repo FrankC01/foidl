@@ -1346,7 +1346,11 @@ class FunctionCall(FoidlAst):
 
     @classmethod
     def generate(cls, csite, value, token, src, state):
-        bvalue = value[0].value if value else value
+        if value:
+            if type(value[0]) is Expressions:
+                bvalue = value[0].value
+            else:
+                bvalue = value
         call_site = WellKnowns.get(csite[:-1], csite[:-1])
         cref = state.symtree.resolve_symbol(call_site)
         if cref:
