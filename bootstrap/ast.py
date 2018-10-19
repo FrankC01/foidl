@@ -505,7 +505,8 @@ class VarHeader(FoidlAst):
         return self._reference
 
     def get_reference(self):
-        self._reference = VarReference(self, self.name.value, self.ident)
+        if not self._reference:
+            self._reference = VarReference(self, self.name.value, self.ident)
         return self._reference
 
     def eval(self, bundle, leader):
@@ -578,6 +579,7 @@ class FuncHeader(FoidlAst):
         self._arguments = args
         self._private = private
         self._ident = expand_symbol(fname.value)
+        self._reference = None
 
     @property
     def name(self):
@@ -595,14 +597,19 @@ class FuncHeader(FoidlAst):
     def arguments(self):
         return self._arguments
 
+    @property
+    def reference(self):
+        return self._reference
+
     def get_reference(self):
-        fref = FuncReference(
-            self,
-            self.name.value,
-            self.ident,
-            self.arguments.elements())
+        if not self._reference:
+            self._reference = FuncReference(
+                self,
+                self.name.value,
+                self.ident,
+                self.arguments.elements())
         # print(fref)
-        return fref
+        return self._reference
 
     def eval(self, bundle, leader):
         pass

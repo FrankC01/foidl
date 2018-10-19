@@ -3,7 +3,7 @@
 
 module test
 
-include [foo]
+include foo
 
 var v
 var :private a +: 1 1
@@ -11,13 +11,13 @@ var :private a +: 1 1
 func :private b []
     +: 2 2
 
-func :private c [a b]
+func c [a b]
     +: 2 2
     -: 2 2
     *: 2 2
 
 func :private d [foo]
     +: 2 2
-    -: 2 2
+    foo_twoarg: a 2
 
 

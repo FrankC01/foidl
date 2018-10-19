@@ -18,7 +18,7 @@ import logging
 import pprint
 from functools import singledispatch, update_wrapper
 
-from rply import ParserGenerator, Token
+from rply import Token
 
 from enums import CollTypes
 import ast
@@ -53,10 +53,6 @@ def _collection_type(p0):
     return x
 
 
-def collection_type(p0):
-    return _collection_type(p0)
-
-
 def _token_eater(in_list, base_type, out_list=None):
     if not out_list:
         out_list = []
@@ -71,25 +67,6 @@ def _token_eater(in_list, base_type, out_list=None):
     return base_type(out_list)
 
 
-def token_eater(in_list, base_type, out_list=None):
-    return _token_eater(in_list, base_type, out_list=None)
-
-
-def _symbol_only(in_list, out_list=None):
-    if not out_list:
-        out_list = []
-    for n in in_list:
-        if type(n) is ast.Symbol:
-            out_list.append(n)
-        else:
-            out_list = _symbol_only(n.value, out_list)
-    return out_list
-
-
-def symbol_only(in_list, out_list=None):
-    return _symbol_only(in_list, out_list)
-
-
 def _flatten_list(in_list, out_list=None):
     if not out_list:
         out_list = []
@@ -99,10 +76,6 @@ def _flatten_list(in_list, out_list=None):
         else:
             out_list.append(n)
     return out_list
-
-
-def flatten_list(in_list, out_list=None):
-    return _flatten_list(in_list, out_list=None)
 
 
 def _literal_entry(literals, token, srcstr):
@@ -133,18 +106,13 @@ def math_func(token):
             "{} not recognized as math operator".format(s))
 
 
-class Parser():
+class DONT_USE_OBSOLETE():
     def __init__(self, mlexer, input):
         # A list of all token names accepted by the parser.
-        self.pg = ParserGenerator(
-            mlexer.get_tokens(),
-            # precedence=[])
-            precedence=[
-                ("left", ["SYMBOL", "KEYWORD"]),
-                ("left", ["SYMBOL_BANG", "SYMBOL_PRED"]),
-                ("left", ["FUNC", "VAR", "INCLUDE"]),
-                ("left", ["MATCH", "LET", "LAMBDA", "GROUP", "PARIAL", "IF"]),
-                ("left", ["FUNC_CALL", "FUNC_BANG", "FUNC_PRED"])])
+        # self.pg = ParserGenerator(
+        #     mlexer.get_tokens(),
+        #     # precedence=[])
+        #     precedence=[])
         self._input = input
 
     @property
@@ -152,93 +120,7 @@ class Parser():
         return self._input
 
     def parse(self):
-        @self.pg.production('program : module')
-        def program(state, p):
-            return ast.CompilationUnit(p)
 
-        @self.pg.production('module : MODULE symbol_only')
-        @self.pg.production('module : MODULE symbol_only include_declaration')
-        @self.pg.production(
-            'module : MODULE symbol_only include_declaration declarations')
-        @self.pg.production('module : MODULE symbol_only declarations')
-        def module(state, p):
-            pp = _flatten_list(p)
-            return ast.Module(pp[1], pp[2:], pp[0], self.input)
-
-        @self.pg.production('include_declaration : INCLUDE symbol_only')
-        @self.pg.production(
-            'include_declaration : INCLUDE symbol_only include_declaration')
-        @self.pg.production('include_declaration : INCLUDE symbol_only_list')
-        @self.pg.production(
-            'include_declaration : INCLUDE symbol_only_list include_declaration')
-        def include_declaration(state, p):
-            if state.incprocessed:
-                raise errors.IncludeOutOfOrder(
-                    "Include expression found after declarations")
-            t = p.pop(0)
-            print("Include {}".format(p))
-            i = ast.Include(_symbol_only(p), t, self.input)
-            include_parse(state, i)
-            return i
-
-        @self.pg.production('declarations : func_declaration')
-        @self.pg.production('declarations : var_declaration')
-        @self.pg.production('declarations : func_declaration declarations')
-        @self.pg.production('declarations : var_declaration declarations')
-        def declarations(state, p):
-            return _flatten_list(p)
-
-        @self.pg.production('func_declaration : func_header')
-        @self.pg.production('func_declaration : func_header expressions')
-        def func_declarations(state, p):
-            t = p.pop(0)
-            return ast.Function(t, p, self.input)
-
-        @self.pg.production('func_header : FUNC strict_symbol symbol_list')
-        @self.pg.production(
-            'func_header : FUNC KEYWORD strict_symbol symbol_list')
-        def func_hdr(state, p):
-            t = p.pop(0)
-            prv = False
-            if type(p[0]) is Token:
-                if p[0].gettokentype() == 'KEYWORD' \
-                        and p[0].getstr() == ':private':
-                        prv = True
-                        p.pop(0)
-            fh = ast.FuncHeader(p.pop(0), p[0], t, self.input, prv)
-            if not state.incprocessed and state.mainsrc == self.input:
-                state.incprocessed = True
-                state.symtree.push_scope(self.input, self.input)
-            state.symtree.register_symbol(fh.name.value, fh.get_reference())
-            return fh
-
-        @self.pg.production('var_declaration : var_header')
-        @self.pg.production('var_declaration : var_header expression')
-        def var_declarations(state, p):
-            t = p.pop(0)
-            return ast.Variable(t, p, t.token, self.input)
-
-        @self.pg.production('var_header : VAR strict_symbol')
-        @self.pg.production('var_header : VAR KEYWORD strict_symbol')
-        def var_hdr(state, p):
-            t = p.pop(0)
-            prv = False
-            if type(p[0]) is Token:
-                if p[0].gettokentype() == 'KEYWORD' \
-                        and p[0].getstr() == ':private':
-                        prv = True
-                        p.pop(0)
-            vh = ast.VarHeader(p.pop(0), t, self.input, prv)
-            if not state.incprocessed and state.mainsrc == self.input:
-                state.incprocessed = True
-                state.symtree.push_scope(self.input, self.input)
-            state.symtree.register_symbol(vh.name.value, vh.get_reference())
-            return vh
-
-        @self.pg.production('expression : symbol')
-        @self.pg.production('expression : literal')
-        @self.pg.production('expression : collection')
-        @self.pg.production('expression : function_call')
         # @self.pg.production('expression : math_call')
         @self.pg.production('expression : logic_call')
         @self.pg.production('expression : partial')
@@ -250,31 +132,6 @@ class Parser():
         def expression(state, p):
             # print("single expression = {} {}".format(p, p[0]))
             return p[0]
-
-        @self.pg.production('expressions : expression COMMA expressions')
-        @self.pg.production('expressions : expression expressions')
-        @self.pg.production('expressions : expression')
-        def expressions(state, p):
-            """Parse one or more expressions"""
-            if len(p) == 1 and type(p[0]) is list:
-                p = p[0]
-            print("Expressions = {}".format(p))
-            t = _token_eater(p, ast.Expressions)
-            return t
-
-        @self.pg.production('function_call : call_signature')
-        def function_call(state, p):
-            print("FC p {}".format(p))
-            if len(p) == 1 and type(p[0]) is list:
-                p = p[0]
-            # p = p[0]
-            t = p.pop(0)
-            p = [expressions(state, p)]
-            print("FC p 1 {}".format(p[0].value))
-            fcall = ast.FunctionCall.generate(
-                t.getstr(), p, t, self.input, state)
-            # print("FC returning {}".format(fcall))
-            return fcall
 
         @self.pg.production('call_signature : MATH_CALL expression expression')
         @self.pg.production('call_signature : FUNC_CALL expressions')
@@ -426,86 +283,6 @@ class Parser():
             else:
                 return p[1]
 
-        @self.pg.production('collection : empty_collection')
-        @self.pg.production('collection : LANGLE expressions RANGLE')
-        @self.pg.production('collection : LBRACKET expressions RBRACKET')
-        @self.pg.production('collection : LBRACE expressions RBRACE')
-        @self.pg.production('collection : LSET expressions RBRACE')
-        def collections(state, p):
-            if len(p) == 1:
-                return p[0]
-            else:
-                t = p[0]
-                x = _collection_type(t)
-                del p[2]
-                del p[0]
-                return ast.Collection(x, p, t, self.input)
-
-        @self.pg.production('empty_collection : empty_vector')
-        @self.pg.production('empty_collection : empty_list')
-        @self.pg.production('empty_collection : empty_map')
-        @self.pg.production('empty_collection : empty_set')
-        def empty_collections(state, p):
-            return p[0]
-
-        @self.pg.production("empty_vector : LANGLE RANGLE")
-        def empty_vector(state, p):
-            ct = _collection_type(p[0])
-            return ast.EmptyCollection.generate(
-                ct,
-                p[0],
-                self.input)
-
-        @self.pg.production("empty_list : LBRACKET RBRACKET")
-        def empty_list(state, p):
-            ct = _collection_type(p[0])
-            return ast.EmptyCollection.generate(
-                ct,
-                p[0],
-                self.input)
-
-        @self.pg.production("empty_map : LBRACE RBRACE")
-        def empty_map(state, p):
-            ct = _collection_type(p[0])
-            return ast.EmptyCollection.generate(
-                ct,
-                p[0],
-                self.input)
-
-        @self.pg.production("empty_set : LSET RBRACE")
-        def empty_set(state, p):
-            ct = _collection_type(p[0])
-            return ast.EmptyCollection.generate(
-                ct,
-                p[0],
-                self.input)
-
-        @self.pg.production('literal : CHAR')
-        @self.pg.production('literal : BIT')
-        @self.pg.production('literal : HEX')
-        @self.pg.production('literal : INTEGER')
-        @self.pg.production('literal : REAL')
-        @self.pg.production('literal : STRING')
-        @self.pg.production('literal : KEYWORD')
-        def literal(state, p):
-            return _literal_entry(state.literals, p[0], self.input)
-
-        @self.pg.production("strict_symbols : strict_symbol")
-        @self.pg.production("strict_symbols : strict_symbol strict_symbols")
-        @self.pg.production(
-            "strict_symbols : strict_symbol COMMA strict_symbols")
-        def strict_symbols(state, p):
-            if len(p) == 1:
-                return ast.SymbolList(p)
-            else:
-                return _token_eater(p, ast.SymbolList)
-
-        @self.pg.production('strict_symbol : SYMBOL')
-        @self.pg.production('strict_symbol : SYMBOL_PRED')
-        @self.pg.production('strict_symbol : SYMBOL_BANG')
-        def strict_symbol(state, p):
-            return ast.Symbol(p[0].getstr(), p[0], self.input)
-
         @self.pg.production('symbol : MATCH_EXPRREF')
         def matchexprref(state, p):
             return ast.MatchExpressionRef(p[0].getstr(), p[0], self.input)
@@ -529,21 +306,165 @@ class Parser():
         def symbol(state, p):
             return ast.Symbol(p[0].getstr(), p[0], self.input)
 
-        @self.pg.production("symbols_only : symbol_only")
-        @self.pg.production("symbols_only : symbol_only symbols_only")
-        @self.pg.production("symbols_only : symbol_only COMMA symbols_only")
-        def symbols_only(state, p):
-            if len(p) == 1:
-                return ast.SymbolList(p)
-            else:
-                return _token_eater(p, ast.SymbolList)
-
-        @self.pg.production('symbol_only : SYMBOL')
-        def symbol_only(state, p):
-            return ast.Symbol(p[0].getstr(), p[0], self.input)
-
     def get_parser(self):
         return self.pg.build()
+
+
+class _TDParser(object):
+
+    _ttype_tuple = (INCLUDE, VAR, FUNC)
+
+    def __init__(self):
+        super().__init__()
+        self._vfhdrs = {}
+        self._result = []
+        self._include = []
+        self._rinclude = []
+        self._nafter = None
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def input(self):
+        return self._input
+
+    @property
+    def tokens(self):
+        return self._tokens
+
+    @property
+    def nafter(self):
+        return self._nafter
+
+    @nafter.setter
+    def nafter(self, nafter):
+        self._nafter = nafter
+
+    @property
+    def result(self):
+        return self._result
+
+    def include(self):
+        symlist = []
+        if self.nafter.gettokentype() == "LBRACKET":
+            hit, stuff = self.tokens.get_until(self._ttype_tuple, True)
+            self._rinclude.extend(stuff)
+            symlist = stuff[0:-1]
+        elif self.nafter.gettokentype() == "SYMBOL":
+            symlist.append(self.nafter)
+        else:
+            raise IOError
+        [self._include.append(
+            ast.Symbol(x.getstr(), x, self.input)) for x in symlist
+            if x.gettokentype() == 'SYMBOL']
+
+    def variable(self):
+        symbol = None
+        private = False
+        hit, stuff = self.tokens.get_until(self._ttype_tuple, True)
+        if self.nafter.gettokentype() == 'KEYWORD':
+            if self.nafter.getstr() == ":private":
+                private = True
+                if stuff and stuff[0].gettokentype() == 'SYMBOL':
+                    symbol = stuff[0]
+            else:
+                raise IOError
+        elif self.nafter.gettokentype() == 'SYMBOL':
+            symbol = self.nafter
+        else:
+            raise IOError
+
+        vhdr = self._vfhdrs.get(symbol.getstr(), None)
+        if vhdr:
+            print("Redefinition of var {}".format(symbol.getstr()))
+            raise IOError
+
+        self._vfhdrs[symbol.getstr()] = ast.VarHeader(
+            ast.Symbol(symbol.getstr(), symbol, self.input),
+            symbol, self.input, private)
+
+
+    def function(self):
+        symbol = None
+        private = False
+        arguments = None
+        if self.nafter.gettokentype() == 'KEYWORD':
+            if self.nafter.getstr() == ":private":
+                private = True
+                x = next(self.tokens)
+                if x and x.gettokentype() == 'SYMBOL':
+                    symbol = x
+                else:
+                    raise IOError
+        elif self.nafter.gettokentype() == 'SYMBOL':
+            symbol = self.nafter
+        else:
+            raise IOError
+
+        x = next(self.tokens)
+        if x and x.gettokentype() == 'LBRACKET':
+            hit, stuff = self.tokens.get_until((RBRACKET), True)
+            if not hit:
+                raise IOError
+            next(self.tokens)
+            args = [ast.Symbol(x.getstr(), x, self.input) for x in stuff]
+            if not args:
+                arguments = ast.EmptyCollection(
+                    CollTypes.LIST, args, x, self.input)
+            else:
+                arguments = ast.Collection(
+                    CollTypes.LIST, args, x, self.input)
+        else:
+            raise IOError()
+
+        hit, stuff = self.tokens.get_until(self._ttype_tuple, True)
+        fhdr = self._vfhdrs.get(symbol.getstr(), None)
+        if fhdr:
+            print("Redefinition of func {}".format(symbol.getstr()))
+            raise IOError
+
+        self._vfhdrs[symbol.getstr()] = ast.FuncHeader(
+            ast.Symbol(symbol.getstr(), symbol, self.input),
+            arguments, symbol, self.input, private)
+
+    def body(self):
+        while self.tokens.ismore:
+            found, fluff = self.tokens.get_until(self._ttype_tuple, True)
+            if found:
+                # print("Found {}".format(found))
+                hit = next(self.tokens)
+                self.nafter = next(self.tokens)
+                if found.gettokentype() == 'VAR':
+                    self.variable()
+                elif found.gettokentype() == 'FUNC':
+                    self.function()
+                else:
+                    self._rinclude.extend([hit, self.nafter])
+                    self.include()
+            else:
+                break
+
+    def parse(self, state, tokens, input):
+        self._state = state
+        self._tokens = tokens
+        self._input = input
+        self.body()
+        if self._include:
+            # Consolidate includes
+            # Pre-process includes
+            include_parse(
+                self.state,
+                ast.Include(self._include, self._rinclude[0], self.input))
+            # Remove includes
+            tokens.drop_tokens(self._rinclude)
+        # Register functions
+        state.symtree.push_scope(self.input, self.input)
+        [state.symtree.register_symbol(
+            x, y.get_reference())
+            for (x, y) in self._vfhdrs.items()]
+        return self._vfhdrs
 
 
 class AParser(object):
@@ -561,6 +482,7 @@ class AParser(object):
         self._input = input
         self._tokens = None
         self._state = None
+        self._locals = None
 
     def _panic(self, cause, token):
         raise errors.ParseError(
@@ -609,36 +531,9 @@ class AParser(object):
             self._malformed(token)
         if isinstance(frame[0], ast.Symbol):
             symbol = frame.pop(0)
-            print("Handling module {}".format(frame))
             return [ast.Module(symbol, frame, token, self.input)]
         else:
             self._panic("{}:{} Expected symbol for {}", token)
-
-    @_parse.register(INCLUDE)
-    def parse_include(self, token, frame):
-        print("Handling include: {}".format(frame))
-        if not frame:
-            self._malformed(token)
-
-        symbol_or_list = frame.pop(0)
-        if isinstance(symbol_or_list, ast.Symbol):
-            symbol_or_list = [symbol_or_list]
-        elif isinstance(symbol_or_list, ast.CollectionAst):
-            symbol_or_list = symbol_or_list.value
-        else:
-            self._panic("{}:{} Expected symbol or list for {}", token)
-
-        includes = symbol_or_list
-        newframe = []
-        for x in frame:
-            if isinstance(x, ast.Include):
-                includes.extend(x.value)
-            else:
-                newframe.append(x)
-
-        print("Handling include: {} {}".format(includes, newframe))
-        newframe.insert(0, ast.Include(includes, token, self.input))
-        return newframe
 
     @_parse.register(VAR)
     def parse_variable(self, token, frame):
@@ -651,7 +546,6 @@ class AParser(object):
 
         if there is an expression, there must be only one
         """
-        private = False
         symbol = None
         expression = None
         # Edge - var token only at end
@@ -661,9 +555,8 @@ class AParser(object):
         # Check first for private
         if isinstance(frame[0], ast.LiteralReference):
             if frame[0].value == ":private":
-                private = True
                 frame.pop(0)
-            # Unexpected literal reference
+            # Should never get here due to pre-parse, but
             else:
                 raise errors.ParseError(
                     "{}:{} Variable type only supports :private keyword."
@@ -672,12 +565,13 @@ class AParser(object):
                         token.getsourcepos().colno,
                         frame[0].value))
 
-        # Check for malformed var and symbol type
+        # Should never get here due to pre-parse
         if not frame:
             self._panic("{}:{} Missing symbol for {}", token)
 
         if isinstance(frame[0], ast.Symbol):
             symbol = frame.pop(0)
+        # Should never get here due to pre-parse
         else:
             self._panic("{}:{} Expected symbol for {}", token)
 
@@ -687,9 +581,9 @@ class AParser(object):
                 # TODO: Get until var, func, include or end
                 expression = [frame.pop(0)]
 
-        print("VAR => {} {} {}".format(symbol, private, expression))
-        hdr = ast.VarHeader(symbol, token, self.input, private)
-        hdr.get_reference()
+        hdr = self._locals.get(symbol.name, None)
+        if not hdr:
+            self._panic("{}:{} Variable {} not in symbol table", symbol.token)
         frame.insert(
             0,
             ast.Variable(
@@ -700,7 +594,6 @@ class AParser(object):
 
     @_parse.register(FUNC)
     def parse_function(self, token, frame):
-        private = False
         symbol = None
         arguments = None
 
@@ -710,9 +603,8 @@ class AParser(object):
         # Check first for private
         if isinstance(frame[0], ast.LiteralReference):
             if frame[0].value == ":private":
-                private = True
                 frame.pop(0)
-            # Unexpected literal reference
+            # Should never get here due to pre-parse, but
             else:
                 raise errors.ParseError(
                     "{}:{} Function type only supports :private keyword."
@@ -720,7 +612,7 @@ class AParser(object):
                         token.getsourcepos().lineno,
                         token.getsourcepos().colno,
                         frame[0].value))
-        # Check for malformed func and symbol type
+        # Should never get here due to pre-parse, but
         if not frame:
             self._panic("{}:{} Missing symbol for {}", token)
 
@@ -729,6 +621,7 @@ class AParser(object):
         else:
             self._panic("{}:{} Expected symbol for {}", token)
 
+        # Should never get here due to pre-parse, but
         if not frame:
             self._panic("{}:{} Missing function arguments", token)
         elif not isinstance(frame[0], ast.CollectionAst):
@@ -755,7 +648,10 @@ class AParser(object):
                 break
         frame = frame[index:]
 
-        hdr = ast.FuncHeader(symbol, arguments, token, self.input, private)
+        hdr = self._locals.get(symbol.name, None)
+        if not hdr:
+            self._panic("{}:{} Function {} not in symbol table", symbol.token)
+
         frame.insert(
             0,
             ast.Function(hdr, expressions, self.input))
@@ -826,7 +722,6 @@ class AParser(object):
     @_parse.register(SYMBOL_BANG)
     @_parse.register(SYMBOL_PRED)
     def parse_symbol(self, token, frame):
-        print("Symbol {}".format(token))
         frame.insert(0, ast.Symbol(token.getstr(), token.token, self.input))
         return frame
 
@@ -838,7 +733,6 @@ class AParser(object):
     @_parse.register(KEYWORD)
     @_parse.register(INTEGER)
     def parse_literal(self, token, frame):
-        print("Literal {}".format(token))
         entry = _literal_entry(self.state.literals, token.token, self.input)
         frame.insert(0, entry)
         return frame
@@ -851,17 +745,18 @@ class AParser(object):
         if tokens:
             self.tokens = FoidlTokenStream(tokens)
             self.state = state
+            # Get includes, vars and funcs
+            lp = _TDParser()
+            self._locals = lp.parse(self.state, self.tokens, self.input)
+            self.tokens.set_bottom_up()
             ar = []
             while self.tokens.ismore:
                 ar = self._parse(next(self.tokens), ar)
                 if not ar:
                     break
-            include_parse(self.state, ar[0].include)
-            print("Finalizing {}".format(ar[0].value))
-            for x in ar[0].value:
-                print(x)
-            # pprint.pprint(ar)
-            # return ast.CompilationUnit(ar)
+            # for x in ar[0].value:
+            #     print(x)
+            return ast.CompilationUnit(ar)
         else:
             return self
 

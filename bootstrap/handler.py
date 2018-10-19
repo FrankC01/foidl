@@ -403,7 +403,7 @@ class Diag(Comp):
                     print("List => {}".format(l.value[0]))
 
     def _tree_walk(self, tree, indent=1):
-        if type(tree) is list:
+        if type(tree) is list and tree:
             self.write("Walk-l: {}> ({}): {}".format(
                 '-' * indent, tree[0].name, tree[0].ptype))
             ttree = tree[0]
@@ -457,13 +457,13 @@ class Diag(Comp):
         self.write("-------")
         self.write(pprint.pformat(self.ptree['externs']))
 
-        # self.write('\n')
-        # self.write("Symbols")
-        # self.write("-------")
-        # for st in self.bundle.symtree.stack:
-        #     self.write('\n')
-        #     tstr = "Symbols for " + st.name
-        #     self.write(tstr)
-        #     self.write('-' * len(tstr))
-        #     self.write(pprint.pformat(st.table))
+        self.write('\n')
+        self.write("Symbols")
+        self.write("-------")
+        for st in self.bundle.symtree.stack:
+            self.write('\n')
+            tstr = "Symbols for " + st.name
+            self.write(tstr)
+            self.write('-' * len(tstr))
+            self.write(pprint.pformat(st.table))
         self.complete()

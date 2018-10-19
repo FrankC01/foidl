@@ -111,8 +111,7 @@ def foidl_tfactory(cname, token):
 
 class FoidlTokenStream(object):
     def __init__(self, tokens):
-        self._tokens = list(reversed(
-            [foidl_tfactory(x.gettokentype(), x) for x in tokens]))
+        self._tokens = [foidl_tfactory(x.gettokentype(), x) for x in tokens]
         self._count = len(self._tokens)
         self._active = self._tokens
         self._current = 0
@@ -120,6 +119,16 @@ class FoidlTokenStream(object):
     @property
     def tokens(self):
         return self._active
+
+    def set_bottom_up(self):
+        self._active = list(reversed(self._tokens))
+        self._count = len(self._active)
+        self._current = 0
+
+    def drop_tokens(self, tlist):
+        new_toks = [x for x in self.tokens if x not in tlist]
+        self._tokens = new_toks
+        self._active = new_toks
 
     @property
     def count(self):
@@ -146,12 +155,26 @@ class FoidlTokenStream(object):
 
     def isnext(self, ttype):
         if self.ismore:
-            return True if type(self.tokens[self.current]) is ttype else False
+            return isinstance(self.tokens[self.current], ttype)
         else:
-            return False
+            raise IOError
 
     def pushback(self):
-        self.__current -= 1
+        self._current -= 1
+
+    def get_until(self, ctuple, pback=False):
+        results = []
+        found = False
+        while self.ismore:
+            x = next(self)
+            if isinstance(x, ctuple):
+                found = x
+                if pback:
+                    self.pushback()
+                    break
+            else:
+                results.append(x)
+        return found, results
 
     def getnext(self, etype=None):
         if self.ismore:

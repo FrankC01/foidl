@@ -90,10 +90,6 @@ def execute(args):
             outhandler = open(args.output, "wt+")
 
         args.inc_paths.append(head)
-        print("Inc Paths = {}".format(args.inc_paths))
-        # Supress python warnings
-        # if not sys.warnoptions:
-        #     warnings.simplefilter("ignore")
         lvl = ParseLevel.LITE if args.action == 'hdr' else ParseLevel.FULL
         hdronly = True if args.action == 'hdr' else False
         state = preprocess_runtime(
