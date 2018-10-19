@@ -128,12 +128,13 @@ class HParser(object):
 
     def module(self, tstrm):
         modsym = None
-        if tstrm.next().getstr() == 'module':
+        nextone = tstrm.next()
+        if nextone.getstr() == 'module':
             _, tk, modsym = self.get_symbol(tstrm)
             self.get_decl(tstrm)
             return ast.Module(modsym, self.values, tk, self.input)
         else:
-            print('Something bad')
+            print('Something bad {}'.format(modsym))
             return
 
     def parse(self, tstrm=None, state=None):

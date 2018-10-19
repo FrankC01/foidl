@@ -513,7 +513,6 @@ class VarHeader(FoidlAst):
 
 
 class Variable(FoidlAst):
-    """Variable AST captures identity and associated expression"""
 
     def __init__(self, vhdr, value, token, src):
         super().__init__(token, src)
@@ -527,7 +526,8 @@ class Variable(FoidlAst):
                 value = value[0]
             if len(value) != 1:
                 raise errors.ParseError(
-                    "variable '{}' at line {} has more than 1 expression".format(
+                    "variable '{}' at line {} has"
+                    "more than 1 expression".format(
                         vname.value,
                         token.getsourcepos().lineno))
         else:
@@ -643,11 +643,12 @@ class Function(FoidlAst):
         bundle.symtree.push_scope(self.name, self.name)
         i = 0
         argref = []
-        for a in self.arguments.value:
-            ar = FuncArgReference(a, a.name, i)
-            bundle.symtree.register_symbol(a.name, ar)
-            argref.append(ar)
-            i += 1
+        if not isinstance(self.arguments, EmptyCollection):
+            for a in self.arguments.value:
+                ar = FuncArgReference(a, a.name, i)
+                bundle.symtree.register_symbol(a.name, ar)
+                argref.append(ar)
+                i += 1
 
         # Eval children
         expr = []

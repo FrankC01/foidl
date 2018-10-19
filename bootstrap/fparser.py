@@ -546,17 +546,34 @@ class Parser():
         return self.pg.build()
 
 
-class AParser():
+class AParser(object):
     _collection_end = {
         "{": "}",
         "#{": "}",
         "<": ">",
         "[": "]"}
 
+    _strict_symtokens = ['SYMBOL', 'SYMBOL_BANG', 'SYMBOL_PRED']
+
+    _decl_set = (ast.Variable, ast.Function, ast.Include)
+
     def __init__(self, mlexer, input):
         self._input = input
         self._tokens = None
         self._state = None
+
+    def _panic(self, cause, token):
+        raise errors.ParseError(
+            cause.format(
+                token.getsourcepos().lineno,
+                token.getsourcepos().colno,
+                token.getstr()))
+
+    def _malformed(self, token):
+        self._panic("{}:{} Badly formed statement for {}", token)
+
+    def _unexpected(self, token):
+        self._panic("{}:{} Unexpected expression for {}", token)
 
     @property
     def input(self):
@@ -581,31 +598,167 @@ class AParser():
     @methdispatch
     def _parse(self, token, frame):
         print("{} not handled yet".format(token))
-        # return None
         frame.insert(0, token)
         return frame
 
     @_parse.register(MODULE)
     def parse_module(self, token, frame):
-        print("Handling Module: {}".format(token))
-        frame.insert(0, token)
-        return frame
+        symbol = None
+        # Edge - var token only at end
+        if not frame:
+            self._malformed(token)
+        if isinstance(frame[0], ast.Symbol):
+            symbol = frame.pop(0)
+            print("Handling module {}".format(frame))
+            return [ast.Module(symbol, frame, token, self.input)]
+        else:
+            self._panic("{}:{} Expected symbol for {}", token)
 
     @_parse.register(INCLUDE)
     def parse_include(self, token, frame):
-        print("Handling include: {}".format(token.getstr()))
-        frame.insert(0, token)
-        return frame
+        print("Handling include: {}".format(frame))
+        if not frame:
+            self._malformed(token)
+
+        symbol_or_list = frame.pop(0)
+        if isinstance(symbol_or_list, ast.Symbol):
+            symbol_or_list = [symbol_or_list]
+        elif isinstance(symbol_or_list, ast.CollectionAst):
+            symbol_or_list = symbol_or_list.value
+        else:
+            self._panic("{}:{} Expected symbol or list for {}", token)
+
+        includes = symbol_or_list
+        newframe = []
+        for x in frame:
+            if isinstance(x, ast.Include):
+                includes.extend(x.value)
+            else:
+                newframe.append(x)
+
+        print("Handling include: {} {}".format(includes, newframe))
+        newframe.insert(0, ast.Include(includes, token, self.input))
+        return newframe
 
     @_parse.register(VAR)
     def parse_variable(self, token, frame):
-        print("Handling variable: {}".format(frame))
-        frame.insert(0, token)
+        """Variable parse. Productions:
+
+        var symbol
+        var symbol expression (not = FUNC, VAR, INCLUDE, MODULE)
+        var :private symbol
+        var :private symbol expression (not = FUNC, VAR, INCLUDE, MODULE)
+
+        if there is an expression, there must be only one
+        """
+        private = False
+        symbol = None
+        expression = None
+        # Edge - var token only at end
+        if not frame:
+            self._malformed(token)
+
+        # Check first for private
+        if isinstance(frame[0], ast.LiteralReference):
+            if frame[0].value == ":private":
+                private = True
+                frame.pop(0)
+            # Unexpected literal reference
+            else:
+                raise errors.ParseError(
+                    "{}:{} Variable type only supports :private keyword."
+                    " Found {}".format(
+                        token.getsourcepos().lineno,
+                        token.getsourcepos().colno,
+                        frame[0].value))
+
+        # Check for malformed var and symbol type
+        if not frame:
+            self._panic("{}:{} Missing symbol for {}", token)
+
+        if isinstance(frame[0], ast.Symbol):
+            symbol = frame.pop(0)
+        else:
+            self._panic("{}:{} Expected symbol for {}", token)
+
+        # Check for expression existance
+        if frame:
+            if not isinstance(frame[0], self._decl_set):
+                # TODO: Get until var, func, include or end
+                expression = [frame.pop(0)]
+
+        print("VAR => {} {} {}".format(symbol, private, expression))
+        hdr = ast.VarHeader(symbol, token, self.input, private)
+        hdr.get_reference()
+        frame.insert(
+            0,
+            ast.Variable(
+                hdr,
+                expression,
+                token, self.input))
         return frame
 
     @_parse.register(FUNC)
     def parse_function(self, token, frame):
-        frame.insert(0, token)
+        private = False
+        symbol = None
+        arguments = None
+
+        # Edge - func token only at end
+        if not frame:
+            self._malformed(token)
+        # Check first for private
+        if isinstance(frame[0], ast.LiteralReference):
+            if frame[0].value == ":private":
+                private = True
+                frame.pop(0)
+            # Unexpected literal reference
+            else:
+                raise errors.ParseError(
+                    "{}:{} Function type only supports :private keyword."
+                    " Found {}".format(
+                        token.getsourcepos().lineno,
+                        token.getsourcepos().colno,
+                        frame[0].value))
+        # Check for malformed func and symbol type
+        if not frame:
+            self._panic("{}:{} Missing symbol for {}", token)
+
+        if isinstance(frame[0], ast.Symbol):
+            symbol = frame.pop(0)
+        else:
+            self._panic("{}:{} Expected symbol for {}", token)
+
+        if not frame:
+            self._panic("{}:{} Missing function arguments", token)
+        elif not isinstance(frame[0], ast.CollectionAst):
+            self._panic("{}:{} Expected function arguments", token)
+        else:
+            arguments = frame.pop(0)
+
+        # Verify all in collection are symbols
+        if not isinstance(arguments, ast.EmptyCollection):
+            for x in arguments.value:
+                if ((not isinstance(x, ast.Symbol) or
+                        x.token.gettokentype() not in self._strict_symtokens)):
+                    self._panic(
+                        "{}:{} Invalid symbol in arguments for {}", token)
+
+        expressions = []
+        index = 0
+        # Get all expressions in function
+        for x in frame:
+            if not isinstance(x, self._decl_set):
+                expressions.append(x)
+                index += 1
+            else:
+                break
+        frame = frame[index:]
+
+        hdr = ast.FuncHeader(symbol, arguments, token, self.input, private)
+        frame.insert(
+            0,
+            ast.Function(hdr, expressions, self.input))
         return frame
 
     def _process_call(self, token, frame):
@@ -673,6 +826,7 @@ class AParser():
     @_parse.register(SYMBOL_BANG)
     @_parse.register(SYMBOL_PRED)
     def parse_symbol(self, token, frame):
+        print("Symbol {}".format(token))
         frame.insert(0, ast.Symbol(token.getstr(), token.token, self.input))
         return frame
 
@@ -684,6 +838,7 @@ class AParser():
     @_parse.register(KEYWORD)
     @_parse.register(INTEGER)
     def parse_literal(self, token, frame):
+        print("Literal {}".format(token))
         entry = _literal_entry(self.state.literals, token.token, self.input)
         frame.insert(0, entry)
         return frame
@@ -701,7 +856,12 @@ class AParser():
                 ar = self._parse(next(self.tokens), ar)
                 if not ar:
                     break
-            pprint.pprint(ar)
+            include_parse(self.state, ar[0].include)
+            print("Finalizing {}".format(ar[0].value))
+            for x in ar[0].value:
+                print(x)
+            # pprint.pprint(ar)
+            # return ast.CompilationUnit(ar)
         else:
             return self
 

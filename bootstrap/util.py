@@ -21,7 +21,7 @@ import pprint
 from enums import ParseLevel
 from lexer import Lexer as full_lex
 from hlexer import HLexer as lite_lex
-from parser import AParser as full_parse
+from fparser import AParser as full_parse
 from hparser import HParser as lite_parse
 
 LOGGER = logging.getLogger()
@@ -39,12 +39,14 @@ def validate_file(infile, ext):
     if not os.path.isfile(absfile):
         raise IOError("{} is not a file".format(absfile))
 
-    srcsplit = os.path.split(absfile)[1].split('.')
+    head, tail = os.path.split(absfile)
+    srcsplit = tail.split('.')
+
     # Validate input file
     if len(srcsplit) < 2 or srcsplit[1] != ext:
         raise IOError(
             "{} doesn not have {} extension".format(absfile, ext))
-    return absfile
+    return head + "/", absfile
 
 
 def absolutes_path_for(ins):

@@ -25,6 +25,7 @@ class Lexer():
         # Keywords
         self.lexer.add('MODULE', r'\bmodule\b')
         self.lexer.add('INCLUDE', r'\binclude\b')
+        self.lexer.add('PRIVATE', r'\b:private')
         self.lexer.add('VAR', r'\bvar\b')
         self.lexer.add('FUNC', r'\bfunc\b')
         self.lexer.add('LET', r'\blet\b')
@@ -36,7 +37,7 @@ class Lexer():
         self.lexer.add('MATCH_EXPRREF', r'\b%0\b')
         self.lexer.add('GROUP', r'@\(')
         self.lexer.add('IF', r'\?:')
-        self.lexer.add('IF_REF', r'\b\?\b')
+        self.lexer.add('IF_REF', r'\?')
         # Boolean operators
         self.lexer.add('EQ_CALL', r"=:")
         self.lexer.add('LT_CALL', r"<:")
@@ -84,10 +85,10 @@ class Lexer():
         self.lexer.add('MATH_CALL', r"[+/*-]{1}:")
         self.lexer.add('MATH_REF', r"[+/*-]{1}")
         # self.lexer.add('LOGICOP_CALL', r'(= | < | <= | > | >= | not=):')
-        self.lexer.add('SYMBOL_BANG', r"\b[a-zA-Z]([a-zA-Z0-9_]*)?!\b")
-        self.lexer.add('SYMBOL_PRED', r"\b[a-zA-Z]([a-zA-Z0-9_]*)?\?\b")
+        self.lexer.add('SYMBOL_BANG', r"\b[a-zA-Z]([a-zA-Z0-9_]*)?!")
+        self.lexer.add('SYMBOL_PRED', r"\b[a-zA-Z]([a-zA-Z0-9_]*)?\?")
         self.lexer.add('KEYWORD', r":[a-zA-Z]([a-zA-Z0-9_]*)?")
-        self.lexer.add('SYMBOL', r"[a-zA-Z]([a-zA-Z0-9_]*)?")
+        self.lexer.add('SYMBOL', r"\b[a-zA-Z]([a-zA-Z0-9_]*)?")
         # Ignore comments
         self.lexer.ignore(r";.*?\n")
         # Ignore spaces

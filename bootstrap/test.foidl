@@ -1,20 +1,23 @@
 ; Foidl test file
 ; Xinnn
 
-module test ; connnebt
+module test
 
-;var a 5
-;var b {}
-;var b #{}
-var b <1>
-;var b [1 2 3, 4, 7]
+include [foo]
 
-;func emptyarg []
+var v
+var :private a +: 1 1
 
-;func foo [c d]
+func :private b []
+    +: 2 2
 
-;func fiz [kwd]
+func :private c [a b]
+    +: 2 2
+    -: 2 2
+    *: 2 2
 
-;func bar []
-;    /: 8 inc: 9
+func :private d [foo]
+    +: 2 2
+    -: 2 2
+
 

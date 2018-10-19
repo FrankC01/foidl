@@ -1,0 +1,8 @@
+; Foidl foo definitions header
+
+module foo
+
+var foo_b Any
+var foo_c Any
+
+func foo_twoarg[a b]

@@ -114,11 +114,12 @@ class FoidlTokenStream(object):
         self._tokens = list(reversed(
             [foidl_tfactory(x.gettokentype(), x) for x in tokens]))
         self._count = len(self._tokens)
+        self._active = self._tokens
         self._current = 0
 
     @property
     def tokens(self):
-        return self._tokens
+        return self._active
 
     @property
     def count(self):

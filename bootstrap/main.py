@@ -75,7 +75,7 @@ _tail_map = {
 def execute(args):
     """Perform verification and actions from cmdline"""
     try:
-        absfile = util.validate_file(args.source, 'foidl')
+        head, absfile = util.validate_file(args.source, 'foidl')
         # Construct output file
         outhandler = None
         if not args.output:
@@ -89,6 +89,8 @@ def execute(args):
                 pass
             outhandler = open(args.output, "wt+")
 
+        args.inc_paths.append(head)
+        print("Inc Paths = {}".format(args.inc_paths))
         # Supress python warnings
         # if not sys.warnoptions:
         #     warnings.simplefilter("ignore")

@@ -87,7 +87,7 @@ Message Verbosity (-v):
         help='Path(s) for include (.defs) files',
         dest='inc_paths',
         nargs='*',
-        default=[os.getcwd()],
+        default=[],
         metavar='<p>')
 
     return aparser
