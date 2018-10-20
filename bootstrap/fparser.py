@@ -117,8 +117,6 @@ class DONT_USE_OBSOLETE():
     def parse(self):
 
         # @self.pg.production('expression : math_call')
-        @self.pg.production('expression : logic_call')
-        @self.pg.production('expression : group')
         @self.pg.production('expression : lambda')
         @self.pg.production('expression : if')
         @self.pg.production('expression : let')
@@ -126,39 +124,6 @@ class DONT_USE_OBSOLETE():
         def expression(state, p):
             # print("single expression = {} {}".format(p, p[0]))
             return p[0]
-
-        @self.pg.production('call_signature : MATH_CALL expression expression')
-        @self.pg.production('call_signature : FUNC_CALL expressions')
-        @self.pg.production('call_signature : FUNC_BANG expressions')
-        @self.pg.production('call_signature : FUNC_PRED expressions')
-        def call_signature(state, p):
-            print("CS {}".format(p))
-            return p
-
-        @self.pg.production('logic_call : LT_CALL expression expression')
-        @self.pg.production('logic_call : GT_CALL expression expression')
-        @self.pg.production('logic_call : LTEQ_CALL expression expression')
-        @self.pg.production('logic_call : GTEQ_CALL expression expression')
-        @self.pg.production('logic_call : NOTEQ_CALL expression expression')
-        @self.pg.production('logic_call : EQ_CALL expression expression')
-        def logic_call(state, p):
-            p = p[0]
-            t = p.pop(0)
-            fcall = ast.FunctionCall.generate(
-                t.getstr(), p, t, self.input, state)
-            # print("FC returning {}".format(fcall))
-            return fcall
-
-        @self.pg.production('group : GROUP RPAREN')
-        @self.pg.production('group : GROUP expressions RPAREN')
-        def group(state, p):
-            """Group parse for zero or more expressions"""
-            if len(p) < 3:
-                return ast.Group([], p[0], self.input)
-            else:
-                del p[2]
-                t = p.pop(0)
-                return ast.Group(p, t, self.input)
 
         @self.pg.production('lambda : LAMBDA symbol_list expression')
         def lambdaexpr(state, p):
@@ -245,53 +210,9 @@ class DONT_USE_OBSOLETE():
             y = eater(res)
             return ast.MatchPairs(y, t, self.input)
 
-        @self.pg.production("symbol_list : empty_list")
-        @self.pg.production("symbol_list : LBRACKET strict_symbols RBRACKET")
-        def symbol_list(state, p):
-            if len(p) < 3:
-                return ast.EmptyCollection(
-                    CollTypes.LIST,
-                    [],
-                    p[0],
-                    self.input)
-            else:
-                return p[1]
-
-        @self.pg.production("symbol_only_list : empty_list")
-        @self.pg.production(
-            "symbol_only_list : LBRACKET symbols_only RBRACKET")
-        def symbol_only_list(state, p):
-            if len(p) < 3:
-                return ast.EmptyCollection(
-                    CollTypes.LIST,
-                    [],
-                    p[0],
-                    self.input)
-            else:
-                return p[1]
-
         @self.pg.production('symbol : MATCH_EXPRREF')
         def matchexprref(state, p):
             return ast.MatchExpressionRef(p[0].getstr(), p[0], self.input)
-
-        @self.pg.production('symbol : MATH_REF')
-        def symbol_mathref(state, p):
-            return ast.Symbol(math_func(p[0]), p[0], self.input)
-
-        @self.pg.production('symbol : IF_REF')
-        @self.pg.production('symbol : EQ_REF')
-        @self.pg.production('symbol : LT_REF')
-        @self.pg.production('symbol : GT_REF',)
-        @self.pg.production('symbol : LTEQ_REF')
-        @self.pg.production('symbol : GTEQ_REF')
-        @self.pg.production('symbol : NOTEQ_REF')
-        def symbol_logref(state, p):
-            # This needs a lookup resolver
-            return ast.Symbol(p[0].getstr(), p[0], self.input)
-
-        @self.pg.production('symbol : SYMBOL')
-        def symbol(state, p):
-            return ast.Symbol(p[0].getstr(), p[0], self.input)
 
     def get_parser(self):
         return self.pg.build()
@@ -508,7 +429,8 @@ class AParser(object):
 
     @methdispatch
     def _parse(self, token, frame):
-        _panic("{}:{} Not being handled {}", token)
+        x = "{}".format(frame)
+        _panic("{}:{} Not being handled {} " + x, token)
 
     @_parse.register(MODULE)
     def parse_module(self, token, frame):
@@ -645,6 +567,9 @@ class AParser(object):
         return frame
 
     def _process_call(self, token, frame):
+        """Construct the function call"""
+        # Maybe able to take advantage of the function
+        # signatures here
         fcall = ast.FunctionCall.generate(
             token.token.getstr(),
             frame, token.token, self.input, self.state)
@@ -664,7 +589,24 @@ class AParser(object):
     @_parse.register(NOTEQ_CALL)
     @_parse.register(MATH_CALL)
     def parse_call(self, token, frame):
+        """Parse a function call"""
         return self._process_call(token, frame)
+
+    @_parse.register(LAMBDA)
+    def parse_lambda(self, token, frame):
+        if len(frame) < 2:
+            _malformed(token)
+        if not isinstance(frame[0], ast.CollectionAst):
+            _panic("{}:{} Lambda expect argument signature {}", token)
+        elif frame[0].ctype is not CollTypes.LIST:
+            _panic("{}:{} Lambda expect argument list {}", token)
+
+        arguments = frame.pop(0)
+        expression = [frame.pop(0)]
+        frame.insert(
+            0,
+            ast.Lambda(arguments, expression, token, self.input))
+        return frame
 
     def group_partial_handdler(self, token, frame, clz):
         """Handle either group or partial"""

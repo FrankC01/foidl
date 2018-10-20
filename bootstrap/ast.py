@@ -700,6 +700,11 @@ class CollectionAst(FoidlAst):
     def elements(self):
         pass
 
+    @property
+    @abstractmethod
+    def ctype(self):
+        pass
+
 
 class SymbolList(CollectionAst):
     def __init__(self, value):
@@ -707,6 +712,10 @@ class SymbolList(CollectionAst):
 
     def elements(self):
         return len(self.value)
+
+    @property
+    def ctype(self):
+        return CollTypes.LIST
 
     def eval(self, bundle, leader):
         for c in self.value:
@@ -721,6 +730,10 @@ class EmptyCollection(CollectionAst):
 
     def elements(self):
         return 0
+
+    @property
+    def ctype(self):
+        return self.type
 
     @classmethod
     def generate(cls, ct, t, src):
@@ -758,6 +771,10 @@ class Collection(CollectionAst):
 
     def elements(self):
         return len(self.value)
+
+    @property
+    def ctype(self):
+        return CollTypes.LIST
 
     def eval(self, bundle, leader):
         if self.type is CollTypes.VECTOR:
@@ -1232,7 +1249,6 @@ class Partial(FoidlAst):
         self.name = "partial_" + str(sp.lineno) + "_" + str(sp.colno)
 
     def _partial_ok(self, parray):
-        print("PARTIAL OK {}".format(parray))
         if type(parray[0]) is not ParseSymbol:
             raise errors.SymbolException(
                 "Partial does not expect type {} in first position".format(

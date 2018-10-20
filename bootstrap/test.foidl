@@ -19,3 +19,4 @@ func :private d [foo?]
     @(
         (foo_twoarg foo?)
     )
+    ^[f g] +: f g
