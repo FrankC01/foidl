@@ -108,11 +108,6 @@ def math_func(token):
 
 class DONT_USE_OBSOLETE():
     def __init__(self, mlexer, input):
-        # A list of all token names accepted by the parser.
-        # self.pg = ParserGenerator(
-        #     mlexer.get_tokens(),
-        #     # precedence=[])
-        #     precedence=[])
         self._input = input
 
     @property
@@ -123,7 +118,6 @@ class DONT_USE_OBSOLETE():
 
         # @self.pg.production('expression : math_call')
         @self.pg.production('expression : logic_call')
-        @self.pg.production('expression : partial')
         @self.pg.production('expression : group')
         @self.pg.production('expression : lambda')
         @self.pg.production('expression : if')
@@ -154,13 +148,6 @@ class DONT_USE_OBSOLETE():
                 t.getstr(), p, t, self.input, state)
             # print("FC returning {}".format(fcall))
             return fcall
-
-        @self.pg.production('partial : LPAREN expressions RPAREN')
-        def partial(state, p):
-            """Partial parse"""
-            p.pop(2)
-            t = p.pop(0)
-            return ast.Partial(p[0].value, t, self.input)
 
         @self.pg.production('group : GROUP RPAREN')
         @self.pg.production('group : GROUP expressions RPAREN')
@@ -310,6 +297,22 @@ class DONT_USE_OBSOLETE():
         return self.pg.build()
 
 
+def _panic(cause, token):
+    raise errors.ParseError(
+        cause.format(
+            token.getsourcepos().lineno,
+            token.getsourcepos().colno,
+            token.gettokentype()))
+
+
+def _malformed(token):
+    _panic("{}:{} Badly formed statement for {}", token)
+
+
+def _unexpected(token):
+    _panic("{}:{} Unexpected expression for {}", token)
+
+
 class _TDParser(object):
 
     _ttype_tuple = (INCLUDE, VAR, FUNC)
@@ -355,7 +358,7 @@ class _TDParser(object):
         elif self.nafter.gettokentype() == "SYMBOL":
             symlist.append(self.nafter)
         else:
-            raise IOError
+            _malformed(self.nafter)
         [self._include.append(
             ast.Symbol(x.getstr(), x, self.input)) for x in symlist
             if x.gettokentype() == 'SYMBOL']
@@ -370,21 +373,20 @@ class _TDParser(object):
                 if stuff and stuff[0].gettokentype() == 'SYMBOL':
                     symbol = stuff[0]
             else:
-                raise IOError
+                _malformed(self.nafter)
         elif self.nafter.gettokentype() == 'SYMBOL':
             symbol = self.nafter
         else:
-            raise IOError
+            _malformed(self.nafter)
 
         vhdr = self._vfhdrs.get(symbol.getstr(), None)
         if vhdr:
             print("Redefinition of var {}".format(symbol.getstr()))
-            raise IOError
+            _malformed(self.nafter)
 
         self._vfhdrs[symbol.getstr()] = ast.VarHeader(
             ast.Symbol(symbol.getstr(), symbol, self.input),
             symbol, self.input, private)
-
 
     def function(self):
         symbol = None
@@ -401,7 +403,7 @@ class _TDParser(object):
         elif self.nafter.gettokentype() == 'SYMBOL':
             symbol = self.nafter
         else:
-            raise IOError
+            _malformed(self.nafter)
 
         x = next(self.tokens)
         if x and x.gettokentype() == 'LBRACKET':
@@ -417,13 +419,13 @@ class _TDParser(object):
                 arguments = ast.Collection(
                     CollTypes.LIST, args, x, self.input)
         else:
-            raise IOError()
+            _malformed(x)
 
         hit, stuff = self.tokens.get_until(self._ttype_tuple, True)
         fhdr = self._vfhdrs.get(symbol.getstr(), None)
         if fhdr:
             print("Redefinition of func {}".format(symbol.getstr()))
-            raise IOError
+            _malformed(self.nafter)
 
         self._vfhdrs[symbol.getstr()] = ast.FuncHeader(
             ast.Symbol(symbol.getstr(), symbol, self.input),
@@ -484,19 +486,6 @@ class AParser(object):
         self._state = None
         self._locals = None
 
-    def _panic(self, cause, token):
-        raise errors.ParseError(
-            cause.format(
-                token.getsourcepos().lineno,
-                token.getsourcepos().colno,
-                token.getstr()))
-
-    def _malformed(self, token):
-        self._panic("{}:{} Badly formed statement for {}", token)
-
-    def _unexpected(self, token):
-        self._panic("{}:{} Unexpected expression for {}", token)
-
     @property
     def input(self):
         return self._input
@@ -519,21 +508,19 @@ class AParser(object):
 
     @methdispatch
     def _parse(self, token, frame):
-        print("{} not handled yet".format(token))
-        frame.insert(0, token)
-        return frame
+        _panic("{}:{} Not being handled {}", token)
 
     @_parse.register(MODULE)
     def parse_module(self, token, frame):
         symbol = None
         # Edge - var token only at end
         if not frame:
-            self._malformed(token)
+            _malformed(token)
         if isinstance(frame[0], ast.Symbol):
             symbol = frame.pop(0)
             return [ast.Module(symbol, frame, token, self.input)]
         else:
-            self._panic("{}:{} Expected symbol for {}", token)
+            _panic("{}:{} Expected symbol for {}", token)
 
     @_parse.register(VAR)
     def parse_variable(self, token, frame):
@@ -550,7 +537,7 @@ class AParser(object):
         expression = None
         # Edge - var token only at end
         if not frame:
-            self._malformed(token)
+            _malformed(token)
 
         # Check first for private
         if isinstance(frame[0], ast.LiteralReference):
@@ -567,13 +554,13 @@ class AParser(object):
 
         # Should never get here due to pre-parse
         if not frame:
-            self._panic("{}:{} Missing symbol for {}", token)
+            _panic("{}:{} Missing symbol for {}", token)
 
         if isinstance(frame[0], ast.Symbol):
             symbol = frame.pop(0)
         # Should never get here due to pre-parse
         else:
-            self._panic("{}:{} Expected symbol for {}", token)
+            _panic("{}:{} Expected symbol for {}", token)
 
         # Check for expression existance
         if frame:
@@ -583,7 +570,7 @@ class AParser(object):
 
         hdr = self._locals.get(symbol.name, None)
         if not hdr:
-            self._panic("{}:{} Variable {} not in symbol table", symbol.token)
+            _panic("{}:{} Variable {} not in symbol table", symbol.token)
         frame.insert(
             0,
             ast.Variable(
@@ -599,7 +586,7 @@ class AParser(object):
 
         # Edge - func token only at end
         if not frame:
-            self._malformed(token)
+            _malformed(token)
         # Check first for private
         if isinstance(frame[0], ast.LiteralReference):
             if frame[0].value == ":private":
@@ -614,18 +601,18 @@ class AParser(object):
                         frame[0].value))
         # Should never get here due to pre-parse, but
         if not frame:
-            self._panic("{}:{} Missing symbol for {}", token)
+            _panic("{}:{} Missing symbol for {}", token)
 
         if isinstance(frame[0], ast.Symbol):
             symbol = frame.pop(0)
         else:
-            self._panic("{}:{} Expected symbol for {}", token)
+            _panic("{}:{} Expected symbol for {}", token)
 
         # Should never get here due to pre-parse, but
         if not frame:
-            self._panic("{}:{} Missing function arguments", token)
+            _panic("{}:{} Missing function arguments", token)
         elif not isinstance(frame[0], ast.CollectionAst):
-            self._panic("{}:{} Expected function arguments", token)
+            _panic("{}:{} Expected function arguments", token)
         else:
             arguments = frame.pop(0)
 
@@ -634,7 +621,7 @@ class AParser(object):
             for x in arguments.value:
                 if ((not isinstance(x, ast.Symbol) or
                         x.token.gettokentype() not in self._strict_symtokens)):
-                    self._panic(
+                    _panic(
                         "{}:{} Invalid symbol in arguments for {}", token)
 
         expressions = []
@@ -650,7 +637,7 @@ class AParser(object):
 
         hdr = self._locals.get(symbol.name, None)
         if not hdr:
-            self._panic("{}:{} Function {} not in symbol table", symbol.token)
+            _panic("{}:{} Function {} not in symbol table", symbol.token)
 
         frame.insert(
             0,
@@ -679,6 +666,46 @@ class AParser(object):
     def parse_call(self, token, frame):
         return self._process_call(token, frame)
 
+    def group_partial_handdler(self, token, frame, clz):
+        """Handle either group or partial"""
+        index = next(
+            (i for i, item in enumerate(frame)
+                if isinstance(item, RPAREN)), -1)
+        if index < 0:
+            _panic("{}:{} Expression requires terminating ')' {}", token)
+        # If rparen is index 0, it is empty expression
+        elif index == 0:
+            frame.pop(0)
+        else:
+            value = frame[0:index]
+            frame = frame[index + 1:]
+            # If there is only 1 value and it is same type
+            # insert the value back into frame, optimizing
+            # away the outer type
+            if len(value) == 1 and isinstance(value[0], clz):
+                frame.insert(0, value[0])
+            else:
+                frame.insert(
+                    0,
+                    clz(value, token, self.input))
+        return frame
+
+    @_parse.register(GROUP)
+    def parse_group(self, token, frame):
+        """Parse Group expression"""
+        return self.group_partial_handdler(token, frame, ast.Group)
+
+    @_parse.register(LPAREN)
+    def parse_partial(self, token, frame):
+        """Prase LPAREN which indicates a partial expression"""
+        return self.group_partial_handdler(token, frame, ast.Partial)
+
+    @_parse.register(RPAREN)
+    def parse_rparen(self, token, frame):
+        """Parse partial or group expression terminators"""
+        frame.insert(0, token)
+        return frame
+
     @_parse.register(LANGLE)
     @_parse.register(LBRACKET)
     @_parse.register(LBRACE)
@@ -691,15 +718,21 @@ class AParser(object):
             (i for i, item in enumerate(frame)
                 if hasattr(item, 'getstr')
                 if item.getstr() == rhs), -1)
+        # No matching closing token
         if index < 0:
-            # This is an exception
-            raise IOError
+            _panic("{}:{} Unexpected {}", token)
+        # Empty collection
         elif index == 0:
             frame.pop(0)
             item = ast.EmptyCollection.generate(ctype, token, self.input)
+        # Collection with elements
         else:
             value = frame[0:index]
             frame = frame[index + 1:]
+            if isinstance(token, LBRACE) and len(value) % 2 != 0:
+                _panic(
+                    "{}:{} Map data types requires even number of elements",
+                    token)
             item = ast.Collection(ctype, value, token, self.input)
         frame.insert(0, item)
         return frame
@@ -708,16 +741,20 @@ class AParser(object):
     @_parse.register(RBRACKET)
     @_parse.register(RBRACE)
     def parse_collection_stop(self, token, frame):
+        """Parse collection type terminators"""
         frame.insert(0, token)
         return frame
 
-    @_parse.register(IF_REF)
     @_parse.register(EQ_REF)
     @_parse.register(LT_REF)
     @_parse.register(GT_REF)
     @_parse.register(LTEQ_REF)
     @_parse.register(GTEQ_REF)
     @_parse.register(NOTEQ_REF)
+    def parse_common_references(self, token, frame):
+        frame.insert(0, ast.Symbol(token.getstr(), token.token, self.input))
+        return frame
+
     @_parse.register(SYMBOL)
     @_parse.register(SYMBOL_BANG)
     @_parse.register(SYMBOL_PRED)
@@ -752,8 +789,6 @@ class AParser(object):
             ar = []
             while self.tokens.ismore:
                 ar = self._parse(next(self.tokens), ar)
-                if not ar:
-                    break
             # for x in ar[0].value:
             #     print(x)
             return ast.CompilationUnit(ar)

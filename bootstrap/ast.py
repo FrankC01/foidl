@@ -391,19 +391,35 @@ class Symbol(FoidlAst):
     def eval(self, bundle, leader):
         LOGGER.info("Symbol processing for {}".format(self.name))
         LOGGER.info(self.name)
-        # sym = self.extern_symbol(cname, call_site.name, self.source)
+        resolved = False
+        wk = WellKnowns.get(self.name, None)
         sym = bundle.symtree.resolve_symbol(self.name)
         if sym:
             if self.source != sym.source:
                 if not bundle.externs.get(self.name, None):
                     bundle.externs[self.name] = sym
-            # print("Symbol = {}".format(sym))
+            resolved = True
             leader.append(ParseSymbol(
                 ExpressionType.SYMBOL_REF,
                 [sym],
                 self.token,
                 self.name))
+        elif wk:
+            sym = bundle.symtree.resolve_symbol(wk)
+            if sym:
+                if self.source != sym.source:
+                    if not bundle.externs.get(wk, None):
+                        bundle.externs[wk] = sym
+                resolved = True
+                leader.append(ParseSymbol(
+                    ExpressionType.SYMBOL_REF,
+                    [sym],
+                    self.token,
+                    self.name))
         else:
+            pass
+
+        if not resolved:
             raise errors.SymbolException(
                 "{}:{} unresolved symbol {}".format(
                     self.token.getsourcepos().lineno,
@@ -1216,6 +1232,7 @@ class Partial(FoidlAst):
         self.name = "partial_" + str(sp.lineno) + "_" + str(sp.colno)
 
     def _partial_ok(self, parray):
+        print("PARTIAL OK {}".format(parray))
         if type(parray[0]) is not ParseSymbol:
             raise errors.SymbolException(
                 "Partial does not expect type {} in first position".format(
@@ -1264,7 +1281,7 @@ class Partial(FoidlAst):
 
     @methdispatch
     def _eval_partial(self, ktype, array, bundle, leader):
-        print("_eval_partial unhandled {}".format(ktype))
+        errors.SymbolException("_eval_partial unhandled for {}".format(ktype))
 
     @_eval_partial.register(FuncReference)
     def _epfr(self, ktype, array, bundle, leader):
