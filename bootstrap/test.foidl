@@ -7,6 +7,7 @@ include foo
 
 var v <>
 var :private a +: 1 1
+var :private lammy ^[f g] +: f g
 
 func :private b []
     +: 2 2
@@ -16,7 +17,9 @@ func c [a b]
     *: 2 2
 
 func :private d [foo?]
-    @(
-        (foo_twoarg foo?)
-    )
-    ^[f g] +: f g
+
+    let [m +: 5 7]
+        @(
+            (lammy m)
+        )
+

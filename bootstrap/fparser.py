@@ -117,7 +117,6 @@ class DONT_USE_OBSOLETE():
     def parse(self):
 
         # @self.pg.production('expression : math_call')
-        @self.pg.production('expression : lambda')
         @self.pg.production('expression : if')
         @self.pg.production('expression : let')
         @self.pg.production('expression : match')
@@ -125,11 +124,6 @@ class DONT_USE_OBSOLETE():
             # print("single expression = {} {}".format(p, p[0]))
             return p[0]
 
-        @self.pg.production('lambda : LAMBDA symbol_list expression')
-        def lambdaexpr(state, p):
-            """Lambda parse"""
-            t = p.pop(0)
-            return ast.Lambda(p.pop(0), p, t, self.input)
 
         @self.pg.production('if : IF expression expression expression')
         def ifexpr(state, p):
@@ -594,6 +588,7 @@ class AParser(object):
 
     @_parse.register(LAMBDA)
     def parse_lambda(self, token, frame):
+        """Parse Lambda expression"""
         if len(frame) < 2:
             _malformed(token)
         if not isinstance(frame[0], ast.CollectionAst):
@@ -606,6 +601,57 @@ class AParser(object):
         frame.insert(
             0,
             ast.Lambda(arguments, expression, token, self.input))
+        return frame
+
+    @_parse.register(MATCH)
+    def parse_match(self, token, frame):
+        """Parse Match expression"""
+        frame.insert(0, token)
+        return frame
+
+    @_parse.register(LET)
+    def parse_let(self, token, frame):
+        """Parse Let expression"""
+        print("Let {}".format(frame))
+        if len(frame) < 2:
+            _malformed(token)
+        # Resolve first as return val versus args
+        letres = None
+        letargs = None
+        letexpr = None
+
+        if isinstance(frame[0], ast.Symbol):
+            letres = frame.pop(0)
+        else:
+            sp = token.getsourcepos()
+            lsym = "let_" + str(sp.lineno) + "_" + str(sp.colno)
+            letres = ast.Symbol(
+                lsym,
+                Token(
+                    "LET_RES",
+                    lsym,
+                    token.getsourcepos()), self.input)
+
+        if isinstance(frame[0], ast.CollectionAst):
+            letargs = frame.pop(0)
+        else:
+            _panic(
+                "{}:{} Let expects local argument pair(s) signature [...] {}",
+                token)
+
+        if letargs.ctype != CollTypes.LIST:
+            _panic(
+                "{}:{} Invalid let argument pair(s) type. Should be [...] {}",
+                token)
+
+        if len(frame) < 1:
+            _panic("{}:{} Missing Let expression {}", token)
+
+        letexpr = [frame.pop(0)]
+        letargs = ast.LetPairs(letargs.value)
+        frame.insert(
+            0,
+            ast.Let(letres, letargs, letexpr, token, self.input))
         return frame
 
     def group_partial_handdler(self, token, frame, clz):

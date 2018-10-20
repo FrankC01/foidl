@@ -726,7 +726,7 @@ class EmptyCollection(CollectionAst):
     def __init__(self, etype, value, token, src):
         super().__init__(token, src)
         self.type = etype
-        self.value = value
+        self.value = value if value else []
 
     def elements(self):
         return 0
@@ -872,6 +872,10 @@ class LetPairs(CollectionAst):
     def prefix(self):
         return self._prefix
 
+    @property
+    def ctype(self):
+        return CollTypes.LIST
+
     @prefix.setter
     def prefix(self, prefix):
         self._prefix = prefix
@@ -916,52 +920,6 @@ class Let(FoidlAst):
     @property
     def letpairs(self):
         return self._letpairs
-
-    @classmethod
-    def generate(cls, p, src):
-        t = p.pop(0)    # Get the 'LET' token
-        # Identify symbol if exists
-        if type(p[0]) is Symbol:
-            symbol = p.pop(0)
-        else:
-            sp = t.getsourcepos()
-            lsym = "let_" + str(sp.lineno) + "_" + str(sp.colno)
-            symbol = Symbol(
-                lsym,
-                Token(
-                    "LET_RES",
-                    lsym,
-                    t.getsourcepos()), src)
-        # Extrapolate letpairs
-        lbindex = p.index(Token('LBRACKET', '['))
-        rbindex = 1 + p.index(Token('RBRACKET', ']'))
-
-        letpairs = [lp for lp in p[lbindex:rbindex]
-                    if type(lp) is not Token]
-        if letpairs:
-            letpairs = letpairs[0]
-        else:
-            letpairs = EmptyCollection.generate(
-                CollTypes.LIST, t, src)
-            # letpairs = EmptyCollection(CollTypes.LIST, [], t, src)
-
-        # Remove letpair range
-        del p[lbindex:rbindex]
-
-        # If value at 0 is list, get inner list
-        if type(p[0]) is list:
-            value = p[0]
-        else:
-            value = p
-
-        # if too many elements, structure expressions
-        # so [<let> <residuals>]
-        if len(value) > 1:
-            mylet = Let(symbol, letpairs, [value.pop(0)], t, src)
-            value.insert(0, mylet)
-            return value
-        else:
-            return Let(symbol, letpairs, value, t, src)
 
     def eval(self, bundle, leader):
         # Push Let scope on bundle
