@@ -47,6 +47,7 @@ STATIC_LIB   := $(LIB)$(foidlrt_LIB)
 BHDRFLAGS := -I $(HDRS) -r -a hdr
 BCFLAGS := -I $(HDRS) -r
 CLFLAG   = -Wall -c -I$(INC)
+CLLFLAGS = -march=x86-64 -fPIC -O3 -c
 LLCFLAGS = -march=x86-64 -x86-asm-syntax=intel -relocation-model=pic -O3 -filetype=obj
 
 # Substitutions for recipe patterns
@@ -82,7 +83,7 @@ $(LLS):
 	mkdir ll
 
 objs/%.o : ll/%.ll
-	$(LLC) $< $(LLCFLAGS) -o $@
+	$(CLC) $< $(CLLFLAGS) -o $@
 
 $(FOBJS):$(FLLS) | $(OBJS)
 

@@ -16,6 +16,7 @@
 
 import logging
 import pprint
+import traceback
 from functools import singledispatch, update_wrapper
 
 from rply import Token
@@ -75,6 +76,8 @@ def _panic(cause, token):
 
 
 def _malformed(token):
+    print("Token = {}".format(token))
+    traceback.print_stack()
     _panic("{}:{} Badly formed statement for {}", token)
 
 
@@ -183,7 +186,7 @@ class _TDParser(object):
                     symbol = x
                 else:
                     raise IOError
-        elif self.nafter.gettokentype() == 'SYMBOL':
+        elif self.nafter.gettokentype() in ['SYMBOL', 'SYMBOL_PRED', 'SYMBOL_BANG']:
             symbol = self.nafter
         else:
             _malformed(self.nafter)
@@ -719,10 +722,6 @@ class AParser(object):
     def parse_literal(self, token, frame):
         entry = _literal_entry(self.state.literals, token.token, self.input)
         frame.insert(0, entry)
-        return frame
-
-    @_parse.register(COMMA)
-    def parse_ignore(self, token, frame):
         return frame
 
     def parse(self, tokens=None, state=None):

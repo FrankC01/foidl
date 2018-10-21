@@ -44,15 +44,15 @@ class Lexer():
         self.lexer.add('LTEQ_CALL', r"<=:")
         self.lexer.add('GTEQ_CALL', r">=:")
         self.lexer.add('NOTEQ_CALL', r"not=:")
-        self.lexer.add('EQ_REF', r"eq")
-        self.lexer.add('LT_REF', r"lt")
-        self.lexer.add('GT_REF', r"gt")
-        self.lexer.add('LTEQ_REF', r"lteq")
-        self.lexer.add('GTEQ_REF', r"gteq")
-        self.lexer.add('NOTEQ_REF', r"neq")
+        # self.lexer.add('EQ_REF', r"eq")
+        # self.lexer.add('LT_REF', r"lt")
+        # self.lexer.add('GT_REF', r"gt")
+        # self.lexer.add('LTEQ_REF', r"lteq")
+        # self.lexer.add('GTEQ_REF', r"gteq")
+        # self.lexer.add('NOTEQ_REF', r"neq")
         # Modifiers
         self.lexer.add('AMP', r'&')
-        self.lexer.add('COMMA', r',')
+        # self.lexer.add('COMMA', r',')
         # Parenthesis
         self.lexer.add('LSET', r"#{")
         self.lexer.add('LPAREN', r"\(")
@@ -79,8 +79,8 @@ class Lexer():
         # self.lexer.add('RANGE', r"[0-9]+[\.]{3}[0-9]+")
         # Symbol Identifiers
         self.lexer.add('FUNC_CALL', r"[a-zA-Z][a-zA-Z0-9_]*:")
-        self.lexer.add('FUNC_BANG', r"[a-zA-Z]([a-zA-Z0-9_]*)?!:\b")
-        self.lexer.add('FUNC_PRED', r"[a-zA-Z]([a-zA-Z0-9_]*)?\?:\b")
+        self.lexer.add('FUNC_BANG', r"[a-zA-Z]([a-zA-Z0-9_]*)?!:")
+        self.lexer.add('FUNC_PRED', r"[a-zA-Z]([a-zA-Z0-9_]*)?\?:")
         self.lexer.add('MATH_CALL', r"[+/*-]{1}:")
         self.lexer.add('MATH_REF', r"[+/*-]{1}")
         # self.lexer.add('LOGICOP_CALL', r'(= | < | <= | > | >= | not=):')
@@ -90,6 +90,8 @@ class Lexer():
         self.lexer.add('SYMBOL', r"\b[a-zA-Z]([a-zA-Z0-9_]*)?")
         # Ignore comments
         self.lexer.ignore(r";.*?\n")
+        # Ignore comma's
+        self.lexer.ignore(r',')
         # Ignore spaces
         self.lexer.ignore(r"\s+")
 

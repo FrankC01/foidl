@@ -97,8 +97,6 @@ class SYMBOL(FoidlTokenType): pass
 class SYMBOL_BANG(FoidlTokenType): pass
 class SYMBOL_PRED(FoidlTokenType): pass
 
-class COMMA(FoidlTokenType): pass
-
 
 def foidl_tfactory(cname, token):
     if not globals().get(cname, None):

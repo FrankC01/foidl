@@ -15,13 +15,26 @@ func :private b []
 func c [r g]
     +: r -: g *: 2 2
 
+func pigmy! [x]
+
+func pigmy? []
+
 
 func :private d [foo?]
+
+    pigmy!: eq
+    pigmy!: lt
+    pigmy!: gt
+    pigmy!: lteq
+    pigmy!: gteq
+    pigmy!: neq
+
+    pigmy?:
 
     let from [m +: 5 7]
         (foo_twoarg m)
 
-     ?: from
+     ?: lt: 10 9
         true
         match f b
         | 7 %0
