@@ -676,13 +676,8 @@ class Function(FoidlAst):
         # Eval children
         expr = []
         for e in self.value:
-            if type(e) is Expressions:
-                for z in e.value:
-                    LOGGER.info("Processing {}".format(z))
-                    z.eval(bundle, expr)
-            else:
-                LOGGER.info("Processing {}".format(e))
-                e.eval(bundle, expr)
+            LOGGER.info("Processing {}".format(e))
+            e.eval(bundle, expr)
         leader.append(
             ParseFunction(
                 ExpressionType.FUNCTION,
@@ -803,33 +798,6 @@ class Collection(CollectionAst):
                 members,
                 self.token,
                 self.ident))
-
-
-class ExpressionList(FoidlAst):
-    def __init__(self, value):
-        self.value = value
-
-    def eval(self, bundle, leader):
-        for c in self.value:
-            c.eval(bundle, leader)
-
-
-class Expressions(FoidlAst):
-    def __init__(self, value):
-        self.value = value
-
-    def eval(self, bundle, leader):
-        for e in self.value:
-            e.eval(bundle, leader)
-
-
-class Expression(FoidlAst):
-    def __init__(self, value):
-        self.value = value
-
-    def eval(self, bundle, leader):
-        for e in self.value:
-            e.eval(bundle, leader)
 
 
 class Group(FoidlAst):
@@ -1054,6 +1022,10 @@ class MatchPairs(CollectionAst):
         return len(self.value)
 
     @property
+    def ctype(self):
+        return CollTypes.LIST
+
+    @property
     def prefix(self):
         return self._prefix
 
@@ -1132,7 +1104,7 @@ class Match(FoidlAst):
         # Register result in symbol table
         bundle.symtree.register_symbol(self.exprres.value, mexpr)
         exprs = []
-        self.value[0].eval(bundle, exprs)
+        self.value.eval(bundle, exprs)
         # Deregister scope symbol table
         bundle.symtree.pop_scope()
 
@@ -1301,22 +1273,6 @@ class If(FoidlAst):
     def ident(self):
         return self._ident
 
-    @classmethod
-    def generate(cls, value, token, src):
-        if len(value) > 3:
-            rem = value[3:]
-            el = If(value[0:3], token, src)
-            rem.insert(0, el)
-            return rem
-        elif len(value) < 3:
-            LOGGER.warn("If")
-            cls.dump(value, 2)
-            raise errors.SyntaxError(
-                "If expects 3 expressions: pred then else {} got {}".format(
-                    token.getsourcepos(), value))
-        else:
-            return If(value, token, src)
-
     def eval(self, bundle, leader):
         pred = []
         self._pred.eval(bundle, pred)
@@ -1337,19 +1293,12 @@ class If(FoidlAst):
 class FunctionCall(FoidlAst):
     def __init__(self, csite, value, token, src):
         super().__init__(token, src)
-        if value and type(value[0]) is Expressions:
-            self.value = value[0].value
-        else:
-            self.value = value
+        self.value = value
         self.call_site = csite
 
     @classmethod
     def generate(cls, csite, value, token, src, state):
-        if value:
-            if type(value[0]) is Expressions:
-                bvalue = value[0].value
-            else:
-                bvalue = value
+        bvalue = value
         call_site = WellKnowns.get(csite[:-1], csite[:-1])
         cref = state.symtree.resolve_symbol(call_site)
         if cref:

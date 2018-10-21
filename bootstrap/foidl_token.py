@@ -71,7 +71,7 @@ class GROUP(FoidlTokenType): pass
 class IF(FoidlTokenType): pass
 
 class MATCH(FoidlTokenType): pass
-class MATCH_PATTERN(FoidlTokenType): pass
+class MATCH_GUARD(FoidlTokenType): pass
 class MATCH_EXPRREF(FoidlTokenType): pass
 class MATCH_DEFAULT(FoidlTokenType): pass
 
@@ -85,7 +85,7 @@ class INTEGER(FoidlTokenType): pass
 class KEYWORD(FoidlTokenType): pass
 class EQ_CALL(FoidlTokenType): pass
 
-class IF_REF(FoidlTokenType): pass
+class MATH_REF(FoidlTokenType): pass
 class EQ_REF(FoidlTokenType): pass
 class LT_REF(FoidlTokenType): pass
 class GT_REF(FoidlTokenType): pass

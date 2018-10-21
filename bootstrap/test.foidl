@@ -12,14 +12,18 @@ var :private lammy ^[f g] +: f g
 func :private b []
     +: 2 2
 
-func c [a b]
-    +: a -: b 2
-    *: 2 2
+func c [r g]
+    +: r -: g *: 2 2
+
 
 func :private d [foo?]
 
-    let [m +: 5 7]
-        @(
-            (lammy m)
-        )
+    let from [m +: 5 7]
+        (foo_twoarg m)
+
+     ?: from
+        true
+        match f b
+        | 7 %0
+        | :default a
 

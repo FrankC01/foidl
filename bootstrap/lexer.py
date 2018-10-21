@@ -33,8 +33,8 @@ class Lexer():
         self.lexer.add('MATCH_DEFAULT', r'\b:default\b')
         # self.lexer.add('PRIVATE', r':private')
         self.lexer.add('LAMBDA', r"\^")
-        self.lexer.add('MATCH_PATTERN', r'\|')
-        self.lexer.add('MATCH_EXPRREF', r'\b%0\b')
+        self.lexer.add('MATCH_GUARD', r'\|')
+        self.lexer.add('MATCH_EXPRREF', r'%0')
         self.lexer.add('GROUP', r'@\(')
         self.lexer.add('IF', r'\?:')
         # Boolean operators

@@ -53,31 +53,6 @@ def _collection_type(p0):
     return x
 
 
-def _token_eater(in_list, base_type, out_list=None):
-    if not out_list:
-        out_list = []
-    for n in in_list:
-        if type(n) is not Token:
-            if type(n) is base_type:
-                _token_eater(n.value, base_type, out_list)
-            else:
-                out_list.append(n)
-        else:
-            pass
-    return base_type(out_list)
-
-
-def _flatten_list(in_list, out_list=None):
-    if not out_list:
-        out_list = []
-    for n in in_list:
-        if type(n) is list:
-            out_list = _flatten_list(n, out_list)
-        else:
-            out_list.append(n)
-    return out_list
-
-
 def _literal_entry(literals, token, srcstr):
     ttype = token.gettokentype()
     tval = token.getstr()
@@ -89,127 +64,6 @@ def _literal_entry(literals, token, srcstr):
             token, srcstr)
         littype[tval] = litref
     return litref
-
-
-def math_func(token):
-    s = token.getstr()
-    if s == "+":
-        return "add"
-    elif s == "*":
-        return "mul"
-    elif s == "/":
-        return "div"
-    elif s == "-":
-        return "sub"
-    else:
-        raise errors.ParseError(
-            "{} not recognized as math operator".format(s))
-
-
-class DONT_USE_OBSOLETE():
-    def __init__(self, mlexer, input):
-        self._input = input
-
-    @property
-    def input(self):
-        return self._input
-
-    def parse(self):
-
-        # @self.pg.production('expression : math_call')
-        @self.pg.production('expression : if')
-        @self.pg.production('expression : let')
-        @self.pg.production('expression : match')
-        def expression(state, p):
-            # print("single expression = {} {}".format(p, p[0]))
-            return p[0]
-
-
-        @self.pg.production('if : IF expression expression expression')
-        def ifexpr(state, p):
-            """If parse"""
-            i = p.pop(0)
-            return ast.If.generate(_flatten_list(p), i, self.input)
-
-        @self.pg.production('let : LET let_locals expression')
-        @self.pg.production(
-            'let : LET strict_symbol let_locals expression')
-        def letexpr(state, p):
-            """Let parse"""
-            return ast.Let.generate(_flatten_list(p), self.input)
-
-        @self.pg.production("let_locals : LBRACKET RBRACKET")
-        @self.pg.production("let_locals : LBRACKET letpairs RBRACKET")
-        def let_locals(state, p):
-            return p
-
-        @self.pg.production('letpairs : strict_symbol expression')
-        @self.pg.production('letpairs : strict_symbol expression letpairs')
-        def letpairs(state, p):
-            """Let parse support for zero or more local var assignments"""
-            return _token_eater(_flatten_list(p), ast.LetPairs)
-
-        @self.pg.production('match : MATCH expression matchpairs')
-        @self.pg.production(
-            'match : MATCH strict_symbol expression matchpairs')
-        def match(state, p):
-            """Match parse"""
-            # print("Match expr {}".format(p))
-            t = p.pop(0)
-            mres = None
-            if len(p) == 3:
-                mres = p.pop(0)
-            mpred = p.pop(0)
-            return ast.Match(
-                mres, mpred,
-                [x for x in p if type(x) is not Token], t, self.input)
-
-        @self.pg.production(
-            'matchpairs : MATCH_PATTERN expression expression')
-        @self.pg.production(
-            'matchpairs : MATCH_PATTERN expression expression matchpairs')
-        @self.pg.production(
-            'matchpairs : MATCH_PATTERN MATCH_DEFAULT expression')
-        def matchpairs(state, p):
-            # print("Match Pair {}".format(p))
-            t = p.pop(0)
-
-            def eater(in_list):
-                out_list = []
-                for n in in_list:
-                    if type(n) is ast.MatchPair:
-                        out_list.append(n)
-                    elif type(n) is ast.MatchPairs:
-                        out_list.extend(eater(n.value))
-                    else:
-                        print("MATCH PAIRS UNKNOWN {}".format(n))
-                return out_list
-
-            def isdef(el):
-                return True \
-                    if type(el) is Token and \
-                    el.getstr() == ':default' else False
-
-            res = []
-            if len(p) == 2:
-                res.append(ast.MatchPair(p, t, self.input, isdef(p[0])))
-            elif len(p) > 2:
-                pattern = p.pop(0)
-                expr = p.pop(0)
-                elem = ast.MatchPair(
-                    [pattern, expr], t, self.input, isdef(pattern))
-                p.insert(0, elem)
-                res = p
-
-            y = eater(res)
-            return ast.MatchPairs(y, t, self.input)
-
-        @self.pg.production('symbol : MATCH_EXPRREF')
-        def matchexprref(state, p):
-            return ast.MatchExpressionRef(p[0].getstr(), p[0], self.input)
-
-    def get_parser(self):
-        return self.pg.build()
 
 
 def _panic(cause, token):
@@ -226,6 +80,20 @@ def _malformed(token):
 
 def _unexpected(token):
     _panic("{}:{} Unexpected expression for {}", token)
+
+
+def _unexpected_declaration(token, decltype):
+    raise errors.ParseError(
+        "{}:{} Unexpected type {} found in expression {}".format(
+            token.getsourcepos().lineno,
+            token.getsourcepos().colno,
+            decltype,
+            token.gettokentype()))
+
+
+def _check_no_declarations(token, values, decltypes):
+    [_unexpected_declaration(token, x) for x in values
+        if isinstance(x, decltypes)]
 
 
 class _TDParser(object):
@@ -568,9 +436,11 @@ class AParser(object):
             token.token.getstr(),
             frame, token.token, self.input, self.state)
         if isinstance(fcall, ast.FoidlAst):
-            return [fcall]
+            fcall = [fcall]
         else:
-            return fcall
+            pass
+        # _check_no_declarations(token, fcall, self._decl_set)
+        return fcall
 
     @_parse.register(FUNC_CALL)
     @_parse.register(FUNC_BANG)
@@ -598,6 +468,7 @@ class AParser(object):
 
         arguments = frame.pop(0)
         expression = [frame.pop(0)]
+        _check_no_declarations(token, expression, self._decl_set)
         frame.insert(
             0,
             ast.Lambda(arguments, expression, token, self.input))
@@ -606,13 +477,84 @@ class AParser(object):
     @_parse.register(MATCH)
     def parse_match(self, token, frame):
         """Parse Match expression"""
-        frame.insert(0, token)
+        matchres = None
+        matchexpr = None
+        matchpairs = None
+        # Must have length expected
+        if len(frame) < 2:
+            _malformed(token)
+        index = next(
+            (i for i, item in enumerate(frame)
+                if isinstance(item, ast.MatchPairs)), -1)
+        # Must have a MatchPairs for semantic correctness
+        if index < 0:
+            _panic(
+                "{}:{} Match requires at least one guard pair '|' {}",
+                token)
+        # Must have at least an expression prior to MatchPairs
+        elif index == 0:
+            _panic(
+                "{}:{} Match requires expression before guard pairs {}",
+                token)
+        # match expression pairs
+        elif index == 1:
+            matchexpr = frame.pop(0)
+            matchpairs = frame.pop(0)
+        # match result expression pairs
+        elif index == 2:
+            if isinstance(frame[0], ast.Symbol):
+                matchres = frame.pop(0)
+            else:
+                _panic("{}:{} Match result must be a symbol", token)
+            matchexpr = frame.pop(0)
+            matchpairs = frame.pop(0)
+        else:
+            _malformed(token)
+        frame.insert(
+            0,
+            ast.Match(matchres, matchexpr, matchpairs, token, self.input))
+        return frame
+
+    @_parse.register(MATCH_GUARD)
+    def parse_match_guard(self, token, frame):
+        if len(frame) < 2:
+            _malformed(token)
+        value = frame[0:2]
+        _check_no_declarations(token, value, self._decl_set)
+        frame = frame[2:]
+        default = False
+        if (isinstance(value[0], ast.LiteralReference) and
+                value[0].value == ':default'):
+                default = True
+        p = ast.MatchPair(
+            value,
+            token,
+            self.input,
+            default)
+        if frame and isinstance(frame[0], ast.MatchPairs):
+            if default:
+                [_panic(
+                    "{}:{} Only one :default expression in match allowed",
+                    token)
+                    for x in frame[0].value if x.default]
+            frame[0].value.append(p)
+        else:
+            frame.insert(
+                0,
+                ast.MatchPairs([p], token, self.input))
+        return frame
+
+    @_parse.register(MATCH_EXPRREF)
+    def parse_match_expression_ref(self, token, frame):
+        """Parse occurance of '%0'"""
+        frame.insert(
+            0,
+            ast.MatchExpressionRef(token.getstr(), token, self.input))
         return frame
 
     @_parse.register(LET)
     def parse_let(self, token, frame):
         """Parse Let expression"""
-        print("Let {}".format(frame))
         if len(frame) < 2:
             _malformed(token)
         # Resolve first as return val versus args
@@ -649,9 +591,22 @@ class AParser(object):
 
         letexpr = [frame.pop(0)]
         letargs = ast.LetPairs(letargs.value)
+        _check_no_declarations(token, letexpr, self._decl_set)
         frame.insert(
             0,
             ast.Let(letres, letargs, letexpr, token, self.input))
+        return frame
+
+    @_parse.register(IF)
+    def parse_if(self, token, frame):
+        if len(frame) < 3:
+            _malformed(token)
+        value = frame[0:3]
+        _check_no_declarations(token, value, self._decl_set)
+        frame = frame[3:]
+        frame.insert(
+            0,
+            ast.If(value, token, self.input))
         return frame
 
     def group_partial_handdler(self, token, frame, clz):
@@ -667,6 +622,8 @@ class AParser(object):
         else:
             value = frame[0:index]
             frame = frame[index + 1:]
+            # Can not contain declaration
+            _check_no_declarations(token, value, self._decl_set)
             # If there is only 1 value and it is same type
             # insert the value back into frame, optimizing
             # away the outer type
@@ -717,6 +674,7 @@ class AParser(object):
         else:
             value = frame[0:index]
             frame = frame[index + 1:]
+            _check_no_declarations(token, value, self._decl_set)
             if isinstance(token, LBRACE) and len(value) % 2 != 0:
                 _panic(
                     "{}:{} Map data types requires even number of elements",
@@ -739,6 +697,7 @@ class AParser(object):
     @_parse.register(LTEQ_REF)
     @_parse.register(GTEQ_REF)
     @_parse.register(NOTEQ_REF)
+    # @_parse.register(MATH_REF)
     def parse_common_references(self, token, frame):
         frame.insert(0, ast.Symbol(token.getstr(), token.token, self.input))
         return frame
