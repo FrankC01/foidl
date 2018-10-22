@@ -9,8 +9,12 @@ __pycache__/
 *.pyc
 *$py.class
 
-# C extensions
+# C and foidl
 *.so
+*.a
+bin/
+obj/
+ll/
 
 # Distribution / packaging
 .Python

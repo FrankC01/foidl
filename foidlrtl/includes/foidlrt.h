@@ -34,7 +34,7 @@ static const ft 	iterator_class	 = 0xfffffffffffffffe;
 //	Type identifiers
 //
 
-//	Support types 
+//	Support types
 
 static const ft 	nil_type 		= 0xffffffffe00000ad;
 static const ft 	end_type 		= 0xffffffffe00000aa;
@@ -50,16 +50,16 @@ static const ft 	integer_type 	= 0xffffffff1000a8a9;
 
 //	Collection types
 
-static const ft 	list2_type      = 0xffffffff100000cf; 
+static const ft 	list2_type      = 0xffffffff100000cf;
 static const ft 	vector2_type 	= 0xffffffff100000ce;
 static const ft 	set2_type       = 0xffffffff100000cd;
-static const ft 	map2_type       = 0xffffffff100000cc; 
+static const ft 	map2_type       = 0xffffffff100000cc;
 
-static const ft 	mapentry_type   = 0xffffffff100000cb; 
+static const ft 	mapentry_type   = 0xffffffff100000cb;
 static const ft 	linknode_type   = 0xffffffff100000ca;
 
-static const ft 	series_type     = 0xffffffff100000c7; 
-static const ft 	reduced_type    = 0xffffffff100000c6; 
+static const ft 	series_type     = 0xffffffff100000c7;
+static const ft 	reduced_type    = 0xffffffff100000c6;
 
 //	Iterator types
 
@@ -112,7 +112,7 @@ static const ft 	write_byte   = 0x0000000000000003;
 static const ft 	write_char   = 0x0000000000000004;
 static const ft 	write_string = 0x0000000000000005;
 
-//	Other constants 
+//	Other constants
 
 static const ft SHIFT = 5; 		//	For HAMT/CHAMP
 static const ft MASK  = 0x1f; 	//	For HAMT/CHAMP
@@ -140,7 +140,7 @@ typedef struct FRTTypeG {
 	void 		*value;	 	// Maps to count on collections
 } *PFRTTypeG;
 
-typedef struct FRTType {	
+typedef struct FRTType {
 	ft 			fclass;
 	ft 			ftype;
 	ft 			count;
@@ -158,26 +158,26 @@ typedef struct FRTType {
 
 typedef struct FRTHamtNode {
 	ft 					fclass;
-	PFRTAny 			slots[32];	
+	PFRTAny 			slots[32];
 } *PFRTHamtNode;
 
-typedef struct FRTVectorG {	
-	ft 				fsig;	
+typedef struct FRTVectorG {
+	ft 				fsig;
 	ft 				fclass; 	//	FOIDL Class - Collection
 	ft 				ftype;		//	FOIDL Type - Vector
     ft 				count;    	//	Element count
-	uint32_t 		hash;	
-    PFRTHamtNode 	root; 		// 	Root HAMT node    
+	uint32_t 		hash;
+    PFRTHamtNode 	root; 		// 	Root HAMT node
     PFRTHamtNode 	tail; 		//	Tail collection
     ft 				shift;		//	Dynamic
 } *PFRTVectorG;
 
-typedef struct FRTVector {	
+typedef struct FRTVector {
 	ft 				fclass; 	//	FOIDL Class - Collection
 	ft 				ftype;		//	FOIDL Type - Vector
     ft 				count;    	//	Element count
-	uint32_t 		hash;	
-    PFRTHamtNode 	root; 		// 	Root HAMT node    
+	uint32_t 		hash;
+    PFRTHamtNode 	root; 		// 	Root HAMT node
     PFRTHamtNode 	tail; 		//	Tail collection
     ft 				shift;		//	Dynamic
 } *PFRTVector;
@@ -186,38 +186,38 @@ typedef struct FRTVector {
 
 typedef struct FRTLinkNode *PFRTLinkNode;
 
-typedef struct FRTLinkNodeG {	
-	ft 				fsig;	
+typedef struct FRTLinkNodeG {
+	ft 				fsig;
 	ft 				fclass; 	//	FOIDL Class - collection_class
 	ft 				ftype;		//	FOIDL Type - linknode_type
     PFRTAny 		data;
     PFRTLinkNode 	next;
 } *PFRTLinkNodeG;
 
-typedef struct FRTLinkNode {	
+typedef struct FRTLinkNode {
 	ft 				fclass; 	//	FOIDL Class - collection_class
 	ft 				ftype;		//	FOIDL Type - linknode_type
     PFRTAny 		data;
     PFRTLinkNode 	next;
 } *PFRTLinkNode;
 
-typedef struct FRTListG {	
-	ft 				fsig;	
+typedef struct FRTListG {
+	ft 				fsig;
 	ft 				fclass; 	//	FOIDL Class - Collection
 	ft 				ftype;		//	FOIDL Type - Vector
     ft 				count;    	//	Element count
-	uint32_t 		hash;	
-    PFRTLinkNode 	root; 		// 	Root 
-    PFRTLinkNode 	rest; 		// 	Last     
+	uint32_t 		hash;
+    PFRTLinkNode 	root; 		// 	Root
+    PFRTLinkNode 	rest; 		// 	Last
 } *PFRTListG;
 
-typedef struct FRTList {	
+typedef struct FRTList {
 	ft 				fclass; 	//	FOIDL Class - Collection
 	ft 				ftype;		//	FOIDL Type - Vector
     ft 				count;    	//	Element count
-	uint32_t 		hash;	
-    PFRTLinkNode 	root; 		// 	Root HAMT node    
-    PFRTLinkNode 	rest; 		// 	Last     
+	uint32_t 		hash;
+    PFRTLinkNode 	root; 		// 	Root HAMT node
+    PFRTLinkNode 	rest; 		// 	Last
 } *PFRTList;
 
 
@@ -228,38 +228,38 @@ typedef struct FRTBitmapNodeG {
 	ft 					fclass;
 	uint32_t 			datamap;
 	uint32_t 			nodemap;
-	PFRTAny 			*slots;		
+	PFRTAny 			*slots;
 } *PFRTBitmapNodeG;
 
 typedef struct FRTBitmapNode {
 	ft 					fclass;
 	uint32_t 			datamap;
 	uint32_t 			nodemap;
-	PFRTAny 			*slots;	
+	PFRTAny 			*slots;
 } *PFRTBitmapNode;
 
 //	Map
 
-typedef struct FRTMapG {	
+typedef struct FRTMapG {
 	ft 				fsig;
 	ft 				fclass; 	//	FOIDL Class - Collection
 	ft 				ftype;		//	FOIDL Type - Map
     ft 				count;    	//	Element count
-	uint32_t 		hash;	    
-    PFRTBitmapNode 	root; 		// 	Root HAMT node      
+	uint32_t 		hash;
+    PFRTBitmapNode 	root; 		// 	Root HAMT node
     ft 				shift;		//	Dynamic
 } *PFRTMapG;
 
-typedef struct FRTMap {	
+typedef struct FRTMap {
 	ft 				fclass; 	//	FOIDL Class - Collection
 	ft 				ftype;		//	FOIDL Type - Map
     ft 				count;    	//	Element count
-	uint32_t 		hash;	
-    PFRTBitmapNode 	root; 		// 	Root HAMT node      
+	uint32_t 		hash;
+    PFRTBitmapNode 	root; 		// 	Root HAMT node
     ft 				shift;		//	Dynamic
 } *PFRTMap,*PFRTAssocType;
 
-typedef struct FRTMapEntry {	
+typedef struct FRTMapEntry {
 	ft 				fclass; 	//	FOIDL Class - Collection
 	ft 				ftype;		//	FOIDL Type - Map
     PFRTAny 		key;
@@ -268,22 +268,22 @@ typedef struct FRTMapEntry {
 
 //  Set
 
-typedef struct FRTSetG {	
+typedef struct FRTSetG {
 	ft 				fsig;
 	ft 				fclass; 	//	FOIDL Class - Collection
 	ft 				ftype;		//	FOIDL Type - Set
     ft 				count;    	//	Element count
-	uint32_t 		hash;	    
-    PFRTBitmapNode 	root; 		// 	Root CHAMP node      
+	uint32_t 		hash;
+    PFRTBitmapNode 	root; 		// 	Root CHAMP node
     ft 				shift;		//	Dynamic
 } *PFRTSetG;
 
-typedef struct FRTSet {	
+typedef struct FRTSet {
 	ft 				fclass; 	//	FOIDL Class - Collection
 	ft 				ftype;		//	FOIDL Type - Set
     ft 				count;    	//	Element count
-	uint32_t 		hash;	    
-    PFRTBitmapNode 	root; 		// 	Root HAMT node      
+	uint32_t 		hash;
+    PFRTBitmapNode 	root; 		// 	Root HAMT node
     ft 				shift;		//	Dynamic
 } *PFRTSet;
 
@@ -294,16 +294,16 @@ typedef struct   FRTFuncRefG {
 	ft 			fclass;
 	ft 			ftype;
     ft 			argcount;
-	uint32_t 	spare;	    
-    void 		*fnptr;   
+	uint32_t 	spare;
+    void 		*fnptr;
 } *PFRTFuncRefG;
 
 typedef struct   FRTFuncRef {
 	ft 			fclass;
 	ft 			ftype;
     ft 			argcount;
-	uint32_t 	spare;	    
-    void 		*fnptr;   
+	uint32_t 	spare;
+    void 		*fnptr;
 } *PFRTFuncRef;
 
 typedef struct   FRTLambdaRef {
@@ -313,20 +313,20 @@ typedef struct   FRTLambdaRef {
 	ft 			closures; 		//	Count of closed over args
 	//ft 			hash;
 	ft 			spare;
-	//void 		*closureptrs;        
-} *PFRTLambdaRef; 
+	//void 		*closureptrs;
+} *PFRTLambdaRef;
 
 typedef struct FRTFuncRef2 {
 	ft 			fclass;
-	ft 			ftype;	
-	ft  		mcount;	
-	uint32_t 	spare;	    	
+	ft 			ftype;
+	ft  		mcount;
+	uint32_t 	spare;
 	void 		*fnptr;
 	PFRTAny 	args; 	//	Could be a vector as well
 	void 		*invokefnptr;
 } *PFRTFuncRef2;
 
-//	Series 
+//	Series
 
 typedef struct FRTSeriesG {
 	ft 			fsig;
@@ -336,23 +336,23 @@ typedef struct FRTSeriesG {
 	uint32_t 	spare2;
 	PFRTAny 	start;
 	PFRTAny 	stop;
-	PFRTAny 	step;	
-} *PFRTSeriesG; 
+	PFRTAny 	step;
+} *PFRTSeriesG;
 
-typedef struct FRTSeries {	
+typedef struct FRTSeries {
 	ft 			fclass;
 	ft 			ftype;
 	ft 			spare1;
 	uint32_t 	spare2;
 	PFRTAny 	start;
 	PFRTAny 	stop;
-	PFRTAny 	step;	
-} *PFRTSeries; 
+	PFRTAny 	step;
+} *PFRTSeries;
 
 //	IO Structures
 
 typedef	struct   FRTIOBufferG {
-	ft 				fsig;		//		
+	ft 				fsig;		//
 	ft 				fclass; 	//	io_buffer_class
 	ft 				ftype;		//	block_type, mmem_type
 	uint32_t 		buffersize;
@@ -366,7 +366,7 @@ typedef	struct   FRTIOBufferG {
 	char 			*bufferPtr;
 } *PFRTIOBufferG;
 
-typedef	struct   FRTIOBuffer {	
+typedef	struct   FRTIOBuffer {
 	ft 				fclass; 	//	io_buffer_class
 	ft 				ftype;		//	block_type, mmem_type
 	uint32_t 		buffersize;
@@ -382,12 +382,12 @@ typedef	struct   FRTIOBuffer {
 
 
 typedef	struct   FRTIOChannelG {
-	ft 				fsig;	
+	ft 				fsig;
 	ft 				fclass; 	//	FOIDL_CLASS_IO
 	ft 				ftype;		//	FOIDL_FILE_REF, etc.
-	PFRTAny 		channelMap; //	Initiating structure    
+	PFRTAny 		channelMap; //	Initiating structure
 	PFRTAny 		name;
-    ft 				openflag;    
+    ft 				openflag;
     ft 				buffertype;
     ft 				handle;
     PFRTFuncRef 	readhandler;
@@ -395,12 +395,12 @@ typedef	struct   FRTIOChannelG {
     PFRTIOBuffer 	bufferptr;
 } *PFRTIOChannelG;
 
-typedef	struct   FRTIOChannel {	
+typedef	struct   FRTIOChannel {
 	ft 				fclass; 	//	FOIDL_CLASS_IO
-	ft 				ftype;		//	FOIDL_FILE_REF, etc.    
-	PFRTAny 		channelMap; //	Initiating structure    
+	ft 				ftype;		//	FOIDL_FILE_REF, etc.
+	PFRTAny 		channelMap; //	Initiating structure
 	PFRTAny 		name;
-    ft 				openflag;    
+    ft 				openflag;
     ft 				buffertype;
     ft 				handle;
     PFRTFuncRef 	readhandler;
@@ -448,12 +448,12 @@ typedef	struct   FRTIOChannel {
 #define localFunc(insym,acount,val) \
 	static struct FRTFuncRefG _ ## insym  = {global_signature,function_class, \
 		funcref_type, acount,0,val}; \
-	static PFRTFuncRef const insym = (PFRTFuncRef) & _ ## insym.fclass;	
+	static PFRTFuncRef const insym = (PFRTFuncRef) & _ ## insym.fclass;
 
 #define globalFuncConst(insym,acount,val) \
 	static const struct FRTFuncRefG _ ## insym  = {global_signature,function_class, \
 		funcref_type, acount,0,val}; \
-	PFRTFuncRef const insym = (PFRTFuncRef) & _ ## insym.fclass;	
+	PFRTFuncRef const insym = (PFRTFuncRef) & _ ## insym.fclass;
 
 typedef struct FRTIterator *PFRTIterator;
 
@@ -468,14 +468,14 @@ typedef PFRTAny (*_d2)(PFRTAny,PFRTAny);
 
 //  Iterators
 
-typedef struct FRTIterator {	
+typedef struct FRTIterator {
 	ft 				fclass; 	//	FOIDL Class - Iterator
 	ft 				ftype;		//	FOIDL Type - Vector
 	itrNext 		next;
 	typeGetter 		get;
 } *PFRTIterator;
 
-typedef struct FRTVector_Iterator {	
+typedef struct FRTVector_Iterator {
 	ft 				fclass; 	//	FOIDL Class - Iterator
 	ft 				ftype;		//	vector_iterator_type
 	itrNext 		next;
@@ -499,14 +499,14 @@ typedef struct FRTList_Iterator {
 typedef struct FRTTrie_Iterator {
 	ft 				fclass; 	//	FOIDL Class - Iterator
 	ft 				ftype;		//	map_iterator_type
-	itrNext 		next;	
+	itrNext 		next;
 	typeGetter 		get;
 	int 			currentValueCursor;
 	int 			currentValueLength;
 	PFRTBitmapNode 	currentValueNode;
 	int 			currentStackLevel;
 	int 			nodeCursorAndLength[MAX_I_DEPTH*2];
-	PFRTBitmapNode  nodes[MAX_I_DEPTH];    
+	PFRTBitmapNode  nodes[MAX_I_DEPTH];
 } *PFRTTrie_Iterator,*PFRTMap_Iterator,*PFRTSet_Iterator;
 
 typedef struct FRTSeries_Iterator {
@@ -523,8 +523,8 @@ typedef struct FRTChannel_Iterator {
 	ft 				fclass; 	//	FOIDL Class - Iterator
 	ft 				ftype;		//	channel_iterator_type
 	itrNext 		next;
-	uint32_t 		currRef;	
-	PFRTIOBuffer 	buffer;	
+	uint32_t 		currRef;
+	PFRTIOBuffer 	buffer;
 } *PFRTChannel_Iterator;
 
 //	Local use structures
@@ -563,7 +563,7 @@ void foidl_heap_setup();
 ft 	foidl_fopen_read_only(char *);
 ft  foidl_fopen_create_truncate(char *);
 void foidl_deallocate_mmap(char*, ft);
-void *open_ro_mmap_file(char *);
+void *foidl_open_ro_mmap_file(char *);
 ft 	foidl_fclose(ft);
 void foidl_exit();
 
@@ -632,7 +632,7 @@ extern PFRTAny 	foidl_fold(PFRTAny, PFRTAny, PFRTAny);
 extern PFRTAny 	foidl_reduce(PFRTAny, PFRTAny, PFRTAny);
 extern PFRTAny  foidl_reduced(PFRTAny);
 extern PFRTAny  foidl_split(PFRTAny,PFRTAny); 	//	May move to string
-#endif 
+#endif
 
 #ifndef PREDICATE_IMPL
 extern PFRTAny scalar_equality(PFRTAny,PFRTAny);
@@ -791,7 +791,7 @@ extern PFRTAny 		iteratorNext(PFRTIterator);
 #ifndef NODE_IMPL
 extern const struct FRTBitmapNode _empty_champ_node;
 extern PFRTBitmapNode   const empty_champ_node;
-extern uint32_t 		bit_count(uint32_t);	
+extern uint32_t 		bit_count(uint32_t);
 extern uint32_t 		bit_pos(uint32_t);
 extern uint32_t 		data_count(PFRTBitmapNode);
 extern uint32_t 		node_count(PFRTBitmapNode);
@@ -806,7 +806,7 @@ extern PFRTBitmapNode 	getNode(PFRTBitmapNode, uint32_t);
 extern void 			arraycopy(PFRTAny *, PFRTAny *,uint32_t);
 #endif
 
-//  Vector functions 
+//  Vector functions
 #ifndef VECTOR_IMPL
 extern  PFRTHamtNode const empty_node;
 extern 	PFRTVector 	 const empty_vector;
@@ -828,7 +828,7 @@ extern  PFRTAny	vector_drop_bang(PFRTAny,PFRTAny);
 extern  PFRTAny	vector_dropLast_bang(PFRTAny);
 extern 	PFRTAny vectorGetDefault(PFRTAny v, uint32_t index);
 extern 	PFRTAny vector_print(PFRTIOChannel,PFRTAny);
-#endif 
+#endif
 
 //	Set function
 #ifndef SET_IMPL
@@ -922,7 +922,7 @@ extern PFRTAny 	io_first(PFRTIOChannel);
 extern PFRTAny 	io_second(PFRTIOChannel);
 extern PFRTAny 	io_peek_match(PFRTIOChannel,PFRTAny);
 extern void 	io_blockBufferClose(PFRTIOChannel);
-#endif 
+#endif
 
 // Series
 

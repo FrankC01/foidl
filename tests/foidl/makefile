@@ -18,83 +18,53 @@ CC      = g++
 LT      = libtool
 LLLT 	= llvm-ar
 CLC 	= clang
-BSTRP 	= ../bin/fbstrp
+BSTRP 	= ../../bin/fbstrp
 
 
 # FOIDL Runtime generation settings
 
 FSRC  	:= fsrc/
-SRC  	:= src/
-INC 	:= includes/
 LLS 	:= ll/
-OBJS 	:= objs/
-LIB 	:= lib/
-HDRS   	:= headers/
+BIN 	:= bin/
+RTHDRS  := ../../foidlrtl/headers
+RTLIB 	:= ../../foidlrtl/lib
 
-FDEFS 	:= .defs
 FOIDL  	:= .foidl
+EXE 	:= .exe
 LL 		:= .ll
-OBJ 	:= .o
-CSRC	:= .c
 
 foildrt_NAME := foidlrt
 foidlrt_LIB  := libfoidlrt.a
-STATIC_LIB   := $(LIB)$(foidlrt_LIB)
 
 # Flags for compilation of all types
 
-BHDRFLAGS := -I $(HDRS) -r -a hdr
-BCFLAGS := -I $(HDRS) -r
-CLFLAG   = -Wall -c -I$(INC)
-CLLFLAGS = -march=x86-64 -fPIC -O3 -c
+BCFLAGS := -I $(RTHDRS)
+CEXEFLAGS = -l$(foildrt_NAME) -L $(RTLIB)
 
 # Substitutions for recipe patterns
 
 FSRCS 	:= $(wildcard $(FSRC)*$(FOIDL))
-FHRDS   := $(subst $(FSRC), $(HDRS), $(FSRCS:$(FOIDL)=$(FDEFS)))
 FLLS	:= $(subst $(FSRC), $(LLS), $(FSRCS:$(FOIDL)=$(LL)))
-FOBJS	:= $(subst $(FSRC), $(OBJS), $(FSRCS:$(FOIDL)=$(OBJ)))
+# Need some kinda windows switch here
+FEXES	:= $(basename $(subst $(FSRC), $(BIN), $(FSRCS:$(FOIDL)=$(EXE))))
 
-SRCS	:= $(wildcard $(SRC)*$(CSRC))
-SOBJS	:= $(subst $(SRC), $(OBJS), $(SRCS:$(CSRC)=$(OBJ)))
+all: $(FEXES) | $(BIN) $(LLS)
 
-all: $(STATIC_LIB) | $(FLLS) $(OBJS)
+bin/%: ll/%.ll
+	$(CLC) $< $(CEXEFLAGS)  -o $@
 
-$(STATIC_LIB): $(FOBJS) $(SOBJS) | $(LIB)
-	$(info $(SRCS))
-	$(LLLT) --format=default -ru $(STATIC_LIB) $(FOBJS) $(SOBJS)
+$(FEXES): $(FLLS) | $(BIN)
 
-$(LIB):
-	mkdir lib
-
-# FOIDL Source -> headers and -> ll
-
-headers/%.defs : fsrc/%.foidl
-	$(BSTRP) -s $< $(BHDRFLAGS) -o $@
+$(BIN):
+	mkdir bin
 
 ll/%.ll : fsrc/%.foidl
 	$(BSTRP) -s $< $(BCFLAGS) -o $@
 
-$(FLLS):$(FSRCS) | $(FHRDS) $(LLS)
+$(FLLS):$(FSRCS) | $(LLS)
 
 $(LLS):
 	mkdir ll
 
-objs/%.o : ll/%.ll
-	$(CLC) $< $(CLLFLAGS) -o $@
-
-$(FOBJS):$(FLLS) | $(OBJS)
-
-# C file compilations
-
-objs/%.o : src/%.c
-	$(CLC) $< $(CLFLAG) -o $@
-
-$(SOBJS):$(SRCS) | $(OBJS)
-
-$(OBJS):
-	mkdir objs
-
-
 clean:
-	$(RM) -r $(FHRDS) $(LLS) $(OBJS) $(LIB)
+	$(RM) -r $(LLS) $(BIN)

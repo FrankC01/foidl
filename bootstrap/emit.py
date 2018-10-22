@@ -43,6 +43,23 @@ def methdispatch(func):
     return wrapper
 
 
+_ctor_support = """%VPAT = type { i32, void ()*, i8* }
+
+@llvm.global_ctors = appending global [1 x %VPAT]
+    [%VPAT { i32 65535, void ()* @foidl_module_inits, i8* null }]
+"""
+
+_modinits0 = """
+define internal void @foidl_module_inits()
+    section \"__TEXT,__StaticInit,regular,pure_instructions\" {
+    %res = call %"Any"* @"foidl_rtl_init"()"""
+
+_modinitret = """
+    ret void
+}
+"""
+
+
 int_64 = ir.IntType(64)
 int_32 = ir.IntType(32)
 int_8 = ir.IntType(8)
@@ -56,6 +73,7 @@ null_val = ir.FormattedConstant(any_ptr, 'null')
 
 # Well known foidl run-time functions used in generation
 supps = [
+    ("foidl_rtl_init", []),
     ("foidl_convert_mainargs", [int_32, void_ptr_ptr, void_ptr_ptr]),
     ("foidl_reg_character", [int_64]),
     ("foidl_reg_integer", [int_64]),
@@ -750,8 +768,6 @@ class LlvmGen(object):
         # Main processing
         if self.main:
             self._emit_main()
-        # Module ctor initializers
-
         # Spit out the goods
         llvm_ir = str(self.module)
 
@@ -761,3 +777,9 @@ class LlvmGen(object):
         # self.engine.finalize_object()
         # self.engine.run_static_constructors()
         wrtr(str(self.module))
+        # Module ctor initializers
+        wrtr(_ctor_support)
+        wrtr(_modinits0)
+        wrtr("    call void @" + self.source + "_linits()")
+        wrtr("    call void @" + self.source + "_vinits()")
+        wrtr(_modinitret)

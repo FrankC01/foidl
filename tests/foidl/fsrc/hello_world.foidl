@@ -3,8 +3,6 @@
 
 module test
 
-include foo
-
 var v <>
 var :private a +: 1 1
 var :private lammy ^[f g] +: f g
@@ -15,24 +13,12 @@ func :private b []
 func c [r g]
     +: r -: g *: 2 2
 
-func pigmy! [x]
-
-func pigmy? []
-
+func pigmy [x y]
 
 func :private d [foo?]
 
-    pigmy!: eq
-    pigmy!: lt
-    pigmy!: gt
-    pigmy!: lteq
-    pigmy!: gteq
-    pigmy!: neq
-
-    pigmy?:
-
     let from [m +: 5 7]
-        (foo_twoarg m)
+        (pigmy eq)
 
      ?: lt: 10 9
         true
@@ -40,3 +26,6 @@ func :private d [foo?]
         | 7 %0
         | :default a
 
+func main[argv]
+    printnl!: "Hello World"
+    d: argv
