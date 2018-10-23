@@ -10,6 +10,7 @@
 #include <foidlrt.h>
 #ifdef _MSC_VER
 #include <io.h>
+#include <stdlib.h>
 #else
 #include    <unistd.h>
 #endif
@@ -49,10 +50,18 @@ void *foidl_open_ro_mmap_file(char * fname) {
     size = s.st_size;
 
     // Get the memory mapped file for reading
+    #ifdef _MSC_VER
+    return malloc(size);
+    #else
     return mmap(0, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    #endif
 }
 
 void foidl_deallocate_mmap(char *fbuffer, ft fsize) {
+    #ifdef _MSC_VER
+    free(fbuffer);
+    #else
     int res = munmap(fbuffer, fsize);
+    #endif
     return;
 }
