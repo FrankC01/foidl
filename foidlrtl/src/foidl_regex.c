@@ -175,9 +175,10 @@ PFRTAny foidl_categorize_num(PFRTAny s) {
 	// 	printf("%s not tested\n", s->value);
 	// 	unknown_handler();
 	// }
-	// return false;
+	return false;
 
 }
+
 PFRTAny foidl_regex_cmp_qmark(PFRTAny pattern, PFRTAny arg) {
 	PFRTAny res = false;
 	// int result;

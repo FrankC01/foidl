@@ -34,6 +34,8 @@ else
 	OS_NAME := Windows
 endif
 
+
+
 # FOIDL Runtime generation settings
 
 FSRC  	:= fsrc/
@@ -51,18 +53,12 @@ OBJ 	:= .o
 CSRC	:= .c
 
 foildrt_NAME := foidlrt
-foidlrt_LIB  := libfoidlrt.a
-STATIC_LIB   := $(LIB)$(foidlrt_LIB)
 
 # Flags for compilation of all types
 
 BHDRFLAGS := -I $(HDRS) -r -a hdr
 BCFLAGS := -I $(HDRS) -r
-ifeq ($(OS_NAME), Windows)
-	CLLFLAGS = -I $(INC) -march=x86-64 -O3 -c
-else
-	CLLFLAGS = -I $(INC) -march=x86-64 -fPIC -O3 -c
-endif
+
 
 # Substitutions for recipe patterns
 
@@ -74,11 +70,22 @@ FOBJS	:= $(subst $(FSRC), $(OBJS), $(FSRCS:$(FOIDL)=$(OBJ)))
 SRCS	:= $(wildcard $(SRC)*$(CSRC))
 SOBJS	:= $(subst $(SRC), $(OBJS), $(SRCS:$(CSRC)=$(OBJ)))
 
+ifeq ($(OS_NAME), Windows)
+	CLLFLAGS := -I $(INC) -march=x86-64 -std=c11 -O3 -c
+	foidlrt_LIB  := foidlrt.lib
+	STATIC_LIB   := $(LIB)$(foidlrt_LIB)
+	LIBFLAGS := -ru 
+else
+	CLLFLAGS := -I $(INC) -march=x86-64 -fPIC -O3 -c
+	foidlrt_LIB  := libfoidlrt.a
+	STATIC_LIB   := $(LIB)$(foidlrt_LIB)
+	LIBFLAGS :=  --format=default -ru 
+endif
+
 all: $(STATIC_LIB) | $(FLLS) $(OBJS)
 
 $(STATIC_LIB): $(FOBJS) $(SOBJS) | $(LIB)
-	$(info $(SRCS))
-	$(LLLT) --format=default -ru $(STATIC_LIB) $(FOBJS) $(SOBJS)
+	$(LLLT) $(LIBFLAGS) $(STATIC_LIB) $(SOBJS)
 
 $(LIB):
 	mkdir lib
