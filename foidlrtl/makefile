@@ -17,7 +17,7 @@
 LT      = libtool
 LLLT 	= llvm-ar
 CLC 	= clang
-BSTRP 	= python3 ../bin/fbstrp
+BSTRP 	= python ../bin/fbstrp
 
 
 # Get OS information
