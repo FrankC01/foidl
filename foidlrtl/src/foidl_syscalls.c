@@ -8,7 +8,11 @@
 
 #define SYSCALLS_IMPL
 #include <foidlrt.h>
-#include <unistd.h>
+#ifdef _MSC_VER
+#include <io.h>
+#else
+#include    <unistd.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
