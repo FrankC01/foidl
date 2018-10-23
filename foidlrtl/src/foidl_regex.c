@@ -1,7 +1,7 @@
 /*
 	foidl_regex.c
 	Library support for regular expressions
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -10,17 +10,17 @@
 #include <foidlrt.h>
 
 
-#include <regex.h>
+// #include <regex.h>
 #include <stdio.h>
 
 // Symbol compiled regex
 
-static regex_t recall;
-static regex_t resymbol;
-static regex_t rekeyword;
-static regex_t reinteger;
-static regex_t rereal;
-static regex_t rehex;
+// static regex_t recall;
+// static regex_t resymbol;
+// static regex_t rekeyword;
+// static regex_t reinteger;
+// static regex_t rereal;
+// static regex_t rehex;
 
 static const char *sympattern 	= "[a-zA-Z]{1}[a-zA-Z0-9_.\\?\\*]*$";
 static const char *callpattern	= "[a-zA-Z]{1}[a-zA-Z0-9_.\\?\\*]*:$";
@@ -43,36 +43,36 @@ static void testregex(char *p,regex_t* pattern) {
 	int result = regexec (pattern, p, 0, NULL, 0);
 	if(! result )
 		printf("%s matches \n",p);
-	else 
+	else
 		printf("No match on %s\n",p);
 }
 */
 
 void foidl_rt_init_regex() {
 	int result = 0;
-	result = regcomp(&resymbol,sympattern,REG_NOSUB | REG_EXTENDED);
-	if(result)
-		unknown_handler(); 	//	Throw run time error
+	// result = regcomp(&resymbol,sympattern,REG_NOSUB | REG_EXTENDED);
+	// if(result)
+	// 	unknown_handler(); 	//	Throw run time error
 
-	result = regcomp(&rekeyword,kwdpattern,REG_NOSUB | REG_EXTENDED);
-	if(result)
-		unknown_handler(); 	//	Throw run time error
+	// result = regcomp(&rekeyword,kwdpattern,REG_NOSUB | REG_EXTENDED);
+	// if(result)
+	// 	unknown_handler(); 	//	Throw run time error
 
-	result = regcomp(&reinteger,intpattern,REG_NOSUB | REG_EXTENDED);
-	if(result)
-		unknown_handler(); 	//	Throw run time error
+	// result = regcomp(&reinteger,intpattern,REG_NOSUB | REG_EXTENDED);
+	// if(result)
+	// 	unknown_handler(); 	//	Throw run time error
 
-	result = regcomp(&rereal,realpattern,REG_NOSUB | REG_EXTENDED);
-	if(result)
-		unknown_handler(); 	//	Throw run time error
+	// result = regcomp(&rereal,realpattern,REG_NOSUB | REG_EXTENDED);
+	// if(result)
+	// 	unknown_handler(); 	//	Throw run time error
 
-	result = regcomp(&rehex,hexpattern,REG_NOSUB | REG_EXTENDED);
-	if(result)
-		unknown_handler(); 	//	Throw run time error
+	// result = regcomp(&rehex,hexpattern,REG_NOSUB | REG_EXTENDED);
+	// if(result)
+	// 	unknown_handler(); 	//	Throw run time error
 
-	result = regcomp(&recall,callpattern,REG_NOSUB | REG_EXTENDED);
-	if(result)
-		unknown_handler(); 	//	Throw run time error
+	// result = regcomp(&recall,callpattern,REG_NOSUB | REG_EXTENDED);
+	// if(result)
+	// 	unknown_handler(); 	//	Throw run time error
 
 	/*
 	//	Symbol testing
@@ -115,90 +115,90 @@ void foidl_rt_init_regex() {
 }
 
 PFRTAny foidl_valid_symbol(PFRTAny s) {
-	if(s->fclass == scalar_class && s->ftype == string_type) {		
-		if(!regexec(&resymbol,s->value, 0, NULL, 0))
-			return true;
-		else 
-			return false;
-	}
+	// if(s->fclass == scalar_class && s->ftype == string_type) {
+	// 	//if(!regexec(&resymbol,s->value, 0, NULL, 0))
+	// 		return true;
+	// 	else
+	// 		return false;
+	// }
 	return false;
 }
 
 PFRTAny foidl_valid_keyword(PFRTAny s) {
-	if(s->fclass == scalar_class && 
-		( s->ftype == keyword_type
-		|| s->ftype == string_type)) {		
-		if(!regexec(&rekeyword,s->value, 0, NULL, 0)) {
-			//printf("%s passed keyword\n", s->value);
-			return true;
-		}
-		else {
-			//printf("%s did not pass keyword\n", s->value);
-			return false;
-		}
-	}
-	else {
-		printf("%s not tested\n", s->value);
-	}
+	// if(s->fclass == scalar_class &&
+	// 	( s->ftype == keyword_type
+	// 	|| s->ftype == string_type)) {
+	// 	if(!regexec(&rekeyword,s->value, 0, NULL, 0)) {
+	// 		//printf("%s passed keyword\n", s->value);
+	// 		return true;
+	// 	}
+	// 	else {
+	// 		//printf("%s did not pass keyword\n", s->value);
+	// 		return false;
+	// 	}
+	// }
+	// else {
+	// 	printf("%s not tested\n", s->value);
+	// }
 	return false;
 }
 
 PFRTAny foidl_valid_number(PFRTAny s) {
-	if(s->fclass == scalar_class && s->ftype == string_type) {		
-		if(!regexec(&reinteger,s->value, 0, NULL, 0))			
-			return true;
-		if(!regexec(&rereal,s->value, 0, NULL, 0))			
-			return true;
-		if(!regexec(&rehex,s->value, 0, NULL, 0))			
-			return true;		
-		else 
-			return false;		
-	}
-	else {
-		printf("%s not tested\n", s->value);
-	}
+	// if(s->fclass == scalar_class && s->ftype == string_type) {
+	// 	if(!regexec(&reinteger,s->value, 0, NULL, 0))
+	// 		return true;
+	// 	if(!regexec(&rereal,s->value, 0, NULL, 0))
+	// 		return true;
+	// 	if(!regexec(&rehex,s->value, 0, NULL, 0))
+	// 		return true;
+	// 	else
+	// 		return false;
+	// }
+	// else {
+	// 	printf("%s not tested\n", s->value);
+	// }
 	return false;
 }
 
 PFRTAny foidl_categorize_num(PFRTAny s) {
-	if(s->fclass == scalar_class && s->ftype == string_type) {		
-		if(!regexec(&reinteger,s->value, 0, NULL, 0))			
-			return integerKW;
-		if(!regexec(&rereal,s->value, 0, NULL, 0))			
-			return realKW;
-		if(!regexec(&rehex,s->value, 0, NULL, 0))			
-			return hexidecimalKW;		
-		else 
-			unknown_handler();		
-	}
-	else {
-		printf("%s not tested\n", s->value);
-		unknown_handler();
-	}
-	return false;
+	// if(s->fclass == scalar_class && s->ftype == string_type) {
+	// 	if(!regexec(&reinteger,s->value, 0, NULL, 0))
+	// 		return integerKW;
+	// 	if(!regexec(&rereal,s->value, 0, NULL, 0))
+	// 		return realKW;
+	// 	if(!regexec(&rehex,s->value, 0, NULL, 0))
+	// 		return hexidecimalKW;
+	// 	else
+	// 		unknown_handler();
+	// }
+	// else {
+	// 	printf("%s not tested\n", s->value);
+	// 	unknown_handler();
+	// }
+	// return false;
 
 }
 PFRTAny foidl_regex_cmp_qmark(PFRTAny pattern, PFRTAny arg) {
 	PFRTAny res = false;
-	int result;
-	regex_t regpat;	
-	result = regcomp(&regpat,pattern->value,REG_NOSUB | REG_EXTENDED);
-	if(!result) {
-		if(!regexec(&regpat,arg->value, 0, NULL, 0))
-			res = true;
-		regfree(&regpat);
-	}
+	// int result;
+	// regex_t regpat;
+	// result = regcomp(&regpat,pattern->value,REG_NOSUB | REG_EXTENDED);
+	// if(!result) {
+	// 	if(!regexec(&regpat,arg->value, 0, NULL, 0))
+	// 		res = true;
+	// 	regfree(&regpat);
+	// }
 	return res;
 }
 
 PFRTAny foidl_categorize(PFRTAny s) {
 	PFRTAny res = unknownKW;
-	if(s->fclass == scalar_class && s->ftype == string_type) {
-		if(!regexec(&resymbol,s->value, 0, NULL, 0))
-			return symbolKW;
-		if(!regexec(&recall,s->value, 0, NULL, 0))
-			return callKW;
+	// if(s->fclass == scalar_class && s->ftype == string_type) {
+	// 	if(!regexec(&resymbol,s->value, 0, NULL, 0))
+	// 		return symbolKW;
+	// 	if(!regexec(&recall,s->value, 0, NULL, 0))
+	// 		return callKW;
 
-	}
+	// }
 	return res;
 }

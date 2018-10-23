@@ -14,11 +14,24 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-CC      = g++
 LT      = libtool
 LLLT 	= llvm-ar
 CLC 	= clang
-BSTRP 	= ../../bin/fbstrp
+BSTRP 	= python ../../bin/fbstrp
+
+# Get OS information
+
+UNAME := $(shell uname)
+
+ifeq ($(UNAME), Linux)
+	OS_NAME := $(UNAME)
+else ifeq ($(UNAME), Solaris)
+	OS_NAME := $(UNAME)
+else ifeq ($(UNAME), Darwin)
+	OS_NAME := $(UNAME)
+else
+	OS_NAME := Windows
+endif
 
 
 # FOIDL Runtime generation settings

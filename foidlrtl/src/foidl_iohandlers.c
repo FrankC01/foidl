@@ -1,7 +1,7 @@
 /*
 	foidl_iohandlers.c
 	Library string type management
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -9,6 +9,12 @@
 #define IOHANDLERS_IMPL
 #include <foidlrt.h>
 #include <stdio.h>
+#ifdef _MSC_VER
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
 #include <unistd.h>
 
 const char 	*trueStr = "true";
@@ -30,7 +36,7 @@ typedef struct Counters {
 	struct Counters lhs = {0,mb->current_line,mb->current_pos};
 
 static uint32_t isCharWS_qmark(char v) {
-	return v == 0x20 ? 1 : v == 0x09 ? 1 : v == 0x0D ? 1 : 0; 
+	return v == 0x20 ? 1 : v == 0x09 ? 1 : v == 0x0D ? 1 : 0;
 }
 
 //	Buffered readers
@@ -94,10 +100,10 @@ PFRTAny charMMapBuffRead(PFRTIOBuffer b) {
 }
 
 static uint32_t countMMapBufferToChar(PFRTIOBuffer b, char c, PCounters pc) {
-	char *p = &b->bufferPtr[b->current_read_offset];	
+	char *p = &b->bufferPtr[b->current_read_offset];
 
-	for(char v = *p; 
-		v != c && 
+	for(char v = *p;
+		v != c &&
 			(b->current_read_offset + pc->processed) < b->max_read_position;
 		++pc->processed) {
 		switch(v) {
@@ -121,10 +127,10 @@ static uint32_t countMMapBufferToChar(PFRTIOBuffer b, char c, PCounters pc) {
 }
 
 static uint32_t countMMapBufferWhileChar(PFRTIOBuffer b, char c, PCounters pc) {
-	char *p = &b->bufferPtr[b->current_read_offset];	
+	char *p = &b->bufferPtr[b->current_read_offset];
 	uint32_t processed = 0;
-	for(char v = *p; 
-		v == c && 
+	for(char v = *p;
+		v == c &&
 			(b->current_read_offset + processed) < b->max_read_position;
 		++pc->processed) {
 		switch(v) {
@@ -147,7 +153,7 @@ static uint32_t countMMapBufferWhileChar(PFRTIOBuffer b, char c, PCounters pc) {
 	return pc->processed;
 }
 
-static uint32_t countMMapBufferToWhen(PFRTIOBuffer b, PFRTAny c,PCounters pc) {	
+static uint32_t countMMapBufferToWhen(PFRTIOBuffer b, PFRTAny c,PCounters pc) {
 	char *p = &b->bufferPtr[b->current_read_offset];
 	PFRTAny v = allocCharWithValue(*p);
 	while(set_get(c,v) == nil) {
@@ -171,7 +177,7 @@ static uint32_t countMMapBufferToWhen(PFRTIOBuffer b, PFRTAny c,PCounters pc) {
 	return pc->processed;
 }
 
-static uint32_t countMMapBufferWhile(PFRTIOBuffer b, PFRTAny c,PCounters pc) {	
+static uint32_t countMMapBufferWhile(PFRTIOBuffer b, PFRTAny c,PCounters pc) {
 	char *p = &b->bufferPtr[b->current_read_offset];
 	PFRTAny v = allocCharWithValue(*p);
 	while(set_get(c,v) != nil) {
@@ -197,7 +203,7 @@ static uint32_t countMMapBufferWhile(PFRTIOBuffer b, PFRTAny c,PCounters pc) {
 
 static uint32_t countMMapBufferString(PFRTIOBuffer b) {
 	uint32_t processed = 0;
-	char *p = &b->bufferPtr[b->current_read_offset];	
+	char *p = &b->bufferPtr[b->current_read_offset];
 	int  x = 1;
 	++p;
 	++processed;
@@ -210,7 +216,7 @@ static uint32_t countMMapBufferString(PFRTIOBuffer b) {
 		else if(*p == '"') {
 			x = 0;
 			++processed;
-		}	
+		}
 		else {
 			++p;
 			++processed;
@@ -222,7 +228,7 @@ static uint32_t countMMapBufferString(PFRTIOBuffer b) {
 
 static uint32_t countMMapBufferQChar(PFRTIOBuffer b) {
 	uint32_t processed = 0;
-	char *p = &b->bufferPtr[b->current_read_offset];	
+	char *p = &b->bufferPtr[b->current_read_offset];
 	int  x = 1;
 	++p;
 	++processed;
@@ -231,7 +237,7 @@ static uint32_t countMMapBufferQChar(PFRTIOBuffer b) {
 		if(*p == 0x27) {
 			x = 0;
 			++processed;
-		}	
+		}
 		else {
 			++p;
 			++processed;
@@ -278,7 +284,7 @@ static void advanceMMapBufferWhile(PFRTIOBuffer b, PFRTAny c) {
 }
 
 PFRTAny io_charReader(PFRTIOChannel chn) {
-	PFRTAny 	result = nil;	
+	PFRTAny 	result = nil;
 	switch(chn->bufferptr->ftype) {
 		case 	no_buffer:
 			unknown_handler();
@@ -318,8 +324,8 @@ PFRTAny io_consReader(PFRTIOChannel chn) {
 		chn->bufferptr->bufferPtr,
 		chn->bufferptr->buffersize);
 	if(x < 0)
-		unknown_handler();	
-	return allocStringWithCopy(chn->bufferptr->bufferPtr);	
+		unknown_handler();
+	return allocStringWithCopy(chn->bufferptr->bufferPtr);
 }
 
 static uint32_t hasmore(PFRTIOBuffer b,uint32_t off) {
@@ -328,9 +334,9 @@ static uint32_t hasmore(PFRTIOBuffer b,uint32_t off) {
 
 PFRTAny io_first(PFRTIOChannel chn) {
 	PFRTIOBuffer b = chn->bufferptr;
-	if(chn->ftype == cin_type) 
+	if(chn->ftype == cin_type)
 		unknown_handler();
-	else 
+	else
 	switch(chn->bufferptr->ftype) {
 		case 	no_buffer:
 			unknown_handler();
@@ -341,7 +347,7 @@ PFRTAny io_first(PFRTIOChannel chn) {
 			if(hasmore(chn->bufferptr,0))
 				return allocCharWithValue(
 					(ft) b->bufferPtr[b->current_read_offset]);
-			else 
+			else
 				unknown_handler();
 			break;
 	}
@@ -350,9 +356,9 @@ PFRTAny io_first(PFRTIOChannel chn) {
 
 PFRTAny io_second(PFRTIOChannel chn) {
 	PFRTIOBuffer b = chn->bufferptr;
-	if(chn->ftype == cin_type) 
+	if(chn->ftype == cin_type)
 		unknown_handler();
-	else 
+	else
 	switch(chn->bufferptr->ftype) {
 		case 	no_buffer:
 			unknown_handler();
@@ -362,20 +368,20 @@ PFRTAny io_second(PFRTIOChannel chn) {
 		case 	mem_map_buffer:
 			if(hasmore(chn->bufferptr,1))
 				return allocCharWithValue(
-					(ft) b->bufferPtr[b->current_read_offset]);				
-			else 
+					(ft) b->bufferPtr[b->current_read_offset]);
+			else
 				unknown_handler();
 			break;
 	}
-	return nil;	
+	return nil;
 }
 
 PFRTAny io_peek_match(PFRTIOChannel chn, PFRTAny pat) {
 	PFRTIOBuffer b = chn->bufferptr;
 	PFRTAny 	result;
-	if(chn->ftype == cin_type) 
+	if(chn->ftype == cin_type)
 		result = false;
-	else 
+	else
 	switch(chn->bufferptr->ftype) {
 		case 	no_buffer:
 			result = false;
@@ -391,20 +397,20 @@ PFRTAny io_peek_match(PFRTIOChannel chn, PFRTAny pat) {
 					foidl_xdel(arg->value);
 					foidl_xdel(arg);
 				}
-				else 
+				else
 					result = false;
 			}
-			else 
+			else
 				result = false;
 			break;
 	}
-	return result;		
+	return result;
 }
 
-PFRTIOChannel io_skipto(PFRTIOChannel chn, PFRTAny exp) {	
-	if(chn->ftype == cin_type) 
+PFRTIOChannel io_skipto(PFRTIOChannel chn, PFRTAny exp) {
+	if(chn->ftype == cin_type)
 		unknown_handler();
-	else 
+	else
 	switch(chn->bufferptr->ftype) {
 		case 	no_buffer:
 			unknown_handler();
@@ -416,17 +422,17 @@ PFRTIOChannel io_skipto(PFRTIOChannel chn, PFRTAny exp) {
 				advanceMMapBufferToChar(chn->bufferptr, (char) exp->value);
 			else if(exp->fclass == collection_class && exp->ftype == set2_type)
 				advanceMMapBufferToWhen(chn->bufferptr, exp);
-			else 
+			else
 				unknown_handler();
 			break;
 	}
 	return chn;
 }
 
-PFRTIOChannel io_skipwhile(PFRTIOChannel chn, PFRTAny exp) {	
-	if(chn->ftype == cin_type) 
+PFRTIOChannel io_skipwhile(PFRTIOChannel chn, PFRTAny exp) {
+	if(chn->ftype == cin_type)
 		unknown_handler();
-	else 
+	else
 	switch(chn->bufferptr->ftype) {
 		case 	no_buffer:
 			unknown_handler();
@@ -438,18 +444,18 @@ PFRTIOChannel io_skipwhile(PFRTIOChannel chn, PFRTAny exp) {
 				advanceMMapBufferWhileChar(chn->bufferptr, (char) exp->value);
 			else if(exp->fclass == collection_class && exp->ftype == set2_type)
 				advanceMMapBufferWhile(chn->bufferptr, exp);
-			else 
+			else
 				unknown_handler();
 			break;
 	}
 	return chn;
 }
 
-PFRTAny io_count(PFRTIOChannel chn) {		
+PFRTAny io_count(PFRTIOChannel chn) {
 	uint32_t 	vcnt = 0;
-	if(chn->ftype == cin_type) 
+	if(chn->ftype == cin_type)
 		unknown_handler();
-	else 
+	else
 	switch(chn->bufferptr->ftype) {
 		case 	no_buffer:
 			unknown_handler();
@@ -463,12 +469,12 @@ PFRTAny io_count(PFRTIOChannel chn) {
 	return (vcnt > 0) ? allocIntegerWithValue(vcnt) : zero;
 }
 
-PFRTAny io_countto(PFRTIOChannel chn, PFRTAny exp) {	
+PFRTAny io_countto(PFRTIOChannel chn, PFRTAny exp) {
 	uint32_t 	vcnt = 0;
 	counter(pc,chn->bufferptr);
-	if(chn->ftype == cin_type) 
+	if(chn->ftype == cin_type)
 		unknown_handler();
-	else 
+	else
 	switch(chn->bufferptr->ftype) {
 		case 	no_buffer:
 			unknown_handler();
@@ -480,7 +486,7 @@ PFRTAny io_countto(PFRTIOChannel chn, PFRTAny exp) {
 				vcnt = countMMapBufferToChar(chn->bufferptr, (char) exp->value,&pc);
 			else if(exp->fclass == collection_class && exp->ftype == set2_type)
 				vcnt = countMMapBufferToWhen(chn->bufferptr, exp,&pc);
-			else 
+			else
 				unknown_handler();
 			break;
 	}
@@ -488,22 +494,22 @@ PFRTAny io_countto(PFRTIOChannel chn, PFRTAny exp) {
 }
 
 PFRTIOChannel io_unread(PFRTIOChannel chn) {
-	if(chn->ftype == cin_type) 
+	if(chn->ftype == cin_type)
 		unknown_handler();
-	else 
+	else
 	switch(chn->bufferptr->ftype) {
 		case 	no_buffer:
 			unknown_handler();
 			break;
-		case 	mem_block_buffer:			
+		case 	mem_block_buffer:
 		case 	mem_map_buffer:
-			if(chn->bufferptr->current_read_offset 
+			if(chn->bufferptr->current_read_offset
 				> chn->bufferptr->previous_read_offset) {
-					chn->bufferptr->current_read_offset 
+					chn->bufferptr->current_read_offset
 						= chn->bufferptr->previous_read_offset;
 					--chn->bufferptr->current_pos;
 				}
-			else 
+			else
 				;
 			break;
 	}
@@ -513,10 +519,10 @@ PFRTIOChannel io_unread(PFRTIOChannel chn) {
 PFRTAny io_take_until(PFRTIOChannel chn, PFRTAny pred) {
 	PFRTAny result = empty_string;
 	uint32_t 	vcnt = 0;
-	counter(pc,chn->bufferptr);	
-	if(chn->ftype == cin_type) 
+	counter(pc,chn->bufferptr);
+	if(chn->ftype == cin_type)
 		unknown_handler();
-	else 
+	else
 	switch(chn->bufferptr->ftype) {
 		case 	no_buffer:
 			unknown_handler();
@@ -529,7 +535,7 @@ PFRTAny io_take_until(PFRTIOChannel chn, PFRTAny pred) {
 				vcnt = countMMapBufferToChar(chn->bufferptr, (char) pred->value,&pc);
 			else if(pred->fclass == collection_class && pred->ftype == set2_type)
 				vcnt = countMMapBufferToWhen(chn->bufferptr, pred,&pc);
-			else 
+			else
 				unknown_handler();
 			break;
 	}
@@ -546,9 +552,9 @@ PFRTAny io_take_string(PFRTIOChannel chn) {
 	PFRTAny result = empty_string;
 	uint32_t 	vcnt = 0;
 
-	if(chn->ftype == cin_type) 
+	if(chn->ftype == cin_type)
 		unknown_handler();
-	else 
+	else
 	switch(chn->bufferptr->ftype) {
 		case 	no_buffer:
 			unknown_handler();
@@ -560,7 +566,7 @@ PFRTAny io_take_string(PFRTIOChannel chn) {
 			if(chn->bufferptr->bufferPtr[chn->bufferptr->current_read_offset]
 				== '"')
 				vcnt = countMMapBufferString(chn->bufferptr);
-			else 
+			else
 				unknown_handler();
 			break;
 	}
@@ -578,9 +584,9 @@ PFRTAny io_take_qchar(PFRTIOChannel chn) {
 	PFRTAny result = nil;
 	uint32_t 	vcnt = 0;
 
-	if(chn->ftype == cin_type) 
+	if(chn->ftype == cin_type)
 		unknown_handler();
-	else 
+	else
 	switch(chn->bufferptr->ftype) {
 		case 	no_buffer:
 			unknown_handler();
@@ -592,7 +598,7 @@ PFRTAny io_take_qchar(PFRTIOChannel chn) {
 			if(chn->bufferptr->bufferPtr[chn->bufferptr->current_read_offset]
 				== 0x27)
 				vcnt = countMMapBufferQChar(chn->bufferptr);
-			else 
+			else
 				unknown_handler();
 			break;
 	}
@@ -601,26 +607,26 @@ PFRTAny io_take_qchar(PFRTIOChannel chn) {
 		++p;
 		ft 	res = 0;
 		//	One char
-		if(vcnt == 3) 
+		if(vcnt == 3)
 			result = allocCharWithValue((ft) *p);
 		//	UTF-8 (2)
 		else if(vcnt == 4) {
-			res = p[0] | p[1] << 8;			
+			res = p[0] | p[1] << 8;
 			result = allocECharWithValue(res,2);
 		}
-		//	UTF-8 (3)		 
+		//	UTF-8 (3)
 		else if(vcnt == 5) {
-			res = p[0] | p[1] << 8 | p[2] << 16;			
+			res = p[0] | p[1] << 8 | p[2] << 16;
 			result = allocECharWithValue(res,3);
 		}
-		//	UTF-8 (4)		 
+		//	UTF-8 (4)
 		else if(vcnt == 6) {
 			res = p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
-			result = allocECharWithValue(res,4);			
+			result = allocECharWithValue(res,4);
 		}
 		else {
 			unknown_handler();
-		}		
+		}
 		chn->bufferptr->previous_read_offset = chn->bufferptr->current_read_offset;
 		chn->bufferptr->current_read_offset += vcnt;
 	}
@@ -640,8 +646,8 @@ static void scalarIOInfo(PFRTAny el,PIOScalarInfo psi) {
 			{
 				psi->pdata = el->value;
 				psi->bytes = el->count;
-				psi->genned = 0;				
-			}						
+				psi->genned = 0;
+			}
 			break;
 		case 	integer_type:
 			{
@@ -652,15 +658,15 @@ static void scalarIOInfo(PFRTAny el,PIOScalarInfo psi) {
 				}
 				psi->pdata = tmp;
 				psi->bytes = strlen(tmp);
-				psi->genned = 1;				
+				psi->genned = 1;
 			}
 			break;
 		case 	character_type:
 			{
 				psi->pdata = (char *) &el->value;
 				psi->bytes = el->count;
-				psi->genned = 0;				
-			}						
+				psi->genned = 0;
+			}
 			break;
 		case 	boolean_type:
 			if((ft) el->value == 0) {
@@ -679,14 +685,14 @@ static void scalarIOInfo(PFRTAny el,PIOScalarInfo psi) {
 				psi->pdata = (char *) (char *) nilStr;
 				psi->bytes = 3;
 				psi->genned = 0;
-			}			
+			}
 			break;
 		case 	end_type:
 			{
 				psi->pdata = (char *) endStr;
 				psi->bytes = 3;
 				psi->genned = 0;
-			}			
+			}
 			break;
 		default:
 			unknown_handler();
@@ -708,7 +714,7 @@ static void io_scalarRawWriter(PFRTIOChannel chn, PFRTAny el) {
 				write(chn->handle,tmp,strlen(tmp));
 				free(tmp);
 			}
-			break;				
+			break;
 		case 	character_type:
 			write(chn->handle,&el->value,el->count);
 			break;
@@ -721,7 +727,7 @@ static void io_scalarRawWriter(PFRTIOChannel chn, PFRTAny el) {
 		case 	boolean_type:
 			if((ft) el->value == 0)
 				write(chn->handle,falseStr,5);
-			else 
+			else
 				write(chn->handle,trueStr,4);
 			break;
 		default:
@@ -731,35 +737,35 @@ static void io_scalarRawWriter(PFRTIOChannel chn, PFRTAny el) {
 
 }
 
-//	Character/string writer 
+//	Character/string writer
 
 PFRTAny io_charWriter(PFRTIOChannel chn, PFRTAny el) {
 
 	if(el->fclass == scalar_class) {
 		IOScalarInfo si = {0,0,0};
-		scalarIOInfo(el,&si);		
+		scalarIOInfo(el,&si);
 		PFRTIOBuffer pb = chn->bufferptr;
 		if(pb->current_write_offset + si.bytes < pb->buffersize) {
 			strncpy(&pb->bufferPtr[pb->current_write_offset],si.pdata,si.bytes);
 			pb->previous_write_offset = pb->current_write_offset;
-			pb->current_write_offset += si.bytes;			
+			pb->current_write_offset += si.bytes;
 		}
 		else {
 			write(chn->handle,pb->bufferPtr,pb->current_write_offset);
 			strncpy(pb->bufferPtr,si.pdata,si.bytes);
-			pb->previous_write_offset = 0;			
+			pb->previous_write_offset = 0;
 			pb->current_write_offset = si.bytes;
 		}
 		if(si.genned == 1)
 			free(si.pdata);
 	}
-	else 
+	else
 		unknown_handler();
 	return (PFRTAny) chn;
 }
 
 void 	io_blockBufferClose(PFRTIOChannel chn) {
-	if(chn->openflag == open_write_only && 
+	if(chn->openflag == open_write_only &&
 		chn->bufferptr->current_write_offset > 0) {
 		PFRTIOBuffer pb = chn->bufferptr;
 		write(chn->handle,pb->bufferPtr,pb->current_write_offset);
@@ -791,12 +797,12 @@ PFRTAny io_consWriter(PFRTIOChannel chn, PFRTAny el) {
 				{
 					if((PFRTSeries) el == infinite)
 						write(chn->handle,infSeriesStr,15);
-					else 
+					else
 						write(chn->handle,seriesStr,16);
 				}
 				break;
 			case 	mapentry_type:
-				{	
+				{
 					io_consWriter(chn,lbracket);
 					io_consWriter(chn,((PFRTMapEntry)el)->key);
 					io_consWriter(chn,comma);
