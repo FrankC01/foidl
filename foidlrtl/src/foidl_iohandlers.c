@@ -10,13 +10,11 @@
 #include <foidlrt.h>
 #include <stdio.h>
 
-#ifdef _MSC_VER
-#include <io.h>
+#ifndef _MSC_VER
+#include <unistd.h>
 #else
-#include <unistd.h>
+#include <io.h>
 #endif
-
-#include <unistd.h>
 
 const char 	*trueStr = "true";
 const char 	*falseStr = "false";

@@ -58,11 +58,10 @@ STATIC_LIB   := $(LIB)$(foidlrt_LIB)
 
 BHDRFLAGS := -I $(HDRS) -r -a hdr
 BCFLAGS := -I $(HDRS) -r
-CLFLAG   = -Wall -c -I$(INC)
 ifeq ($(OS_NAME), Windows)
-	CLLFLAGS = -march=x86-64 -std=C11 -O3 -c
+	CLLFLAGS = -I $(INC) -march=x86-64 -O3 -c
 else
-	CLLFLAGS = -march=x86-64 -std=C11 -fPIC -O3 -c
+	CLLFLAGS = -I $(INC) -march=x86-64 -fPIC -O3 -c
 endif
 
 # Substitutions for recipe patterns
@@ -105,7 +104,7 @@ $(FOBJS):$(FLLS) | $(OBJS)
 # C file compilations
 
 objs/%.o : src/%.c
-	$(CLC) $< $(CLFLAG) -o $@
+	$(CLC) $< $(CLLFLAGS) -o $@
 
 $(SOBJS):$(SRCS) | $(OBJS)
 
