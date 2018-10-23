@@ -12,13 +12,13 @@
 #include <io.h>
 #include <stdlib.h>
 #else
-#include    <unistd.h>
+#include <unistd.h>
+#include <sys/mman.h>
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 // #include <io.h>
-#include <sys/mman.h>
 
 
 void foidl_exit() {
