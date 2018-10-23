@@ -14,12 +14,25 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-CC      = g++
 LT      = libtool
 LLLT 	= llvm-ar
 CLC 	= clang
 BSTRP 	= ../bin/fbstrp
 
+
+# Get OS information
+
+UNAME := $(shell uname)
+
+ifeq ($(UNAME), Linux)
+	OS_NAME := $(UNAME)
+else ifeq ($(UNAME), Solaris)
+	OS_NAME := $(UNAME)
+else ifeq ($(UNAME), Darwin)
+	OS_NAME := $(UNAME)
+else
+	OS_NAME := Windows
+endif
 
 # FOIDL Runtime generation settings
 
@@ -46,7 +59,11 @@ STATIC_LIB   := $(LIB)$(foidlrt_LIB)
 BHDRFLAGS := -I $(HDRS) -r -a hdr
 BCFLAGS := -I $(HDRS) -r
 CLFLAG   = -Wall -c -I$(INC)
-CLLFLAGS = -march=x86-64 -fPIC -O3 -c
+ifeq ($(OS_NAME), Windows)
+	CLLFLAGS = -march=x86-64 -std=C11 -O3 -c
+else
+	CLLFLAGS = -march=x86-64 -std=C11 -fPIC -O3 -c
+endif
 
 # Substitutions for recipe patterns
 

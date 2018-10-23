@@ -10,8 +10,10 @@
 #ifndef FOIDL_MAIN
 
 #define FOIDL_MAIN
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
 
 typedef unsigned long long ft;
 typedef long long lt;

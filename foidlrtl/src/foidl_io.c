@@ -9,7 +9,11 @@
 #define IO_IMPL
 #include	<foidlrt.h>
 #include 	<stdio.h>
+#ifdef _MSC_VER
+#include <io.h>
+#else
 #include 	<unistd.h>
+#endif
 #include 	<sys/stat.h>
 //#include 	<stdio.h>
 

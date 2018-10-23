@@ -127,3 +127,5 @@ samplegenesis/
 temp/libsnark
 *.ll
 *.o
+foidlrtl/headers/langcore.defs
+foidlrtl/headers/langcorem.defs
