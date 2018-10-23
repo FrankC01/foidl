@@ -46,13 +46,13 @@ FOIDL  	:= .foidl
 EXE 	:= .exe
 LL 		:= .ll
 
-foildrt_NAME := foidlrt
+foidlrt_NAME := foidlrt
 foidlrt_LIB  := libfoidlrt.a
 
 # Flags for compilation of all types
 
 BCFLAGS := -I $(RTHDRS)
-CEXEFLAGS = -l$(foildrt_NAME) -L $(RTLIB)
+CEXEFLAGS = -l$(foidlrt_NAME) -L $(RTLIB) -m64
 
 # Substitutions for recipe patterns
 
