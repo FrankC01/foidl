@@ -33,6 +33,7 @@ endif
 # llvm toolchain executables
 
 LLLT 	= llvm-lib
+LLAR	= llvm-ar
 CLC 	= clang
 
 # FOIDL Runtime generation settings
@@ -76,7 +77,7 @@ ifeq ($(OS_NAME), Windows)
 	TARGET_64=-target x86_64-pc-windows-msvc -m64
 	TARGETCL=/arch:$(if $(filter $(ARCH),x64),-m64,-m32)
 	TARGETCL_64=-m64 /arch:AVX2
-	
+
 	SYSTEM_INC=-isystem $(MSVC_INCLUDE) -isystem $(UniversalCRT_IncludePath) -isystem $(WINSDK_INC) -isystem $(WINSDK_SHARED_INC)
 	SYSTEM_INC_64=-isystem $(MSVC_INCLUDE64) -isystem $(UniversalCRT_IncludePath64) -isystem $(WINSDK_INC64) -isystem $(WINSDK_SHARED_INC64)
 	SYSTEMCL_INC=/imsvc $(MSVC_INCLUDE) /imsvc $(UniversalCRT_IncludePath) /imsvc $(WINSDK_INC) /imsvc $(WINSDK_SHARED_INC)
@@ -88,15 +89,16 @@ ifeq ($(OS_NAME), Windows)
 	SYSTEM_FLAGS=-fmsc-version=$(_MSC_VER) -fms-extensions -fms-compatibility -fdelayed-template-parsing
 	# The resulting commands
 	C64=$(CLC) -c -isystem $(INC) $(TARGET_64) $(SYSTEM_INC_64)  $(SYSTEM_FLAGS)
-	LIB64=$(LLLT) $(SYSTEM_LIB_INC_64) /nologo
 	foidlrt_LIB  := libfoidlrt.lib
+	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
+	LIB64=$(LLLT) $(SYSTEM_LIB_INC_64) /out:$(STATIC_LIB) /nologo
 else
 	C64=$(CLC) -c -isystem $(INC) -march=x86-64 -fPIC -O3 -c
-	LIB64=$(LLLT) 
 	foidlrt_LIB  := libfoidlrt.a
+	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
+	LIB64=$(LLAR) --format=default -ru $(STATIC_LIB)
 endif
 
-foildrt_NAME := foidlrt
 FDEFS 	:= .defs
 FOIDL  	:= .foidl
 LL 		:= .ll
@@ -119,14 +121,13 @@ FOBJS	:= $(subst $(FSRC), $(OBJS), $(FSRCS:$(FOIDL)=$(OBJ)))
 SRCS	:= $(wildcard $(SRC)*$(CSRC))
 SOBJS	:= $(subst $(SRC), $(OBJS), $(SRCS:$(CSRC)=$(OBJ)))
 
-STATIC_LIB  := $(LIB)$(foidlrt_LIB)
 
 all: $(STATIC_LIB) | $(FLLS) $(OBJS)
 
 # all: $(SOBJS)
 
 $(STATIC_LIB): $(FOBJS) $(SOBJS) | $(LIB)
-	$(LIB64) /out:$(STATIC_LIB) $(SOBJS) $(FOBJS)
+	$(LIB64) $(SOBJS) $(FOBJS)
 
 $(LIB):
 	mkdir lib
