@@ -55,11 +55,11 @@ FOBJS 	:= $(subst $(FSRC), $(OBJS), $(FSRCS:$(FOIDL)=$(OBJ)))
 
 # Need some kinda windows switch here
 ifeq ($(OS_NAME), Windows)
-	EXE 	:= .exe
+FEXES	:= $(subst $(FSRC), $(BIN), $(FSRCS:$(FOIDL)=.exe))
 else
-	EXE 	:=
-endif
+EXE 	:=
 FEXES	:= $(basename $(subst $(FSRC), $(BIN), $(FSRCS:$(FOIDL)=$(EXE))))
+endif
 
 
 ifeq ($(OS_NAME), Windows)
@@ -118,13 +118,14 @@ endif
 
 BCFLAGS := -I $(RTHDRS)
 
+$(info EXE=$(FEXES))
 
 all: $(FEXES) | $(BIN) $(OBJS)
 
 # all: $(FOBJS)
 
 ifeq ($(OS_NAME), Windows)
-bin/%: objs/%.o
+bin/%.exe: objs/%.o
 	$(LINK64) $(LIBS) /subsystem:console /out:$@ $<
 else
 bin/%: objs/%.o
