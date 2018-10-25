@@ -155,18 +155,31 @@ static struct chanFlags setupChanFromDecl(PFRTAny decl) {
 }
 
 static size_t fileSizeInfo(PFRTAny name) {
+	#if _MSC_VER
+	struct _stat64 buffer;
+	int status = _stat64(name->value, &buffer);
+	#else
 	struct stat buffer;
 	int status = stat(name->value, &buffer);
+	#endif
 	//printf("fileSizeInfo for %s\n",name->value );
 	if( status == - 1) {
 		perror("io open error: ");
 		foidl_fail();
 	}
+	#ifdef _MSC_VER
+	else if (_S_IFDIR && buffer.st_mode) {
+	#else
 	else if (S_ISDIR(buffer.st_mode)) {
+	#endif
 		writeCerrNl(file_is_directory);
 		foidl_fail();
 	}
+	#ifdef _MSC_VER
+	else if (! _S_IFREG && buffer.st_mode) {
+	#else
 	else if (! S_ISREG(buffer.st_mode)) {
+	#endif
 		foidl_fail();
 	}
 	else {
@@ -180,16 +193,29 @@ PFRTAny foidl_fexists_qmark(PFRTAny s) {
 	PFRTAny 	result = true;
 	if(string_type_qmark(s) == false)
 		return false;
+	#if _MSC_VER
+	struct _stat64 buffer;
+	int status = _stat64(s->value, &buffer);
+	#else
 	struct stat buffer;
 	int status = stat(s->value, &buffer);
+	#endif
 	if( status == - 1)
 		return false;
 	result = true;
+	#ifdef _MSC_VER
+	if (_S_IFDIR && buffer.st_mode) {
+	#else
 	if (S_ISDIR(buffer.st_mode)) {
+	#endif
 		writeCerrNl(file_is_directory);
 		foidl_fail();
 	}
+	#ifdef _MSC_VER
+	else if (! _S_IFREG && buffer.st_mode) {
+	#else
 	else if (! S_ISREG(buffer.st_mode)) {
+	#endif
 		foidl_fail();
 	}
 	else {
