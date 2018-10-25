@@ -26,21 +26,21 @@ void foidl_exit() {
 }
 
 ft foidl_fclose(ft file) {
-    return close(file);
+    return _close(file);
 }
 
 ft foidl_fopen_read_only(char *fname) {
-    return open(fname, O_RDONLY);
+    return _open(fname, O_RDONLY);
 }
 
 ft foidl_fopen_create_truncate(char *fname) {
-    return open(fname, O_RDWR | O_CREAT | O_TRUNC | O_APPEND, 0644);
+    return _open(fname, O_RDWR | O_CREAT | O_TRUNC | O_APPEND, 0644);
 }
 
 void *foidl_open_ro_mmap_file(char * fname) {
 
     // Open the file for reading
-    int fd = open(fname, O_RDONLY);
+    int fd = _open(fname, O_RDONLY);
 
     // Get the size of the file.
     struct stat s;

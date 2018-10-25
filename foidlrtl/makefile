@@ -88,7 +88,7 @@ ifeq ($(OS_NAME), Windows)
 	SYSTEM_LIBGCC_INC_64=-L$(MSVC_LIB64) -L$(UniversalCRT_Lib64) -L$(WINSDK_LIB64)
 	SYSTEM_FLAGS=-fmsc-version=$(_MSC_VER) -fms-extensions -fms-compatibility -fdelayed-template-parsing
 	# The resulting commands
-	C64=$(CLC) -c -isystem $(INC) $(TARGET_64) $(SYSTEM_INC_64)  $(SYSTEM_FLAGS)
+	C64=$(CLC) -c -isystem $(INC) $(TARGET_64) $(SYSTEM_INC_64) -D_CRT_SECURE_NO_WARNINGS -std=c11 $(SYSTEM_FLAGS)
 	foidlrt_LIB  := libfoidlrt.lib
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
 	LIB64=$(LLLT) $(SYSTEM_LIB_INC_64) /out:$(STATIC_LIB) /nologo

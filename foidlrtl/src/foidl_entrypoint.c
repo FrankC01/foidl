@@ -21,7 +21,7 @@ static void genEnvMap(char **es) {
 	foidl_env = foidl_map_inst_bang();	
 	while(*es) {
 		char 	*estr = *es++;		
-		char 	*temp = strdup(estr);	
+		char 	*temp = _strdup(estr);	
 		char 	*tk = strtok(temp,"=");
 		char 	*tv = strtok(NULL,"=");
 		if( tk != NULL && tv != NULL) 

@@ -16,6 +16,51 @@
 #include <io.h>
 #endif
 
+#ifndef ASPRINTF_H
+#define ASPRINTF_H
+#include <stdarg.h>
+
+/*
+ * vscprintf:
+ * MSVC implements this as _vscprintf, thus we just 'symlink' it here
+ * GNU-C-compatible compilers do not implement this, thus we implement it here
+ */
+
+#define vscprintf _vscprintf
+
+/*
+ * asprintf, vasprintf:
+ * MSVC does not implement these, thus we implement them here
+ * GNU-C-compatible compilers implement these with the same names, thus we
+ * don't have to do anything
+ */
+int vasprintf(char **strp, const char *format, va_list ap)
+{
+    int len = vscprintf(format, ap);
+    if (len == -1)
+        return -1;
+    char *str = (char*)malloc((size_t) len + 1);
+    if (!str)
+        return -1;
+    int retval = vsnprintf(str, len + 1, format, ap);
+    if (retval == -1) {
+        free(str);
+        return -1;
+    }
+    *strp = str;
+    return retval;
+}
+
+int asprintf(char **strp, const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+    int retval = vasprintf(strp, format, ap);
+    va_end(ap);
+    return retval;
+}
+#endif // ASPRINTF_H
+
 const char 	*trueStr = "true";
 const char 	*falseStr = "false";
 const char  *nilStr = "nil";
@@ -319,7 +364,7 @@ PFRTAny io_nextStringReader(PFRTIterator chn) {
 
 PFRTAny io_consReader(PFRTIOChannel chn) {
 	chn->bufferptr->bufferPtr[0] = 0;
-	int x = read(chn->handle,
+	int x = _read(chn->handle,
 		chn->bufferptr->bufferPtr,
 		chn->bufferptr->buffersize);
 	if(x < 0)
@@ -704,30 +749,30 @@ static void io_scalarRawWriter(PFRTIOChannel chn, PFRTAny el) {
 	switch(el->ftype) {
 		case 	keyword_type:
 		case 	string_type:
-			write(chn->handle,el->value,el->count);
+			_write(chn->handle,el->value,el->count);
 			break;
 		case 	integer_type:
 			{
 				char *tmp;
 				asprintf(&tmp,"%lld",(ft) el->value);
-				write(chn->handle,tmp,strlen(tmp));
+				_write(chn->handle,tmp,strlen(tmp));
 				free(tmp);
 			}
 			break;
 		case 	character_type:
-			write(chn->handle,&el->value,el->count);
+			_write(chn->handle,&el->value,el->count);
 			break;
 		case 	nil_type:
-			write(chn->handle,nilStr,3);
+			_write(chn->handle,nilStr,3);
 			break;
 		case 	end_type:
-			write(chn->handle,endStr,3);
+			_write(chn->handle,endStr,3);
 			break;
 		case 	boolean_type:
 			if((ft) el->value == 0)
-				write(chn->handle,falseStr,5);
+				_write(chn->handle,falseStr,5);
 			else
-				write(chn->handle,trueStr,4);
+				_write(chn->handle,trueStr,4);
 			break;
 		default:
 			unknown_handler();
@@ -750,7 +795,7 @@ PFRTAny io_charWriter(PFRTIOChannel chn, PFRTAny el) {
 			pb->current_write_offset += si.bytes;
 		}
 		else {
-			write(chn->handle,pb->bufferPtr,pb->current_write_offset);
+			_write(chn->handle,pb->bufferPtr,pb->current_write_offset);
 			strncpy(pb->bufferPtr,si.pdata,si.bytes);
 			pb->previous_write_offset = 0;
 			pb->current_write_offset = si.bytes;
@@ -767,7 +812,7 @@ void 	io_blockBufferClose(PFRTIOChannel chn) {
 	if(chn->openflag == open_write_only &&
 		chn->bufferptr->current_write_offset > 0) {
 		PFRTIOBuffer pb = chn->bufferptr;
-		write(chn->handle,pb->bufferPtr,pb->current_write_offset);
+		_write(chn->handle,pb->bufferPtr,pb->current_write_offset);
 		pb->current_write_offset = pb->previous_write_offset = 0;
 	}
 }
@@ -795,9 +840,9 @@ PFRTAny io_consWriter(PFRTIOChannel chn, PFRTAny el) {
 			case 	series_type:
 				{
 					if((PFRTSeries) el == infinite)
-						write(chn->handle,infSeriesStr,15);
+						_write(chn->handle,infSeriesStr,15);
 					else
-						write(chn->handle,seriesStr,16);
+						_write(chn->handle,seriesStr,16);
 				}
 				break;
 			case 	mapentry_type:
@@ -816,7 +861,7 @@ PFRTAny io_consWriter(PFRTIOChannel chn, PFRTAny el) {
 
 	}
 	else if(el->fclass == function_class) {
-		write(chn->handle,fnStr,12);
+		_write(chn->handle,fnStr,12);
 	}
 	else {
 		unknown_handler();

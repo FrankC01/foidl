@@ -14,14 +14,14 @@
 #ifndef ASPRINTF_H
 #define ASPRINTF_H
 
+#include <stdarg.h>
+
 /*
  * vscprintf:
  * MSVC implements this as _vscprintf, thus we just 'symlink' it here
  * GNU-C-compatible compilers do not implement this, thus we implement it here
  */
-#ifdef _MSC_VER
 #define vscprintf _vscprintf
-#endif
 
 /*
  * asprintf, vasprintf:
@@ -29,7 +29,6 @@
  * GNU-C-compatible compilers implement these with the same names, thus we
  * don't have to do anything
  */
-#ifdef _MSC_VER
 int vasprintf(char **strp, const char *format, va_list ap)
 {
     int len = vscprintf(format, ap);
@@ -55,7 +54,6 @@ int asprintf(char **strp, const char *format, ...)
     va_end(ap);
     return retval;
 }
-#endif
 
 #endif // ASPRINTF_H
 
