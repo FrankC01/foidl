@@ -636,6 +636,14 @@ extern PFRTAny  foidl_reduced(PFRTAny);
 extern PFRTAny  foidl_split(PFRTAny,PFRTAny); 	//	May move to string
 #endif
 
+#ifndef F_ASPRINTF
+#ifdef _MSC_VER
+#include <stdarg.h>
+extern int vasprintf(char **strp, const char *format, va_list ap);
+extern int asprintf(char **strp, const char *format, ...);
+#endif
+#endif
+
 #ifndef PREDICATE_IMPL
 extern PFRTAny scalar_equality(PFRTAny,PFRTAny);
 extern PFRTAny foidl_equal_qmark(PFRTAny,PFRTAny);
