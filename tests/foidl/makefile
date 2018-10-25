@@ -111,7 +111,7 @@ else
 	C64=$(CLC) -c -isystem $(RTHDRS) -march=x86-64 -fPIC -O3
 	foidlrt_LIB  := libfoidlrt.a
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
-	LINK64 := $(CLC) -lfoidlrt -L $(RTLLIB)
+	LINK64 := $(CLC) -lfoidlrt -L $(RTLIB)
 endif
 
 # Flags for compilation of all types
@@ -127,10 +127,11 @@ ifeq ($(OS_NAME), Windows)
 bin/%: objs/%.o
 	$(LINK64) $(LIBS) /subsystem:console /out:$@ $<
 else
+bin/%: objs/%.o
 	$(LINK64) $< -o $@
 endif
 
-$(FEXES): $(FLLS) | $(BIN)
+$(FEXES): $(FOBJS) | $(BIN)
 
 $(BIN):
 	mkdir bin
@@ -155,4 +156,4 @@ $(OBJS):
 
 
 clean:
-	$(RM) -r $(LLS) $(BIN)
+	$(RM) -r $(LLS) $(BIN) $(OBJS)

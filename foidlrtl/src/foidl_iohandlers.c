@@ -16,6 +16,7 @@
 #include <io.h>
 #endif
 
+#ifdef _MSC_VER
 #ifndef ASPRINTF_H
 #define ASPRINTF_H
 #include <stdarg.h>
@@ -60,6 +61,10 @@ int asprintf(char **strp, const char *format, ...)
     return retval;
 }
 #endif // ASPRINTF_H
+#else
+#define _read read
+#define _write write
+#endif // _MSC_VER
 
 const char 	*trueStr = "true";
 const char 	*falseStr = "false";

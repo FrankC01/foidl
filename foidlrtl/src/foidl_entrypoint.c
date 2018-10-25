@@ -1,7 +1,7 @@
 /*
 	foidl_entrypoint.c
 	Library main entry
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -15,20 +15,24 @@ static PFRTAny 	foidl_argv;
 PFRTAny 		foidl_env;
 static PFRTAny 	foidl_rtl_initialized = (PFRTAny) & _false.fclass;
 
-//	RTL Entrypoint 
+//	RTL Entrypoint
 
-static void genEnvMap(char **es) {	
-	foidl_env = foidl_map_inst_bang();	
+static void genEnvMap(char **es) {
+	foidl_env = foidl_map_inst_bang();
 	while(*es) {
-		char 	*estr = *es++;		
-		char 	*temp = _strdup(estr);	
+		char 	*estr = *es++;
+		#ifdef _MSC_VER
+		char 	*temp = _strdup(estr);
+		#else
+		char 	*temp = strdup(estr);
+		#endif
 		char 	*tk = strtok(temp,"=");
 		char 	*tv = strtok(NULL,"=");
-		if( tk != NULL && tv != NULL) 
+		if( tk != NULL && tv != NULL)
 			foidl_map_extend_bang(foidl_env,
 				allocGlobalString(tk),
-				allocGlobalString(tv));		
-	}	
+				allocGlobalString(tv));
+	}
 }
 
 PFRTAny 	foidl_rtl_init() {
@@ -37,13 +41,13 @@ PFRTAny 	foidl_rtl_init() {
 		//foidl_heap_setup();
 		foidl_gc_init();
 		foidl_rtl_init_chars();
-		foidl_rtl_init_ints();		
+		foidl_rtl_init_ints();
 		foidl_rtl_init_globals();
 		foildl_rtl_init_strings();
 		foidl_rtl_init_types();
 		foidl_rtl_init_series();
 		foidl_rt_init_regex();
-		
+
 		foidl_rtl_initialized = true;
 	}
 	return true;
@@ -51,9 +55,9 @@ PFRTAny 	foidl_rtl_init() {
 
 //	Application entry point
 
-PFRTAny 	foidl_convert_mainargs(int argc, char **as, char **es) {		
-	genEnvMap(es);	
-	foidl_argv = vector_from_argv(argc,as);	
+PFRTAny 	foidl_convert_mainargs(int argc, char **as, char **es) {
+	genEnvMap(es);
+	foidl_argv = vector_from_argv(argc,as);
 	return foidl_argv;
 }
 
@@ -82,7 +86,7 @@ PFRTAny foidl_countto(PFRTAny coll, PFRTAny exp) {
 	PFRTAny 	res=zero;
 	if(coll->fclass == io_class)
 		res = foidl_io_countto(coll,exp);
-	else 
+	else
 		unknown_handler();
 	return res;
 }
@@ -92,17 +96,17 @@ PFRTAny foidl_countnotto(PFRTAny coll, PFRTAny exp) {
 	PFRTAny 	res=zero;
 	if(coll->fclass == io_class)
 		res = foidl_io_countnotto(coll,exp);
-	else 
+	else
 		unknown_handler();
 	return res;
 }
 
 
-//	Gets the element from collection or string 
+//	Gets the element from collection or string
 //	for string: el == index
 // 	for vector: el == index
-//	for list: el == index 
-//	for map: el == key 
+//	for list: el == index
+//	for map: el == key
 //	for set: el == value
 
 PFRTAny 	foidl_get(PFRTAny coll, PFRTAny el) {
@@ -110,7 +114,7 @@ PFRTAny 	foidl_get(PFRTAny coll, PFRTAny el) {
 	if(foidl_extendable_qmark(coll) == false)
 		return result;
 
-	if(el != nil) {		
+	if(el != nil) {
 		switch(coll->ftype) {
 			case 	vector2_type:
 				return vector_get(coll,el);
@@ -121,9 +125,9 @@ PFRTAny 	foidl_get(PFRTAny coll, PFRTAny el) {
 			case 	list2_type:
 				return list_get(coll,el);
 			case 	string_type:
-				return string_get(coll,el);	
+				return string_get(coll,el);
 			default:
-				unknown_handler();					
+				unknown_handler();
 		}
 	}
 	return result;
@@ -136,7 +140,7 @@ PFRTAny 	foidl_getd(PFRTAny coll, PFRTAny el, PFRTAny def) {
 	if(foidl_extendable_qmark(coll) == false)
 		return result;
 	if(el != nil) {
-		
+
 		switch(coll->ftype) {
 			case 	vector2_type:
 				result = vector_get_default(coll,el,def);
@@ -154,9 +158,9 @@ PFRTAny 	foidl_getd(PFRTAny coll, PFRTAny el, PFRTAny def) {
 				result = string_get_default(coll,el,def);
 				break;
 			default:
-				unknown_handler();					
+				unknown_handler();
 		}
-	}	
+	}
 	return result;
 }
 
@@ -167,7 +171,7 @@ PFRTAny 	foidl_first(PFRTAny a) {
 	if(foidl_extendable_qmark(a) == false)
 		return result;
 
-	if(a->fclass == io_class) 
+	if(a->fclass == io_class)
 		return foidl_io_first(a);
 
 	switch(a->ftype) {
@@ -197,7 +201,7 @@ PFRTAny foidl_second(PFRTAny a) {
 	if(foidl_extendable_qmark(a) == false)
 		return result;
 
-	if(a->fclass == io_class) 
+	if(a->fclass == io_class)
 		return foidl_io_second(a);
 
 	switch(a->ftype) {
@@ -211,7 +215,7 @@ PFRTAny foidl_second(PFRTAny a) {
 			result = map_second(a);
 			break;
 		case 	list2_type:
-			result = list_second(a);					
+			result = list_second(a);
 			break;
 		case 	string_type:
 			result =  string_second(a);
@@ -228,7 +232,7 @@ PFRTAny 	foidl_rest(PFRTAny a) {
 	if(foidl_extendable_qmark(a) == false)
 		return result;
 
-	if((foidl_collection_qmark(a) || a->ftype == string_type) && 
+	if((foidl_collection_qmark(a) || a->ftype == string_type) &&
 		a->count > 0) {
 		switch(a->ftype) {
 			case 	vector2_type:
@@ -241,7 +245,7 @@ PFRTAny 	foidl_rest(PFRTAny a) {
 				result = map_rest(a);
 				break;
 			case 	list2_type:
-				result = list_rest(a);					
+				result = list_rest(a);
 				break;
 			case 	string_type:
 				result =  string_rest(a);
@@ -255,7 +259,7 @@ PFRTAny 	foidl_rest(PFRTAny a) {
 
 PFRTAny 	foidl_last(PFRTAny a) {
 	PFRTAny result = a;
-	if((foidl_collection_qmark(a) || a->ftype == string_type) && 
+	if((foidl_collection_qmark(a) || a->ftype == string_type) &&
 		a->count > 0) {
 		switch(a->ftype) {
 			case 	vector2_type:
@@ -289,24 +293,24 @@ PFRTAny 	foidl_last(PFRTAny a) {
 
 PFRTAny 	foidl_extendKV(PFRTAny coll, PFRTAny key, PFRTAny value) {
 	PFRTAny res = nil;
-	if(coll->ftype == map2_type) 		
+	if(coll->ftype == map2_type)
 		res = map_extend(coll,key,value);
-	else 
+	else
 		unknown_handler();
 	return res;
 }
 
 PFRTAny 	foidl_extendKV_bang(PFRTAny coll, PFRTAny key, PFRTAny value) {
 	PFRTAny res = nil;
-	if(coll->ftype == map2_type) 		
+	if(coll->ftype == map2_type)
 		res = foidl_map_extend_bang(coll,key,value);
-	else 
+	else
 		unknown_handler();
 	return res;
 }
 
 PFRTAny 	foidl_extend(PFRTAny coll, PFRTAny element) {
-	PFRTAny result=nil;	
+	PFRTAny result=nil;
 	switch(coll->ftype) {
 		case 	set2_type:
 			result = set_extend(coll,element);
@@ -321,23 +325,23 @@ PFRTAny 	foidl_extend(PFRTAny coll, PFRTAny element) {
 						foidl_second(element));
 			}
 			else {
-				foidl_ep_excp(extend_map_two_arg);	
+				foidl_ep_excp(extend_map_two_arg);
 			}
 			break;
 		case 	list2_type:
-			result = list_extend(coll,element);				
+			result = list_extend(coll,element);
 			break;
 		case 	keyword_type:
 		case 	string_type:
-			result = string_extend(coll,element);			
+			result = string_extend(coll,element);
 			break;
 	}
-	return result;	
+	return result;
 }
 
 PFRTAny 	foidl_extend_bang(PFRTAny coll, PFRTAny element) {
-	PFRTAny result=nil;	
-	
+	PFRTAny result=nil;
+
 	switch(coll->ftype) {
 		case 	set2_type:
 			result = foidl_set_extend_bang(coll,element);
@@ -354,22 +358,22 @@ PFRTAny 	foidl_extend_bang(PFRTAny coll, PFRTAny element) {
 						foidl_first(element),
 						foidl_second(element));
 				}
-				else					
+				else
 					unknown_handler();
 			}
 			else {
-				unknown_handler();	
+				unknown_handler();
 			}
 			break;
 		case 	list2_type:
-			result = list_push_bang(coll,element);				
+			result = list_push_bang(coll,element);
 			break;
 		case 	string_type:
 			string_extend_bang(coll,element);
 			break;
 	}
 
-	return result;	
+	return result;
 }
 
 PFRTAny 	foidl_take(PFRTAny arg, PFRTAny coll) {
@@ -383,7 +387,7 @@ PFRTAny 	foidl_drop(PFRTAny arg, PFRTAny coll) {
 PFRTAny 	foidl_drop_bang(PFRTAny coll, PFRTAny arg) {
 	if(coll->ftype == vector2_type)
 		return vector_drop_bang(coll,arg);
-	else 
+	else
 		unknown_handler();
 	return coll;
 }
@@ -395,7 +399,7 @@ PFRTAny 	foidl_dropFor(PFRTAny coll, PFRTAny cnt) {
 PFRTAny 	foidl_dropLast(PFRTAny coll) {
 	if(coll->ftype == string_type)
 		return string_droplast(coll);
-	else 
+	else
 		unknown_handler();
 	return coll;
 }
@@ -405,7 +409,7 @@ PFRTAny 	foidl_droplast_bang(PFRTAny coll) {
 		return string_droplast_bang(coll);
 	else if(coll->ftype == vector2_type)
 		return vector_dropLast_bang(coll);
-	else 
+	else
 		unknown_handler();
 	return coll;
 }
@@ -420,14 +424,14 @@ PFRTAny 	foidl_droplast_bang(PFRTAny coll) {
 
 static PFRTAny validateIndexable(PFRTAny coll,PFRTAny indx) {
 	PFRTAny 	isIndex = indx->ftype == integer_type ? true : false;
-	if(coll->ftype == list2_type || coll->ftype == vector2_type 
-		|| coll->ftype == string_type || coll->ftype == keyword_type) { 
-		if(isIndex == false) 
+	if(coll->ftype == list2_type || coll->ftype == vector2_type
+		|| coll->ftype == string_type || coll->ftype == keyword_type) {
+		if(isIndex == false)
 			foidl_ep_excp(update_not_integral);
 		else if((ft) indx->value >= coll->count)
 			foidl_ep_excp(index_out_of_bounds);
 		}
-	
+
 	return isIndex;
 }
 
@@ -436,8 +440,8 @@ PFRTAny 	foidl_update(PFRTAny coll, PFRTAny k, PFRTAny v) {
 
 	if(foidl_extendable_qmark(coll) == false)
 		return result;
-	validateIndexable(coll,k);	
-	
+	validateIndexable(coll,k);
+
 	PFRTAny 	finalValue =
 		foidl_function_qmark(v) == false ? v : dispatch1(v, foidl_get(coll,k));
 		switch(coll->fclass) {
@@ -462,7 +466,7 @@ PFRTAny 	foidl_update(PFRTAny coll, PFRTAny k, PFRTAny v) {
 					case 	string_type:
 						result = string_update(coll,k,finalValue);
 						break;
-				}				
+				}
 				break;
 		}
 	return result;
@@ -483,10 +487,10 @@ PFRTAny 	foidl_update_bang(PFRTAny coll, PFRTAny k, PFRTAny v) {
 						result = list_update_bang(coll,k,finalValue);
 						break;
 					case 	map2_type:
-						unknown_handler();						
+						unknown_handler();
 						break;
-					case 	vector2_type:						
-						result = vector_update_bang(coll,k,finalValue);							
+					case 	vector2_type:
+						result = vector_update_bang(coll,k,finalValue);
 						break;
 					case 	set2_type:
 						unknown_handler();
@@ -496,9 +500,9 @@ PFRTAny 	foidl_update_bang(PFRTAny coll, PFRTAny k, PFRTAny v) {
 			case 	scalar_class:
 				switch(coll->ftype) {
 					case 	string_type:
-						result = string_update_bang(coll,k,finalValue);							
+						result = string_update_bang(coll,k,finalValue);
 						break;
-				}				
+				}
 				break;
 		}
 	return result;
@@ -506,7 +510,7 @@ PFRTAny 	foidl_update_bang(PFRTAny coll, PFRTAny k, PFRTAny v) {
 
 //	remove takes collection and key to remove
 //	map: key
-//	set: key 
+//	set: key
 //	list: index
 //	vector: index
 
@@ -514,14 +518,14 @@ PFRTAny 	foidl_remove(PFRTAny coll, PFRTAny key) {
 	PFRTAny 	result = nil;
 	if(foidl_extendable_qmark(coll) == false)
 		return result;
-	validateIndexable(coll,key);	
+	validateIndexable(coll,key);
 	return coll;
 }
 
 //	removes may take a function as a key or collection of
 //	elements to remove commiserate of collection type
 //	map: Collection of keys
-//	set: Collection of keys 
+//	set: Collection of keys
 //	list: collection of diminishing indexes.
 //	vector: collection of dinishing indexes.
 //	If key is a function, it expects to take 1 argument (coll element)
@@ -535,7 +539,7 @@ PFRTAny 	foidl_removes(PFRTAny coll, PFRTAny key) {
 //		lists, removes head
 //		vector, removes tail
 
-PFRTAny 	foidl_pop(PFRTAny coll) {	
+PFRTAny 	foidl_pop(PFRTAny coll) {
 	switch(coll->ftype) {
 		case 	list2_type:
 			return list_pop(coll);
@@ -544,9 +548,9 @@ PFRTAny 	foidl_pop(PFRTAny coll) {
 			return vector_pop(coll);
 			break;
 		default:
-			unknown_handler();	
+			unknown_handler();
 	}
-		
+
 	return coll;
 }
 
@@ -559,9 +563,9 @@ PFRTAny 	foidl_pop_bang(PFRTAny coll) {
 			return list_pop_bang(coll);
 			break;
 		default:
-			unknown_handler();	
+			unknown_handler();
 	}
-		
+
 	return coll;
 }
 
@@ -570,7 +574,7 @@ PFRTAny 	foidl_pop_bang(PFRTAny coll) {
 PFRTAny foidl_push(PFRTAny coll, PFRTAny value) {
 	if(coll->ftype == list2_type)
 		return list_push(coll,value);
-	else 
+	else
 		unknown_handler();
 	return coll;
 }
@@ -578,15 +582,15 @@ PFRTAny foidl_push(PFRTAny coll, PFRTAny value) {
 PFRTAny foidl_push_bang(PFRTAny coll,PFRTAny value) {
 	if(coll->ftype == list2_type)
 		return list_push_bang(coll,value);
-	else 
-		unknown_handler();	
+	else
+		unknown_handler();
 	return coll;
 }
 
 // Reduced gens object to hopefully halt a reduction
 
 PFRTAny 	foidl_reduced(PFRTAny el) {
-	return allocAny(collection_class,reduced_type,(void *)el);	
+	return allocAny(collection_class,reduced_type,(void *)el);
 }
 
 
@@ -603,13 +607,13 @@ PFRTAny 	foidl_map(PFRTAny fn, PFRTAny coll) {
 	return coll;
 }
 
-//	
+//
 //	Reducers and folders
 //
 
 static void verifyFold(PFRTAny fn, PFRTAny fnerr, PFRTAny coll, PFRTAny collerr) {
 	if(foidl_function_qmark(fn) == true) {
-		if(foidl_collection_qmark(coll) == true || coll->ftype == string_type) 
+		if(foidl_collection_qmark(coll) == true || coll->ftype == string_type)
 			return;
 		else {
 			foidl_ep_excp(collerr);
@@ -617,7 +621,7 @@ static void verifyFold(PFRTAny fn, PFRTAny fnerr, PFRTAny coll, PFRTAny collerr)
 	}
 	else {
 		foidl_ep_excp(fnerr);
-	}	
+	}
 }
 
 static PFRTAny 	reduction(PFRTAny fn, PFRTAny accum, PFRTIterator rI) {
@@ -714,14 +718,14 @@ static PFRTAny 	internal_fold_flatten(PFRTAny accum, PFRTAny v) {
 		return internal_fold_flatten(
 			internal_fold_flatten(accum,((PFRTMapEntry)v)->key),
 			((PFRTMapEntry)v)->value);
-	else 
-		return foidl_extend_bang(accum,v);	
+	else
+		return foidl_extend_bang(accum,v);
 }
 
 PFRTAny 	foidl_flatten(PFRTAny coll) {
-	if(foidl_collection_qmark(coll) == true && coll->count != 0) 
+	if(foidl_collection_qmark(coll) == true && coll->count != 0)
 		return foidl_fold((PFRTAny) i_flat,foidl_vector_inst_bang(),coll);
-	else 
+	else
 		return (PFRTAny) empty_vector;
 }
 
@@ -731,7 +735,7 @@ PFRTAny 	foidl_coerce(PFRTAny type, PFRTAny data) {
 	return data;
 }
 
-PFRTAny 	foidl_failWith(PFRTAny str) {	
+PFRTAny 	foidl_failWith(PFRTAny str) {
 	return nil;
 }
 
@@ -744,7 +748,7 @@ PFRTAny 	foidl_split(PFRTAny s, PFRTAny d) {
 PFRTAny foidl_add(PFRTAny arg1, PFRTAny arg2) {
 	if(arg1->ftype == integer_type && arg2->ftype == integer_type)
 		return foidl_add_ints(arg1,arg2);
-	else 
+	else
 		unknown_handler();
 	return nil;
 }
@@ -752,7 +756,7 @@ PFRTAny foidl_add(PFRTAny arg1, PFRTAny arg2) {
 PFRTAny foidl_sub(PFRTAny arg1, PFRTAny arg2) {
 	if(arg1->ftype == integer_type && arg2->ftype == integer_type)
 		return foidl_sub_ints(arg1,arg2);
-	else 
+	else
 		unknown_handler();
 	return nil;
 }
@@ -760,7 +764,7 @@ PFRTAny foidl_sub(PFRTAny arg1, PFRTAny arg2) {
 PFRTAny foidl_div(PFRTAny arg1, PFRTAny arg2) {
 	if(arg1->ftype == integer_type && arg2->ftype == integer_type)
 		return foidl_div_ints(arg1,arg2);
-	else 
+	else
 		unknown_handler();
 	return nil;
 }
@@ -768,7 +772,7 @@ PFRTAny foidl_div(PFRTAny arg1, PFRTAny arg2) {
 PFRTAny foidl_mul(PFRTAny arg1, PFRTAny arg2) {
 	if(arg1->ftype == integer_type && arg2->ftype == integer_type)
 		return foidl_mul_ints(arg1,arg2);
-	else 
+	else
 		unknown_handler();
 	return nil;
 }
@@ -776,14 +780,14 @@ PFRTAny foidl_mul(PFRTAny arg1, PFRTAny arg2) {
 PFRTAny foidl_mod(PFRTAny arg1, PFRTAny arg2) {
 	if(arg1->ftype == integer_type && arg2->ftype == integer_type)
 		return foidl_mod_ints(arg1,arg2);
-	else 
+	else
 		unknown_handler();
 	return nil;
 }
 PFRTAny foidl_inc(PFRTAny el) {
 	if(el->ftype == integer_type)
 		return foidl_add(el,one);
-	else 
+	else
 		unknown_handler();
 	return nil;
 }
@@ -791,7 +795,7 @@ PFRTAny foidl_inc(PFRTAny el) {
 PFRTAny foidl_dec(PFRTAny el) {
 	if(el->ftype == integer_type)
 		return foidl_sub(el,one);
-	else 
+	else
 		unknown_handler();
 	return nil;
 }

@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifdef _MSC_VER
 #ifndef ASPRINTF_H
 #define ASPRINTF_H
 
@@ -56,6 +57,7 @@ int asprintf(char **strp, const char *format, ...)
 }
 
 #endif // ASPRINTF_H
+#endif // _MSC_VER
 
 static PFRTAny strkwMap;
 
