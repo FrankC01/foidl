@@ -137,12 +137,12 @@ $(LIB):
 headers/%.defs : fsrc/%.foidl
 	$(BSTRP) -s $< $(BHDRFLAGS) -o $@
 
-$(FHDRS):$(FSRCS)
+$(FHDRS): 
 
 ll/%.ll : fsrc/%.foidl
 	$(BSTRP) -s $< $(BCFLAGS) -o $@
 
-$(FLLS):$(FSRCS) | $(FHDRS) $(LLS)
+$(FLLS): | $(FHDRS) $(LLS)
 
 $(LLS):
 	mkdir ll
@@ -152,14 +152,14 @@ $(LLS):
 objs/%.o : ll/%.ll
 	$(C64) $< -o $@
 
-$(FOBJS):$(FLLS) | $(OBJS)
+$(FOBJS): | $(OBJS)
 
 # # C file compilations
 
 objs/%.o : src/%.c
 	$(C64) $< -o $@
 
-$(SOBJS):$(SRCS) | $(OBJS)
+$(SOBJS): | $(OBJS)
 
 $(OBJS):
 	mkdir objs
