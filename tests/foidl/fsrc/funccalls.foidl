@@ -1,0 +1,91 @@
+; ------------------------------------------------------------------------------
+; Copyright 2018 Frank V. Castellucci
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+; ------------------------------------------------------------------------------
+
+module funccalls
+
+; 'func' is a keyword and it declares a funcion in the global module scope
+; Syntax: func [:private] symbol [symbol? { [,] symbol}] {expression}
+;   :private - An optional keyword to indicate the function should not
+;               be visible outside of the module scope
+;   symbol  - The identifier of the function
+;   arglist - A list of zero or more non-repeating symbols as positional
+;               arguments passed to the function
+;   expression - One or more expressions that make up the function body.
+;               All functions return the last expression result in the
+;               function body. If no expression provided, will return nil
+;
+
+; Function 'emptyfunc' takes no arguments and returns nil
+
+func emptyfunc []
+
+; Function 'plus_ten' that takes one argument 'singlearg' and
+; returns the argument plus 10
+; Example: plus_ten: 7 => 17
+
+func plus_ten [singlearg]
+    +: singlearg 10
+
+; Function last_expr that takes one argument 'singlearg' and
+; returns the last expression encountered
+; Note: The compiler back-end may optimize out the first
+; expression
+
+func last_expr [singlearg]
+    +: plus_ten: singlearg 7
+    +: 20 20
+
+; Function Calls
+; Syntax: function_symbol':'' {args}
+;   function_symbol: - A functions symbol with ':' appended
+;   args -  Zero or more arguments as determined by function
+;           signature
+;
+; Note: Because there are no delimiters to a function call that
+; indicate end of arguments, Foidl will continue to consume expressions to
+; satisfy the call or fail trying. So, using '+:' (or add) as an example:
+; '+:' takes two expressions where each expression should evaluate
+; to a number demonstrate the 'chaining' effect
+; Expression are evaluated using post-walk
+;
+
+; First evalute 9+10 then add to arg1, return result
+;
+;       +:
+;     /   \
+;   arg1  +:
+;        /  \
+;       9   10
+
+func chomper [arg1]
+       +: arg1 +: 9 10
+
+
+; In the following... whoa... where is the second argument to '+: 9' ????
+; This will fail with a parser error but it may not fail depending
+; on what follows after the 9... uncomment and rebuild to see
+;   func fail_chomper [arg1]
+;       +: arg1 +: 9
+;
+; (add reference to partials)
+
+func main [argv]
+    print!: "Calling emptyfunc returns " printnl!: emptyfunc:
+    print!: "Calling plus_ten with 7 returns  : " printnl!: plus_ten: 7
+    print!: "Calling last_expr with 7 returns : " printnl!: last_expr: 7
+    print!: "Calling chomper with 30 returns  : " printnl!: chomper: 30
+
+

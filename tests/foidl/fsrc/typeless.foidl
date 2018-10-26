@@ -100,6 +100,9 @@ var some_expression -: inttype 2
 
 var derived_list [get: m_type "key"]
 
+; 'func' is a keyword that identifies a callable function
+; see funccalls.foidl for more indepth discussion
+
 func :private spitvars []
     print!: nlchr
     print!: "iamnil evaluates to      " printnl!: iamnil
@@ -121,7 +124,6 @@ func :private spitvars []
     print!: "Expression in collection   : " printnl!: derived_list
     print!: nlchr
 
-; 'func' is a keyword that identifies a callable function
 
 func main [argv]
     spitvars:
