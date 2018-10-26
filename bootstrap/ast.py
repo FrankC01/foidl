@@ -1118,8 +1118,8 @@ class Match(FoidlAst):
         if not havedef:
             mp = MatchPair(
                 [None, _NIL],
-                self.value[0].token,
-                self.value[0].source,
+                self.value.token,
+                self.value.source,
                 True)
             mp.eval(bundle, exprs)
 

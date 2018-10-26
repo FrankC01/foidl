@@ -1,0 +1,106 @@
+; ------------------------------------------------------------------------------
+; Copyright 2018 Frank V. Castellucci
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+; ------------------------------------------------------------------------------
+
+; Introduction to flow control expressions
+
+module flowexprs
+
+; For function and function calls see funcalls.foidl
+
+; If
+; Syntax: '?:' predicate_expression then_expression else_expression
+;   predicate_expression - The expressiont that is tested for truthness
+;   then_expression - The expression executed if test_expression truthy
+;   else_expression - The expreesion executed if test_expression not truthy
+; Example tests if a is nil using library nil?: function call and returns
+; true  if it is, else returns false
+
+func nil_expression [a]
+
+    ?: nil?: a
+        true
+        false
+
+; Match
+; Syntax 'match' [symbol] match_expression
+;           '|' expression_pattern then_expression
+;           '|' :default then_expression
+;   [result] - Optional local symbol exposing result in enclosing scope
+;   match_expression - The expression whose result is used to test match pattern
+;   |        - Match 'guard' indicating a pair, consisting of
+;   expression_pattern - Expression to test for match, typicall with the
+;                        match expression
+;   then_expression - If expression_pattern matches, execute this
+;   :default   - Should appear last, indicated if all other matches
+;                fail, the expression assigned should be executed
+
+func match_expression0 [a]
+
+    ; Capture the result in a local variable, which is lexically scoped
+    ; to the function, that is determined by a match guard or nil default
+    ; Note that '%0' refers to result of match_expression
+
+    match +: a 10
+        | <: %0 100   "Less than 100"
+        | >: %0 100   "Greater than 100"
+        | =: %0 100   "Equal to 100"
+        ;           Compiler adds default which returns nil
+
+func match_expression1 [a]
+
+    ; Capture the result in a local variable, which is lexically scoped
+    ; to the function
+    ; This variation has
+    ;   'b' - which captures the then_expression found in matching
+    ;   100 - a single value (typically a literal) that the compiler
+    ;           expands to =: %0 100
+    ;   :default - The fall through expression to execute
+    ; Note that '%0' refers to result of match_expression
+
+    match b +: a 10
+        | <: %0 100     /: %0 5
+        | >: %0 160     /: %0 10
+        | 100           %0
+        | :default      0
+
+
+    ; Now we can use 'b' in lexical scope, or deeper
+
+    ?: =: b 0
+        "Default encountered"
+        b
+
+
+func main [argv]
+    print!: nlchr
+    print!: "Is nil nil? Answer : " printnl!: nil_expression: nil
+    print!: "Is 5 nil? Answer   : " printnl!: nil_expression: 5
+    print!: nlchr
+    print!: "Match_0 to see if 82 + 10 is : "
+        printnl!: match_expression0: 82
+    print!: "Match_0 to see if 92 + 10 is : "
+        printnl!: match_expression0: 92
+    print!: "Match_0 to see if 90 + 10 is : "
+        printnl!: match_expression0: 90
+    print!: nlchr
+    print!: "Match_1 to see if 82 + 10 is : "
+        printnl!: match_expression1: 82
+    print!: "Match_1 to see if 155 + 10 is : "
+        printnl!: match_expression1: 155
+    print!: "Match_1 to see if 90 + 10 is : "
+        printnl!: match_expression1: 90
+    print!: "Match_1 to test if 100 + 10 is : "
+        printnl!: match_expression1: 100
