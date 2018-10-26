@@ -1,0 +1,129 @@
+; ------------------------------------------------------------------------------
+; Copyright 2018 Frank V. Castellucci
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+; ------------------------------------------------------------------------------
+
+module typeless
+
+; Foidl is considered 'typeless' and does not require type hints
+; There is runtime checking in the core runtime. For example, the
+; integral math functions chekc that the arguments are of a numeric
+; value
+
+; 'var' is a keyword and it declares a variable in the global module scope
+; Syntax: var [:private] symbol [expression]
+;   :private - An optional keyword to indicate the var should not
+;               be visible outside of the module scope
+;   somesymbol - The identifier of the var
+;   expression - The literal or expression assigned to the variable.
+;                If no expression provided, defaults to nil
+;
+; vars are immutable, just as are all data types
+;
+; The FOIDL parser will infer internal type information from
+; the expression if possible
+
+; Here are most of the literal expressions supported
+
+var iamnil                      ; No expression will be assigned 'nil'
+var inttype 5                   ; Will parse as an integer
+var hextype 0xdead09a764        ; Hex, '0x...' converts to integer
+var bintype 0b10010011          ; Binary, '0b...' converts to integer
+var strtype "I'm a string"
+var chrtype 'a'
+var kwdtype :keyword            ; No quotes needed on keywords
+
+; Foidl supports collection types: Lists, Vectors, Maps and Sets
+
+; List
+; Syntax: '[' expression? { [,] expression} ']'
+; Lists are implemented as a linked list and can take
+; zero or more expression. Note that 'spitvars' the function is an
+; expression as is printed as a 'Fn reference'
+; or just another expression
+
+var l_type [inttype hextype
+            bintype, strtype,
+            spitvars, iamnil]
+
+var  l_empty []
+
+; Vector
+; Syntax: '<' expression? { [,] expression} '>'
+; Vectors are implemented as a contigous block of memory with
+; zero or more expression.
+; When printed, vectors are distinguised by #[ ... ]
+; Oh look, our vector contains our list. Yes, you can nest data
+
+var v_type <inttype iamnil l_type>
+var v_empty <>
+
+; Map
+; Syntax: '{' key value {[,] key value} '}'
+; Maps are associative data structures that takes zero or
+; more 'key' 'value' expressions.
+; zero or more expression. If there are matching
+; keys, the last one encountered becomes the
+; key/value of the entry
+
+var m_type {"key" spitvars, :keywordforkey v_type}
+var m_empty {}
+
+; Set
+; Syntax: '#{' expression {[,] expression} '}'
+; Sets are associative data structures that takes zero or
+; more expressions.
+; Sets, unlike Lists and Vectors, only contains
+; unique elements
+
+var s_type #{"word" hextype spitvars "word"}
+var s_empty #{}
+
+; Final note. vars can be declared with expressions that
+; are evaluated at startup. This also is the same for
+; entities in collection types
+
+var some_expression -: inttype 2
+
+; Using get on map with key to get value
+
+var derived_list [get: m_type "key"]
+
+func :private spitvars []
+    print!: nlchr
+    print!: "iamnil evaluates to      " printnl!: iamnil
+    print!: "literal inttype evaluates to " printnl!: inttype
+    print!: "literal hextype evaluates to " printnl!: hextype
+    print!: "literal bintype evaluates to " printnl!: bintype
+    print!: "literal strtype evaluates to " printnl!: strtype
+    print!: "literal chrtype evaluates to " printnl!: chrtype
+    print!: "literal kwdtype evaluates to " printnl!: kwdtype
+    print!: "Our list of expressions    : " printnl!: l_type
+    print!: "Our empty list             : " printnl!: l_empty
+    print!: "Our vector                 : " printnl!: v_type
+    print!: "Our empty vector           : " printnl!: v_empty
+    print!: "Our map                    : " printnl!: m_type
+    print!: "Our empty map              : " printnl!: m_empty
+    print!: "Our set                    : " printnl!: s_type
+    print!: "Our empty set              : " printnl!: s_empty
+    print!: "The age of the author is   : " printnl!: some_expression
+    print!: "Expression in collection   : " printnl!: derived_list
+    print!: nlchr
+
+; 'func' is a keyword that identifies a callable function
+
+func main [argv]
+    spitvars:
+    printnl!: "So endeth the lesson"
+    print!: nlchr
