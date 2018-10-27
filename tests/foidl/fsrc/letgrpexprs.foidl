@@ -28,6 +28,7 @@ module letgrpexprs
 ; Note: Groups are the semantic equivalent of 1 expression
 
 func group_expression0 [a]
+
     ; Nonsensical group to demonstrate multiple functions
     @(
         printnl!: "First expression in group"
@@ -63,11 +64,12 @@ func let_expression0 [a]
         *: b d
 
     ;   Demonstrate using group as the let expression
+
     let e []
         @(
             print!: "Result of first let = " printnl!: b
             print!: "Result of second let = " printnl!: c
-            printnl!: "Let/Group result will be 200"
+            printnl!: "This group result will be 200"
             200
         )
 
@@ -77,4 +79,4 @@ func let_expression0 [a]
 func main [argv]
     printnl!: "Let_0 churns up 7 "
     let x [] let_expression0: 20
-    print!: "Result of let/group churn = " printnl!: x
+    print!: "Result of Let_0 = " printnl!: x
