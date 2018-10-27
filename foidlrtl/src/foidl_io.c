@@ -168,7 +168,7 @@ static size_t fileSizeInfo(PFRTAny name) {
 		foidl_fail();
 	}
 	#ifdef _MSC_VER
-	else if (_S_IFDIR && buffer.st_mode) {
+	else if (_S_IFDIR & buffer.st_mode) {
 	#else
 	else if (S_ISDIR(buffer.st_mode)) {
 	#endif
@@ -176,7 +176,7 @@ static size_t fileSizeInfo(PFRTAny name) {
 		foidl_fail();
 	}
 	#ifdef _MSC_VER
-	else if (! _S_IFREG && buffer.st_mode) {
+	else if (! _S_IFREG & buffer.st_mode) {
 	#else
 	else if (! S_ISREG(buffer.st_mode)) {
 	#endif
@@ -204,7 +204,7 @@ PFRTAny foidl_fexists_qmark(PFRTAny s) {
 		return false;
 	result = true;
 	#ifdef _MSC_VER
-	if (_S_IFDIR && buffer.st_mode) {
+	if (_S_IFDIR & buffer.st_mode) {
 	#else
 	if (S_ISDIR(buffer.st_mode)) {
 	#endif
@@ -212,7 +212,7 @@ PFRTAny foidl_fexists_qmark(PFRTAny s) {
 		foidl_fail();
 	}
 	#ifdef _MSC_VER
-	else if (! _S_IFREG && buffer.st_mode) {
+	else if (! _S_IFREG & buffer.st_mode) {
 	#else
 	else if (! S_ISREG(buffer.st_mode)) {
 	#endif
