@@ -25,6 +25,9 @@ module flowexprs
 ;   predicate_expression - The expressiont that is tested for truthness
 ;   then_expression - The expression executed if test_expression truthy
 ;   else_expression - The expreesion executed if test_expression not truthy
+;
+; Note: Ifs are the semantic equivalent of 1 expression
+
 ; Example tests if a is nil using library nil?: function call and returns
 ; true  if it is, else returns false
 
@@ -38,14 +41,17 @@ func nil_expression [a]
 ; Syntax 'match' [symbol] match_expression
 ;           '|' expression_pattern then_expression
 ;           '|' :default then_expression
-;   [result] - Optional local symbol exposing result in enclosing scope
+;   [symbol] - Optional local symbol exposing result in enclosing scope
 ;   match_expression - The expression whose result is used to test match pattern
 ;   |        - Match 'guard' indicating a pair, consisting of
-;   expression_pattern - Expression to test for match, typicall with the
+;   predicate_expression - Expression to test for match, typical with the
 ;                        match expression
-;   then_expression - If expression_pattern matches, execute this
+;   then_expression - If predicate_expression matches, execute this
 ;   :default   - Should appear last, indicated if all other matches
 ;                fail, the expression assigned should be executed
+;
+; Note: Matches are the semantic equivalent of 1 expression
+
 
 func match_expression0 [a]
 

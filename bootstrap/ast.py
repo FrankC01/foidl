@@ -829,9 +829,16 @@ class Group(FoidlAst):
 
 
 class LetPairs(CollectionAst):
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, value, token, src):
+        super().__init__(token, src)
         self._prefix = None
+        if not isinstance(value, EmptyCollection):
+            if len(value.value) % 2 != 0:
+                raise errors.ParseError(
+                    "{}:{} Uneven let pairs".format(
+                        token.getsourcepos().lineno,
+                        token.getsourcepos().colno))
+        self.value = value
 
     def elements(self):
         return len(self.value)
@@ -850,19 +857,20 @@ class LetPairs(CollectionAst):
 
     def eval(self, bundle, leader):
         # Put symbols in table and evaluate expression
-        for i, j in zip(*[iter(self.value)] * 2):
-            expr = []
-            j.eval(bundle, expr)
-            ident = self.prefix + "_" + i.value
-            lar = LetArgReference(i)
-            lar.ident = ident
-            bundle.symtree.register_symbol(i.value, lar)
-            leader.append(
-                ParseLetPair(
-                    ExpressionType.LET_ARG_PAIR,
-                    expr,
-                    res=lar,
-                    name=ident))
+        if not isinstance(self.value, EmptyCollection):
+            for i, j in zip(*[iter(self.value.value)] * 2):
+                expr = []
+                j.eval(bundle, expr)
+                ident = self.prefix + "_" + i.value
+                lar = LetArgReference(i)
+                lar.ident = ident
+                bundle.symtree.register_symbol(i.value, lar)
+                leader.append(
+                    ParseLetPair(
+                        ExpressionType.LET_ARG_PAIR,
+                        expr,
+                        res=lar,
+                        name=ident))
 
 
 class Let(FoidlAst):
@@ -870,13 +878,6 @@ class Let(FoidlAst):
         super().__init__(token, src)
         self._id = symbol
         self._letpairs = lpairs
-
-        if type(lpairs) is not EmptyCollection:
-            if len(self._letpairs.value) % 2:
-                raise errors.ParseError(
-                    "{}:{} un-even let pairs".format(
-                        token.getsourcepos().lineno,
-                        token.getsourcepos().colno))
 
         self.value = expr if type(expr[0]) is not list else expr[0]
 

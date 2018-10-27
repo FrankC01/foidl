@@ -593,7 +593,7 @@ class AParser(object):
             _panic("{}:{} Missing Let expression {}", token)
 
         letexpr = [frame.pop(0)]
-        letargs = ast.LetPairs(letargs.value)
+        letargs = ast.LetPairs(letargs, token, self.input)
         _check_no_declarations(token, letexpr, self._decl_set)
         frame.insert(
             0,
