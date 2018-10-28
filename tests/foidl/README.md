@@ -10,5 +10,6 @@ For the consumer it is suggested that the following order provides a gradual int
 | [typeless.foidl](fsrc/typeless.foidl) | No type or type hinting required. Examines vars, literals and data collections |
 | [funccalls.foidl](fsrc/funccalls.foidl) | Function declarations and function call expressions |
 | [flowexprs.foidl](fsrc/flowexprs.foidl) | Basic flow control expressions: If, Match and local variable scope intro |
-| [letgrpexprs.foidl](fsrc/letgrpexprs.foidl) | The lovable Let, some more local scope stuff and da' Group |
+| [letgrpexprs.foidl](fsrc/letgrpexprs.foidl) | Let and Group expressions |
+| [lcpexprs.foidl](fsrc/lcpexprs.foidl) | Lambdas, Closures and Partials |
 

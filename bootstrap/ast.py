@@ -280,7 +280,7 @@ class LetResReference(ResultReference):
         super().__init__(astmember)
 
     def __repr__(self):
-        return "LetResRef({}:ptr {})".format(self.argname, self.ptr)
+        return "LetResRefefernce({}:ptr {})".format(self.argname, self.ptr)
 
 
 class MatchResReference(ResultReference):
@@ -1160,8 +1160,9 @@ class Lambda(FoidlAst):
         # Append Body
         plambda, plamdaref = refactor_lambda(
             self, self.token.getsourcepos(), argref, expr,
-            [FuncArgReference, LetArgReference,
-                LetResReference, MatchResReference])
+            [FuncArgReference, LetArgReference, MatchExprReference,
+                LetResReference, MatchResReference],
+            [LiteralReference])
         # [print("Lamb Arg {}".format(n)) for n in plambda.pre]
         bundle.lambdas.append(plambda)
         # Pop stack
@@ -1180,12 +1181,22 @@ class Partial(FoidlAst):
         self.name = "partial_" + str(sp.lineno) + "_" + str(sp.colno)
 
     def _partial_ok(self, parray):
-        if type(parray[0]) is not ParseSymbol:
+        if isinstance(
+            parray[0],
+                (
+                    ParseLet,
+                    ParseGroup,
+                    ParseLambdaRef,
+                    ParsePartialDecl,
+                    ParsePartialInvk)):
+            return parray[0]
+        target = parray[0]
+        if not isinstance(target, ParseSymbol):
             raise errors.SymbolException(
                 "Partial does not expect type {} in first position".format(
-                    parray[0]))
-        p0expr = parray[0].exprs[0]
-        if type(p0expr) is VarReference:
+                    target))
+        p0expr = target.exprs[0]
+        if isinstance(p0expr, VarReference):
             check = p0expr.exprs[0]
             if type(check) is ParseSymbol:
                 check = check.exprs[0]
@@ -1228,7 +1239,7 @@ class Partial(FoidlAst):
 
     @methdispatch
     def _eval_partial(self, ktype, array, bundle, leader):
-        errors.SymbolException("_eval_partial unhandled for {}".format(ktype))
+        errors.ParseError("_eval_partial unhandled for {}".format(ktype))
 
     @_eval_partial.register(FuncReference)
     def _epfr(self, ktype, array, bundle, leader):
@@ -1248,9 +1259,18 @@ class Partial(FoidlAst):
         else:
             self._eval_decl(ktype, array, bundle, leader)
 
+    @_eval_partial.register(ParseLet)
+    def _eppdcl(self, ktype, array, bundle, leader):
+        self._eval_invk(ktype, array, bundle, leader)
+        # raise errors.ParseError("_eval_partial inside {}".format(ktype))
+
+    @_eval_partial.register(ParseGroup)
+    @_eval_partial.register(ParsePartialDecl)
+    @_eval_partial.register(ParsePartialInvk)
     @_eval_partial.register(LetArgReference)
+    @_eval_partial.register(LetResReference)
     @_eval_partial.register(FuncArgReference)
-    def _epfar(self, ktype, array, bundle, leader):
+    def _eprefs(self, ktype, array, bundle, leader):
         """Assume a partial invocation"""
         self._eval_invk(ktype, array, bundle, leader)
 

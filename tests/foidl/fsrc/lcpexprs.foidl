@@ -1,0 +1,144 @@
+; ------------------------------------------------------------------------------
+; Copyright 2018 Frank V. Castellucci
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+; ------------------------------------------------------------------------------
+
+; Introduction to lambda, closure and partial expressions
+
+module lcpexprs
+
+; Lambda
+; Symntax: '^[' symbol? { [,] symbol} ']' expression
+;   arglist - A list of zero or more non-repeating symbols as positional
+;               arguments passed when calling the lambda
+;   expression - Expression to execute when evaluating lambda
+;
+; Note: Lambdas are the semantic equivalent of 1 expression
+; Note: Invoking a lambda uses partial syntax. See partials below
+
+var mylambda ^[a b] +: a b  ; Contrived for demo
+
+; Function that calls lambda defined in var mylambda
+func lambda_from_var [a b]
+    print!: "Result of calling mylambda : "
+    printnl!: (mylambda a b)
+
+; Function that calls function passed in as argument
+func indirect_invocation [fn a b]
+    print!: "Result of HOF indirect : "
+    printnl!: (fn a b)
+
+; Function to show lambda invocation as let result
+func lambda_from_let [a b]
+    let x []
+        ^[c d] *: c d
+    print!: "Result of calling let result : "
+    printnl!: (x a b)
+
+; Function to show lambda invocation as group result
+func lambda_from_group [a b]
+    print!: "Result of calling "
+    printnl!: (
+        @(
+            print!: "from group : "
+            ^[c d] +: c d)
+        a b)
+
+; Function to show lambda invocation directly
+func lambda_direct [a b]
+    print!: "Result of direct call "
+    printnl!: (^[c d] +: c d a b)
+
+; Closures
+; a.k.a. Lexical Closure or Functional Closure
+; Closure supports 'closing over' of a variable in some lexical scope
+; into the enclosing lexical scope
+; The variable closed over is hereto referred to as a 'free' variable
+
+; Function that returns a lambda that closes over a local var
+; for later use, x is the 'free variable'
+func closure_seed []
+    ; x = 30
+    let x [] +: 10 20
+    ; Close over x (30) and take two more args to add them up
+    ^[a b] +: x +: a b
+
+; Function to drive closures
+func do_closures [a b]
+    ; Get the closed over lambda which is
+    ; something that takes two arguments
+    let thing [] closure_seed:
+    print!: "Lets see what the result "
+    printnl!: (thing a b)
+    print!: "Lets see what the result (expect 90) "
+    printnl!: (thing 30 30)
+
+; Partial
+; Symntax: '(' ( symbol | lambda | partial ) [,] expression+ ')'
+;   symbol - A var, funcname, let result, match result
+;   expression - One or more expressions
+;
+; Note: Partials are the semantic equivalent of 1 expression
+
+; Function to use for partials demo
+func addfour [a b c d]
+    +: a +: b +: c d
+
+; Function to excercise partials
+; In each case, except the last, the inner partial forms a function
+; and then invokes the result of the inner with the outer arguments
+; In the last case, the compiler optimizes out the partial and makes
+; a direct call
+func do_partials[a b c d]
+    print!: "Create partial from addfour with 1 arg and call with remaining "
+    printnl!: ((addfour a) b c d)
+    print!: "Create partial from addfour with 2 arg and call with remaining "
+    printnl!: ((addfour a b) c d)
+    print!: "Create partial from addfour with 3 arg and call with remaining "
+    printnl!: ((addfour a b c) d)
+    print!: "Create partial from addfour with 4 args                        "
+    printnl!: (addfour a b c d)
+    print!: "Which is the same as calling 'addfour: a b c d'                "
+    printnl!: addfour: a b c d
+
+    match +: a b
+        | 2         ^[f] +: a f
+        | 3         ^[f] +: b f
+        | :default  ^[f] +: c f
+
+; Entry point
+func main [argv]
+
+    print!: nlchr
+    printnl!: "Lambda Examples"
+    printnl!: "==============="
+    lambda_from_var: 6 7
+    indirect_invocation: ^[a b] -: a b 10 9
+    lambda_from_let: 6 7
+    lambda_from_group: 100 10
+    lambda_direct: 50 50
+
+    print!: nlchr
+    printnl!: "Closure Examples"
+    printnl!: "================"
+    do_closures: 5 10
+
+    print!: nlchr
+    printnl!: "Partials Examples"
+    printnl!: "================="
+    let a [] do_partials: 1 2 3 4
+    print!: "Dazzled yet? " printnl!: (a 5)
+    print!: nlchr
+
+

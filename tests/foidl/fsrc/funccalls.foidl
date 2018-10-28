@@ -19,7 +19,7 @@
 module funccalls
 
 ; 'func' is a keyword and it declares a funcion in the global module scope
-; Syntax: func [:private] symbol '[' symbol? { [,] symbol}']' {expression}
+; Syntax: func [:private] symbol '[' symbol? { [,] symbol} ']' {expression}
 ;   :private - An optional keyword to indicate the function should not
 ;               be visible outside of the module scope
 ;   symbol  - The identifier of the function

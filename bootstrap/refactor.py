@@ -25,14 +25,15 @@ from ptree import ParseSymbol, ParseLambda, ParseLambdaRef, ParseClosureRef
 LOGGER = logging.getLogger()
 
 
-def _find_refs(argsig, srcpos, body, cntrl, clist, newlist, bexpr=None):
+def _find_refs(
+        argsig, srcpos, body, cntrl, ecntrl, clist, newlist, bexpr=None):
     """Find closures candidates in body.
 
     These are identifiable as some reference types
-    that have a token source position elsewhere
-    said references"""
+    that have a token source position prior to lambda declaration
+    """
 
-    def _inner(el, elref, elpos, bexpr):
+    def _deep_inner(el, elref, elpos, bexpr):
         if elref in argsig or elpos.lineno > srcpos.lineno:
             return
         elif elpos.lineno < srcpos.lineno or elpos.colno < srcpos.colno:
@@ -47,23 +48,42 @@ def _find_refs(argsig, srcpos, body, cntrl, clist, newlist, bexpr=None):
                 "Unhandled lambda free variable location {}".format(
                     elpos))
 
+    def _light_inner(el, elref, elpos, bexpr):
+        if elref in argsig or elpos.lineno > srcpos.lineno:
+            return
+        elif elpos.lineno < srcpos.lineno or elpos.colno < srcpos.colno:
+            index = bexpr.index(el)
+            nc = copy.deepcopy(el)
+            # nc.exprs[0] = cntrl[0].replicate(elref)
+            bexpr[index] = nc
+            newlist.append(nc)
+            clist.append(el)
+        else:
+            raise ParseError(
+                "Unhandled lambda free variable location {}".format(
+                    elpos))
+
     if type(body) is list:
         [_find_refs(
-            argsig, srcpos, n, cntrl, clist, newlist) for n in body]
+            argsig, srcpos, n, cntrl, ecntrl, clist, newlist) for n in body]
+    elif type(body) in ecntrl:
+        pass
+    elif type(body) in cntrl and not hasattr(body, 'exprs'):
+        raise ParseError("Don't know how to handle {}".format(body))
     elif type(body) is ParseSymbol and type(body.exprs[0]) in cntrl:
-        _inner(
+        _deep_inner(
             body, body.exprs[0], body.exprs[0].token.getsourcepos(), bexpr)
     else:
         [_find_refs(
-            argsig, srcpos, n, cntrl, clist, newlist, body.exprs)
+            argsig, srcpos, n, cntrl, ecntrl, clist, newlist, body.exprs)
             for n in body.exprs]
 
 
-def refactor_lambda(astref, srcpos, argsig, body, cntrl):
+def refactor_lambda(astref, srcpos, argsig, body, cntrl, ecntrl):
     """Update lambda so it captures free variables"""
-    clist = []
-    newlist = []
-    _find_refs(argsig, srcpos, body, cntrl, clist, newlist)
+    clist = []      # Definition argument signature
+    newlist = []    # New list is ?
+    _find_refs(argsig, srcpos, body, cntrl, ecntrl, clist, newlist)
     if clist:
         # Get the argsig references, extend, reindex
         newfa = [n.exprs[0] for n in newlist]
