@@ -676,11 +676,18 @@ class Function(FoidlAst):
         i = 0
         argref = []
         if not isinstance(self.arguments, EmptyCollection):
+            symset = set()
             for a in self.arguments.value:
+                symset.add(a.name)
                 ar = FuncArgReference(a, a.name, i)
                 bundle.symtree.register_symbol(a.name, ar)
                 argref.append(ar)
                 i += 1
+            if len(symset) != len(self.arguments.value):
+                raise errors.ParseError(
+                    "{}:{} Repeating symbol in function args not allowed".format(
+                        self.token.getsourcepos().lineno,
+                        self.token.getsourcepos().colno))
 
         # Eval children
         expr = []
@@ -866,10 +873,13 @@ class LetPairs(CollectionAst):
 
     def eval(self, bundle, leader):
         # Put symbols in table and evaluate expression
+
         if not isinstance(self.value, EmptyCollection):
+            symset = set()
             for i, j in zip(*[iter(self.value.value)] * 2):
                 expr = []
                 j.eval(bundle, expr)
+                symset.add(i.value)
                 ident = self.prefix + "_" + i.value
                 lar = LetArgReference(i)
                 lar.ident = ident
@@ -880,6 +890,11 @@ class LetPairs(CollectionAst):
                         expr,
                         res=lar,
                         name=ident))
+            if len(symset) != len(self.value.value) / 2:
+                raise errors.ParseError(
+                    "{}:{} Repeating symbol in let args not allowed".format(
+                        self.token.getsourcepos().lineno,
+                        self.token.getsourcepos().colno))
 
 
 class Let(FoidlAst):
@@ -1163,11 +1178,19 @@ class Lambda(FoidlAst):
         i = 0
         argref = []
         if not isinstance(self.arguments, EmptyCollection):
+            symset = set()
             for a in self.arguments.value:
+                symset.add(a.name)
                 ar = FuncArgReference(a, a.name, i)
                 bundle.symtree.register_symbol(a.name, ar)
                 argref.append(ar)
                 i += 1
+            if len(symset) != len(self.arguments.value):
+                raise errors.ParseError(
+                    "{}:{} Repeating symbol in lambda args not allowed".format(
+                        self.token.getsourcepos().lineno,
+                        self.token.getsourcepos().colno))
+
         # Eval expression
         expr = []
         for e in self.value:
