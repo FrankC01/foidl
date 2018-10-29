@@ -143,6 +143,10 @@ class FuncReference(FoidlReference):
     def name(self):
         return self._name
 
+    @name.setter
+    def name(self, newname):
+        self._name = newname
+
     @property
     def ident(self):
         return self._ident
@@ -300,7 +304,12 @@ class MatchExprReference(ResultReference):
         super().__init__(astmember)
 
     def __repr__(self):
-        return "MatchExprRef({}:ptr {})".format(self.argname, self.ptr)
+        return "MatchExprRef({} ident {}:{}:{} ptr {})".format(
+            self.argname,
+            self.token,
+            self.token.getsourcepos(),
+            self.ident,
+            self.ptr)
 
 
 class FoidlAst(ABC):
@@ -941,6 +950,11 @@ class MatchExpressionRef(FoidlAst):
         sym = bundle.symtree.resolve_symbol(self.name)
         if sym:
             leader.append(sym)
+            # leader.append(
+            #     ParseMatchExpression(
+            #         ExpressionType.MATCH_EXPR,
+            #         [sym],
+            #         self.token))
         else:
             raise errors.ParseError(
                 "Can not result match expression reference {}".format(
@@ -1148,11 +1162,12 @@ class Lambda(FoidlAst):
         bundle.symtree.push_scope(self.name, self.name)
         i = 0
         argref = []
-        for a in self.arguments.value:
-            ar = FuncArgReference(a, a.name, i)
-            bundle.symtree.register_symbol(a.name, ar)
-            argref.append(ar)
-            i += 1
+        if not isinstance(self.arguments, EmptyCollection):
+            for a in self.arguments.value:
+                ar = FuncArgReference(a, a.name, i)
+                bundle.symtree.register_symbol(a.name, ar)
+                argref.append(ar)
+                i += 1
         # Eval expression
         expr = []
         for e in self.value:
@@ -1267,6 +1282,7 @@ class Partial(FoidlAst):
     @_eval_partial.register(ParseGroup)
     @_eval_partial.register(ParsePartialDecl)
     @_eval_partial.register(ParsePartialInvk)
+    @_eval_partial.register(MatchResReference)
     @_eval_partial.register(LetArgReference)
     @_eval_partial.register(LetResReference)
     @_eval_partial.register(FuncArgReference)

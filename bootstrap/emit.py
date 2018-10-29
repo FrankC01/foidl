@@ -518,12 +518,15 @@ class LlvmGen(object):
         fref = builder.call(
             builder.module.get_global("foidl_tofuncref"),
             [builder.bitcast(fn, void_ptr), mcnt])
-        for i in el.exprs:
-            myarg = [fref]
-            self._emit_et(i, builder, myarg)
-            last = builder.call(
-                builder.module.get_global("foidl_imbue"),
-                myarg)
+        if el.exprs:
+            for i in el.exprs:
+                myarg = [fref]
+                self._emit_et(i, builder, myarg)
+                last = builder.call(
+                    builder.module.get_global("foidl_imbue"),
+                    myarg)
+        else:
+            last = fref
         frame.append(last)
 
     @_emit_et.register(ParsePartialInvk)
@@ -535,12 +538,15 @@ class LlvmGen(object):
         fref = builder.call(
             builder.module.get_global("foidl_fref_instance"),
             fpre)
-        for i in el.exprs:
-            myarg = [fref]
-            self._emit_et(i, builder, myarg)
-            last = builder.call(
-                builder.module.get_global("foidl_imbue"),
-                myarg)
+        if el.exprs:
+            for i in el.exprs:
+                myarg = [fref]
+                self._emit_et(i, builder, myarg)
+                last = builder.call(
+                    builder.module.get_global("foidl_imbue"),
+                    myarg)
+        else:
+            last = fref
         frame.append(last)
 
     @_emit_et.register(ParseGroup)

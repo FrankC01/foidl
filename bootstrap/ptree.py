@@ -105,6 +105,10 @@ class ParseMatch(ParseTree):
     pass
 
 
+class ParseMatchExpression(ParseTree):
+    pass
+
+
 class ParseMatchPair(ParseTree):
     pass
 
