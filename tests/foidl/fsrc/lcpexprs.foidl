@@ -113,9 +113,9 @@ func do_partials[a b c d]
     printnl!: addfour: a b c d
 
     match +: a b
-        | 2         ^[f] +: a f
-        | 3         ^[f] +: b f
-        | :default  ^[f] +: c f
+        | 2         ^[f] +: %0 f ; Closing over match's predicate result
+        | 3         ^[f] +: f +: f %0
+        | :default  ^[f] printnl!: f ; print functions return nil
 
 ; Entry point
 func main [argv]
