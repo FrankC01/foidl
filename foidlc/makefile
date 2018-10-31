@@ -14,7 +14,7 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-BSTRP 	= ../bin/fbstrp
+BSTRP 	= python ../bin/fbstrp
 
 # Get OS information
 
@@ -126,7 +126,7 @@ all: $(FOIDLC) | $(HDRS) $(LLS) $(OBJS)
 
 ifeq ($(OS_NAME), Windows)
 $(FOIDLC): $(FOBJS) | $(BIN)
-	$(LINK64) $(LIBS) /subsystem:console /out:$@ $(FOIDLC)
+	$(LINK64) $(LIBS) /subsystem:console /out:$@ $(FOBJS)
 else
 $(FOIDLC): $(FOBJS) | $(BIN)
 	$(LINK64) $(FOBJS) -o $@
