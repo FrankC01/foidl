@@ -1,67 +1,80 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; g3_genhdr
-; Level 1 Gen 3 Self Hosted Compiler - Header generation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; genhdr
+; Header generator
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module g3_genhdr
-include g3_tvalidate
+module genhdr
+include langcorem
+include tvalidate
 
 func hrdmodule [accum token]
-	extend*: 
-		extend*: 
-			extend*: accum "module "
+	extend!:
+		extend!:
+			extend!: accum "module "
 			get: token :lexeme
-		nlchr 
+		nlchr
 
 func hdrvar [tokens cntr accum token]
 	valVarLite: tokens cntr
 	?: =: get: token :state :private
 		accum
-		extend*: 
-			extend*: 
-				extend*: 
-					extend*: accum "var " 
+		extend!:
+			extend!:
+				extend!:
+					extend!: accum "var "
 					get: token :lexeme
 				" Type "
 			nlchr
 
 func hdreatargs [tokens accum cntr]
-	let: [token get: tokens cntr]
-		match: get: token :type
-		| =: %0 :liststart extend*: accum " [ " 
-		| =: %0 :symbol extend*: extend*: accum get: token :lexeme spchr
-		| =: %0 :listend reduced: extend*: extend*: accum "]" nlchr
+	let [token get: tokens cntr]
+		match get: token :type
+		| :liststart extend!: accum " [ "
+		| :symbol extend!: extend!: accum get: token :lexeme spchr
+		| :listend reduced: extend!: extend!: accum "]" nlchr
 		| :default fail:
 
 func hdrfunc [tokens cntr accum token]
 	funcVarLite: tokens cntr
 	?: =: get: token :state :private
 		accum
-		fold: 
+		fold:
 			(hdreatargs tokens)
-			extend*: extend*: accum "func " get: token :lexeme
-			series: inc: cntr nil nil 
+			extend!: extend!: accum "func " get: token :lexeme
+			series: inc: cntr nil nil
 
 func ghdr [tokens accum cntr]
-	let: [token get: tokens cntr ]
-	match: get: token :type  
-		| =: %0 :module hrdmodule: accum token 
-		| =: %0 :variable hdrvar: tokens cntr accum token
-		| =: %0 :function hdrfunc: tokens cntr accum token 
-		| =: %0 :end reduced: accum 
-		| :default accum
+	let [token get: tokens cntr ]
+		match get: token :type
+			| =: %0 :module hrdmodule: accum token
+			| =: %0 :variable hdrvar: tokens cntr accum token
+			| =: %0 :function hdrfunc: tokens cntr accum token
+			| =: %0 :end reduced: accum
+			| :default accum
 
 func writer [channel val]
-	write*: channel val 
+	write!: channel val
 	channel
 
 func genhdr [channel tokens]
 	firstmodule: tokens
-	write*: channel "; FOIDL Generated Header "
-	write*: channel nlchr
-	write*: channel nlchr
-	let: [ps fold: (ghdr tokens) vector_inst*: infinite ] 
+	write!: channel "; FOIDL Generated Header "
+	write!: channel nlchr
+	write!: channel nlchr
+	let [ps fold: (ghdr tokens) vector_inst!: infinite ]
 		fold: writer channel ps

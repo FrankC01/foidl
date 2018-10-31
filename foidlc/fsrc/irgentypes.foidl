@@ -1,13 +1,26 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; g3_irgentypes
-; Level 1 Gen 3 Self Hosted Compiler - IR types
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; irgentypes
+; LLVM-IR Generation types
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module g3_irgentypes
-include g3_irgenutils
+module irgentypes
+
+include irgenutils
 
 ;	Convenience strings
 
@@ -29,16 +42,16 @@ var irFalse 	".false"
 var irDefault 	".default"
 var irGuard 	".guard."
 
-func makeLabel [pre ident suf] extend: extend: pre ident suf 
+func makeLabel [pre ident suf] extend: extend: pre ident suf
 
-func guardLabel [base ident] 
+func guardLabel [base ident]
 	extend:
-		extend: 
-			extend: irMatch base 
-			irGuard 
+		extend:
+			extend: irMatch base
+			irGuard
 		ident
 
-func guardDefaultLabel [base ident] 
+func guardDefaultLabel [base ident]
 	extend: extend: extend: extend: irMatch base irGuard ident irDefault
 
 func guardNextLabel [mcnt indx base ident]
@@ -90,7 +103,7 @@ func bcasts2s	[ord msz nsz srcord]	[ :bcasts2s ord srcord msz nsz ]
 func branch  [ident] 		[ :branch ident ]
 func cbranch [ident b1 b2]  [ :cbranch ident b1 b2 ]
 
-;	Call 
+;	Call
 
 func call   [ord fname] [:call ord fname ]
 func callir [fname] 	[:callir fname ]

@@ -44,19 +44,19 @@ func pastFold  [accum node]
 	printItem: accum :refid get: node :refid
 	printItem: accum :private get: node :private
 
-	match: get: node :type
-		| =: %0 :match printItem: accum :result get: node :result
-		| =: %0 :matchpredref
+	match get: node :type
+		| :match printItem: accum :result get: node :result
+		| :matchpredref
 			printItem: accum :predref get: get: node :predref :uid
-		| =: %0 :let @(
+		| :let @(
 						pastLet: accum node
 						pastFold: accum get: node :args
 						)
-		| =: %0 :literal printItem: accum :subtype get: node :subtype
-		| =: %0 :call pastCall: accum node
-		| =: %0 :function pastFold: extend: accum "fa" get: node :args
-		| =: %0 :lambda pastFold: extend: accum "la" get: node :args
-		| =: %0 :collection
+		| :literal printItem: accum :subtype get: node :subtype
+		| :call pastCall: accum node
+		| :function pastFold: extend: accum "fa" get: node :args
+		| :lambda pastFold: extend: accum "la" get: node :args
+		| :collection
 					@(
 						printItem: accum :count get: node :count
 						printItem: accum :subtype get: node :subtype
@@ -71,14 +71,14 @@ func pastLambdaFold  [accum node]
 	printItem: accum :context get: node :context
 	printItem: accum :fname get: node :fname
 
-	match: get: node :type
-		| =: %0 :let @(
-						pastLet: accum node
-						pastFold: accum get: node :args
-						)
-		| =: %0 :call pastCall: accum node
-		| =: %0 :function pastFold: extend: accum "fa" get: node :args
-		| =: %0 :lambda pastFold: extend: accum "la" get: node :args
+	match get: node :type
+		| :let @(
+					pastLet: accum node
+					pastFold: accum get: node :args
+				)
+		| :call pastCall: accum node
+		| :function pastFold: extend: accum "fa" get: node :args
+		| :lambda pastFold: extend: accum "la" get: node :args
 
 
 	fold: pastFold extend: accum "->" get: node :children

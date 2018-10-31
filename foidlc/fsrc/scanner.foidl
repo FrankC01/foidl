@@ -1,24 +1,40 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; g3_scanner
-; Level 1 Gen 3 source scanner
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; scanner
+; Lexical Scanner
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 module  scanner
+include foidlrtm
+include langcorem
+
 include tokens
 include scanutils
 
 func processComment [src_chn accum]
-	skip_toNL*: src_chn
+	skip_toNL!: src_chn
 	accum
 
 func processEnd [src_chn accum]
 	accumToken: src_chn accum endTok
 
 func stateSymbol [src_chn accum]
-	validateSymbol: take_untilWS*: src_chn
+	validateSymbol: take_untilWS!: src_chn
 
 func fauxIncludeSymbolList [src_chn accum fsym]
 	accumToken: src_chn accum listStartTok
@@ -26,26 +42,26 @@ func fauxIncludeSymbolList [src_chn accum fsym]
 	accumToken: src_chn accum listEndTok
 
 func stateString [src_chn accum]
-	buildToken: src_chn accum map_inst*: :string take_string*: unread*: src_chn
+	buildToken: src_chn accum map_inst!: :string take_string!: unread!: src_chn
 
 func stateChar [src_chn accum]
-	buildToken: src_chn accum map_inst*: :character take_qchar*: unread*: src_chn
+	buildToken: src_chn accum map_inst!: :character take_qchar!: unread!: src_chn
 
 func stateNumber [src_chn accum val]
 	accumToken: src_chn accum
-		foidl_extendKV*:
+		foidl_extendKV!:
 			extendKV: generalTok :lexeme val
 			:type foidl_categorize_num: val
 
 func publicPrivateDecl [src_chn accum typeKW]
-	let: [ target take_untilWS*: src_chn ]
+	let [ target take_untilWS!: src_chn ]
 		  ?: foidl_valid_keyword: target
-		  	buildPrivateToken: src_chn accum map_inst*: typeKW
-		  		stateSymbol: skip_whileWS*: src_chn accum
-		  	buildToken: src_chn accum map_inst*: typeKW validateSymbol: target
+		  	buildPrivateToken: src_chn accum map_inst!: typeKW
+		  		stateSymbol: skip_whileWS!: src_chn accum
+		  	buildToken: src_chn accum map_inst!: typeKW validateSymbol: target
 
 func moduleToken [src_chn accum]
-	buildToken: src_chn accum map_inst*: :module stateSymbol: src_chn accum
+	buildToken: src_chn accum map_inst!: :module stateSymbol: src_chn accum
 
 func funcToken [src_chn accum]
 	publicPrivateDecl: src_chn accum :function
@@ -72,7 +88,7 @@ func declTermType? [src_chan val]
 		false
 
 func declTerm [src_chn accum dterm]
-	skip_whileWS*: src_chn
+	skip_whileWS!: src_chn
 	(dterm src_chn accum)
 
 ;	* /
@@ -90,82 +106,82 @@ func testForNumber [b]
 		failSymbol: b
 
 func numberTerm [src_chn accum]
-	let: [target take_until*: unread*: src_chn boundarySetLite
+	let [target take_until!: unread!: src_chn boundarySetLite
 		  fn testForNumber: target ]
 		  (fn src_chn accum target)
 
 func mathTerm [src_chn accum]
-	let: [ target take_untilWS*: unread*: src_chn
+	let [ target take_untilWS!: unread!: src_chn
 		   fn get: mathFuncMap target ]
 		   (fn src_chn accum target)
 
 func factorTerm [src_chn accum]
-	let: [ target take_untilWS*: unread*: src_chn
+	let [ target take_untilWS!: unread!: src_chn
 		   fn getd: factorFuncMap target failLookup ]
 		   (fn src_chn accum target)
 
 func keywordTerm [src_chn accum]
-	let: [ target validateKeyword: take_until*: unread*: src_chn boundarySet ]
+	let [ target validateKeyword: take_until!: unread!: src_chn boundarySet ]
 	   accumToken: src_chn accum extendKV: keywordTok :lexeme target
 
 func metaTerm [src_chn accum]
-	match: read*: src_chn
-	| =: %0 lbracket accumToken: src_chn accum vecStartTok
-	| =: %0 lbrace accumToken: src_chn accum setStartTok
+	match read!: src_chn
+	| lbracket accumToken: src_chn accum vecStartTok
+	| lbrace accumToken: src_chn accum setStartTok
 	| :default failScan: src_chn %0
 
 func deferTerm [src_chn accum]
-	match: read*: src_chn
+	match read!: src_chn
 	| =: %0 lparen accumToken: src_chn accum deferTok
 	| :default failScan: src_chn %0
 
 func groupTerm [src_chn accum]
-	match: read*: src_chn
-	| =: %0 lparen accumToken: src_chn accum groupTok
+	match read!: src_chn
+	| lparen accumToken: src_chn accum groupTok
 	| :default failScan: src_chn %0
 
 func generalTerm [src_chn accum]
-	generalExpression: src_chn accum take_until*: unread*: src_chn boundarySet
+	generalExpression: src_chn accum take_until!: unread!: src_chn boundarySet
 
 func ignoreTerm [accum]
 	accum
 
 func failCollMap [a b]
-	print*: "Unable to find '"
-	print*: b
-	print*: "' in map "
-	printnl*: a
+	print!: "Unable to find '"
+	print!: b
+	print!: "' in map "
+	printnl!: a
 
 func chnReducer [src_chn accum val]
-	match: read*: src_chn
-	| =: %0 semichr processComment: src_chn accum
+	match read!: src_chn
+	| semichr processComment: src_chn accum
 	| nil?: %0 reduced: processEnd: src_chn accum
 	| nl?: %0 ignoreTerm: accum
 	| getd: skipSet %0 false ignoreTerm: accum
-	| =: %0 meta metaTerm: src_chn accum
+	| meta metaTerm: src_chn accum
 	| getd: collSet %0 false accumToken: src_chn accum getd: collTokMap %0 failCollMap
-	| =: %0 sqchr stateChar: src_chn accum
-	| =: %0 dqchr stateString: src_chn accum
-	| =: %0 colonchr keywordTerm: src_chn accum
-	| =: %0 carchr accumToken: src_chn accum lambdaTok
-	| =: %0 orchr accumToken: src_chn accum guardTok
-	| =: %0 atchr groupTerm: src_chn accum
-	| =: %0 pctchr anonTerm: src_chn accum
-	| =: %0 tildchr deferTerm: src_chn accum
+	| sqchr stateChar: src_chn accum
+	| dqchr stateString: src_chn accum
+	| colonchr keywordTerm: src_chn accum
+	| carchr accumToken: src_chn accum lambdaTok
+	| orchr accumToken: src_chn accum guardTok
+	| atchr groupTerm: src_chn accum
+	| pctchr anonTerm: src_chn accum
+	| tildchr deferTerm: src_chn accum
 	| numberTermType?: src_chn %0  numberTerm: src_chn accum
 	| getd: mathSet %0 false mathTerm: src_chn accum
 	| getd: factorSet %0 false factorTerm: src_chn accum
 	| declTermType?: src_chn %0 declTerm: src_chn
 									accum
-									get: declFuncMap take_untilWS*: unread*: src_chn
+									get: declFuncMap take_untilWS!: unread!: src_chn
 	| :default generalTerm: src_chn accum
 
 func scanner [srcf]
-	let: [ src_chn open*: {
+	let [ src_chn open!: {
 				:channel srcf
 				:open :r
 				:buffer :mmap
 				:read_handler :char }
-	  		tks fold: (chnReducer src_chn) vector_inst*: infinite
-		  	fin close*: src_chn]
+	  		tks fold: (chnReducer src_chn) vector_inst!: infinite
+		  	fin close!: src_chn ]
 		 tks

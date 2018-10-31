@@ -20,6 +20,8 @@
 
 module  astrefutils
 
+include langcorem
+include foidlrtm
 include astutils
 include	asttypes
 include state
@@ -35,9 +37,9 @@ func insertClosures [res node ]
 	extend!: get: res :args exchangeClosure: node count: get: res :args
 
 func liftClosures [accum node]
-	match: get: node :type
-	| =: %0 :let accum 									;	Ignore digging in
-	| =: %0 :funcref nil
+	match get: node :type
+	| :let accum 									;	Ignore digging in
+	| :funcref nil
 	| get: referenceSet %0 insertClosures: accum node
 	| :default fold: liftClosures accum get: node :children
 	accum
@@ -46,7 +48,7 @@ func mergeList [ accum oarg ]
 	extend!: accum foidl_extendKV!: oarg :uid count: accum
 
 func cvrtLambdaToFuncRef [fname fcnt]
-	let: [lfref genAstFuncRef: get: astRoot! :context fname fcnt ]
+	let [lfref genAstFuncRef: get: astRoot! :context fname fcnt ]
 		@(
 			insertIntoContext: lfref
 			promoteLiteralCount: fcnt
@@ -56,7 +58,7 @@ func cvrtLambdaToFuncRef [fname fcnt]
 func processLambdaRefactor [res node]
 	?: =: count: get: res :copy zero
 		cvrtLambdaToFuncRef: get: node :fname get: get: node :args :count
-		let: [cp get: res :copy
+		let [cp get: res :copy
 			  ar get: res :args
 			  oa get: node :args
 			  nc +: get: oa :count count: ar

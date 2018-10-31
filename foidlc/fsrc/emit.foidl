@@ -1,15 +1,29 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; g3_emit
-; Level 1 Gen 3 Self Hosted Compiler - Code emit
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; emit
+; IR Emit
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module g3_emit
-include g3_state
-include g3_emitutils
-include g3_emitwalk
+module emit
+
+include foidlrtm
+include state
+include emitutils
+include emitwalk
 
 func emitHeader []
 	spitModuleComment:
@@ -17,19 +31,19 @@ func emitHeader []
 func emit [ochan fir]
 
 	;	Setup outchannel
-	foidl_extendKV*: emitState* :out ochan 
-	foidl_extendKV*: emitState* :edspFn emitDispatch 
+	foidl_extendKV!: emitState! :out ochan
+	foidl_extendKV!: emitState! :edspFn emitDispatch
 
 	;	Spit comments and header
 	emitHeader:
 	emitWalk: get: fir :externs
 	emitWalk: get: fir :linits
-	emitWalk: get: fir :vinits	
-	emitWalk: get: fir :body	
+	emitWalk: get: fir :vinits
+	emitWalk: get: fir :body
 	emitWalk: get: fir :main
 	?: >: count: get: fir :main zero
 		?: =: get: first: get: fir :main two zero
-			spit*: noargMain
-			spit*: stdMain
+			spit!: noargMain
+			spit!: stdMain
 		nil
 	emitWalk: get: fir :inits

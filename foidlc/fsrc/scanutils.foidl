@@ -1,42 +1,56 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; g3_scanutils
-; Level 1 Gen 3 scanner utilities
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; scanutils
+; Lexical Scanner utilities
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module g3_scanutils
-include g3_tokens
+module scanutils
+include langcorem
+
+include tokens
 
 func failScan [src_chn val]
-	write*: cerr "Unrecognized term '"
-	write*: cerr val
-	write*: cerr "' scanned, line: "	
-	write*: cerr foidl_io_line: src_chn
-	write*: cerr " column: '"
-	write*: cerr foidl_io_pos: src_chn
-	write*: cerr nlchr
+	write!: cerr "Unrecognized term '"
+	write!: cerr val
+	write!: cerr "' scanned, line: "
+	write!: cerr foidl_io_line: src_chn
+	write!: cerr " column: '"
+	write!: cerr foidl_io_pos: src_chn
+	write!: cerr nlchr
 	fail:
 
 func failSymbol [sym]
-	write*: cerr "Unrecognized term found: '"
-	write*: cerr sym
-	write*: cerr nlchr
+	write!: cerr "Unrecognized term found: '"
+	write!: cerr sym
+	write!: cerr nlchr
 	fail:
 
 func failLookup [coll val]
 	failSymbol: val
 
 func failCategorize [sym coll val]
-	write*: cerr "Unrecognized category found: '"
-	write*: cerr val
-	write*: cerr "' for term: "
-	write*: cerr sym
-	write*: cerr nlchr
+	write!: cerr "Unrecognized category found: '"
+	write!: cerr val
+	write!: cerr "' for term: "
+	write!: cerr sym
+	write!: cerr nlchr
 	fail:
 
-;	General utility functions 
+;	General utility functions
 
 func validateSymbol [s]
 	?: foidl_valid_symbol: s
@@ -52,64 +66,64 @@ func defValSymbol [a s]
 	validateSymbol: s
 
 func accumToken [src_chn accum tk]
-	map_extend*: tk :line foidl_io_line: src_chn
-	map_extend*: tk :colnum foidl_io_pos: src_chn
-	extend*: accum tk 
+	map_extend!: tk :line foidl_io_line: src_chn
+	map_extend!: tk :colnum foidl_io_pos: src_chn
+	extend!: accum tk
 	accum
 
 func baseToken [src_chn accum tsub ttype lexstr]
-	map_extend*: tsub :type ttype
-	map_extend*: tsub :lexeme lexstr
-	map_extend*: tsub :state :public
+	map_extend!: tsub :type ttype
+	map_extend!: tsub :lexeme lexstr
+	map_extend!: tsub :state :public
 	tsub
 
 func buildToken [src_chn accum tsub ttype lexstr]
 	accumToken: src_chn accum baseToken: src_chn accum tsub ttype lexstr
 
 func buildPrivateToken [src_chn accum tsub ttype lexstr]
-	baseToken: src_chn accum tsub ttype lexstr	
-	accumToken: src_chn accum map_extend*: tsub :state :private
+	baseToken: src_chn accum tsub ttype lexstr
+	accumToken: src_chn accum map_extend!: tsub :state :private
 
 func stateIdentifier [src_chn accum val]
-	let: [fsym getd: postCallMap val defValSymbol ]
+	let [fsym getd: postCallMap val defValSymbol ]
 		accumToken: src_chn accum extendKV: symbolTok :lexeme fsym
 
 func postCall [src_chn accum val]
-	let: [dsym droplast*: val
+	let [dsym droplast!: val
 		  fsym getd: postCallMap dsym defValSymbol ]
-	accumToken: src_chn accum extendKV: callTok :lexeme fsym 
+	accumToken: src_chn accum extendKV: callTok :lexeme fsym
 
 func postExpression [src_chn accum val]
-	let: [dsym droplast*: val
+	let [dsym droplast!: val
 		  ftok getd: exprTokMap dsym failLookup ]
 	accumToken: src_chn accum extendKV: ftok :lexeme val
 
 func stateCall [src_chn accum val]
-	let: [tok getd: exprTokMap val callTok]
-		accumToken: src_chn accum extendKV: tok :lexeme droplast*: val
+	let [tok getd: exprTokMap val callTok]
+		accumToken: src_chn accum extendKV: tok :lexeme droplast!: val
 
 func generalSymbol [src_chn accum val]
-	let: [tok getd: exprTokMap val symbolTok]
+	let [tok getd: exprTokMap val symbolTok]
 		accumToken: src_chn accum extendKV: tok :lexeme val
 
 var categoryMap {
-	:call 		stateCall 
-	:symbol 	generalSymbol	
+	:call 		stateCall
+	:symbol 	generalSymbol
 }
 
 func generalExpression [src_chn accum val]
-	let: [ fn getd: categoryMap foidl_categorize: val ( failCategorize val ) ]
+	let [ fn getd: categoryMap foidl_categorize: val ( failCategorize val ) ]
 		(fn src_chn accum val)
 
 func anonConsume [src_chn accum]
-	read*: src_chn
-	accumToken: src_chn accum anonTok 
+	read!: src_chn
+	accumToken: src_chn accum anonTok
 
 func anonTerm [src_chn accum]
-	let: [ nc first: src_chn ]
-		match: nc 
-		| =: %0 chr0 anonConsume: src_chn accum
-		| ws?: %0 accum 
+	let [ nc first: src_chn ]
+		match nc
+		| chr0 anonConsume: src_chn accum
+		| ws?: %0 accum
 		| :default failScan: src_chn nc
 
 var mathFuncMap {
@@ -127,7 +141,7 @@ var mathFuncMap {
 	"<="    stateIdentifier
 	"!<" 	stateIdentifier
 	"!<=" 	stateIdentifier
-	"?:" 	postExpression 
+	"?:" 	postExpression
 	"-:" 	postCall
 	"+:" 	postCall
 	"!:" 	postCall

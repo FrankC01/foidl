@@ -1,47 +1,61 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; g3_incproc
-; Level 1 Gen 3 Self Hosted Compiler - Include processor
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; incproc
+; Include processor
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module g3_incproc
 
-include g3_scanner
-include g3_tvalidate
-include g3_state
-include g3_symbolmgmt
-include g3_asttypes
+module incproc
+
+include langcorem
+include scanner
+include tvalidate
+include state
+include symbolmgmt
+include asttypes
 
 var defTail ".defs"
 var incExistsErr " Unable to resolve include file: "
 var checkIncStuff " Insure spelling of include as well as include paths provided to compilation "
 
 func failIncludeResolution [fname]
-	write*: cerr incExistsErr
-	write*: cerr fname 
-	write*: nlchr
-	write*: checkIncStuff
-	write*: nlchr 
+	write!: cerr incExistsErr
+	write!: cerr fname
+	write!: nlchr
+	write!: checkIncStuff
+	write!: nlchr
 	fail:
 
 func incBuildAndResolve [incf accum incp]
-	let: [ np extend: extend: incp incf defTail ]
+	let [ np extend: extend: incp incf defTail ]
 		?: fileExists?: np
 			reduced: np
-			accum					
+			accum
 
-func resolveIncludePath [incps accum incf]		
-	let: [fp fold: (incBuildAndResolve incf) false incps ]
-		?: fp 
-			extend*: accum fp
+func resolveIncludePath [incps accum incf]
+	let [fp fold: (incBuildAndResolve incf) false incps ]
+		?: fp
+			extend!: accum fp
 			failIncludeResolution: incf
 
 ;	Validates the signature and inserts in symbol table
 
 func incl_valfunc_gensymbol [tokens cntr token]
-	funcVarLite: tokens cntr		
+	funcVarLite: tokens cntr
 	funcToSymbolTable: token  get: get: tokens inc: cntr :count
 
 ;	Validates the signature and inserts in symbol table
@@ -51,29 +65,29 @@ func incl_valvar_gensymbol [tokens cntr token]
 	varToSymbolTable: token
 
 func incl_fold [tokens accum cntr]
-	let: [token get: tokens cntr ]
-		match: get: token :type  		
-			| =: %0 :variable incl_valvar_gensymbol: tokens cntr token
-			| =: %0 :function incl_valfunc_gensymbol: tokens cntr token 
-			| =: %0 :end reduced: accum 
+	let [token get: tokens cntr ]
+		match get: token :type
+			| :variable incl_valvar_gensymbol: tokens cntr token
+			| :function incl_valfunc_gensymbol: tokens cntr token
+			| :end reduced: accum
 			| :default accum
 
 func parse_val_map [accum fqfp]
-	let: [ 	tkns 	scanner: fqfp
+	let [ 	tkns 	scanner: fqfp
 			ignr0	firstmodule: tkns
 			sm 		readySymbolMap: get: tkns zero ]
 	   @(
-	   		syntaxSetup*: tkns nil
+	   		syntaxSetup!: tkns nil
 	   		fold: (incl_fold tkns ) nil infinite
 	   		pushInSymStack: sm
 	   	)
-		   	   
+
 
 ;	With paths and file references
 ;	1. Resolve path or error
 ;	2. scan, validate, symbol store
 
 func processIncludes [incpaths incfiles]
-	let: [fqps fold: (resolveIncludePath incpaths) <> incfiles ]
+	let [fqps fold: (resolveIncludePath incpaths) <> incfiles ]
 		fold: parse_val_map nil fqps
 

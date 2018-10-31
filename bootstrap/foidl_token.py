@@ -14,6 +14,8 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
+import rply.errors
+
 
 class FoidlTokenType(object):
     def __init__(self, token):
@@ -109,7 +111,16 @@ def foidl_tfactory(cname, token):
 
 class FoidlTokenStream(object):
     def __init__(self, tokens):
-        self._tokens = [foidl_tfactory(x.gettokentype(), x) for x in tokens]
+        self._tokens = []
+        try:
+            for x in tokens:
+                self._tokens.append(
+                    foidl_tfactory(x.gettokentype(), x))
+            # self._tokens = [
+            #     foidl_tfactory(x.gettokentype(), x) for x in tokens]
+        except rply.errors.LexingError as e:
+            print("Token scanner exception state = {}".format(self._tokens))
+            raise e
         self._count = len(self._tokens)
         self._active = self._tokens
         self._current = 0

@@ -19,6 +19,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 module state
+include foidlrtm
+include langcorem
+
 include errors
 
 var vDeclSet #{:include :function :variable :end }
@@ -65,9 +68,9 @@ func vpeek []
 		get: get: syntax! :tokens inc: vindex:
 
 func vnext []
-	?: =>: inc: vindex:  get: syntax! :cnt
+	?: >=: inc: vindex:  get: syntax! :cnt
 		failString!: oobRead
-		let: [ ci inc: vindex:
+		let [ ci inc: vindex:
 			   tk get: get: syntax! :tokens ci ]
 			@(
 				foidl_extendKV!: foidl_extendKV!: syntax! :token tk :index ci
@@ -80,7 +83,7 @@ func vaccept [ typeKw ]
 		false
 
 func vexpect [ typeKw ]
-	let: [ vn vaccept: typeKw ]
+	let [ vn vaccept: typeKw ]
 		?: =: vn false
 			expected: typeKw
 			vn
@@ -157,14 +160,14 @@ func pushInSymStack [symMap]
 var name_ext {qmchr "_qmark", tmchr "_bang"}
 
 func genName [s]
-	let: [	c last: s
+	let [	c last: s
 			ll get: name_ext c ]
 		?: ll
 			extend: dropLast: s ll
 			s
 
 func findInSymtable [s accum vmap]
-	let: [x get: vmap s ]
+	let [x get: vmap s ]
 		?: nil?: x
 			accum
 			reduced: x
@@ -173,7 +176,7 @@ func getSymbolFor [s]
 	fold: ( findInSymtable s ) nil symbolStack!
 
 func inContextSymbols? [s]
-	let: [ fnd get: get: context! :symtable s ]
+	let [ fnd get: get: context! :symtable s ]
 	?: fnd
 		fnd
 		getSymbolFor: s
@@ -182,7 +185,7 @@ func insertIntoContext [ref]
 	foidl_extendKV!: get: context! :symtable get: ref :fname ref
 
 func insertSymbolInTop [token node]
-	let: [	lxm get: token :lexeme
+	let [	lxm get: token :lexeme
 			fnd getSymbolFor: lxm ]
 		@(
 			hidesCheck: fnd token node
@@ -209,21 +212,21 @@ func peekRefID! []
 	peek: astRefStack!
 
 func litCnt []
-	let: [lcnt get: astCntrs! :litcnt ]
+	let [lcnt get: astCntrs! :litcnt ]
 		@(
 			foidl_extendKV!: astCntrs! :litcnt inc: lcnt
 			lcnt
 		)
 
 func lmdCnt []
-	let: [lcnt get: astCntrs! :lmdcnt ]
+	let [lcnt get: astCntrs! :lmdcnt ]
 		@(
 			foidl_extendKV!: astCntrs! :lmdcnt inc: lcnt
 			lcnt
 		)
 
 func exprCnt []
-	let: [lcnt get: astCntrs! :exprcnt ]
+	let [lcnt get: astCntrs! :exprcnt ]
 		@(
 			foidl_extendKV!: astCntrs! :exprcnt inc: lcnt
 			lcnt

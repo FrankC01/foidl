@@ -102,6 +102,7 @@ def _check_no_declarations(token, values, decltypes):
 class _TDParser(object):
 
     _ttype_tuple = (INCLUDE, VAR, FUNC)
+    _strict_symtokens = ['SYMBOL', 'SYMBOL_BANG', 'SYMBOL_PRED']
 
     def __init__(self):
         super().__init__()
@@ -160,7 +161,7 @@ class _TDParser(object):
                     symbol = stuff[0]
             else:
                 _malformed(self.nafter)
-        elif self.nafter.gettokentype() == 'SYMBOL':
+        elif self.nafter.gettokentype() in self._strict_symtokens:
             symbol = self.nafter
         else:
             _malformed(self.nafter)
@@ -186,7 +187,7 @@ class _TDParser(object):
                     symbol = x
                 else:
                     raise IOError
-        elif self.nafter.gettokentype() in ['SYMBOL', 'SYMBOL_PRED', 'SYMBOL_BANG']:
+        elif self.nafter.gettokentype() in self._strict_symtokens:
             symbol = self.nafter
         else:
             _malformed(self.nafter)

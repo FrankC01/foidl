@@ -1,101 +1,115 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; g3_irgen
-; Level 1 Gen 3 Self Hosted Compiler - IR Generation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; irgen
+; LLVM-IR Generation
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module g3_irgen
-include g3_state
-include g3_irgenutils
-include g3_irgenutils0
-include g3_irgentypes
-include g3_irgenvars
+module irgen
+include foidlrtm
+
+include state
+include irgenutils
+include irgenutils0
+include irgentypes
+include irgenvars
 
 func ptac [a tac]
-	print*: "  "
-	printnl*: tac 
+	print!: "  "
+	printnl!: tac
 	inc: a
 
 func irPrint [ir]
-	print*: "External Declarations = " 
-	printnl*: count: get: ir :externs
+	print!: "External Declarations = "
+	printnl!: count: get: ir :externs
 	fold: ptac zero get: ir :externs
 
-	print*: "Literal inits = " 
-	printnl*: count: get: ir :linits
+	print!: "Literal inits = "
+	printnl!: count: get: ir :linits
 	fold: ptac zero get: ir :linits
 
-	print*: "Variable inits = "
-	printnl*: count: get: ir :vinits
+	print!: "Variable inits = "
+	printnl!: count: get: ir :vinits
 	fold: ptac zero get: ir :vinits
 
-	print*: "Body = "
-	printnl*: count: get: ir :body
+	print!: "Body = "
+	printnl!: count: get: ir :body
 	fold: ptac zero get: ir :body
 
-	print*: "Main = "
-	printnl*: count: get: ir :main
+	print!: "Main = "
+	printnl!: count: get: ir :main
 	fold: ptac zero get: ir :main
 
-	print*: "Core inits = "
-	printnl*: count: get: ir :inits
+	print!: "Core inits = "
+	printnl!: count: get: ir :inits
 	fold: ptac zero get: ir :inits
 
 func funcAllocs [acc node]
 	toIRContext: alloca: node
-	acc 
+	acc
 
 func funcLastLoad [chld cnt targord]
-	let: [ 	lchld get: chld dec: cnt ]
+	let [ 	lchld get: chld dec: cnt ]
 		@(
-			genPrefetch: nil lchld 
+			genPrefetch: nil lchld
 			toIRContext: store: get: lchld :refid targord
 		)
-		
+
 
 func genFunctionIR [node]
 	zeroIROrdCnt:
-	let: [ 	bcnt 	inc: get: get: node :args :count
+	let [ 	bcnt 	inc: get: get: node :args :count
 			acnt 	inc: bcnt
-			fname   get: inContextSymbols?: get: node :fname :fname 
-			ign  	foidl_extendKV*: irBase* :ordcnt acnt
+			fname   get: inContextSymbols?: get: node :fname :fname
+			ign  	foidl_extendKV!: irBase! :ordcnt acnt
 			fchd 	get: node :children
 			fcnt 	fold: stackAllocCount acnt fchd ]
 		@(
 			;	Set target context
 			?: =: fname "user_main"
-				foidl_extendKV*: irBase* :context toIRMain
-				foidl_extendKV*: irBase* :context toIRBody
+				foidl_extendKV!: irBase! :context toIRMain
+				foidl_extendKV!: irBase! :context toIRBody
 			;	Function definition
 			toIRContext: deffn: fname dec: bcnt get: node :private
 			;	Function return allocation
 			toIRContext: alloca: bcnt
-			foidl_extendKV*: node :uid bcnt
-			;	Build additional stack 
-			?: >: -: get: irBase* :ordcnt acnt zero
+			foidl_extendKV!: node :uid bcnt
+			;	Build additional stack
+			?: >: -: get: irBase! :ordcnt acnt zero
 				fold: funcAllocs nil series: acnt inc: fcnt nil
-				nil	
-			;	Process function 			
+				nil
+			;	Process function
 			fold: irFoldExpression nil fchd
 			;	Process return
 			funcLastLoad: fchd count: fchd bcnt
 			toIRContext: dload: nextIROrdCnt: bcnt "func res"
-			toIRContext: ret: getLastIROrdCnt:			
+			toIRContext: ret: getLastIROrdCnt:
 		)
 
-func genIRFunctions [acc node]	
+func genIRFunctions [acc node]
 	?: =: get: node :type :function
 		genFunctionIR: node
 		nil
 	acc
 
-func genIR [ast]	
-	initializeIR: ast 
+func genIR [ast]
+	initializeIR: ast
 	genIRVariables: ast
 	fold: genIRFunctions nil get: ast :lambdas
 	fold: genIRFunctions nil get: ast :children
 	finalizeIR:
-	id: irBase*
+	id: irBase!
 

@@ -1,0 +1,8 @@
+
+module test
+
+include fing
+
+func main [argv]
+    printnl!: foo?
+    printnl!: bar!

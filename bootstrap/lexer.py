@@ -68,7 +68,8 @@ class Lexer():
         self.lexer.add('RBRACE', r'\}')
         # Semi Colon
         # Strings
-        self.lexer.add('STRING', r'\"(.+?)\"')
+        # self.lexer.add('STRING', r'\"(.+?)\"')
+        self.lexer.add('STRING', r'"([^"]|\n)*"')
         self.lexer.add('CHAR', r'\'(.{1})\'')
         # Numbers
         self.lexer.add('BIT', r"0b[0-1]+")

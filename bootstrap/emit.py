@@ -95,6 +95,12 @@ coresupps = [
     ("set_extend_bang", [any_ptr, any_ptr])]
 
 
+def expand_symbol(instr):
+    return instr.replace(
+        "?", "_qmark").replace(
+        "!", "_bang").replace("*", "_bang")
+
+
 class LlvmGen(object):
     def __init__(self, source, triple=None):
         # Compilation unit name
@@ -139,7 +145,10 @@ class LlvmGen(object):
 
     def _reg_global_var(self, vname):
         """Create a global variable with null pointer"""
-        x = ir.GlobalVariable(self.module, any_ptr, vname)
+        x = ir.GlobalVariable(
+            self.module,
+            any_ptr,
+            expand_symbol(vname))
         x.align = 8
         return x
 
@@ -568,7 +577,10 @@ class LlvmGen(object):
     def _emit_varref_type(self, el, builder, frame):
         """Emit a variable reference"""
         if not el.exprs:
-            frame.append(builder.load(builder.module.get_global(el.name)))
+            frame.append(
+                builder.load(
+                    builder.module.get_global(
+                        expand_symbol(el.name))))
         else:
             self._emit_et(el.exprs[0], builder, frame)
 

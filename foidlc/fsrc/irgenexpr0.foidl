@@ -1,69 +1,83 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; g3_irgenexpr0
-; Level 1 Gen 3 Self Hosted Compiler - IR expressions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; irgenexpr0
+; LLVM-IR Generation expressions helpers
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module g3_irgenexpr0
-include g3_irgenutils
-include g3_irgenutils0
-include g3_irgentypes
+module irgenexpr0
+include foidlrtm
+
+include irgenutils
+include irgenutils0
+include irgentypes
 
 func genIRLiteral [node]
-	let: [ord nextIROrdCnt: ]
+	let [ord nextIROrdCnt: ]
 		@(
 			toIRContext: loadv: ord get: node :fqn
-			foidl_extendKV*: node :refid ord
+			foidl_extendKV!: node :refid ord
 		)
 
-func genIRFuncRef [node]	
-	let: [ 	ac 		get: node :argcnt
-			sv 		get: node :fname 
+func genIRFuncRef [node]
+	let [ 	ac 		get: node :argcnt
+			sv 		get: node :fname
 			lac 	getCountLiteral: ac
 			svfr	extend: sv irFnRef ]
 		@(
-			irExpression: lac			
+			irExpression: lac
 			toIRContext: call: nextIROrdCnt: "foidl_tofuncref"
 			toIRContext: immedLP
-			toIRContext: callargbcfni8: :i8p sv ac  
+			toIRContext: callargbcfni8: :i8p sv ac
 			toIRContext: immedComma
 			toIRContext: callargr: :any get: lac :refid
 			toIRContext: immedRP
-			foidl_extendKV*: node :refid getLastIROrdCnt:
+			foidl_extendKV!: node :refid getLastIROrdCnt:
 		)
-			
+
 func genIRFuncArg [node]
-	foidl_extendKV*: node :refid get: node :uid
+	foidl_extendKV!: node :refid get: node :uid
 
 func genIRVarRef [node]
-	let: [ord nextIROrdCnt: ]
+	let [ord nextIROrdCnt: ]
 		@(
-			toIRContext: loadv: ord get: node :fname			
-			foidl_extendKV*: node :refid ord
+			toIRContext: loadv: ord get: node :fname
+			foidl_extendKV!: node :refid ord
 		)
 
 func genIRPred [node]
-	let: [ fchld first: get: node :children ]
+	let [ fchld first: get: node :children ]
 		@(
 			irExpression: fchld
-			toIRContext: store: get: fchld :refid get: node :uid 
+			toIRContext: store: get: fchld :refid get: node :uid
 		)
 
 func genIRRef [node]
-	let: [ord nextIROrdCnt: ]
+	let [ord nextIROrdCnt: ]
 		@(
 			toIRContext: load: ord get: get: node :varref :uid
-			foidl_extendKV*: node :refid ord
+			foidl_extendKV!: node :refid ord
 		)
 
-func genIRLetVar 	[node]	
-	let: [	fchld first: get: node :children 
+func genIRLetVar 	[node]
+	let [	fchld first: get: node :children
 			fnm   get: node :fname ]
 		@(
 			irExpression: fchld
 			genPrefetch: nil fchld
-			toIRContext: store: get: fchld :refid get: node :uid			
+			toIRContext: store: get: fchld :refid get: node :uid
 		)
 

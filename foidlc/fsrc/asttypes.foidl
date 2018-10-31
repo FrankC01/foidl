@@ -20,6 +20,7 @@
 
 module asttypes
 
+include foidlrtm
 include state
 
 var lname ".lambda."

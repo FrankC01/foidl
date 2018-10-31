@@ -1,61 +1,75 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; g3_irgenutils0
-; Level 1 Gen 3 Self Hosted Compiler - IR utils
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; irgenutils0
+; LLVM-IR Generation utilities additions
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module g3_irgenutils0
-include g3_irgenutils
-include g3_irgentypes
+module irgenutils0
+include foidlrtm
+
+include irgenutils
+include irgentypes
 
 var prefetchSet #{:if :call :match :matchpred :collection :let :partial :group }
 
 func genPrefetch [acc node]
 	?: get: prefetchSet get: node :type
-		let: [ ord nextIROrdCnt: ] 
+		let [ ord nextIROrdCnt: ]
 			@(
 				toIRContext: load: ord get: node :uid
-				foidl_extendKV*: node :refid ord
+				foidl_extendKV!: node :refid ord
 				acc
 			)
 		acc
 
 func buildImmedArg [node]
-	toIRContext: callargr: :any get: node :refid 
+	toIRContext: callargr: :any get: node :refid
 
 func buildCallArg [chld mcnt indx]
 	?: =: indx mcnt
-		chld 
-		let: [	node get: chld indx 
+		chld
+		let [	node get: chld indx
 				dcom >: mcnt inc: indx ]
 			@(
-				toIRContext: callargr: :any get: node :refid 
-				?: dcom 
+				toIRContext: callargr: :any get: node :refid
+				?: dcom
 					toIRContext: immedComma
 					nil
 				buildCallArg: chld mcnt inc: indx
 			)
 
 func buildExtendOneCall [ord cfn acc node]
-	toIRContext: call: nextIROrdCnt: cfn 
+	toIRContext: call: nextIROrdCnt: cfn
 	toIRContext: immedLP
 	toIRContext: callargr: :any ord
 	toIRContext: immedComma
-	toIRContext: callargr: :any get: node :refid 
+	toIRContext: callargr: :any get: node :refid
 	toIRContext: immedRP
 
-func buildExtendTwoCall [ord cfn chld mcnt cnt] 
-	?: <: cnt mcnt 
+func buildExtendTwoCall [ord cfn chld mcnt cnt]
+	?: <: cnt mcnt
 		@(
-			toIRContext: call: nextIROrdCnt: cfn 
+			toIRContext: call: nextIROrdCnt: cfn
 			toIRContext: immedLP
 			toIRContext: callargr: :any ord
 			toIRContext: immedComma
-			toIRContext: callargr: :any get: get: chld cnt :refid 
+			toIRContext: callargr: :any get: get: chld cnt :refid
 			toIRContext: immedComma
-			toIRContext: callargr: :any get: get: chld inc: cnt :refid 
+			toIRContext: callargr: :any get: get: chld inc: cnt :refid
 			toIRContext: immedRP
 			buildExtendTwoCall: ord cfn chld mcnt +: cnt two
 		)
@@ -63,23 +77,23 @@ func buildExtendTwoCall [ord cfn chld mcnt cnt]
 
 func genThenElsePred [chld node pre ident]
 	irExpression: node
-	let: [ 	luid 	get: node :uid			
-			tlabel 	makeLabel: pre ident irThen 
-			elabel 	makeLabel: pre ident irElse 
+	let [ 	luid 	get: node :uid
+			tlabel 	makeLabel: pre ident irThen
+			elabel 	makeLabel: pre ident irElse
 			endlab 	makeLabel: pre ident irEnd
 			chld1 	get: chld one
 			chld2 	get: chld two
-			ord 	nextIROrdCnt: 
+			ord 	nextIROrdCnt:
 			tord 	nextIROrdCnt: ]
 		@(
 			toIRContext: load: ord luid
-			toIRContext: loadv: tord "true"			
+			toIRContext: loadv: tord "true"
 			toIRContext: comparei: nextIROrdCnt: ord tord
 			toIRContext: cbranch: getLastIROrdCnt: tlabel elabel
 			toIRContext: label: tlabel
 			irExpression: chld1
 			genPrefetch: nil chld1
-			toIRContext: store: get: chld1 :refid ident 
+			toIRContext: store: get: chld1 :refid ident
 			toIRContext: branch: endlab
 			toIRContext: label: elabel
 			irExpression: chld2
@@ -89,48 +103,48 @@ func genThenElsePred [chld node pre ident]
 			toIRContext: label: endlab
 		)
 
-func genIRDefaultGuard [muid node] 
-	let: [	pid 	get: node :refid 
-			uid 	get: node :uid 
-			dlab 	guardDefaultLabel: muid uid 
-			chld 	get: get: node :children one 
+func genIRDefaultGuard [muid node]
+	let [	pid 	get: node :refid
+			uid 	get: node :uid
+			dlab 	guardDefaultLabel: muid uid
+			chld 	get: get: node :children one
 			elab 	makeLabel: irMatch muid irEnd ]
 		@(
 			toIRContext: label: dlab
 			irExpression: chld
-			genPrefetch: nil chld 
+			genPrefetch: nil chld
 			toIRContext: store: get: chld :refid muid
 			toIRContext: branch: elab
 			node
-		)		
+		)
 
-func genIRGuard [chld mcnt muid accum indx]	
+func genIRGuard [chld mcnt muid accum indx]
 	?: =: indx zero
 		accum
 		?: =: mcnt indx
 			reduced: genIRDefaultGuard: muid get: chld indx
-			let: [ 	node 	get: chld indx
-					pid 	get: node :refid 
-					uid 	get: node :uid 
+			let [ 	node 	get: chld indx
+					pid 	get: node :refid
+					uid 	get: node :uid
 					nchld 	get: node :children
 					fchl 	first: nchld
 					schl 	second: nchld
 					mlab 	guardLabel: muid uid
 					mlabt 	extend: mlab irTrue
 					mlabf 	extend: mlab irFalse
-					nlab 	guardNextLabel: mcnt indx muid uid 
+					nlab 	guardNextLabel: mcnt indx muid uid
 					elab 	makeLabel: irMatch muid irEnd ]
 				@(
-					?: =: indx one 
+					?: =: indx one
 						toIRContext: branch: mlab
 						nil
 					toIRContext: label: mlab
 					irExpression: fchl
 					genPrefetch: nil fchl
-					let: [ ord  nextIROrdCnt: ]
+					let [ ord  nextIROrdCnt: ]
 						@(
-							toIRContext: loadv: ord "true"			
-							toIRContext: comparei: nextIROrdCnt: get: fchl :refid ord 
+							toIRContext: loadv: ord "true"
+							toIRContext: comparei: nextIROrdCnt: get: fchl :refid ord
 							toIRContext: cbranch: getLastIROrdCnt: mlabt mlabf
 							toIRContext: label: mlabt
 							irExpression: schl
@@ -146,7 +160,7 @@ func genIRGuard [chld mcnt muid accum indx]
 func genIRPartialVal [ord chld mcnt indx]
 	?: =: indx mcnt
 		nil
-		let: [ 	frord 	nextIROrdCnt: 
+		let [ 	frord 	nextIROrdCnt:
 				node 	get: chld indx ]
 			@(
 				toIRContext: dload: frord ord "fref"
@@ -156,7 +170,7 @@ func genIRPartialVal [ord chld mcnt indx]
 				toIRContext: immedLP
 				toIRContext: callargr: :any frord
 				toIRContext: immedComma
-				buildImmedArg: node				
+				buildImmedArg: node
 				toIRContext: immedRP
 				genIRPartialVal: ord chld mcnt inc: indx
 			)

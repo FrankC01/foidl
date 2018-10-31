@@ -1,15 +1,27 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; g3_tvalutil
-; Level 1 Gen 3 Self Hosted Compiler - validation utils
-;	Note: Includes light and heavy weight validation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; tvalutil
+; Lite and heavy weight validations
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module  g3_tvalutil
-include g3_state
-include g3_errors
+module  tvalutil
+
+include state
+include errors
 
 var generalErr "General verification error"
 var emptyToks "No tokens presented for validation"
@@ -23,33 +35,33 @@ func valNext []
 
 func valSymbol []
 	;printnl*: "valSymbol"
-	vexpect: :symbol 
+	vexpect: :symbol
 
 ;	:liststart already processed
 
-func valArgList []	
+func valArgList []
 	?: =: vcurrent_type: :listend
 		nil
 		@(
 			valSymbol:
 			valArgList:
 		)
-		
+
 
 func valLetArgList []
 	?: =: vcurrent_type: :listend
 		nil
 		@(
 			valSymbol:
-			foidl_dispatch0: get: syntax* :exprjmp
+			foidl_dispatch0: get: syntax! :exprjmp
 			valLetArgList:
 		)
 
 func valCollection [ stopKw scnt ]
-	?: =: vcurrent_type: stopKw 
-		scnt 
+	?: =: vcurrent_type: stopKw
+		scnt
 		@(
-			foidl_dispatch0: get: syntax* :exprjmp
+			foidl_dispatch0: get: syntax! :exprjmp
 			valCollection: stopKw inc: scnt
 		 )
 
@@ -73,12 +85,12 @@ func valSet []
 
 func validateMap [token cnt]
 	?: =: mod: cnt two zero
-		token 
+		token
 		failMap: token cnt
 
 func valMap []
 	;printnl*: "valMap"
-	let ct: [] vcurrent:
+	let ct [] vcurrent:
 	vexpect: :mapstart
 	validateMap: ct valCollection: :mapend zero
 	vexpect: :mapend
@@ -86,13 +98,13 @@ func valMap []
 func valPartial []
 	;printnl*: "valPartial"
 	vexpect: :partialstart
-	valCollection: :partialend zero 
+	valCollection: :partialend zero
 	vexpect: :partialend
 
 func valIf []
 	;printnl*: "valIf"
 	vexpect: :if
-	foidl_dispatch0: get: syntax* :exprjmp
-	foidl_dispatch0: get: syntax* :exprjmp
+	foidl_dispatch0: get: syntax! :exprjmp
+	foidl_dispatch0: get: syntax! :exprjmp
 
 

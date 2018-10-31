@@ -137,7 +137,7 @@ $(LIB):
 headers/%.defs : fsrc/%.foidl
 	$(BSTRP) -s $< $(BHDRFLAGS) -o $@
 
-$(FHDRS): 
+$(FHDRS):
 
 ll/%.ll : fsrc/%.foidl
 	$(BSTRP) -s $< $(BCFLAGS) -o $@

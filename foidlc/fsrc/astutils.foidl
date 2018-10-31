@@ -20,6 +20,8 @@
 
 module astutils
 
+include langcorem
+include foidlrtm
 include tokens
 include	asttypes
 include state
@@ -27,6 +29,7 @@ include astrefactor
 include errors
 
 var astRoot! genAstRoot: nil
+
 var astCStack! foidl_list_inst!:
 
 var referenceSet #{
@@ -47,13 +50,13 @@ func addAstChildNode [node]
 ;	downstreaam/efficient IR/Emit generation
 
 func promoteLiteral [lit_tok]
-	let: [ 	modstr 	get: astRoot! :context
+	let [ 	modstr 	get: astRoot! :context
 			litstr get: lit_tok  :lexeme
 			litmap get: astRoot! :literals
 			litast get: litmap   litstr ]
 	?: litast 		;	Does it exist in core
 		genAstLitCopy: litast 		; 	If so, return it
-		let: [mlit genAstLiteral: modstr litstr get: lit_tok :type litCnt: ]
+		let [mlit genAstLiteral: modstr litstr get: lit_tok :type litCnt: ]
 		@(
 			foidl_extendKV!: litmap litstr mlit
 			genAstLitCopy: mlit
@@ -63,14 +66,14 @@ func promoteLiteralCount [cnt]
 	promoteLiteral: get: astCountList cnt
 
 func literalForCount [cnt]
-	let: [	ltok 	get: astCountList cnt
+	let [	ltok 	get: astCountList cnt
 			litstr 	get: ltok :lexeme ]
 		genAstLitCopy:  get: get: astRoot! :literals litstr
 
 ;	Check if function
 
 func promoteExtern1 [sref]
-	let: [	modstr 	get: astRoot! :context
+	let [	modstr 	get: astRoot! :context
 			estr 	get: sref :fname
 			styp 	get: sref :type
 			etyp 	or: =: styp :varref =: styp :funcref
@@ -132,7 +135,7 @@ func astRegisterAndFetchUntil [node endtype acFn]
 ;	All collection handling
 
 func astCollection []
-	let: [ 	ct 		vcurrent_type:
+	let [ 	ct 		vcurrent_type:
 			et 		get: collectionEndMap ct
 		   	coll genAstCollection:
 		   			get: astRoot! :context
@@ -151,7 +154,7 @@ func getArgObject [aFn ctxt lxm cnt]
 func astSymbolFunctionArgs [aFn scnt]
 	?: =: get: vcurrent: :type :listend
 		scnt
-		let: [	token vcurrent:
+		let [	token vcurrent:
 				anode getArgObject:
 						aFn
 						get: astRoot! :context
@@ -177,7 +180,7 @@ func astFuncArgs [coll aFn]
 func astLetArgs [scnt]
 	?: =: get: vcurrent: :type :listend
 		scnt
-		let: [	token vcurrent:
+		let [	token vcurrent:
 				anode  genAstLetVar: get: astRoot! :context get: token :lexeme ]
 			@(
 				vexpect: :symbol
@@ -193,7 +196,7 @@ func astLetArgs [scnt]
 
 func astMatchGuards [scnt]
 	?: =: get: vcurrent: :type :guard
-		let: [ 	ctxt 	get: astRoot! :context
+		let [ 	ctxt 	get: astRoot! :context
 				mg 		genAstMatchGuard: ctxt  scnt ]
 			@(
 				vexpect: :guard
@@ -207,7 +210,7 @@ func astMatchGuards [scnt]
 			)
 		scnt
 
-;	Partial Processing
+;	Partial Processing.. need better docs
 func astPartialSymbol []
 	?: =: vcurrent_type: :call
 		promoteExtern: vcurrent:

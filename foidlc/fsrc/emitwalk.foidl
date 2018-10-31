@@ -1,211 +1,223 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; g3_emitwalk
-; Level 1 Gen 3 Self Hosted Compiler - Emit walker
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; emit
+; IR Emit
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module g3_emitwalk
-include g3_emitutils
-include g3_irgentypes
+module emitwalk
+include emitutils
+include irgentypes
 
 func emitCall [tac]
-	spit*: tbchr
-	spitRegOne*: tac 
-	spit*: assign
-	spit*: callAnyR
-	spitAtTwo*: tac 
+	spit!: tbchr
+	spitRegOne!: tac
+	spit!: assign
+	spit!: callAnyR
+	spitAtTwo!: tac
 
 func emitCallV [tac]
-	spit*: tbchr
-	spit*: callAnyV
-	spitAtOne*: tac 
+	spit!: tbchr
+	spit!: callAnyV
+	spitAtOne!: tac
 
 func emitCallIR [tac]
-	spit*: tbchr
-	spit*: callAnyR
-	spitAtOne*: tac 
+	spit!: tbchr
+	spit!: callAnyR
+	spitAtOne!: tac
 
 func emitCallArgI [tac]
-	spit*: get: typeMap get: tac one
-	spit*: get: tac two
+	spit!: get: typeMap get: tac one
+	spit!: get: tac two
 
 func emitCallArgR [tac]
-	spit*: get: typeMap get: tac one
-	spit*: pctchr
-	spit*: get: tac two
+	spit!: get: typeMap get: tac one
+	spit!: pctchr
+	spit!: get: tac two
 
 func emitCallArgFnCast [tac]
-	spit*: fnCtoV0
-	spit*: lparen
+	spit!: fnCtoV0
+	spit!: lparen
 	emitAnyCnt: get: tac three zero
-	spit*: rparen
-	spit*: tmchr
-	spit*: spchr
-	spitAtTwo*: tac 
-	spit*: fnCtoV2
+	spit!: rparen
+	spit!: tmchr
+	spit!: spchr
+	spitAtTwo!: tac
+	spit!: fnCtoV2
 
 func emitAllocAny [tac]
-	spit*: tbchr
-	spitRegOne*: tac 
-	spitWithNL*: allocaAny
+	spit!: tbchr
+	spitRegOne!: tac
+	spitWithNL!: allocaAny
 
 func emitAllocStr [tac]
-	spit*: tbchr	
-	spitRegOne*: tac 
-	spit*: allocStrg0
-	spit*: get: tac two
-	spit*: allocStrg1
-	spitNL*:
+	spit!: tbchr
+	spitRegOne!: tac
+	spit!: allocStrg0
+	spit!: get: tac two
+	spit!: allocStrg1
+	spitNL!:
 
 func emitBCStr [tac]
-	spit*: tbchr	
-	spitRegOne*: tac 
-	spit*: bcStoV0
-	spit*: get: tac three
-	spit*: bcStoV1
-	spitRegTwo*: tac 
-	spitWithNL*: bcToV
+	spit!: tbchr
+	spitRegOne!: tac
+	spit!: bcStoV0
+	spit!: get: tac three
+	spit!: bcStoV1
+	spitRegTwo!: tac
+	spitWithNL!: bcToV
 
 ;%5 = bitcast [ 4  x i8 ]* %1 to [ 2  x i8 ]*
 func emitBCStr2s [tac]
-	spit*: tbchr	
-	spitRegOne*: tac 
-	spit*: bcStoV0
-	spit*: get: tac three
-	spit*: bcStoV1
-	spitRegTwo*: tac 
-	spit*: bcToSt2
-	spit*: get: tac four
-	spitWithNL*: bcStoV1
+	spit!: tbchr
+	spitRegOne!: tac
+	spit!: bcStoV0
+	spit!: get: tac three
+	spit!: bcStoV1
+	spitRegTwo!: tac
+	spit!: bcToSt2
+	spit!: get: tac four
+	spitWithNL!: bcStoV1
 
-func emitStoreAny [tac]	
-	spit*: tbchr 
-	spit*: storeAny
-	spitRegOne*: tac
-	spit*: fromAny
-	spitRegTwo*: tac 
-	spit*: align8
-	spitNL*:
+func emitStoreAny [tac]
+	spit!: tbchr
+	spit!: storeAny
+	spitRegOne!: tac
+	spit!: fromAny
+	spitRegTwo!: tac
+	spit!: align8
+	spitNL!:
 
-func emitStoreVar [tac]	 
-	spit*: tbchr
-	spit*: storeAny
-	spitRegOne*: tac
-	spit*: fromAny
-	spitAtTwo*: tac 
-	spit*: align8
-	spitNL*:
+func emitStoreVar [tac]
+	spit!: tbchr
+	spit!: storeAny
+	spitRegOne!: tac
+	spit!: fromAny
+	spitAtTwo!: tac
+	spit!: align8
+	spitNL!:
 
 func emitStoreStr [tac]
-	spit*: tbchr
-	spit*: storeStrg0
-	spit*: get: tac one 
-	spit*: storeStrg1
-	spit*: dqchr
-	spit*: get: tac two
-	spit*: dqchr
-	spit*: comma
-	spit*: lbracket
-	spit*: get: tac one 
-	spit*: bcStoV1
-	spit*: spchr 
-	spit*: pctchr
-	spitWithNL*: get: tac three
+	spit!: tbchr
+	spit!: storeStrg0
+	spit!: get: tac one
+	spit!: storeStrg1
+	spit!: dqchr
+	spit!: get: tac two
+	spit!: dqchr
+	spit!: comma
+	spit!: lbracket
+	spit!: get: tac one
+	spit!: bcStoV1
+	spit!: spchr
+	spit!: pctchr
+	spitWithNL!: get: tac three
 
-func emitLoadAny [tac]	
-	spit*: tbchr 
-	spitRegOne*: tac
-	spit*: loadAny	
-	spit*: fromAny
-	spitRegTwo*: tac 
-	spit*: align8
-	spitNL*:
+func emitLoadAny [tac]
+	spit!: tbchr
+	spitRegOne!: tac
+	spit!: loadAny
+	spit!: fromAny
+	spitRegTwo!: tac
+	spit!: align8
+	spitNL!:
 
-func emitLoadVar [tac]	
-	spit*: tbchr 
-	spitRegOne*: tac
-	spit*: loadAny	
-	spit*: fromAny
-	spitAtTwo*: tac
-	spit*: align8 
-	spitNL*:
+func emitLoadVar [tac]
+	spit!: tbchr
+	spitRegOne!: tac
+	spit!: loadAny
+	spit!: fromAny
+	spitAtTwo!: tac
+	spit!: align8
+	spitNL!:
 
 func emitGenInit [tac]
-	spitNL*:
-	spit*: defVoidFn
-	spitAtOne*: tac 
-	spit*: emptyArg
-	spitNL*:
+	spitNL!:
+	spit!: defVoidFn
+	spitAtOne!: tac
+	spit!: emptyArg
+	spitNL!:
 
 func emitCoreInit [tac]
-	spitNL*:
-	spit*: minits0
-	spit*: dqchr
-	spit*: minits1
-	spit*: dqchr
-	spitWithNL*: minits2
+	spitNL!:
+	spit!: minits0
+	spit!: dqchr
+	spit!: minits1
+	spit!: dqchr
+	spitWithNL!: minits2
 
-func emitFnDefn [tac]	
-	spitNL*:
+func emitFnDefn [tac]
+	spitNL!:
 	?: get: tac three
-		spit*: defFnPrv
-		spit*: defFn 
-	spitAtOne*: tac 
-	spit*: lparen
+		spit!: defFnPrv
+		spit!: defFn
+	spitAtOne!: tac
+	spit!: lparen
 	emitAnyCnt: get: tac two zero
-	spit*: rparen
-	spitWithNL*: lbrace 
+	spit!: rparen
+	spitWithNL!: lbrace
 
 func emitReturn [tac]
-	spit*: tbchr
-	spit*: return 
-	spit*: get: typeMap :any
-	spitRegTwo*: tac
-	spitNL*:
-	spitWithNL*: endFunc			
+	spit!: tbchr
+	spit!: return
+	spit!: get: typeMap :any
+	spitRegTwo!: tac
+	spitNL!:
+	spitWithNL!: endFunc
 
 func emitRetVoid [tac]
-	spit*: tbchr
-	spitWithNL*: returnVoid
-	spitWithNL*: endFunc		
+	spit!: tbchr
+	spitWithNL!: returnVoid
+	spitWithNL!: endFunc
 
 func emitCompareI [tac]
-	spit*: tbchr
-	spitRegOne*: tac 
-	spit*: cmpEqStr
-	spitRegTwo*: tac 
-	spit*: comma
-	spitRegThree*: tac
-	spitNL*:
+	spit!: tbchr
+	spitRegOne!: tac
+	spit!: cmpEqStr
+	spitRegTwo!: tac
+	spit!: comma
+	spitRegThree!: tac
+	spitNL!:
 
 func emitCondBranch [tac]
-	spit*: tbchr
-	spit*: brnchCond 
-	spitRegOne*: tac 
-	spit*: comma
-	spit*: cmpLabel
-	spitRegTwo*: tac 
-	spit*: comma
-	spit*: cmpLabel
-	spitRegThree*: tac 
-	spitNL*:
+	spit!: tbchr
+	spit!: brnchCond
+	spitRegOne!: tac
+	spit!: comma
+	spit!: cmpLabel
+	spitRegTwo!: tac
+	spit!: comma
+	spit!: cmpLabel
+	spitRegThree!: tac
+	spitNL!:
 
 func emitBranch [tac]
-	spit*: tbchr
-	spit*: brnchLbl
-	spitRegOne*: tac 
-	spitNL*:
+	spit!: tbchr
+	spit!: brnchLbl
+	spitRegOne!: tac
+	spitNL!:
 
 func emitLabel [tac]
-	spitNL*:
-	spit*: get: tac one
-	spit*: colonchr
-	spitNL*:	
+	spitNL!:
+	spit!: get: tac one
+	spit!: colonchr
+	spitNL!:
 
 var emitHandlers {
-	:immed 			emitImmediate	
+	:immed 			emitImmediate
 	:decextfn 		emitExtFn
 	:decextv  		emitExtRef
 	:decextfnr		emitExtRef
@@ -222,7 +234,7 @@ var emitHandlers {
 	:store 			emitStoreAny
 	:dstore 		emitStoreAny
 	:storev 		emitStoreVar
-	:stores 		emitStoreStr	
+	:stores 		emitStoreStr
 	:load 			emitLoadAny
 	:dload 			emitLoadAny
 	:loadv 			emitLoadVar
@@ -232,7 +244,7 @@ var emitHandlers {
 	:callargi 		emitCallArgI
 	:callargr 		emitCallArgR
 	:callargbcfni8  emitCallArgFnCast
-	:return 		emitReturn 
+	:return 		emitReturn
 	:comparei 		emitCompareI
 	:branch 		emitBranch
 	:cbranch 		emitCondBranch
@@ -240,15 +252,15 @@ var emitHandlers {
 	:returnv 		emitRetVoid
 }
 
-func emitDispatch [tac]	
-	let: [	tact  get: tac zero
+func emitDispatch [tac]
+	let [	tact  get: tac zero
 			tacfn get: emitHandlers  tact]
 	?: tacfn
 		(tacfn tac)
-		@(			
-			printnl*: tac
+		@(
+			printnl!: tac
 		)
 
-func emitWalk [blist]	
+func emitWalk [blist]
 	fold: foldEmit nil blist
 

@@ -20,6 +20,8 @@
 
 module  astrefactor
 
+include langcorem
+include foidlrtm
 include astrefutils
 include astutils
 include	asttypes
@@ -54,11 +56,11 @@ var refSingleSet #{:literal :varref :funcref :collection
 				:letvarref :funcarg :letresult :matchresult }
 
 func partialToCall [node fchl chld ]
-	let: [ dcnt dec: count: chld
+	let [ dcnt dec: count: chld
 		   ctxt get: node :context ]
-		match: get: fchl :argcnt
-		| =: %0 dcnt
-			let: [ call genAstCall: ctxt ctxt fchl
+		match get: fchl :argcnt
+		| dcnt
+			let [ call genAstCall: ctxt ctxt fchl
 				   cchl get: call :children ]
 				@(
 					fold: ^[a i] extend!: a i cchl rest: chld
@@ -69,7 +71,7 @@ func partialToCall [node fchl chld ]
 		| :default node
 
 func refactorPartial [node]
-	let: [	chld get: node :children
+	let [	chld get: node :children
 			cnt  count: chld
 			fchl first: chld ]
 		?: =: get: fchl :type :funcref
@@ -81,7 +83,7 @@ func refactorPartial [node]
 ; If condition wrapper in "foidl_truthy"
 
 func wrapIfPredicate []
-	let: [	ctxt get: astRoot! :context
+	let [	ctxt get: astRoot! :context
 			ftc genAstCall: ctxt ctxt getSymbolFor: foidltruthy ]
 		@(
 			pushAstChilden: ftc
@@ -106,7 +108,7 @@ func wrapInTruthy [ftc node]
 	ftc
 
 func guardToCall [ftc node ctxt]
-	let: [	cref genAstCall: ctxt ctxt getSymbolFor: foidlequals
+	let [	cref genAstCall: ctxt ctxt getSymbolFor: foidlequals
 			cren get: cref :children
 			mgp  genAstMatchPredRef: ctxt ]
 		@(
@@ -119,7 +121,7 @@ func guardToCall [ftc node ctxt]
 func refactorGuard [chld]
 	?: guardDefault?: first: chld
 		chld
-		let: [ 	node 	first: chld
+		let [ 	node 	first: chld
 				ign	 	foidl_droplast!: chld
 				ctxt 	get: astRoot! :context
 				ftc 	genAstCall: ctxt ctxt getSymbolFor: foidltruthy ]
@@ -141,7 +143,7 @@ func defaultLocator [chld acc idx ]
 		acc
 
 func insertDefault [node chld scnt]
-	let: [	grd genAstMatchGuard: get: astRoot! :context scnt
+	let [	grd genAstMatchGuard: get: astRoot! :context scnt
 			gch get: grd :children ]
 		@(
 			foidl_extendKV!: grd :refid get: node :refid
@@ -151,7 +153,7 @@ func insertDefault [node chld scnt]
 		)
 
 func refactorMatch [node]
-	let: [	ch get: node :children
+	let [	ch get: node :children
 			ct count: ch
 			dct dec: ct
 			dl fold: (defaultLocator ch) false series: one ct nil ]

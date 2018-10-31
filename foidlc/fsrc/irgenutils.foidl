@@ -1,48 +1,62 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; g3_irgenutils
-; Level 1 Gen 3 Self Hosted Compiler - IR utils
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; irgenutils
+; LLVM-IR Generation utilities
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module g3_irgenutils
-include g3_astutils
-include g3_irgentypes
-include g3_irgenlits
-include g3_irgenexpr
+module irgenutils
+include foidlrtm
 
-var irBase* {
-	:externs 	foidl_vector_inst*: 	;	External declarations
-	:linits 	foidl_vector_inst*: 	;	literal initializer call 
-	:vinits 	foidl_vector_inst*: 	;	variable initializer call
-	:body 		foidl_vector_inst*:  	;	Main code body
-	:inits 		foidl_vector_inst*: 	;	body ctor block
-	:main 		foidl_vector_inst*: 	;	main (userMain) block
-	:ordcnt 	zero 					;	vregister and vstack ordinals	
+include astutils
+include irgentypes
+include irgenlits
+include irgenexpr
+
+var irBase! {
+	:externs 	foidl_vector_inst!: 	;	External declarations
+	:linits 	foidl_vector_inst!: 	;	literal initializer call
+	:vinits 	foidl_vector_inst!: 	;	variable initializer call
+	:body 		foidl_vector_inst!:  	;	Main code body
+	:inits 		foidl_vector_inst!: 	;	body ctor block
+	:main 		foidl_vector_inst!: 	;	main (userMain) block
+	:ordcnt 	zero 					;	vregister and vstack ordinals
 	:context 	nil
 	:irexpr 	nil
 	}
 
 var frefExclusionSet  #{"foidlrt2" "foidlrtm2" "langcore2" "langcorem2"}
 
-var stackExclusionSet 
-	#{:literal :funcref :lambarg :funcarg :varref :guard :matchpredref :letvarref 
+var stackExclusionSet
+	#{:literal :funcref :lambarg :funcarg :varref :guard :matchpredref :letvarref
 		:matchresultref :letresultref }
 
 func getCountLiteral [cnt]
-	literalForCount: cnt 
+	literalForCount: cnt
 
 func getIROrdCnt  []
-	get: irBase* :ordcnt
+	get: irBase! :ordcnt
 
 func getLastIROrdCnt []
 	dec: getIROrdCnt:
 
 func nextIROrdCnt []
-	let: [ ccnt getIROrdCnt: ]
+	let [ ccnt getIROrdCnt: ]
 		@(
-			foidl_extendKV*: irBase* :ordcnt inc: ccnt
+			foidl_extendKV*: irBase! :ordcnt inc: ccnt
 			ccnt
 		)
 
@@ -52,60 +66,60 @@ func tagAllocID [node]
 		nil
 	getLastIROrdCnt:
 
-func stackAllocCount [acc node]	
-	let: [ 	vsc 	stackAllocCount
-			nt  	get: node :type 
+func stackAllocCount [acc node]
+	let [ 	vsc 	stackAllocCount
+			nt  	get: node :type
 			chld 	get: node :children ]
-		match: nt
+		match nt
 			| get: stackExclusionSet %0 fold: vsc acc chld
-			| =: %0 :match 
+			| :match
 				@(	tagAllocID: node
 					?: get: node :result
 						foidl_extendKV*: get: node :result :uid get: node :uid
-						nil 					
+						nil
 					fold: vsc acc chld
 				)
-			| =: %0 :let 
+			| :let
 				@(
 					tagAllocID: get: node :result
-					fold: vsc 
-						fold: vsc 
+					fold: vsc
+						fold: vsc
 							tagAllocID: node
 							get: get: node :args :children
 						chld
-				)					
+				)
 			| :default fold: vsc tagAllocID: node chld
 
 func zeroIROrdCnt []
-	foidl_extendKV*: irBase* :ordcnt zero
+	foidl_extendKV*: irBase! :ordcnt zero
 
 func toIRExterns [tac]
-	extend*: get: irBase* :externs tac
+	extend*: get: irBase! :externs tac
 
 func toIRLitInit [tac]
-	extend*: get: irBase* :linits tac
+	extend*: get: irBase! :linits tac
 
 func toIRVarInit [tac]
-	extend*: get: irBase* :vinits tac
+	extend*: get: irBase! :vinits tac
 
 func toIRInit [tac]
-	extend*: get: irBase* :inits tac
+	extend*: get: irBase! :inits tac
 
 func toIRBody [tac]
-	extend*: get: irBase* :body tac
+	extend*: get: irBase! :body tac
 
 func toIRMain [tac]
-	extend*: get: irBase* :main tac
+	extend*: get: irBase! :main tac
 
 func toIRContext [tac]
-	let: [ ctxt get: irBase* :context ]
+	let [ ctxt get: irBase! :context ]
 		(ctxt tac )
 
 func irExpression [node]
-	genIRExpr: node 
+	genIRExpr: node
 
 func irFoldExpression [acc node]
-	genIRExpr: node 
+	genIRExpr: node
 
 func initInitFrame [mname]
 	toIRInit: definitfn: mname
@@ -114,51 +128,51 @@ func initInitFrame [mname]
 	toIRInit: immedRP
 
 func initVarInitFrame [mname]
-	let: [ vname extend: mname ".vinits"]
+	let [ vname extend: mname ".vinits"]
 		@(
 			toIRVarInit: defvarinitfn: vname
 			toIRInit: callv: vname
 			toIRInit: immedLP
-			toIRInit: immedRP 	
+			toIRInit: immedRP
 		)
 
 func genExternalsIR [accum eentry]
-	let: [	eval 	value: eentry 
-			etyp 	get: eval :type 
-			enam    get: eval :fname 
+	let [	eval 	value: eentry
+			etyp 	get: eval :type
+			enam    get: eval :fname
 			esrc 	get: eval :module
 			ecnt    get: eval :argcnt ]
-		match: etyp
-		| =: :varref %0 toIRExterns: declv: enam		
-		| =: :funcref %0 
+		match etyp
+		| :varref toIRExterns: declv: enam
+		| :funcref
 			;?: get: frefExclusionSet esrc
 			;	@(
-			;		print*: "Ignoring "
-			;		print*: enam
-			;		print*: " from module "
-			;		printnl*: esrc
+			;		print!: "Ignoring "
+			;		print!: enam
+			;		print!: " from module "
+			;		printnl!: esrc
 			;	)
 				toIRExterns: declfn: enam ecnt
 		| :default @(
-						print*: "Unrecognized type in genExternalsIR = "
-						printnl*: etyp
+						print!: "Unrecognized type in genExternalsIR = "
+						printnl!: etyp
 						fail:
 					)
 	accum
 
 func initializeIR [ast ]
-	let: [	mname 	get: ast :context 
+	let [	mname 	get: ast :context
 			extrns 	get: ast :externs
 			litmap 	get: ast :literals ]
 		@(
 			initInitFrame: mname
-			fold: genExternalsIR nil extrns 
+			fold: genExternalsIR nil extrns
 			?: >: count: litmap zero
 				genLiteralsIR: litmap mname
 				nil
 			initVarInitFrame: mname
 		)
-	
+
 
 func finalizeIR []
 	toIRVarInit: retv
