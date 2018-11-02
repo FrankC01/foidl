@@ -125,15 +125,12 @@ LLCFLAGS = -march=x86-64 -x86-asm-syntax=intel -relocation-model=pic -O3 -filety
 all: $(FOIDLC) | $(HDRS) $(LLS) $(OBJS)
 
 ifeq ($(OS_NAME), Windows)
-$(FOIDLC): $(FOBJS) | $(BIN)
+$(FOIDLC): $(FOBJS) $(FLLS) $(FHDRS) | $(BIN)
 	$(LINK64) $(LIBS) /subsystem:console /out:$@ $(FOBJS)
 else
-$(FOIDLC): $(FOBJS) | $(BIN)
+$(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) | $(BIN)
 	$(LINK64) $(FOBJS) -o $@
 endif
-
-# $(FOIDLC): $(FOBJS) $(FHRDS) | $(BIN) $(OBJS) $(LLS)
-# 	$(info Building executable)
 
 $(BIN):
 	mkdir bin
@@ -151,7 +148,7 @@ $(HDRS):
 ll/%.ll : fsrc/%.foidl
 	$(BSTRP) -s $< $(BCFLAGS) -o $@
 
-$(FLLS): $(FHDRS) | $(FHRDS) $(LLS)
+$(FLLS): | $(LLS)
 
 $(LLS):
 	mkdir ll

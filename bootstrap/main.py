@@ -16,7 +16,6 @@
 # ------------------------------------------------------------------------------
 
 import sys
-import warnings
 import logging
 from colorlog import ColoredFormatter
 

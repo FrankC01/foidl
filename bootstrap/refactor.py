@@ -19,7 +19,8 @@ import copy
 
 from errors import ParseError
 from enums import ExpressionType
-from ptree import ParseSymbol, ParseLambda, ParseLambdaRef, ParseClosureRef
+from ptree import (
+    ParseIf, ParseSymbol, ParseLambda, ParseLambdaRef, ParseClosureRef)
 
 
 LOGGER = logging.getLogger()
@@ -108,6 +109,13 @@ def _find_refs(
         _lite_inner(
             body, body, body.token.getsourcepos(), bexpr)
     # Otherwise, assume it is a Deeper type
+    elif isinstance(body, ParseIf):
+        [_find_refs(
+            argsig, srcpos, n, cntrl, ecntrl, clist, newlist, body.exprs)
+            for n in body.pre]
+        [_find_refs(
+            argsig, srcpos, n, cntrl, ecntrl, clist, newlist, body.exprs)
+            for n in body.exprs]
     else:
         [_find_refs(
             argsig, srcpos, n, cntrl, ecntrl, clist, newlist, body.exprs)

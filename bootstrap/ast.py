@@ -1200,7 +1200,7 @@ class Lambda(FoidlAst):
             self, self.token.getsourcepos(), argref, expr,
             [FuncArgReference, LetArgReference, MatchExprReference,
                 LetResReference, MatchResReference],
-            [LiteralReference])
+            [LiteralReference, VarReference])
         # [print("Lamb Arg {}".format(n)) for n in plambda.pre]
         bundle.lambdas.append(plambda)
         # Pop stack
