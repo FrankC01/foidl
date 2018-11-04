@@ -1,0 +1,127 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; argparse
+; Command line parsing
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module cmdline
+
+; The foidl RTL contains a generic, simple command line
+; parser that takes a command map structure. See the argparse
+; module source (in foidlrtl/flib) for map structure details
+
+include argparse
+
+; Test structure to emulate foidlc commands
+; These commands expect arguments following command switch
+
+var :private compile_cmd {
+    :help       "Compile input source to LLVM-IR"
+    :keyword    :compile
+    :fn_value   compile_handler}
+
+var :private generate_cmd {
+    :help       "Generate header file from input source"
+    :keyword    :genhdr
+    :fn_value   generate_handler}
+
+var :private output_cmd {
+    :help       "Directs output"
+    :keyword    :output
+    :fn_value   output_handler}
+
+var :private include_path_cmd {
+    :help       "Sets additional include paths"
+    :keyword    :includes
+    :fn_value   include_handler}
+
+; These commands are flags only and use the argparse default
+; handler that sets keyword result to true if found
+
+var :private debug_print_tokens {
+    :help       "Debug: prints output of lexical scan"
+    :keyword    :printtoks}
+
+var :private debug_print_ast {
+    :help       "Debug: prints ast genreated"
+    :keyword    :printast}
+
+var :private debug_print_ir {
+    :help       "Debug: prints LLVM-IR generated"
+    :keyword    :printir}
+
+var :private foidlc_version {
+    :help       "Displays current version of foidlc"
+    :keyword    :version}
+
+var :private foidlc_command_map {
+    "-c" compile_cmd
+    "-g" generate_cmd
+    "-o" output_cmd
+    "-I" include_path_cmd
+    "-v" foidlc_version
+    "-pt" debug_print_tokens
+    "-pa" debug_print_ast
+    "-pi" debug_print_ir
+}
+
+; Function: compile_handler
+; Description: Handles parsing of compile argument. Attempts to
+;   read the next argument as the input file name to compile
+
+func :private compile_handler [state cmdmap]
+    argparse_get_next_value:
+        state
+        cmdmap
+        "-c <input file> Command requires input file name"
+        "input file name"
+
+; Function: generate_handler
+; Description: Handles parsing of generate argument. Attempts to
+;   read the next argument as the input file name to generate a header file
+
+func :private generate_handler [state cmdmap]
+    argparse_get_next_value:
+        state
+        cmdmap
+        "-g <input file> Command requires input file name"
+        "input file name"
+
+; Function: output_handler
+; Description: Handles parsing of generate argument. Attempts to
+;   read the next argument as the input file name to generate a header file
+
+func :private output_handler [state cmdmap]
+    argparse_get_next_value:
+        state
+        cmdmap
+        "-o <output file> Command requires input file name"
+        "input file name"
+
+func :private include_handler [state cmdmap]
+    let incs [] argparse_until_next_switch: state cmdmap
+    ?: =: first: incs 0
+        @(
+            printnl!: "-I expects 1 or more parameters"
+            fail:
+        )
+    second: incs
+
+func main [argv]
+    let res [] parseargs: rest: argv foidlc_command_map
+    print!: "Results of parsing command line => "
+    printnl!: res

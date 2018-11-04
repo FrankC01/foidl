@@ -14,6 +14,7 @@ __pycache__/
 *.a
 bin/
 obj/
+objs/
 ll/
 
 # Distribution / packaging
@@ -127,5 +128,9 @@ samplegenesis/
 temp/libsnark
 *.ll
 *.o
+foidlrtl/headers
 foidlrtl/headers/langcore.defs
 foidlrtl/headers/langcorem.defs
+foidlc/headers/*.defs
+bootstrap/*.foidl
+bootstrap/*.defs
