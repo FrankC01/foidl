@@ -111,7 +111,7 @@ else
 	C64=$(CLC) -c -isystem $(RTHDRS) -march=x86-64 -fPIC -O3
 	foidlrt_LIB  := libfoidlrt.a
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
-	LINK64 := $(CLC) -lfoidlrt -L $(RTLIB)
+	LINK64 := $(CLC) -lc++ -lfoidlrt -L $(RTLIB)
 endif
 
 # Flags for compilation of all types

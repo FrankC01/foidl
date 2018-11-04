@@ -35,6 +35,7 @@ endif
 LLLT 	= llvm-lib
 LLAR	= llvm-ar
 CLC 	= clang
+CPPLC   = clang++
 
 # FOIDL Runtime generation settings
 
@@ -94,7 +95,8 @@ ifeq ($(OS_NAME), Windows)
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
 	LIB64=$(LLLT) $(SYSTEM_LIB_INC_64) /out:$(STATIC_LIB) /nologo
 else
-	C64=$(CLC) -c -isystem $(INC) -march=x86-64 -std=c11 -fPIC -O3 -c
+	C64=$(CLC) -c -isystem $(INC) -march=x86-64 -std=c11 -fPIC -O3
+	CPP64=$(CPPLC) -c -isystem $(INC) -march=x86-64 -std=c++11 -fPIC -O3
 	foidlrt_LIB  := libfoidlrt.a
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
 	LIB64=$(LLAR) --format=default -ru $(STATIC_LIB)
@@ -105,6 +107,7 @@ FOIDL  	:= .foidl
 LL 		:= .ll
 OBJ 	:= .o
 CSRC	:= .c
+CPPSRC  := .cpp
 
 # Flags for compilation of all types
 
@@ -127,15 +130,17 @@ FLIBLLS		:= $(subst $(FLIB), $(LLS), $(FLIBSS:$(FOIDL)=$(LL)))
 FLIBOBJS	:= $(subst $(FLIB), $(OBJS), $(FLIBSS:$(FOIDL)=$(OBJ)))
 
 SRCS	:= $(wildcard $(SRC)*$(CSRC))
-SOBJS	:= $(subst $(SRC), $(OBJS), $(SRCS:$(CSRC)=$(OBJ)))
+SOBJS	:= $(subst $(SRC),$(OBJS), $(SRCS:$(CSRC)=$(OBJ)))
 
+SRCPPS  := $(wildcard $(SRC)*$(CPPSRC))
+SPPOBJS := $(subst $(SRC),$(OBJS),$(SRCPPS:$(CPPSRC)=$(OBJ)))
 
 all: $(STATIC_LIB) | $(FLLS) $(FLIBLLS) $(OBJS)
 
 # all: $(SOBJS)
 
-$(STATIC_LIB): $(FOBJS) $(FLIBOBJS) $(SOBJS) | $(LIB)
-	$(LIB64) $(SOBJS) $(FOBJS) $(FLIBOBJS)
+$(STATIC_LIB): $(SOBJS) $(SPPOBJS) $(FOBJS) $(FLIBOBJS) | $(LIB)
+	$(LIB64) $(SOBJS) $(SPPOBJS) $(FOBJS) $(FLIBOBJS)
 
 $(LIB):
 	mkdir lib
@@ -176,16 +181,23 @@ $(FOBJS): | $(OBJS)
 
 $(FLIBOBJS): | $(OBJS)
 
-# # C file compilations
+# CPP file compilations
 
-objs/%.o : src/%.c
+$(OBJS)%.o: $(SRC)%.cpp
+	$(CPP64) $< -o $@
+
+$(SPPOBJS): | $(OBJS)
+
+
+# C file compilations
+
+$(OBJS)%.o: $(SRC)%.c
 	$(C64) $< -o $@
 
 $(SOBJS): | $(OBJS)
 
 $(OBJS):
 	mkdir objs
-
 
 clean:
 	$(RM) -r $(FHDRS) $(FLIBHDRS) $(LLS) $(OBJS) $(LIB)
