@@ -1,0 +1,272 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; argparse
+; Command line parsing
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module argparse
+
+; Module: argparse
+; Description: argparse is a utility that takes a list of arguments
+; and a control map which drives how the arguments are to be parsed
+; Structue of the control map
+; {
+;   "x"             cmdmap  ; key is arg that is matched, see cmdmap below
+; }
+; The syntax of the cmdmap
+; {
+;   :doc        "This is help line"     ; Argument documentation
+;   :keyword    :parsedkeyword          ; Argument identity key in result
+;   :fn_value   fn                      ; Function or type to produce default value
+; }
+;
+
+func :private argparse_error_unrecognized [arg]
+    print!: "Unrecognized argument : "
+    printnl!: arg
+    fail:
+
+func :private argparse_error_missing_field [s]
+    print!: "Missing required field : "
+    printnl!: s
+    fail:
+
+func :private end_of_args [s]
+    print!: s
+    print!: " - no more arguments found"
+    print!: nlchr
+    fail:
+
+; Function: cmdset
+; Description: Recusively Adds the keys from control maps to a set
+; Syntax: cmdset: accum element
+;   state - The argparse progress state
+;   element - mapentry
+
+func :private cmdset [state el]
+    let [nstate extend: state key: el
+        children getd: value: el :children nil]
+        ?: and: children not: empty?: children
+            fold: cmdset nstate children
+            nstate
+
+; Function: in_cmdset
+; Description: Test if argument is in the argument command set
+
+func :private in_cmdset [state arg]
+    getd: get: state :cset arg false
+
+; Function valid_arg
+; Description: Validates command is in command set or fail
+; Syntax: valid_arg: accum arg
+;   - state: The argparse progress state
+;   - arg: The current argument
+
+func :private valid_arg [state arg]
+    ?: in_cmdset: state arg
+        nil
+        argparse_error_unrecognized: arg
+
+
+func :private update_index [state]
+    update: state :index inc
+
+func :private inc_index_by [state, cnt]
+    extendKV: state :index +: get: state :index cnt
+
+func :private current_value [state, pre]
+    let [idx  get: state :index]
+        ?: =: idx get: state :max
+            end_of_args: pre
+            get: get: state :args idx
+
+; Function argparse_default
+; Description: Set the result for command to true
+; Syntax: argparse_default: accum cmdmap result
+;   - state:   The argparse progress state
+;   - cmdmap:  The cmdmap associated to the argument
+
+func :private argparse_default_handler [state cmdmap]
+    let [   res       get: state :result
+            akey      get: cmdmap :keyword
+          ]
+          update_index:
+            extendKV: state :result extendKV: res akey true
+
+;   Command handlers
+
+; Function: argparse_get_next_value
+; Description: Generic function that attempts to retrieve the
+;   next argument from the argument list.
+; Syntax: argparse_get_next_value: state cmdmap noarg_str unexpect_str
+;   - state: The argparse progress state
+;   - cmdmap: The compile switch declaration map
+;   - noarg_str: If no argument found after current message
+;   - unexpect_str: If the next argument is member of command set nessage
+
+func argparse_get_next_value [state cmdmap noarg_str unexpect_str]
+    ; Move the index to pass over argument
+    let nstate  [] update_index: state
+    ; Try to get next arglist value
+    let nextarg [] current_value: nstate noarg_str
+    ; If it is another primary argument fail, otherwise capture
+    ?: in_cmdset: nstate nextarg
+        argparse_error_missing_field: unexpect_str
+        let [res      get: nstate :result
+            akey      get: cmdmap :keyword]
+            update_index:
+                extendKV: nstate :result extendKV: res akey nextarg
+
+
+func :private until_switch [state arglist result indx]
+    ; Get the effective index and check for max
+    let effoff [] +: get: state :index indx
+    ; If effective index is greater than or equal to max
+    ; finish up
+    ?: =: effoff get: state :max
+        reduced: result
+    ; Otherwise, get the next argument
+        @(
+            let narg  [] get: arglist effoff
+            ; If it is a switch, finish up, otherwise add to collection
+            ?: in_cmdset: state narg
+                reduced: result
+                extend: result narg
+        )
+
+
+; Function: argparse_until_next_switch
+; Description: Generic function that retrieves arguments until end
+;   or until it matches a command
+; Syntax: argparse_until_next_switch: state cmdmap
+;   - state: The argparse progress state
+;   - cmdmap: The compile switch declaration map
+
+func argparse_until_next_switch [state cmdmap]
+    ; Move the index to pass over argument
+    let nstate  [] update_index: state
+    ; Fetch any args to next switch or end of arguments
+    let alist []
+        fold: (until_switch nstate get: nstate :args)
+                [] series: 0 get: nstate :max 1
+    ; Returns list tuple with count and final state
+    ?: =: count: alist 0
+        [0 nstate]
+        let [res            get: nstate :result
+             akey           get: cmdmap :keyword
+             istate         extendKV: nstate :result extendKV: res akey alist
+             icnt count:    alist]
+            [icnt inc_index_by: istate icnt]
+
+; Function argparse_parse
+; Description: Process the argument based on cmaps ':fn_value' function.
+;   If there is no function found, call default processor;
+; Syntax: argparse_parse: state arg cmap
+;   - state: The argparse state map
+;   - arg:   The current argument
+;   - cmap:  The current arguments command map
+
+func :private argparse_parse [state arg cmap]
+    let [vfn getd: cmap :fn_value nil]
+        ?: vfn
+            (vfn state cmap)
+            argparse_default_handler: state cmap
+
+func :private parse [state ignore]
+    ; Get current argument
+    let arg [] get: get: state :args get: state :index
+    ; Check for validatiy
+    valid_arg: state arg
+    ; Process argument
+    let aparse []
+        argparse_parse:
+            state
+            arg
+            get: get: state :cmds arg
+    ; End if arguments exhausted, otherwise keep going
+    ?: =: get: aparse :index get: aparse :max
+        reduced: aparse
+        aparse
+
+; Function: arg_parse_help
+; Description: Display the help information from control map
+; Syntax: arg_parse_help cntrlmap
+;   - cntrlmap: Control map declaration of the argument structure
+
+func :private arg_parse_help [cntrlmap]
+    print!: nlchr
+    printnl!: "Options"
+    printnl!: "-------"
+    fold: ^[cmap el]
+        @(
+            print!: key: el
+            print!: "       "
+            printnl!: getd: value: el :help "No help for argument found"
+            cmap
+        )
+        cntrlmap cntrlmap
+    print!: nlchr
+    fail:
+
+; Function: help_requested
+; Description: Determines if argument contains help help request
+; Syntax: help_requested: cntrlmap arg
+;   - cntrlmap: Control map declaration of the argument structure
+
+func :private help_requested [cntrlmap arg]
+    ?: or: =: arg "-h" =: arg "--help"
+        arg_parse_help: cntrlmap
+        cntrlmap
+
+; Function: parseargs
+; Description: !folds! the argument list based on the control map settings
+; Syntax: parseargs: arglist cntrlmap -> parsed result
+;   - arglist: List containing arguments to parse e.g.: [-a -b foo ]
+;   - cntrlmap: Control map declaration of the argument structure
+; Returns: Result of parse
+
+func parseargs [arglist cntrlmap]
+
+    ;   Verify arguments
+    ?: and: arglist (not empty?: arglist)
+        nil
+        argparse_error_missing_field: "arglist"
+    ;   Verify control map
+    ?: and: cntrlmap (not empty?: cntrlmap)
+        nil
+        argparse_error_missing_field: "cntrlmap"
+
+    ; Quick help check
+    fold: help_requested cntrlmap arglist
+
+    ; Iteratei and parse arglist and return results
+    let argresult
+        [state {
+                :cset   fold: cmdset #{} cntrlmap   ; Set of all commands
+                :cmds   cntrlmap                    ; Control map declaration
+                :args   arglist                     ; Input args
+                :index  0                           ; Index to first arg
+                :max    count: arglist              ; Maximum arguments
+                :result {} }]                       ; Result collector
+        get:
+            fold:
+                parse                       ; Main parser fn
+                state                       ; State map for control
+                series: 0 count: arglist 1  ; Drive iterations
+            :result
+
+    argresult

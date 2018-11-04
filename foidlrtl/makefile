@@ -39,6 +39,7 @@ CLC 	= clang
 # FOIDL Runtime generation settings
 
 FSRC  	:= fsrc/
+FLIB 	:= flib/
 SRC  	:= src/
 INC 	:= includes/
 LLS 	:= ll/
@@ -110,6 +111,8 @@ CSRC	:= .c
 BHDRFLAGS := -I $(HDRS) -r -a hdr
 BCFLAGS := -I $(HDRS) -r
 
+BHDRLIBFLAGS := -I $(HDRS) -a hdr
+BLIBCFLAGS := -I $(HDRS)
 
 # Substitutions for recipe patterns
 
@@ -118,21 +121,26 @@ FHDRS   := $(subst $(FSRC), $(HDRS), $(FSRCS:$(FOIDL)=$(FDEFS)))
 FLLS	:= $(subst $(FSRC), $(LLS), $(FSRCS:$(FOIDL)=$(LL)))
 FOBJS	:= $(subst $(FSRC), $(OBJS), $(FSRCS:$(FOIDL)=$(OBJ)))
 
+FLIBSS 		:= $(wildcard $(FLIB)*$(FOIDL))
+FLIBHDRS   	:= $(subst $(FLIB), $(HDRS), $(FLIBSS:$(FOIDL)=$(FDEFS)))
+FLIBLLS		:= $(subst $(FLIB), $(LLS), $(FLIBSS:$(FOIDL)=$(LL)))
+FLIBOBJS	:= $(subst $(FLIB), $(OBJS), $(FLIBSS:$(FOIDL)=$(OBJ)))
+
 SRCS	:= $(wildcard $(SRC)*$(CSRC))
 SOBJS	:= $(subst $(SRC), $(OBJS), $(SRCS:$(CSRC)=$(OBJ)))
 
 
-all: $(STATIC_LIB) | $(FLLS) $(OBJS)
+all: $(STATIC_LIB) | $(FLLS) $(FLIBLLS) $(OBJS)
 
 # all: $(SOBJS)
 
-$(STATIC_LIB): $(FOBJS) $(SOBJS) | $(LIB)
-	$(LIB64) $(SOBJS) $(FOBJS)
+$(STATIC_LIB): $(FOBJS) $(FLIBOBJS) $(SOBJS) | $(LIB)
+	$(LIB64) $(SOBJS) $(FOBJS) $(FLIBOBJS)
 
 $(LIB):
 	mkdir lib
 
-# FOIDL Source -> headers and -> ll
+# FOIDL RTL Source -> headers and -> ll
 
 headers/%.defs : fsrc/%.foidl
 	$(BSTRP) -s $< $(BHDRFLAGS) -o $@
@@ -144,6 +152,18 @@ ll/%.ll : fsrc/%.foidl
 
 $(FLLS): | $(FHDRS) $(LLS)
 
+# FOIDL RTL Source -> headers and -> ll
+
+headers/%.defs : flib/%.foidl
+	$(BSTRP) -s $< $(BHDRLIBFLAGS) -o $@
+
+$(FLIBHDRS):
+
+ll/%.ll : flib/%.foidl
+	$(BSTRP) -s $< $(BLIBCFLAGS) -o $@
+
+$(FLIBLLS): | $(FLIBHDRS) $(LLS)
+
 $(LLS):
 	mkdir ll
 
@@ -153,6 +173,8 @@ objs/%.o : ll/%.ll
 	$(C64) $< -o $@
 
 $(FOBJS): | $(OBJS)
+
+$(FLIBOBJS): | $(OBJS)
 
 # # C file compilations
 
@@ -166,4 +188,4 @@ $(OBJS):
 
 
 clean:
-	$(RM) -r $(FHDRS) $(LLS) $(OBJS) $(LIB)
+	$(RM) -r $(FHDRS) $(FLIBHDRS) $(LLS) $(OBJS) $(LIB)

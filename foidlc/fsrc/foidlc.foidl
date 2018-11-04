@@ -42,7 +42,7 @@ func outputHandler [accum argv argc]
 	map_extend!: accum :output get: argv +: argc 1
 
 func cmdline [accum argv argc]
-	match a getd: argv argc :done
+	match getd: argv argc :done
 	| "-c" cmdline: map_extend!: accum :compile true argv +: argc 1
 	| "-g" cmdline: map_extend!: accum :genhdr true argv +: argc 1
 	| "-i" cmdline: includeHandler: accum argv argc  argv +: argc 2
@@ -124,6 +124,7 @@ func process [cmap]
 	?: and: or: get: cmap :compile get: cmap :genhdr get: cmap :source
 		processTokens: cmap scanner: get: cmap :source
 		nowork: cmap
+
 
 func main [argv]
 	process:
