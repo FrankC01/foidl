@@ -13,9 +13,10 @@
 extern "C" {
 #endif
 
-int _is_symbol(const char*);
-int _is_keyword(const char*);
-int _is_number(const char*);
+int _is_symbol(const char* s);
+int _is_keyword(const char* s);
+int _is_number(const char* s);
+int _is_match(const char* s, const char* pattern);
 
 #ifdef __cplusplus
 }

@@ -77,6 +77,16 @@ PFRTAny foidl_valid_number(PFRTAny s) {
 	return false;
 }
 
+PFRTAny foidl_regex_match_qmark(PFRTAny s, PFRTAny pattern) {
+
+	if((s->fclass == scalar_class && s->ftype == string_type)
+		&& (pattern->fclass == scalar_class && pattern->ftype == string_type)){
+		if (_is_match(s->value, pattern->value))
+			return true;
+	}
+	return false;
+}
+
 PFRTAny foidl_categorize_num(PFRTAny s) {
 	// if(s->fclass == scalar_class && s->ftype == string_type) {
 	// 	if(!regexec(&reinteger,s->value, 0, NULL, 0))

@@ -20,7 +20,7 @@
 
 module cmdline
 
-; The foidl RTL contains a generic, simple command line
+; The foidl RTL contains a generic, simple argument
 ; parser that takes a command map structure. See the argparse
 ; module source (in foidlrtl/flib) for map structure details
 
@@ -68,6 +68,7 @@ var :private foidlc_version {
     :help       "Displays current version of foidlc"
     :keyword    :version}
 
+; The final base command map for foidlc emulation
 var :private foidlc_command_map {
     "-c" compile_cmd
     "-g" generate_cmd
@@ -109,8 +110,8 @@ func :private output_handler [state cmdmap]
     argparse_get_next_value:
         state
         cmdmap
-        "-o <output file> Command requires input file name"
-        "input file name"
+        "-o <output file> Command requires output file name"
+        "output file name"
 
 func :private include_handler [state cmdmap]
     let incs [] argparse_until_next_switch: state cmdmap
@@ -125,3 +126,6 @@ func main [argv]
     let res [] parseargs: rest: argv foidlc_command_map
     print!: "Results of parsing command line => "
     printnl!: res
+    ?: get: res :genhdr
+        printnl!: "Got gen header"
+        nil

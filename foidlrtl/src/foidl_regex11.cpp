@@ -5,7 +5,8 @@
     Copyright Frank V. Castellucci
     All Rights Reserved
 */
-
+#include <stdio.h>
+#include <iostream>
 #include <regex>
 using namespace std;
 
@@ -32,4 +33,8 @@ extern "C" int _is_number(const char* s) {
      if( regex_match(s, hexpattern)) return 1;
      if( regex_match(s, bitpattern)) return 1;
      return 0;
+}
+
+extern "C" int _is_match(const char* s, const char* pattern) {
+    return regex_match(s,regex(pattern));
 }

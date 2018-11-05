@@ -290,14 +290,21 @@ func series [start stop step]
 ; String functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-func trim [x]
-	foidl_trim: x
+func trim [s]
+	foidl_trim: s
 
 func strb [arg]
 	foidl_strb: arg
 
 func hasChar [s chr]
 	foidl_hasChar: s chr
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Regex functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func regex_match?[s pattern]
+	foidl_regex_match?: s pattern
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Predicate functions

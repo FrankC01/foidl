@@ -108,10 +108,10 @@ ifeq ($(OS_NAME), Windows)
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
 	LINK64=lld-link $(SYSTEM_LIB_INC_64) /libpath:$(RTLIB)
 else
-	C64=$(CLC) -c -isystem $(RTHDRS) -march=x86-64 -fPIC -O3
+	C64=$(CLC) -c -march=x86-64 -fPIC -O3
 	foidlrt_LIB  := libfoidlrt.a
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
-	LINK64 := $(CLC) -lc++ -lfoidlrt -L $(RTLIB)
+	LINK64 := $(CLC) -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++ -lfoidlrt -L $(RTLIB)
 endif
 
 # Flags for compilation of all types
@@ -152,7 +152,6 @@ $(FOBJS): | $(OBJS)
 
 $(OBJS):
 	mkdir objs
-
 
 clean:
 	$(RM) -r $(LLS) $(BIN) $(OBJS)
