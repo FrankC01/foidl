@@ -77,7 +77,7 @@ PFRTAny foidl_valid_number(PFRTAny s) {
 	return false;
 }
 
-//PFRTAny foidl_categorize_num(PFRTAny s) {
+PFRTAny foidl_categorize_num(PFRTAny s) {
 	// if(s->fclass == scalar_class && s->ftype == string_type) {
 	// 	if(!regexec(&reinteger,s->value, 0, NULL, 0))
 	// 		return integerKW;
@@ -92,9 +92,9 @@ PFRTAny foidl_valid_number(PFRTAny s) {
 	// 	printf("%s not tested\n", s->value);
 	// 	unknown_handler();
 	// }
-//	return false;
+	return false;
 
-//}
+}
 
 PFRTAny foidl_regex_cmp_qmark(PFRTAny pattern, PFRTAny arg) {
 	PFRTAny res = false;
@@ -109,8 +109,8 @@ PFRTAny foidl_regex_cmp_qmark(PFRTAny pattern, PFRTAny arg) {
 	return res;
 }
 
-// PFRTAny foidl_categorize(PFRTAny s) {
-// 	PFRTAny res = unknownKW;
+PFRTAny foidl_categorize(PFRTAny s) {
+	PFRTAny res = unknownKW;
 // 	if(s->fclass == scalar_class && s->ftype == string_type) {
 // 		if(!regexec(&resymbol,s->value, 0, NULL, 0))
 // 			return symbolKW;
@@ -118,8 +118,8 @@ PFRTAny foidl_regex_cmp_qmark(PFRTAny pattern, PFRTAny arg) {
 // 			return callKW;
 
 // 	}
-// 	return res;
-// }
+	return res;
+}
 
 void foidl_rt_init_regex() {
 	/*
