@@ -125,7 +125,7 @@ LLCFLAGS = -march=x86-64 -x86-asm-syntax=intel -relocation-model=pic -O3 -filety
 all: $(FOIDLC) | $(HDRS) $(LLS) $(OBJS)
 
 ifeq ($(OS_NAME), Windows)
-$(FOIDLC): $(FOBJS) $(FLLS) $(FHDRS) | $(BIN)
+$(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) | $(BIN)
 	$(LINK64) $(LIBS) /subsystem:console /out:$@ $(FOBJS)
 else
 $(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) | $(BIN)
