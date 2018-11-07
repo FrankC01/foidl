@@ -5,12 +5,9 @@
     Copyright Frank V. Castellucci
     All Rights Reserved
 */
-<<<<<<< HEAD
 #include <foidl_regex11.hpp>
 #include <stdio.h>
 #include <iostream>
-=======
->>>>>>> 3c80cbbbf45a6d43d9d5e44b4e536b64dd80b18d
 #include <regex>
 using namespace std;
 
