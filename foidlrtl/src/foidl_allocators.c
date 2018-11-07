@@ -1,7 +1,7 @@
 /*
 	foidl_xallators.c
 	Library support for structure allocations
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -13,7 +13,7 @@
 
 static PFRTAny gc_initialized = (PFRTAny) &_false.fclass;
 
-const PFRTAny emtndarray[0];// = {end,end}; 
+const PFRTAny emtndarray[0];// = {end,end};
 
 void * foidl_xall(uint32_t sz) {
 	return calloc(sz,1);
@@ -45,14 +45,14 @@ PFRTAny    allocAny(ft fclass, ft ftype, void *value) {
 	return s;
 }
 
-PFRTAny allocStringWithBufferSize (uint32_t cnt) {	
+PFRTAny allocStringWithBufferSize (uint32_t cnt) {
 	PFRTAny 	s = (PFRTAny) foidl_xall(sizeof (struct FRTType));
 	char 		*newp = foidl_xall(cnt+1);
 	s->fclass = scalar_class;
 	s->ftype  = string_type;
 	s->value  = (void *)newp;
-	s->count  = cnt;	
-	return s;	
+	s->count  = cnt;
+	return s;
 }
 
 PFRTAny allocGlobalStringCopy(char *v) {
@@ -101,8 +101,8 @@ PFRTAny allocStringWithCopyCnt(uint32_t cnt, char *p) {
 	s->fclass = scalar_class;
 	s->ftype  = string_type;
 	s->value  = (void *)newp;
-	s->count  = cnt;	
-	return s;	
+	s->count  = cnt;
+	return s;
 }
 
 PFRTAny allocStringWithCopy(char *p) {
@@ -113,11 +113,11 @@ PFRTAny allocStringWithCopy(char *p) {
 	s->fclass = scalar_class;
 	s->ftype  = string_type;
 	s->value  = (void *)newp;
-	s->count  = plen;	
-	return s;	
+	s->count  = plen;
+	return s;
 }
 
-PFRTAny allocAndConcatString(uint32_t tlen, 
+PFRTAny allocAndConcatString(uint32_t tlen,
 		char *base, uint32_t bcnt, char *p1, uint32_t p1cnt) {
 	char 	*newp = foidl_xall(tlen+1);
 	strcpy(newp,base);
@@ -126,8 +126,20 @@ PFRTAny allocAndConcatString(uint32_t tlen,
 	s->fclass = scalar_class;
 	s->ftype  = string_type;
 	s->value  = (void *)newp;
-	s->count  = tlen;	
-	return s;	
+	s->count  = tlen;
+	return s;
+}
+
+PFRTAny allocRegex(PFRTAny sbase, void* regex) {
+	PFRTRegEx 	s = (PFRTRegEx) foidl_xall(sizeof (struct FRTRegEx));
+	s->fclass = scalar_class;
+	s->ftype  = regex_type;
+	s->value  = sbase;
+	s->count  = sbase->count;
+	s->hash   = sbase->hash;
+	s->regex  = regex;
+	return (PFRTAny) s;
+
 }
 
 PFRTAny allocGlobalCharType(int v) {
@@ -171,8 +183,8 @@ PFRTIOBuffer 	allocIONoBuffer() {
     b->current_read_offset =
     b->previous_write_offset =
     b->current_write_offset =
-    b->max_read_position = 
-    b->current_line = 
+    b->max_read_position =
+    b->current_line =
     b->current_pos = 0;
 	return b;
 }
@@ -214,7 +226,7 @@ PFRTFuncRef2 allocFuncRef2(void *fn, ft maxarg, invoke_funcptr ifn) {
 PFRTLinkNode   allocLinkNode() {
 	PFRTLinkNode l = (PFRTLinkNode) foidl_xall(sizeof(struct FRTLinkNode));
 	l->fclass = collection_class;
-	l->ftype  = linknode_type;	
+	l->ftype  = linknode_type;
 	l->data   = end;
 	l->next   = empty_link;
 	return l;
@@ -223,7 +235,7 @@ PFRTLinkNode   allocLinkNode() {
 PFRTLinkNode   allocLinkNodeWith(PFRTAny data, PFRTLinkNode nextNode) {
 	PFRTLinkNode l = allocLinkNode();
 	l->fclass = collection_class;
-	l->ftype  = linknode_type;	
+	l->ftype  = linknode_type;
 	l->data   = data;
 	l->next   = nextNode;
 	return l;
@@ -241,7 +253,7 @@ PFRTList   allocList(ft cnt, PFRTLinkNode root) {
 }
 
 
-PFRTVector allocVector(ft cnt, ft shift, PFRTHamtNode root, 
+PFRTVector allocVector(ft cnt, ft shift, PFRTHamtNode root,
 	PFRTHamtNode tail) {
 	PFRTVector a = (PFRTVector) foidl_xall(sizeof(struct FRTVector));
 	a->fclass = collection_class;
@@ -260,7 +272,7 @@ PFRTSet allocSet(ft cnt, ft shift, PFRTBitmapNode root) {
 	a->fclass = collection_class;
 	a->ftype  = set2_type;
 	a->count  = cnt;
-	a->root   = root;	
+	a->root   = root;
 	a->shift  = shift;
 	a->hash   = 0;
 	return a;
@@ -271,7 +283,7 @@ PFRTMap allocMap(ft cnt, ft shift, PFRTBitmapNode root) {
 	a->fclass = collection_class;
 	a->ftype  = map2_type;
 	a->count  = cnt;
-	a->root   = root;	
+	a->root   = root;
 	a->shift  = shift;
 	a->hash   = 0;
 	return a;
@@ -302,23 +314,23 @@ PFRTAny 	*allocRawAnyArray(ft cnt) {
 }
 
 PFRTBitmapNode allocNode() {
-	PFRTBitmapNode a = (PFRTBitmapNode) 
+	PFRTBitmapNode a = (PFRTBitmapNode)
 		foidl_xall(sizeof(struct FRTBitmapNode));
 	a->fclass = bitmapnode_class;
 	a->datamap = 0;
 	a->nodemap = 0;
-	a->slots = (PFRTAny *) emtndarray;	
+	a->slots = (PFRTAny *) emtndarray;
 	return a;
 }
 
 PFRTHamtNode allocHamtNode() {
 	PFRTHamtNode a = (PFRTHamtNode) foidl_xall(sizeof(struct FRTHamtNode));
 	a->fclass = hamptnode_class;
-	for(ft i=0; i < WCNT; i++) a->slots[i] = end;		
+	for(ft i=0; i < WCNT; i++) a->slots[i] = end;
 	return a;
 }
 
-PFRTBitmapNode allocNodeWith(uint32_t datamap, 
+PFRTBitmapNode allocNodeWith(uint32_t datamap,
 	uint32_t nodemap, ft slen) {
 	PFRTBitmapNode res = allocNode();
 	res->datamap = datamap;
@@ -331,7 +343,7 @@ PFRTBitmapNode allocNodeClone(PFRTBitmapNode src, ft slen) {
 	PFRTBitmapNode res = allocNode();
 	res->datamap = src->datamap;
 	res->nodemap = src->nodemap;
-	res->slots   = allocRawAnyArray(slen);	
+	res->slots   = allocRawAnyArray(slen);
 	for(ft i = 0; i < slen;i++) res->slots[i] = src->slots[i];
 	return res;
 }
@@ -342,7 +354,7 @@ PFRTBitmapNode allocNodeWithAll(uint32_t datamap,
 	res->datamap = datamap;
 	res->nodemap = nodemap;
 	res->slots   = slots;
-	return res;	
+	return res;
 }
 
 //	Iterators
@@ -352,10 +364,10 @@ PFRTIterator allocTrieIterator(PFRTAssocType base,itrNext next) {
 	uint32_t payload_arity = payloadArity(base->root);
 	PFRTTrie_Iterator i = foidl_xall(sizeof(struct FRTTrie_Iterator));
 	i->fclass = iterator_class;
-	i->ftype  = base->ftype == map2_type ? 
-		map_iterator_type : set_iterator_type;		
+	i->ftype  = base->ftype == map2_type ?
+		map_iterator_type : set_iterator_type;
 	i->next   = next;
-	i->get 	  = base->ftype == map2_type ? mapGetDefault : setGetDefault;		
+	i->get 	  = base->ftype == map2_type ? mapGetDefault : setGetDefault;
 	i->currentStackLevel = -1;
 	if(node_arity != 0) {
 		i->currentStackLevel = 0;
@@ -372,9 +384,9 @@ PFRTIterator allocTrieIterator(PFRTAssocType base,itrNext next) {
 }
 
 PFRTIterator allocVectorIterator(PFRTVector v,itrNext next) {
-	PFRTVector_Iterator	vi = (PFRTVector_Iterator) 
+	PFRTVector_Iterator	vi = (PFRTVector_Iterator)
 		foidl_xall(sizeof(struct FRTVector_Iterator));
-	PFRTHamtNode vn = (PFRTHamtNode)vectorGetDefault((PFRTAny)  v,0);	
+	PFRTHamtNode vn = (PFRTHamtNode)vectorGetDefault((PFRTAny)  v,0);
 	vi->fclass = iterator_class;
 	vi->ftype  = vector_iterator_type;
 	vi->next   = next;
@@ -406,7 +418,7 @@ PFRTIterator allocSeriesIterator(PFRTSeries s, itrNext next) {
 	li->counter = -1;
 	li->initialValue = nil;
 	li->lastValue = nil;
-	li->series = s;	
+	li->series = s;
 	return (PFRTIterator) li;
 }
 
@@ -426,7 +438,7 @@ PFRTIterator allocChannelIterator(PFRTIOBuffer cb, itrNext next) {
 //
 
 /*
-	FuncRef2 args (vector) should only have to release 
+	FuncRef2 args (vector) should only have to release
 	level 0 root node and the tail node
 */
 

@@ -42,6 +42,47 @@ constKeyword(hexidecimalKW,":hexidecimal");
 constKeyword(binaryKW,":binary");
 constKeyword(unknownKW,":unknown");
 
+
+// Take input foidl string and return foidl_regex type
+
+PFRTAny	foidl_regex(PFRTAny s) {
+	if(s->fclass == scalar_class && s->ftype == string_type) {
+		return allocRegex(s,_string_to_regex(s->value));
+	}
+	return nil;
+}
+
+
+PFRTAny foidl_regex_match_qmark(PFRTAny s, PFRTAny pattern) {
+	// If s is, indeed, a string
+	if(s->fclass == scalar_class && s->ftype == string_type) {
+		// And pattern is a string
+		if(pattern->fclass == scalar_class && pattern->ftype == string_type) {
+			if (_is_match(s->value, pattern->value)) return true;
+		}
+		// Otherwise if pattern is a regex
+		else if(pattern->fclass == scalar_class && pattern->ftype == regex_type) {
+			PFRTRegEx rex = (PFRTRegEx) pattern;
+			if (_is_matchp(s->value, rex->regex)) return true;
+		}
+		else {
+			return false;
+		}
+	}
+	return false;
+}
+
+PFRTAny foidl_tokenize(PFRTAny s, PFRTAny patterns,
+	PFRTAny ignores, PFRTAny revorder) {
+	// 1. Get size of list and create array(s) of pointers for
+	//	the patterns and ignores
+	// 2. Verify or create regexes for each pattern and ignore
+	// 3. call underylying regex searches
+	// 4. Convert the return
+	return empty_list;
+}
+
+
 PFRTAny foidl_valid_symbol(PFRTAny s) {
 	if(s->fclass == scalar_class && s->ftype == string_type) {
 		if(_is_symbol(s->value))
@@ -72,16 +113,6 @@ PFRTAny foidl_valid_keyword(PFRTAny s) {
 PFRTAny foidl_valid_number(PFRTAny s) {
 	if(s->fclass == scalar_class && s->ftype == string_type) {
 		if(_is_number(s->value))
-			return true;
-	}
-	return false;
-}
-
-PFRTAny foidl_regex_match_qmark(PFRTAny s, PFRTAny pattern) {
-
-	if((s->fclass == scalar_class && s->ftype == string_type)
-		&& (pattern->fclass == scalar_class && pattern->ftype == string_type)){
-		if (_is_match(s->value, pattern->value))
 			return true;
 	}
 	return false;

@@ -303,8 +303,47 @@ func hasChar [s chr]
 ; Regex functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; Compile string to regex
+func regex [s]
+	foidl_regex: s
+
+; Match string 's' with pattern
 func regex_match?[s pattern]
 	foidl_regex_match?: s pattern
+
+; Tokenizes a string or IO channel stream
+; A list of regex'd pattern maps and list of ignores and
+; whether to reverse order (true) or not (false)
+; and attempt to tokenize. Returns list of 'token' maps
+; The 'patterns' must be a list of maps, where each map:
+; {
+;	:regex 	; regex_type (see regex: n)
+;	:type 	; a keyword unique identifier
+; }
+;
+; The return list is of one or more 'token' maps:
+; {
+;	:token_type		; The matching pattern :type
+;	:token_value	; The string represented by the token
+;	:lineno 		; The line number for the value
+;	:colno 			; The column number for the value
+; }
+;
+; If there is a failure, the return list will have one
+; map:
+; {
+;	:token_type		: error
+;	:token_value	; If possible, the value where error occured
+;	:lineno 		; If possible, the line number
+;	:colno 			; If possible, the column number
+;	:error_str 		; If possible, the error_string associated
+; }
+
+
+func  tokenize [s patterns ignores revorder]
+	?: or: string?: s io?: s
+		foidl_tokenize: s patterns ignores revorder
+		[]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Predicate functions

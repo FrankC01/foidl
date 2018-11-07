@@ -5,10 +5,13 @@
     Copyright Frank V. Castellucci
     All Rights Reserved
 */
+#include <foidl_regex11.hpp>
 #include <stdio.h>
 #include <iostream>
 #include <regex>
 using namespace std;
+
+regex* _new_regex(const char*);
 
 static regex sympattern("[a-zA-Z]{1}[a-zA-Z0-9_.\\?\\!]*$");
 static regex callpattern("[a-zA-Z]{1}[a-zA-Z0-9_.\\?\\!]*:$");
@@ -17,6 +20,7 @@ static regex intpattern ("^[-+]?[0-9][0-9]*$");
 static regex realpattern("^[-+]?[0-9]*\\.{1,1}[0-9]+$");
 static regex hexpattern ("^0[xX]{1,1}[a-fA-F0-9]+$");
 static regex bitpattern ("^0[bB]{1,1}[0-1]+$");
+static regex *NLCR = _new_regex("\r?[\n]+");
 
 
 extern "C" int _is_symbol(const char* s) {
@@ -35,6 +39,24 @@ extern "C" int _is_number(const char* s) {
      return 0;
 }
 
+// Match with conversion of pattern string to regex
+// Expensive!
 extern "C" int _is_match(const char* s, const char* pattern) {
     return regex_match(s,regex(pattern));
+}
+
+// Match with assumption 'pattern' is actually a regex*
+// see _string_to_regex below
+extern "C" int _is_matchp(const char* s, void* pattern) {
+    regex* rpattern = static_cast<regex*>(pattern);
+    return regex_match(s,*rpattern);
+}
+
+regex* _new_regex(const char* s) {
+    return new regex(s);
+}
+
+// Compile a regex from string
+extern "C" void* _string_to_regex(const char* s) {
+    return _new_regex(s);
 }

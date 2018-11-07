@@ -653,6 +653,14 @@ static void scalarIOInfo(PFRTAny el,PIOScalarInfo psi) {
 				psi->genned = 0;
 			}
 			break;
+		case 	regex_type:
+			{
+				PFRTRegEx rel = (PFRTRegEx)el;
+				psi->pdata = rel->value->value;
+				psi->bytes = el->count;
+				psi->genned = 0;
+			}
+			break;
 		case 	integer_type:
 			{
 				char *tmp;
@@ -710,6 +718,12 @@ static void io_scalarRawWriter(PFRTIOChannel chn, PFRTAny el) {
 		case 	keyword_type:
 		case 	string_type:
 			_write(chn->handle,el->value,el->count);
+			break;
+		case 	regex_type:
+			{
+				PFRTRegEx rel = (PFRTRegEx)el;
+				_write(chn->handle,rel->value->value,rel->count);
+			}
 			break;
 		case 	integer_type:
 			{

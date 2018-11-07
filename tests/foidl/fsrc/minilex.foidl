@@ -1,0 +1,168 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; argparse
+; Command line parsing
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module minilex
+
+; Using RTL regex_match to construct a mini-lexer
+
+; Reserved words
+var patterns [
+    ;   Keywords and reserved symbols
+    {
+        :type   :module
+        :regex  regex: "module"
+    }
+    {
+        :type   :variable
+        :regex  regex: "var"
+    }
+    {
+        :type   :function
+        :regex  regex: "func"
+    }
+    {
+        :type   :let
+        :regex  regex:"let"
+    }
+    {
+        :type   :match
+        :regex  regex: "match"
+    }
+    {
+        :type   :group
+        :regex  regex: "@\("
+    }
+    {
+        :type   :lambda
+        :regex  regex: "\^"
+    }
+    {
+        :type   :match_guard
+        :regex  regex: "\|"
+    }
+    {
+        :type   :match_exprref
+        :regex  regex: "%0"
+    }
+    {
+        :type   :if_expr
+        :regex  regex: "\?:"
+    }
+    {
+        :type   :lparen
+        :regex  regex: "\("     ;   Used for partials
+    }
+    {
+        :type   :rparen
+        :regex  regex: "\)"
+    }
+    {
+        :type   :math_ref
+        :regex  regex: "[+/*-]\\b?"
+    }
+    {
+        :type   :math_call
+        :regex  regex: "[+/*-]:\\b?"
+    }
+    ;   Collection wrapper symbols
+    {
+        :type   :lbracket
+        :regex  regex: "\["     ;   Used for list
+    }
+    {
+        :type   :rbracket
+        :regex  regex: "\]"
+    }
+    {
+        :type   :langle
+        :regex  regex: "<"      ;   Used for vector
+    }
+    {
+        :type   :rangle
+        :regex  regex: ">"
+    }
+    {
+        :type   :lbrace         ;   Used for maps
+        :regex  regex: "\{"
+    }
+    {
+        :type   :rbrace
+        :regex  regex: "\}"
+    }
+    {
+        :type   :lset
+        :regex  regex: "#\{"    ;   Used for sets
+    }
+    ;   Literals
+    {
+        :type   :integer
+        :regex  regex: "-?[[:digit:]]+"
+    }
+]
+
+; Boolean operators
+var EQ_CALL         "=:"
+var LT_CALL         "<:"
+var GT_CALL         ">:"
+var LTEQ_CALL       "<=:"
+var GTEQ_CALL       ">=:"
+var NOTEQ_CALL      "not=:"
+
+
+; Reserved keywords
+var PRIVATE_RE  ":private"
+var DEFAULT_RE  ":default"
+
+var SYMBOL      "[a-zA-Z]([a-zA-Z0-9]*)?"
+var SYMBOL_PRED "[a-zA-Z]([a-zA-Z0-9]*)\?"
+var SYMBOL_BANG "[a-zA-Z]([a-zA-Z0-9]*)!?"
+
+var IGNORE_WS   "[,\t ]+"
+
+func foo [thing, re]
+    printnl!: regex_match?: thing get: re :regex
+    print!: "Tokenize with nils " printnl!: tokenize: nil patterns nil true
+
+func main [argv]
+    ;   Reserved words
+    print!: "'module' with module pattern = " print!:
+        foo: "module" get: patterns 0
+
+    ;print!: "'var' with var pattern = " printnl!: regex_match?: "var" VAR_RE
+    ;print!: "'func' with func pattern = " printnl!: regex_match?: "func" FUNC_RE
+    ;print!: "'let' with let pattern = " printnl!: regex_match?: "let" LET_RE
+    ;print!: "'match' with match pattern = " printnl!: regex_match?: "match" MATCH_RE
+    ; Reserved symbols
+    ;print!: "'^' with lambda pattern = " printnl!: regex_match?: "^" LAMBDA_RE
+    ;print!: "'|' with match guard pattern = " printnl!: regex_match?: "|" MATCH_GUARD_RE
+    ;print!: "'%0' with match expr pattern = " printnl!: regex_match?: "%0" MATCH_EXPR_RE
+    ;print!: "'@(' with group pattern = " printnl!: regex_match?: "@(" GROUP_RE
+    ;print!: "'?:' with if pattern = " printnl!: regex_match?: "?:" IF_RE
+    ; Boolean operators
+    ;print!: "'=:' with eq pattern = " printnl!: regex_match?: "=:" EQ_CALL
+    ;print!: "'<:' with lt pattern = " printnl!: regex_match?: "<:" LT_CALL
+    ;print!: "'>:' with gt pattern = " printnl!: regex_match?: ">:" GT_CALL
+    ;print!: "'<=:' with lteq pattern = " printnl!: regex_match?: "<=:" LTEQ_CALL
+    ;print!: "'>=:' with gteq pattern = " printnl!: regex_match?: ">=:" GTEQ_CALL
+    ;print!: "'not=:' with neq pattern = " printnl!: regex_match?: "not=:" NOTEQ_CALL
+
+    ;print!: "'foo' with symbol pattern => " printnl!: regex_match?: "foo" SYMBOL
+    ;print!: "'foo?' with symbol pattern => " printnl!: regex_match?: "foo?" SYMBOL_PRED
+    ;print!: "'foo!' with symbol pattern => " printnl!: regex_match?: "foo!" SYMBOL_BANG

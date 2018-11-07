@@ -209,8 +209,8 @@ func :private parse [state ignore]
 
 func :private arg_parse_help [cntrlmap]
     print!: nlchr
-    printnl!: "Options"
-    printnl!: "-------"
+    printnl!: "Argument commands"
+    printnl!: "-----------------"
     fold: ^[cmap el]
         @(
             print!: key: el
@@ -241,14 +241,17 @@ func :private help_requested [cntrlmap arg]
 
 func parseargs [arglist cntrlmap]
 
-    ;   Verify arguments
-    ?: and: arglist (not empty?: arglist)
-        nil
-        argparse_error_missing_field: "arglist"
     ;   Verify control map
     ?: and: cntrlmap (not empty?: cntrlmap)
         nil
         argparse_error_missing_field: "cntrlmap"
+    ;   Verify arguments
+    ?: and: arglist (not empty?: arglist)
+        nil
+        @(  print!: nlchr
+            printnl!: "No arguments provided, displaying help"
+            arg_parse_help: cntrlmap
+        )
 
     ; Quick help check
     fold: help_requested cntrlmap arglist

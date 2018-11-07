@@ -227,7 +227,10 @@ func 	foidl_strcatns [str cnt chs]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Fundemental String Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func    foidl_regex [s]
 func    foidl_regex_match? [s pattern]
+func    foidl_tokenize [s patterns ignores revorder]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Fundemental Collection Functions

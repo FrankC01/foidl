@@ -47,6 +47,7 @@ static const ft 	keyword_type    = 0xffffffff100000ab;
 static const ft 	string_type 	= 0xffffffff100000aa;
 static const ft 	boolean_type    = 0xffffffff100000a9;
 static const ft 	character_type  = 0xffffffff100000a8;
+static const ft     regex_type      = 0xffffffff100000a7;
 
 static const ft 	integer_type 	= 0xffffffff1000a8a9;
 
@@ -151,6 +152,27 @@ typedef struct FRTType {
 } FRTAny, *PFRTType, *PFRTAny,*PFRTCollection;
 
 #define ANYTOG(s) (PFRTTypeG) ((void *)s - sizeof(ft))
+
+// Special Types
+
+typedef struct FRTRegExG {
+    ft          fsig;
+    ft          fclass;
+    ft          ftype;
+    ft          count;      // Copy over from string basis
+    uint32_t    hash;       // Copy over from string basis
+    PFRTAny     value;      // Initial String
+    void        *regex;     // Compiled regex
+} *PFRTRegExG;
+
+typedef struct FRTRegEx {
+    ft          fclass;
+    ft          ftype;
+    ft          count;      // Copy over from string basis
+    uint32_t    hash;       // Copy over from string basis
+    PFRTAny     value;      // Initial String
+    void        *regex;     // Compiled regex
+} *PFRTRegEx;
 
 //
 // Collections
@@ -680,6 +702,8 @@ extern PFRTAny 			allocAndConcatString(uint32_t,char *, uint32_t, char *, uint32
 
 extern PFRTAny 			allocGlobalCharType(int);
 extern PFRTAny 			allocGlobalIntegerType(long long v);
+
+extern PFRTAny          allocRegex(PFRTAny sbase, void* regex);
 
 // IO Types
 extern PFRTIOChannel 	allocIOChannel(ft,PFRTAny);

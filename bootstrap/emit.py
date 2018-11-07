@@ -576,13 +576,17 @@ class LlvmGen(object):
     @_emit_et.register(ast.VarReference)
     def _emit_varref_type(self, el, builder, frame):
         """Emit a variable reference"""
-        if not el.exprs:
-            frame.append(
-                builder.load(
-                    builder.module.get_global(
-                        expand_symbol(el.name))))
-        else:
-            self._emit_et(el.exprs[0], builder, frame)
+        frame.append(
+            builder.load(
+                builder.module.get_global(
+                    expand_symbol(el.name))))
+        # if not el.exprs:
+        #     frame.append(
+        #         builder.load(
+        #             builder.module.get_global(
+        #                 expand_symbol(el.name))))
+        # else:
+        #     self._emit_et(el.exprs[0], builder, frame)
 
     @_emit_et.register(ast.FuncArgReference)
     def _emit_funcargref_type(self, el, builder, frame):
