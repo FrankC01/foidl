@@ -74,7 +74,7 @@ ifeq ($(OS_NAME), Windows)
 	ARCH := $(ARCH64) # set to either one, and the right stuff will get chosen
 	DEFINES := -DWIN32 -std=c++11 #-fno-rtti -fno-exceptions -D_HAS_EXCEPTIONS=0 -D_ITERATOR_DEBUG_LEVEL=0
 	_MSC_VER := 1900 # 1800=VC2013, 1900=VC2015, 1910=VC2017 / others: https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B
-	LIBS := libcmt.lib libcpmt.lib $(foidlrt_LIB)
+	LIBS := libcmt.lib libcpmt.lib $(foidlrt_LIB) libucrt.lib
 
 	# base locations of MSVC toolchain:
 	# search location #1
@@ -87,7 +87,7 @@ ifeq ($(OS_NAME), Windows)
 	MSVC_PATH=$(PROGRAMFILES_PATH)/Microsoft Visual Studio 14.0/VC
 	# Some universal flags
 	UniversalCRT_IncludePath64="$(WINDOWS_KITS10_PATH)/Include/10.0.10150.0/ucrt"
-	UniversalCRT_Lib64="$(WINDOWS_KITS10_PATH)/Lib/10.0.10150.0/ucrt/$(ARCH64)"
+	UniversalCRT_Lib64="$(WINDOWS_KITS10_PATH)/Lib/10.0.17134.0/ucrt/$(ARCH64)"
 	MSVC_INCLUDE64="$(MSVC_PATH)/include"
 	MSVC_LIB64="$(MSVC_PATH)/lib$(if $(filter $(ARCH64),x64),/amd64,)"
 	WINSDK_INC64="$(WINDOWS_KITS81_PATH)/Include/um"
