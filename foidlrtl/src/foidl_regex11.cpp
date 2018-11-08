@@ -21,6 +21,7 @@ static regex realpattern("^[-+]?[0-9]*\\.{1,1}[0-9]+$");
 static regex hexpattern ("^0[xX]{1,1}[a-fA-F0-9]+$");
 static regex bitpattern ("^0[bB]{1,1}[0-1]+$");
 static regex *NLCR = _new_regex("\r?[\n]+");
+static regex *simple_str = _new_regex("\"([\\s\\S]+?)\"");
 
 
 extern "C" int _is_symbol(const char* s) {
@@ -58,5 +59,6 @@ regex* _new_regex(const char* s) {
 
 // Compile a regex from string
 extern "C" void* _string_to_regex(const char* s) {
+    cout << " compiling regex " << s << endl;
     return _new_regex(s);
 }

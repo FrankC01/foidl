@@ -42,10 +42,14 @@ constKeyword(hexidecimalKW,":hexidecimal");
 constKeyword(binaryKW,":binary");
 constKeyword(unknownKW,":unknown");
 
+// void* const simple_str = _string_to_regex("\"([\\s\\S]+?)\"");
+
 
 // Take input foidl string and return foidl_regex type
 
 PFRTAny	foidl_regex(PFRTAny s) {
+	// void* str_regex = _string_to_regex(simple_str);
+
 	if(s->fclass == scalar_class && s->ftype == string_type) {
 		return allocRegex(s,_string_to_regex(s->value));
 	}
@@ -72,13 +76,76 @@ PFRTAny foidl_regex_match_qmark(PFRTAny s, PFRTAny pattern) {
 	return false;
 }
 
-PFRTAny foidl_tokenize(PFRTAny s, PFRTAny patterns,
-	PFRTAny ignores, PFRTAny revorder) {
+constKeyword(typeKW,":type");
+constKeyword(regexKW,":regex");
+constKeyword(errorKW,":error");
+
+void gen_block(PFRTAny patterns,PFRTAny ignores, token_block *block) {
+	ft pcnt = ((PFRTList) patterns)->count;
+	ft icnt = ((PFRTList) ignores)->count;
+
+	PFRTAny entry = nil;
+	PFRTAny ttype;
+	PFRTRegEx tregex;
+	if(pcnt > 0) {
+		block->pattern_cnt = pcnt;
+		block->regex_array = foidl_xall(pcnt * sizeof(ft));
+		block->type_array = foidl_xall(pcnt * sizeof(ft));
+		uint32_t count=0;
+		PFRTIterator li = iteratorFor(patterns);
+		while((entry = iteratorNext(li)) != end) {
+			ttype = foidl_get(entry, typeKW);
+			tregex = (PFRTRegEx)foidl_get(entry, regexKW);
+			block->regex_array[count] = tregex->regex;
+			block->type_array[count] = (char *) ttype->value;
+			count++;
+		}
+		foidl_xdel(li);
+	}
+	else {
+		block->pattern_cnt = 0;
+	}
+	if(icnt > 0) {
+		block->ignore_cnt = icnt;
+		block->ig_regex_array = foidl_xall(icnt * sizeof(ft));
+		uint32_t count=0;
+		PFRTIterator li = iteratorFor(ignores);
+		while((entry = iteratorNext(li)) != end) {
+			tregex = (PFRTRegEx)foidl_get(entry, regexKW);
+			block->ig_regex_array[count] = tregex->regex;
+			count++;
+		}
+		foidl_xdel(li);
+	}
+	else {
+		block->ignore_cnt = 0;
+	}
+
+	return;
+}
+
+
+PFRTAny foidl_tokenize(
+	PFRTAny s,
+	PFRTAny patterns,
+	PFRTAny ignores,
+	PFRTAny revorder) {
 	// 1. Get size of list and create array(s) of pointers for
 	//	the patterns and ignores
 	// 2. Verify or create regexes for each pattern and ignore
 	// 3. call underylying regex searches
 	// 4. Convert the return
+	if(s->fclass == scalar_class && s->ftype == string_type) {
+		token_block	block;
+		gen_block(patterns, ignores, &block);
+		if(block.pattern_cnt > 0) {
+			foidl_xdel(block.regex_array);
+			foidl_xdel(block.type_array);
+		}
+		if(block.ignore_cnt > 0) {
+			foidl_xdel(block.ig_regex_array);
+		}
+	}
 	return empty_list;
 }
 

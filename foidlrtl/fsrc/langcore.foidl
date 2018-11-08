@@ -152,6 +152,20 @@ func take_untilWS! [coll]
 func close! [channel]
 	foidl_close!: channel
 
+func quaf! [s]
+	let src_chan []
+		?: io?: s
+			s
+			open!: {
+                :channel s
+                :open :r
+                :buffer :mmap
+                :read_handler :char
+            	}
+    let qs [] foidl_io_quaf!: src_chan
+    close!: src_chan
+    qs
+
 func print! [s]
 	write!: cout s
 

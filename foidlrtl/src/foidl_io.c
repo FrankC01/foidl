@@ -524,6 +524,18 @@ PFRTAny 	foidl_close_bang(PFRTIOChannel chan) {
 	return (PFRTAny) chan;
 }
 
+PFRTAny foidl_io_quaf_bang(PFRTIOChannel chan) {
+	if(canRead(chan) == true) {
+		PFRTIOBuffer b = chan->bufferptr;
+		return allocStringWithCopyCnt(b->buffersize, b->bufferPtr);
+	}
+	else {
+		return nil;
+	}
+}
+
+
+
 //	Console shortcuts used in RTL
 
 PFRTAny 	writeCout(PFRTAny el) {

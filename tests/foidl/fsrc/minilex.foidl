@@ -22,8 +22,12 @@ module minilex
 
 ; Using RTL regex_match to construct a mini-lexer
 
-; Reserved words
 var patterns [
+    ; Reserved words
+    {
+        :type   :comment
+        :regex  regex: ";.*"
+    }
     ;   Keywords and reserved symbols
     {
         :type   :module
@@ -38,6 +42,10 @@ var patterns [
         :regex  regex: "func"
     }
     {
+        :type   :private
+        :regex  regex: ":private"
+    }
+    {
         :type   :let
         :regex  regex:"let"
     }
@@ -46,20 +54,24 @@ var patterns [
         :regex  regex: "match"
     }
     {
-        :type   :group
-        :regex  regex: "@\("
-    }
-    {
-        :type   :lambda
-        :regex  regex: "\^"
-    }
-    {
         :type   :match_guard
         :regex  regex: "\|"
     }
     {
         :type   :match_exprref
         :regex  regex: "%0"
+    }
+    {
+        :type   :default
+        :regex  regex: ":default"
+    }
+    {
+        :type   :group
+        :regex  regex: "@\("
+    }
+    {
+        :type   :lambda
+        :regex  regex: "\^"
     }
     {
         :type   :if_expr
@@ -110,59 +122,77 @@ var patterns [
         :type   :lset
         :regex  regex: "#\{"    ;   Used for sets
     }
+    {
+        :type   :boolpred
+        :regex  regex: "(=|>=|<=|>|<|not=){1,1}:?\\b";
+
+    }
+    {
+        :type   :funccall
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9]*)?:"
+    }
+    {
+        :type   :funccall_pred
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9]*)?\\?:"
+    }
+    {
+        :type   :funccall_bang
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9]*)?!:"
+    }
+    {
+        :type   :keyword
+        :regex  regex: ":[a-zA-Z]([a-zA-Z0-9]*)?"
+    }
     ;   Literals
+    ;   String is in RTL for now
     {
         :type   :integer
-        :regex  regex: "-?[[:digit:]]+"
+        :regex  regex: "[-+]?[[:digit:]]+?"
+    }
+    ;   String is in RTL for now
+    {
+        :type   :char
+        :regex  regex:  "'[0-9]{1,1}'"
+    }
+    {
+        :type   :bit
+        :regex  regex: "0[bB][0-1]+"
+
+    }
+    {
+        :type   :hex
+        :regex  regex: "0[xX][0-9a-fA-F]+"
+    }
+    {
+        :type   :symbol
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9]*)?"
+    }
+    {
+        :type   :symbol_pred
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9]*)?\\?"
+    }
+    {
+        :type   :symbol_bang
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9]*)?!"
     }
 ]
 
-; Boolean operators
-var EQ_CALL         "=:"
-var LT_CALL         "<:"
-var GT_CALL         ">:"
-var LTEQ_CALL       "<=:"
-var GTEQ_CALL       ">=:"
-var NOTEQ_CALL      "not=:"
-
-
-; Reserved keywords
-var PRIVATE_RE  ":private"
-var DEFAULT_RE  ":default"
-
-var SYMBOL      "[a-zA-Z]([a-zA-Z0-9]*)?"
-var SYMBOL_PRED "[a-zA-Z]([a-zA-Z0-9]*)\?"
-var SYMBOL_BANG "[a-zA-Z]([a-zA-Z0-9]*)!?"
-
-var IGNORE_WS   "[,\t ]+"
-
-func foo [thing, re]
-    printnl!: regex_match?: thing get: re :regex
-    print!: "Tokenize with nils " printnl!: tokenize: nil patterns nil true
+var ignores [
+    {
+        :type   :ignore
+        :regex  regex: "[,\t ]+"
+    }
+]
 
 func main [argv]
-    ;   Reserved words
-    print!: "'module' with module pattern = " print!:
-        foo: "module" get: patterns 0
+    print!: nlchr
+    ?: =: count: argv 2
+        let [src_string quaf!: get: argv 1]
+            @(
+                print!: "Contents of " printnl!: get: argv 1
+                printnl!: src_string
+                printnl!: "Tokenized content intermed"
+                tokenize: src_string patterns ignores true
+            )
+        printnl!: "usage 'minilex foidl_source"
 
-    ;print!: "'var' with var pattern = " printnl!: regex_match?: "var" VAR_RE
-    ;print!: "'func' with func pattern = " printnl!: regex_match?: "func" FUNC_RE
-    ;print!: "'let' with let pattern = " printnl!: regex_match?: "let" LET_RE
-    ;print!: "'match' with match pattern = " printnl!: regex_match?: "match" MATCH_RE
-    ; Reserved symbols
-    ;print!: "'^' with lambda pattern = " printnl!: regex_match?: "^" LAMBDA_RE
-    ;print!: "'|' with match guard pattern = " printnl!: regex_match?: "|" MATCH_GUARD_RE
-    ;print!: "'%0' with match expr pattern = " printnl!: regex_match?: "%0" MATCH_EXPR_RE
-    ;print!: "'@(' with group pattern = " printnl!: regex_match?: "@(" GROUP_RE
-    ;print!: "'?:' with if pattern = " printnl!: regex_match?: "?:" IF_RE
-    ; Boolean operators
-    ;print!: "'=:' with eq pattern = " printnl!: regex_match?: "=:" EQ_CALL
-    ;print!: "'<:' with lt pattern = " printnl!: regex_match?: "<:" LT_CALL
-    ;print!: "'>:' with gt pattern = " printnl!: regex_match?: ">:" GT_CALL
-    ;print!: "'<=:' with lteq pattern = " printnl!: regex_match?: "<=:" LTEQ_CALL
-    ;print!: "'>=:' with gteq pattern = " printnl!: regex_match?: ">=:" GTEQ_CALL
-    ;print!: "'not=:' with neq pattern = " printnl!: regex_match?: "not=:" NOTEQ_CALL
-
-    ;print!: "'foo' with symbol pattern => " printnl!: regex_match?: "foo" SYMBOL
-    ;print!: "'foo?' with symbol pattern => " printnl!: regex_match?: "foo?" SYMBOL_PRED
-    ;print!: "'foo!' with symbol pattern => " printnl!: regex_match?: "foo!" SYMBOL_BANG

@@ -13,6 +13,21 @@
 extern "C" {
 #endif
 
+typedef struct {
+    int     pattern_cnt;
+    void    **regex_array;
+    char    **type_array;
+    int     ignore_cnt;
+    void    **ig_regex_array;
+} token_block;
+
+typedef struct {
+    int     type_index;
+    char    *word;
+    int     lineno;
+    int     colno;
+} token, *ptoken;
+
 int     _is_symbol(const char* s);
 int     _is_keyword(const char* s);
 int     _is_number(const char* s);
