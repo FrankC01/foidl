@@ -24,10 +24,6 @@ module minilex
 
 var patterns [
     ; Reserved words
-    {
-        :type   :comment
-        :regex  regex: ";.*"
-    }
     ;   Keywords and reserved symbols
     {
         :type   :module
@@ -74,10 +70,6 @@ var patterns [
         :regex  regex: "\^"
     }
     {
-        :type   :if_expr
-        :regex  regex: "\?:"
-    }
-    {
         :type   :lparen
         :regex  regex: "\("     ;   Used for partials
     }
@@ -86,12 +78,12 @@ var patterns [
         :regex  regex: "\)"
     }
     {
-        :type   :math_ref
-        :regex  regex: "[+/*-]\\b?"
+        :type   :math_call
+        :regex  regex: "(\+|-|/|\*):{1,1}?"
     }
     {
-        :type   :math_call
-        :regex  regex: "[+/*-]:\\b?"
+        :type   :boolpred
+        :regex  regex: "(=|>=|<=|>|<|not=):"
     }
     ;   Collection wrapper symbols
     {
@@ -123,36 +115,35 @@ var patterns [
         :regex  regex: "#\{"    ;   Used for sets
     }
     {
-        :type   :boolpred
-        :regex  regex: "(=|>=|<=|>|<|not=){1,1}:?\\b";
-
-    }
-    {
         :type   :funccall
-        :regex  regex: "[a-zA-Z]([a-zA-Z0-9]*)?:"
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?:"
     }
     {
         :type   :funccall_pred
-        :regex  regex: "[a-zA-Z]([a-zA-Z0-9]*)?\\?:"
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?\?:"
     }
     {
         :type   :funccall_bang
-        :regex  regex: "[a-zA-Z]([a-zA-Z0-9]*)?!:"
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?!:"
     }
     {
         :type   :keyword
-        :regex  regex: ":[a-zA-Z]([a-zA-Z0-9]*)?"
+        :regex  regex: ":[a-zA-Z]([a-zA-Z0-9_]*)?"
     }
     ;   Literals
-    ;   String is in RTL for now
+    ;   String is in RTL for now but should move hear
     {
         :type   :integer
-        :regex  regex: "[-+]?[[:digit:]]+?"
+        :regex  regex: "-?[0-9]+"
+    }
+    {
+        :type   :math_ref
+        :regex  regex: "(\+|-|/|\*)"
     }
     ;   String is in RTL for now
     {
         :type   :char
-        :regex  regex:  "'[0-9]{1,1}'"
+        :regex  regex:  "\'[0-9]{1,1}\'"
     }
     {
         :type   :bit
@@ -163,17 +154,27 @@ var patterns [
         :type   :hex
         :regex  regex: "0[xX][0-9a-fA-F]+"
     }
-    {
-        :type   :symbol
-        :regex  regex: "[a-zA-Z]([a-zA-Z0-9]*)?"
-    }
+    ; Symbols
     {
         :type   :symbol_pred
-        :regex  regex: "[a-zA-Z]([a-zA-Z0-9]*)?\\?"
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?\?"
     }
     {
         :type   :symbol_bang
-        :regex  regex: "[a-zA-Z]([a-zA-Z0-9]*)?!"
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?!"
+    }
+    {
+        :type   :symbol
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?"
+    }
+    {
+        :type   :if_expr
+        :regex  regex: "\?:"
+    }
+    ; Comment char
+    {
+        :type   :comment
+        :regex  regex: ";.*"
     }
 ]
 
@@ -184,15 +185,23 @@ var ignores [
     }
 ]
 
+func dump_toks [toks]
+    printnl!: "Tokenized content top down"
+    let rev_toks []
+        fold: ^[a m]
+            @(
+                printnl!: m
+                extend: a m
+            ) [] toks
+    print!: nlchr
+    printnl!: "Tokenized content reversed"
+    fold: ^[a m] @(printnl!: m a) nil rev_toks
+
 func main [argv]
     print!: nlchr
     ?: =: count: argv 2
-        let [src_string quaf!: get: argv 1]
-            @(
-                print!: "Contents of " printnl!: get: argv 1
-                printnl!: src_string
-                printnl!: "Tokenized content intermed"
-                tokenize: src_string patterns ignores true
-            )
+        let [src_string quaf!: get: argv 1
+             toks tokenize: src_string patterns ignores true]
+             dump_toks: toks
         printnl!: "usage 'minilex foidl_source"
 

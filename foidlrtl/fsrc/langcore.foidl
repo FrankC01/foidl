@@ -338,7 +338,7 @@ func regex_match?[s pattern]
 ; The return list is of one or more 'token' maps:
 ; {
 ;	:token_type		; The matching pattern :type
-;	:token_value	; The string represented by the token
+;	:token_str		; The string represented by the token
 ;	:lineno 		; The line number for the value
 ;	:colno 			; The column number for the value
 ; }

@@ -9,8 +9,6 @@
 #define REGEX_IMPL
 #include <foidlrt.h>
 #include <foidl_regex11.hpp>
-
-// #include <regex.h>
 #include <stdio.h>
 
 // Symbol compiled regex
@@ -29,8 +27,6 @@
 // static const char *realpattern 	= "^[-+]?[0-9]*\\.{1,1}[0-9]+$";
 // static const char *hexpattern 	= "^0[xX]{1,1}[a-fA-F0-9]+$";
 // static const char *bitpattern 	= "^0[bB]{1,1}[0-1]+$";
-
-static const char *foobar = "foo_bar";
 
 constKeyword(callKW,":call");
 constKeyword(symbolKW,":symbol");
@@ -78,7 +74,6 @@ PFRTAny foidl_regex_match_qmark(PFRTAny s, PFRTAny pattern) {
 
 constKeyword(typeKW,":type");
 constKeyword(regexKW,":regex");
-constKeyword(errorKW,":error");
 
 void gen_block(PFRTAny patterns,PFRTAny ignores, token_block *block) {
 	ft pcnt = ((PFRTList) patterns)->count;
@@ -124,6 +119,12 @@ void gen_block(PFRTAny patterns,PFRTAny ignores, token_block *block) {
 	return;
 }
 
+constKeyword(errorKW,":error");
+constKeyword(strKW,":string");
+constKeyword(token_typeKW,":token_type");
+constKeyword(token_strKW,":token_str");
+constKeyword(linenoKW,":lineno");
+constKeyword(colnoKW,":colno");
 
 PFRTAny foidl_tokenize(
 	PFRTAny s,
@@ -135,18 +136,58 @@ PFRTAny foidl_tokenize(
 	// 2. Verify or create regexes for each pattern and ignore
 	// 3. call underylying regex searches
 	// 4. Convert the return
+	PFRTAny mylist = empty_list;
 	if(s->fclass == scalar_class && s->ftype == string_type) {
 		token_block	block;
+		block.token_cnt = 0;
+		block.tokens = 0;
 		gen_block(patterns, ignores, &block);
+		_reduce_tokens(s->value,  &block);
+		// Drop the ignores thing
+		if(block.ignore_cnt > 0) {
+			foidl_xdel(block.ig_regex_array);
+		}
+		if(block.token_cnt > 0) {
+			mylist = foidl_list_inst_bang();
+			for(int i=0; i<block.token_cnt;i++) {
+				PFRTAny mymap = foidl_map_inst_bang();
+				ptoken res = block.tokens[i];
+				foidl_map_extend_bang(
+					mymap,
+					token_strKW,
+					(PFRTAny) res->word);
+				foidl_map_extend_bang(
+					mymap,
+					linenoKW,
+					allocIntegerWithValue((long long) res->lineno));
+				foidl_map_extend_bang(
+					mymap,
+					colnoKW,
+					allocIntegerWithValue((long long) res->colno));
+				if(res->type_index < 0) {
+					foidl_map_extend_bang(
+						mymap,
+						token_typeKW,
+						strKW);
+				}
+				else {
+					PFRTAny index = allocIntegerWithValue((long long) res->type_index);
+					PFRTAny lmap = foidl_get(patterns, index);
+					PFRTAny tkw = foidl_get(lmap, typeKW);
+					foidl_map_extend_bang(mymap,token_typeKW,tkw);
+				}
+				foidl_list_extend_bang(mylist,mymap);
+				foidl_xdel(block.tokens[i]);
+			}
+			foidl_xdel(block.tokens);
+
+		}
 		if(block.pattern_cnt > 0) {
 			foidl_xdel(block.regex_array);
 			foidl_xdel(block.type_array);
 		}
-		if(block.ignore_cnt > 0) {
-			foidl_xdel(block.ig_regex_array);
-		}
 	}
-	return empty_list;
+	return mylist;
 }
 
 

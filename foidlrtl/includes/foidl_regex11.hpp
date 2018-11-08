@@ -14,19 +14,22 @@ extern "C" {
 #endif
 
 typedef struct {
-    int     pattern_cnt;
-    void    **regex_array;
-    char    **type_array;
-    int     ignore_cnt;
-    void    **ig_regex_array;
-} token_block;
-
-typedef struct {
     int     type_index;
     char    *word;
     int     lineno;
     int     colno;
 } token, *ptoken;
+
+typedef struct {
+    int     pattern_cnt;
+    void    **regex_array;
+    char    **type_array;
+    int     ignore_cnt;
+    void    **ig_regex_array;
+    int     token_cnt;
+    ptoken  *tokens;
+} token_block, *ptoken_block;
+
 
 int     _is_symbol(const char* s);
 int     _is_keyword(const char* s);
@@ -35,6 +38,7 @@ int     _is_number(const char* s);
 void*   _string_to_regex(const char* s);
 int     _is_match(const char* s, const char* pattern);
 int     _is_matchp(const char* s, void* pattern);
+void    _reduce_tokens(const char*s, ptoken_block);
 
 #ifdef __cplusplus
 }
