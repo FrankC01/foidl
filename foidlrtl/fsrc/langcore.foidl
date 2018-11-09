@@ -346,18 +346,17 @@ func regex_match?[s pattern]
 ; If there is a failure, the return list will have one
 ; map:
 ; {
-;	:token_type		: error
-;	:token_value	; If possible, the value where error occured
-;	:lineno 		; If possible, the line number
-;	:colno 			; If possible, the column number
-;	:error_str 		; If possible, the error_string associated
+;	:token_type		:error
+;	:token_str		; the character where error occured
+;	:lineno 		;
+;	:colno 			;
 ; }
 
 
-func  tokenize [s patterns ignores revorder]
+func  tokenize [s patterns ignores]
 	?: or: string?: s io?: s
-		foidl_tokenize: s patterns ignores revorder
-		[]
+		foidl_tokenize: s patterns ignores
+		[] ; Return empty list if s not string or channel
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Predicate functions

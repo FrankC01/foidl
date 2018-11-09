@@ -23,7 +23,7 @@ static regex realpattern("^[-+]?[0-9]*\\.{1,1}[0-9]+$");
 static regex hexpattern ("^0[xX]{1,1}[a-fA-F0-9]+$");
 static regex bitpattern ("^0[bB]{1,1}[0-1]+$");
 static regex *NLCR = _new_regex("\r?[\n]");
-static regex *simple_str = _new_regex("\".*\"");
+static regex *simple_str = _new_regex("\"(.|\n)*?\"");
 // static regex *comment = _new_regex("\"([\\s\\S]+?)\"");
 
 extern "C" void * foidl_xall(uint32_t sz);
@@ -116,22 +116,6 @@ extern "C" void _reduce_tokens(const char*s, ptoken_block block) {
                 content.erase(sm.position(), sm.length());
             }
         }
-        // Process quoted string
-        if(!res) {
-            res = regex_search(content, sm,
-                *simple_str,regex_constants::match_continuous);
-            if (res) {
-                string word = content.substr(
-                    sm.position(), sm.length());
-                // cout << "Found type [:string] at {"
-                // << lc << "}:{" << sp
-                // << "} " << word << endl;
-                hitlist.push_back(_build_token(word, -1, lc, sp));
-                sp += sm.length();
-                content.erase(sm.position(), sm.length());
-                hit = 1;
-            }
-        }
         // Process tokens
         if(!res) {
             for(int i=0; i<block->pattern_cnt;i++) {
@@ -158,21 +142,37 @@ extern "C" void _reduce_tokens(const char*s, ptoken_block block) {
                 }
             }
         }
+        // Process quoted string
+        if(!res) {
+            res = regex_search(content, sm,
+                *simple_str,regex_constants::match_continuous);
+            if (res) {
+                string word = content.substr(
+                    sm.position(), sm.length());
+                // cout << "Found type [:string] at {"
+                // << lc << "}:{" << sp
+                // << "} " << word << endl;
+                hitlist.push_back(_build_token(word, -1, lc, sp));
+                sp += sm.length();
+                lc += count(word.begin(),word.end(),'\n');;
+                content.erase(sm.position(), sm.length());
+                hit = 1;
+            }
+        }
         if(!res)
             if(!hit) {
-                cout << "Error: No match for '" << content.substr(0,1)
-                    << "' in '" << content
-                    << "' at line " << lc << " column " << sp << endl;
-                nomatcherr = 1;
+                for (auto&& i : hitlist) {
+                    foidl_xdel(i);
+                }
+                hitlist.erase(hitlist.begin(), hitlist.end());
+
+                string errorstr("Error: No match for '");
+                errorstr += content.substr(0,1);
+                hitlist.push_back(_build_token(errorstr, -2, lc, sp));
                 break;
             }
     }
-    if(nomatcherr == 1) {
-        for (auto&& i : hitlist) {
-            foidl_xdel(i);
-        }
-    }
-    else if(hitlist.size() > 0) {
+    if(hitlist.size() > 0) {
         block->token_cnt = hitlist.size();
         block->tokens = (ptoken *) foidl_xall(hitlist.size() * sizeof(ptoken));
         int index = 0;

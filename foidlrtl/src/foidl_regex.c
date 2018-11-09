@@ -126,11 +126,7 @@ constKeyword(token_strKW,":token_str");
 constKeyword(linenoKW,":lineno");
 constKeyword(colnoKW,":colno");
 
-PFRTAny foidl_tokenize(
-	PFRTAny s,
-	PFRTAny patterns,
-	PFRTAny ignores,
-	PFRTAny revorder) {
+PFRTAny foidl_tokenize(PFRTAny s, PFRTAny patterns, PFRTAny ignores) {
 	// 1. Get size of list and create array(s) of pointers for
 	//	the patterns and ignores
 	// 2. Verify or create regexes for each pattern and ignore
@@ -164,11 +160,17 @@ PFRTAny foidl_tokenize(
 					mymap,
 					colnoKW,
 					allocIntegerWithValue((long long) res->colno));
-				if(res->type_index < 0) {
+				if(res->type_index == -1) {
 					foidl_map_extend_bang(
 						mymap,
 						token_typeKW,
 						strKW);
+				}
+				else if(res->type_index == -2) {
+					foidl_map_extend_bang(
+						mymap,
+						token_typeKW,
+						errorKW);
 				}
 				else {
 					PFRTAny index = allocIntegerWithValue((long long) res->type_index);

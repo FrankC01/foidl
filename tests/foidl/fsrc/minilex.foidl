@@ -30,6 +30,10 @@ var patterns [
         :regex  regex: "module"
     }
     {
+        :type   :include
+        :regex  regex: "include"
+    }
+    {
         :type   :variable
         :regex  regex: "var"
     }
@@ -133,17 +137,12 @@ var patterns [
     ;   Literals
     ;   String is in RTL for now but should move hear
     {
-        :type   :integer
-        :regex  regex: "-?[0-9]+"
+        :type   :real_number
+        :regex  regex: "-?(?:0|[1-9]\d*)\.\d*(?:[eE][+\-]?\d+)?"
     }
     {
-        :type   :math_ref
-        :regex  regex: "(\+|-|/|\*)"
-    }
-    ;   String is in RTL for now
-    {
-        :type   :char
-        :regex  regex:  "\'[0-9]{1,1}\'"
+        :type   :real_number
+        :regex  regex: "-?[0-9]+?\.[0-9]+?"
     }
     {
         :type   :bit
@@ -153,6 +152,18 @@ var patterns [
     {
         :type   :hex
         :regex  regex: "0[xX][0-9a-fA-F]+"
+    }
+    {
+        :type   :integer
+        :regex  regex: "-?[0-9]+"
+    }
+    {
+        :type   :math_ref
+        :regex  regex: "(\+|-|/|\*)"
+    }
+    {
+        :type   :char
+        :regex  regex:  "\'[0-9a-zA-Z]*?\'"
     }
     ; Symbols
     {
@@ -178,6 +189,7 @@ var patterns [
     }
 ]
 
+;   List  of ignores
 var ignores [
     {
         :type   :ignore
@@ -197,11 +209,17 @@ func dump_toks [toks]
     printnl!: "Tokenized content reversed"
     fold: ^[a m] @(printnl!: m a) nil rev_toks
 
+func token_results [toks]
+    match count: toks
+    | 0     printnl!: "No tokens found"
+    | 1     printnl!: get: toks 0
+    | :default dump_toks: toks
+
 func main [argv]
     print!: nlchr
     ?: =: count: argv 2
         let [src_string quaf!: get: argv 1
-             toks tokenize: src_string patterns ignores true]
-             dump_toks: toks
+             toks tokenize: src_string patterns ignores]
+             token_results: toks
         printnl!: "usage 'minilex foidl_source"
 
