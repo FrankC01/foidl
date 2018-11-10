@@ -1,0 +1,104 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; cmdline
+; Command line parsing
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module cmdline
+
+include argparse
+
+; These commands expect arguments following the command switch
+; We use the argparse utility handler functions, we could have defined
+; our own handler and pass it's reference as well
+
+
+var :private compile_cmd {
+    :help       "Generate LLLVM from input source"
+    :keyword    :compile
+    :handler_fn argparse_singlevalue
+    :unexpected "-c <input file> Command requires input file name"
+    :conflicts  ["-g"]
+}
+
+var :private generate_cmd {
+    :help       "Generate header file from input source"
+    :keyword    :genhdr
+    :handler_fn argparse_singlevalue
+    :unexpected "-g <input file> Command requires input file name"
+    :conflicts  ["-c"]
+}
+
+var :private output_cmd {
+    :help       "Directs output from -[cg]"
+    :keyword    :output
+    :handler_fn argparse_singlevalue
+    :unexpected "-o <output file> Command requires output file name"
+}
+
+var :private include_path_cmd {
+    :help       "Sets include paths"
+    :keyword    :includes
+    :handler_fn argparse_multivalue
+    :unexpected "-I expects 1 or more parameters"
+}
+
+; These commands are flags only and use the argparse default
+; handler that sets keyword result to true if found
+
+var :private debug_print_tokens {
+    :help       "Debug: prints output of lexical scan"
+    :keyword    :printtoks}
+
+var :private debug_print_ast {
+    :help       "Debug: prints ast genreated"
+    :keyword    :printast}
+
+var :private debug_print_ir {
+    :help       "Debug: prints LLVM-IR generated"
+    :keyword    :printir}
+
+var :private foidlc_version {
+    :help       "Displays current version of foidlc"
+    :keyword    :version}
+
+; The final base command map for foidlc emulation
+var :private foidlc_command_map {
+    "-c" compile_cmd
+    "-g" generate_cmd
+    "-o" output_cmd
+    "-I" include_path_cmd
+    "-v" foidlc_version
+    "-pt" debug_print_tokens
+    "-pa" debug_print_ast
+    "-pi" debug_print_ir
+}
+
+; Function: cmdlineparse
+; Description: ingests command line and set expected keys
+func cmdlineparse [argv]
+    let result []
+        extendKV:
+            parseargs: rest: argv foidlc_command_map
+            :outchannel nil
+    let compile_flag [] getd: result :compile nil
+    let genhdr_flag [] getd: result :genhdr nil
+    ?: compile_flag
+        extendKV: result :source compile_flag
+        ?: genhdr_flag
+            extendKV: result :source genhdr_flag
+            extendKV: result :source nil

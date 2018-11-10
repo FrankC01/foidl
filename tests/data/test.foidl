@@ -1,0 +1,65 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; test
+; minilex test file
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module foo
+
+var map {}
+var set #{}
+var vector <>
+var list []
+
+var ivar 220013
+var ivar -334992
+
+var rvar 0.9
+var rvar -1.9
+var rvar 6.02e-23
+var hvar 0xfead9866
+var hvar 0Xfead9866
+var bvar 0b10010101
+var bvar 0B10010101
+var str "My string"
+var lstr "My very long multiline
+string which continues across lines
+"
+var chr 'A'
+var qstr "A string containing \dq embedded \dq string"
+var kvar :mykeyword
+
+func :private foobar? [a b]
+    ?: -: 9 10
+        foobar!: +
+        foobar?: b
+
+    let a [b +: 1 1]
+        ^[v] (foobar? b)
+
+    match a +: 1 2
+    | 1     +: %0 "A string \t with \dq ' quoted ' \dq \n \n "
+
+    :func
+
+    {"\dq"  :douuble_quote
+    "\q"    :single_quote
+     "\n"   :newline
+     "\t"   :tab}
+
+    a
+

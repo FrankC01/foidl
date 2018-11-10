@@ -44,10 +44,12 @@ constKeyword(unknownKW,":unknown");
 // Take input foidl string and return foidl_regex type
 
 PFRTAny	foidl_regex(PFRTAny s) {
-	// void* str_regex = _string_to_regex(simple_str);
 
 	if(s->fclass == scalar_class && s->ftype == string_type) {
 		return allocRegex(s,_string_to_regex(s->value));
+	}
+	else {
+		printf("Skipped for pattern processing 0x%08x\n",s->ftype);
 	}
 	return nil;
 }
@@ -82,6 +84,7 @@ void gen_block(PFRTAny patterns,PFRTAny ignores, token_block *block) {
 	PFRTAny entry = nil;
 	PFRTAny ttype;
 	PFRTRegEx tregex;
+	PFRTAny  spare;
 	if(pcnt > 0) {
 		block->pattern_cnt = pcnt;
 		block->regex_array = foidl_xall(pcnt * sizeof(ft));
@@ -90,7 +93,9 @@ void gen_block(PFRTAny patterns,PFRTAny ignores, token_block *block) {
 		PFRTIterator li = iteratorFor(patterns);
 		while((entry = iteratorNext(li)) != end) {
 			ttype = foidl_get(entry, typeKW);
+			// spare = foidl_get(entry, regexKW);
 			tregex = (PFRTRegEx)foidl_get(entry, regexKW);
+			// printf("Type in pattern processing 0x%08x\n",spare->ftype);
 			block->regex_array[count] = tregex->regex;
 			block->type_array[count] = (char *) ttype->value;
 			count++;

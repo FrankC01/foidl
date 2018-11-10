@@ -10,7 +10,9 @@
 #define REGEX11_IMPL
 
 #ifdef __cplusplus
-extern "C" {
+    #define EXTERNC extern "C"
+#else
+    #define EXTERNC
 #endif
 
 typedef struct {
@@ -31,17 +33,13 @@ typedef struct {
 } token_block, *ptoken_block;
 
 
-int     _is_symbol(const char* s);
-int     _is_keyword(const char* s);
-int     _is_number(const char* s);
+EXTERNC int     _is_symbol(const char* s);
+EXTERNC int     _is_keyword(const char* s);
+EXTERNC int     _is_number(const char* s);
 
-void*   _string_to_regex(const char* s);
-int     _is_match(const char* s, const char* pattern);
-int     _is_matchp(const char* s, void* pattern);
-void    _reduce_tokens(const char*s, ptoken_block);
-
-#ifdef __cplusplus
-}
-#endif
+EXTERNC void*   _string_to_regex(const char* s);
+EXTERNC int     _is_match(const char* s, const char* pattern);
+EXTERNC int     _is_matchp(const char* s, void* pattern);
+EXTERNC void    _reduce_tokens(const char*s, ptoken_block);
 
 #endif

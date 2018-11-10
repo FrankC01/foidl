@@ -89,7 +89,7 @@ class HParser(object):
 
     def get_var(self, vtok, tstrm):
         h, tk, s = self.get_symbol(tstrm)
-        if tk.getstr() != 'private' or tk.getstr() != ':private':
+        if tk.getstr() not in "private" or tk.getstr() not in ":private":
             # print("Processing variable {}".format(tk))
             self.values.append(
                 ast.Variable(
@@ -98,7 +98,7 @@ class HParser(object):
 
     def get_func(self, ftok, tstrm):
             h, tk, funcs = self.get_symbol(tstrm)
-            if tk.getstr() != 'private' and tk.getstr() != ':private':
+            if tk.getstr() not in "private" or tk.getstr() not in ":private":
                 # print("Processing function {}".format(tk))
                 args = self.get_symbols_list(tstrm)
                 argv = None

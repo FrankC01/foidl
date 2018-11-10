@@ -33,6 +33,7 @@ endif
 # llvm toolchain executables
 
 CLC 	:= clang
+CPPLC   = clang++
 CLINK   := lld-link
 
 FSRC  	:= fsrc/
@@ -113,7 +114,7 @@ ifeq ($(OS_NAME), Windows)
 	LINK64=lld-link $(SYSTEM_LIB_INC_64) /libpath:$(RTLIB)
 else
 	C64=$(CLC) -c -isystem $(RTHDRS) -march=x86-64 -fPIC -O3
-	LINK64 := $(CLC) -lc++ -lfoidlrt -L $(RTLIB)
+	LINK64 := $(CPPLC) -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++ -lfoidlrt -L $(RTLIB)
 endif
 
 BHDRFLAGS := -I $(HDRS) $(RTHDRS) -a hdr

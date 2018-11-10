@@ -14,31 +14,37 @@
 #ifdef _MSC_VER
 #endif // _MSC_VER
 
-static PFRTAny strkwMap;
+static PFRTAny strMap;
+static PFRTAny kwMap;
+
+// TODO: Separate strings from keywords
 
 typedef PFRTAny (*_regskalloc)(char*);
 
 void foildl_rtl_init_strings() {
-	strkwMap = foidl_map_inst_bang();
+	strMap = foidl_map_inst_bang();
+	kwMap = foidl_map_inst_bang();
 }
 
-static PFRTAny  registerMember(PFRTAny k,_regskalloc fn) {
-	PFRTAny res = map_get(strkwMap,k);
+PFRTAny  foidl_reg_string(char *i) {
+	// printf("Registering string %s\n", i);
+	FRTAny 	anyStr = {scalar_class,string_type,strlen(i),0,i};
+	PFRTAny res = map_get(strMap,&anyStr);
 	if(res == nil) {
-		res = fn(k->value);
-		foidl_map_extend_bang(strkwMap,res,res);
+		res = allocGlobalStringCopy(anyStr.value);
+		foidl_map_extend_bang(strMap,res,res);
 	}
 	return res;
 }
 
-PFRTAny  foidl_reg_string(char *i) {
-	FRTAny 	anyStr = {scalar_class,string_type,strlen(i),0,i};
-	return registerMember(&anyStr, allocGlobalStringCopy);
-}
-
 PFRTAny  foidl_reg_keyword(char *i) {
 	FRTAny 	anyKW = {scalar_class,keyword_type,strlen(i),0,i};
-	return registerMember(&anyKW,allocGlobalKeywordCopy);
+	PFRTAny res = map_get(kwMap,&anyKW);
+	if(res == nil) {
+		res = allocGlobalStringCopy(anyKW.value);
+		foidl_map_extend_bang(kwMap,res,res);
+	}
+	return res;
 }
 
 PFRTAny 	string_from_carray(char p[]) {

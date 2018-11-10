@@ -1,0 +1,230 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; lexer
+; Compiler lexical scanner
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module lexer
+
+; Using RTL regex_match to construct the foidlc lexer
+
+var patterns [
+    ; Reserved words
+    ;   Keywords and reserved symbols
+    {
+        :type   :module
+        :regex  regex: "module"
+    }
+    {
+        :type   :include
+        :regex  regex: "include"
+    }
+    {
+        :type   :variable
+        :regex  regex: "var"
+    }
+    {
+        :type   :function
+        :regex  regex: "func"
+    }
+    {
+        :type   :private
+        :regex  regex: ":private"
+    }
+    {
+        :type   :let
+        :regex  regex:"let"
+    }
+    {
+        :type   :match
+        :regex  regex: "match"
+    }
+    {
+        :type   :match_guard
+        :regex  regex: "\|"
+    }
+    {
+        :type   :match_exprref
+        :regex  regex: "%0"
+    }
+    {
+        :type   :default
+        :regex  regex: ":default"
+    }
+    {
+        :type   :group
+        :regex  regex: "@\("
+    }
+    {
+        :type   :lambda
+        :regex  regex: "\^"
+    }
+    {
+        :type   :lparen
+        :regex  regex: "\("     ;   Used for partials
+    }
+    {
+        :type   :rparen
+        :regex  regex: "\)"
+    }
+    {
+        :type   :math_call
+        :regex  regex: "(\+|-|/|\*):{1,1}?"
+    }
+    {
+        :type   :boolpred
+        :regex  regex: "(=|>=|<=|>|<|not=):"
+    }
+    ;   Collection wrapper symbols
+    {
+        :type   :lbracket
+        :regex  regex: "\["     ;   Used for list
+    }
+    {
+        :type   :rbracket
+        :regex  regex: "\]"
+    }
+    {
+        :type   :langle
+        :regex  regex: "<"      ;   Used for vector
+    }
+    {
+        :type   :rangle
+        :regex  regex: ">"
+    }
+    {
+        :type   :lbrace         ;   Used for maps
+        :regex  regex: "\{"
+    }
+    {
+        :type   :rbrace
+        :regex  regex: "\}"
+    }
+    {
+        :type   :lset
+        :regex  regex: "#\{"    ;   Used for sets
+    }
+    {
+        :type   :funccall
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?:"
+    }
+    {
+        :type   :funccall_pred
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?\?:"
+    }
+    {
+        :type   :funccall_bang
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?!:"
+    }
+    {
+        :type   :keyword
+        :regex  regex: ":[a-zA-Z]([a-zA-Z0-9_]*)?"
+    }
+    ;   Literals
+    ;   String is in RTL for now but should move hear
+    {
+        :type   :real_number
+        :regex  regex: "-?(?:0|[1-9]\d*)\.\d*(?:[eE][+\-]?\d+)?"
+    }
+    {
+        :type   :real_number
+        :regex  regex: "-?[0-9]+?\.[0-9]+?"
+    }
+    {
+        :type   :bit
+        :regex  regex: "0[bB][0-1]+"
+
+    }
+    {
+        :type   :hex
+        :regex  regex: "0[xX][0-9a-fA-F]+"
+    }
+    {
+        :type   :integer
+        :regex  regex: "-?[0-9]+"
+    }
+    {
+        :type   :math_ref
+        :regex  regex: "(\+|-|/|\*)"
+    }
+    {
+        :type   :char
+        :regex  regex:  "\'[0-9a-zA-Z]*?\'"
+    }
+    ; Symbols
+    {
+        :type   :symbol_pred
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?\?"
+    }
+    {
+        :type   :symbol_bang
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?!"
+    }
+    {
+        :type   :symbol
+        :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?"
+    }
+    {
+        :type   :if_expr
+        :regex  regex: "\?:"
+    }
+    ; Comment char
+    {
+        :type   :comment
+        :regex  regex: ";.*"
+    }
+]
+
+;   List  of ignores
+var ignores [
+    {
+        :type   :ignore
+        :regex  regex: "[,\t ]+"
+    }
+]
+
+func dump_toks [toks]
+    printnl!: "Tokenized content top down"
+
+    let rev_toks []
+        fold: ^[a m]
+            @(
+                printnl!: m
+                extend: a m
+            ) [] toks
+
+    print!: nlchr
+    printnl!: "Tokenized content reversed"
+    fold: ^[a m] @(printnl!: m a) nil rev_toks
+
+func token_results [toks]
+    match count: toks
+    | 0     printnl!: "No tokens found"
+    | 1     printnl!: get: toks 0
+    | :default dump_toks: toks
+
+; Function: lex
+; Description: Perform a lexical scan of source and
+; return a list tuple of top_down and bottom up token lists
+; Checks tokens for error and, if found, prints error and exits
+
+func lex [source_file]
+    let [src_string quaf!: source_file
+         toks tokenize: src_string patterns ignores]
+         token_results: toks
+
+

@@ -26,9 +26,9 @@ static regex *NLCR = _new_regex("\r?[\n]");
 static regex *simple_str = _new_regex("\"(.|\n)*?\"");
 // static regex *comment = _new_regex("\"([\\s\\S]+?)\"");
 
-extern "C" void * foidl_xall(uint32_t sz);
-extern "C" void foidl_xdel(void *v);
-extern "C" void * foidl_reg_string(const char *i);
+EXTERNC void * foidl_xall(uint32_t sz);
+EXTERNC void foidl_xdel(void *v);
+EXTERNC void * foidl_reg_string(const char *i);
 
 const char *astring = ":string";
 
@@ -41,15 +41,15 @@ ptoken _build_token(string &word, int ti, int lc, int sp ) {
     return _tok;
 }
 
-extern "C" int _is_symbol(const char* s) {
+EXTERNC int _is_symbol(const char* s) {
     return regex_match(s, sympattern);
 }
 
-extern "C" int _is_keyword(const char* s) {
+EXTERNC int _is_keyword(const char* s) {
     return regex_match(s, kwdpattern);
 }
 
-extern "C" int _is_number(const char* s) {
+EXTERNC int _is_number(const char* s) {
      if( regex_match(s, intpattern)) return 1;
      if( regex_match(s, realpattern)) return 1;
      if( regex_match(s, hexpattern)) return 1;
@@ -59,13 +59,13 @@ extern "C" int _is_number(const char* s) {
 
 // Match with conversion of pattern string to regex
 // Expensive!
-extern "C" int _is_match(const char* s, const char* pattern) {
+EXTERNC int _is_match(const char* s, const char* pattern) {
     return regex_match(s,regex(pattern));
 }
 
 // Match with assumption 'pattern' is actually a regex*
 // see _string_to_regex below
-extern "C" int _is_matchp(const char* s, void* pattern) {
+EXTERNC int _is_matchp(const char* s, void* pattern) {
     regex* rpattern = static_cast<regex*>(pattern);
     return regex_match(s,*rpattern);
 }
@@ -75,18 +75,27 @@ regex* _new_regex(const char* s) {
 }
 
 // Compile a regex from string
-extern "C" void* _string_to_regex(const char* s) {
+EXTERNC void* _string_to_regex(const char* s) {
     // cout << " compiling regex " << s << endl;
-    return _new_regex(s);
+    regex* re = _new_regex(s);
+    return static_cast<void *>(re);
 }
 
-extern "C" void _reduce_tokens(const char*s, ptoken_block block) {
+
+EXTERNC void _reduce_tokens(const char*s, ptoken_block block) {
     list<ptoken> hitlist;
     string content(s);
     smatch sm;
     int lc =  1;
     int sp =  1;
     int nomatcherr = 0;
+    // for(int i=0; i<block->pattern_cnt;i++) {
+    //     cout << "Pattern : "
+    //         << block->type_array[i]
+    //         << " addr: "
+    //         << block->regex_array[i]
+    //         << endl;
+    // }
     while(!content.empty()) {
         int  err=0;
         int  res=0;
@@ -98,7 +107,6 @@ extern "C" void _reduce_tokens(const char*s, ptoken_block block) {
             res = regex_search(content, sm,
                 *regexp, regex_constants::match_continuous);
             if (res) {
-                // cout << "Skipping ignore " << endl;
                 sp += sm.length();
                 content.erase(sm.position(), sm.length());
                 break;
@@ -110,7 +118,6 @@ extern "C" void _reduce_tokens(const char*s, ptoken_block block) {
             res = regex_search(content, sm,
                 *NLCR,regex_constants::match_continuous);
             if (res) {
-                // cout << "Newline " << endl;
                 lc += 1;
                 sp = 1;
                 content.erase(sm.position(), sm.length());
