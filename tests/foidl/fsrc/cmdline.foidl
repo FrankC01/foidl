@@ -26,28 +26,38 @@ module cmdline
 
 include argparse
 
-; Test structure to emulate foidlc commands
-; These commands expect arguments following command switch
+; These commands expect arguments following the command switch
+; We use the argparse utility handler functions, we could have defined
+; our own handler and pass it's reference as well
+
 
 var :private compile_cmd {
-    :help       "Compile input source to LLVM-IR"
+    :help       "Generate LLLVM from input source"
     :keyword    :compile
-    :fn_value   compile_handler}
+    :handler_fn argparse_singlevalue
+    :unexpected "-c <input file> Command requires input file name"
+}
 
 var :private generate_cmd {
     :help       "Generate header file from input source"
     :keyword    :genhdr
-    :fn_value   generate_handler}
+    :handler_fn argparse_singlevalue
+    :unexpected "-g <input file> Command requires input file name"
+}
 
 var :private output_cmd {
-    :help       "Directs output"
+    :help       "Directs output from -[cg]"
     :keyword    :output
-    :fn_value   output_handler}
+    :handler_fn argparse_singlevalue
+    :unexpected "-o <output file> Command requires output file name"
+}
 
 var :private include_path_cmd {
-    :help       "Sets additional include paths"
+    :help       "Sets include paths"
     :keyword    :includes
-    :fn_value   include_handler}
+    :handler_fn argparse_multivalue
+    :unexpected "-I expects 1 or more parameters"
+}
 
 ; These commands are flags only and use the argparse default
 ; handler that sets keyword result to true if found
@@ -80,52 +90,7 @@ var :private foidlc_command_map {
     "-pi" debug_print_ir
 }
 
-; Function: compile_handler
-; Description: Handles parsing of compile argument. Attempts to
-;   read the next argument as the input file name to compile
-
-func :private compile_handler [state cmdmap]
-    argparse_get_next_value:
-        state
-        cmdmap
-        "-c <input file> Command requires input file name"
-        "input file name"
-
-; Function: generate_handler
-; Description: Handles parsing of generate argument. Attempts to
-;   read the next argument as the input file name to generate a header file
-
-func :private generate_handler [state cmdmap]
-    argparse_get_next_value:
-        state
-        cmdmap
-        "-g <input file> Command requires input file name"
-        "input file name"
-
-; Function: output_handler
-; Description: Handles parsing of generate argument. Attempts to
-;   read the next argument as the input file name to generate a header file
-
-func :private output_handler [state cmdmap]
-    argparse_get_next_value:
-        state
-        cmdmap
-        "-o <output file> Command requires output file name"
-        "output file name"
-
-func :private include_handler [state cmdmap]
-    let incs [] argparse_until_next_switch: state cmdmap
-    ?: =: first: incs 0
-        @(
-            printnl!: "-I expects 1 or more parameters"
-            fail:
-        )
-    second: incs
-
 func main [argv]
     let res [] parseargs: rest: argv foidlc_command_map
     print!: "Results of parsing command line => "
     printnl!: res
-    ?: get: res :genhdr
-        printnl!: "Got gen header"
-        nil

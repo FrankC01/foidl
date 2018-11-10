@@ -20,34 +20,44 @@
 
 module argparse
 
+include langcorem
+
 ; Module: argparse
 ; Description: argparse is a utility that takes a list of arguments
-; and a control map which drives how the arguments are to be parsed
+; (for example: argv) and a control map which drives how the arguments are
+; to be parsed
 ; Structue of the control map
 ; {
-;   "x"             cmdmap  ; key is arg that is matched, see cmdmap below
+;   "key"      cmdmap  ; key is arg that is matched, see cmdmap below
 ; }
 ; The syntax of the cmdmap
 ; {
 ;   :doc        "This is help line"     ; Argument documentation
 ;   :keyword    :parsedkeyword          ; Argument identity key in result
-;   :fn_value   fn                      ; Function or type to produce default value
+;   :handler_fn fn                      ; Handler function for value
+;   :unexpected msg                     ; Optional msg for unexpected command
+;   :expected   msg                     ; Optional msg for end of argments
 ; }
 ;
 
+var :private comma_str strb: comma
+
+; General failure functions
+
 func :private argparse_error_unrecognized [arg]
-    print!: "Unrecognized argument : "
-    printnl!: arg
+    print!: "Error: Unrecognized argument - '"
+    print!: arg
+    printnl!: "'"
     fail:
 
-func :private argparse_error_missing_field [s]
-    print!: "Missing required field : "
-    printnl!: s
+func :private argparse_error_unexpected [msg]
+    print!: "Error: Unexpected command - "
+    printnl!: msg
     fail:
 
-func :private end_of_args [s]
-    print!: s
-    print!: " - no more arguments found"
+func :private end_of_args [msg]
+    print!: "Error: End of arguments - "
+    print!: msg
     print!: nlchr
     fail:
 
@@ -82,16 +92,22 @@ func :private valid_arg [state arg]
         argparse_error_unrecognized: arg
 
 
+; Function: update_index
+; Description: Updates the state index, returns new state
 func :private update_index [state]
     update: state :index inc
 
+; Function: inc_index_by
+; Description: Increment state index by cnt, returns new state
 func :private inc_index_by [state, cnt]
     extendKV: state :index +: get: state :index cnt
 
-func :private current_value [state, pre]
+; Function: current_value
+; Description: Gets the next value expeceted, fails if end of args
+func :private current_value [state, msg]
     let [idx  get: state :index]
         ?: =: idx get: state :max
-            end_of_args: pre
+            end_of_args: msg
             get: get: state :args idx
 
 ; Function argparse_default
@@ -107,31 +123,48 @@ func :private argparse_default_handler [state cmdmap]
           update_index:
             extendKV: state :result extendKV: res akey true
 
-;   Command handlers
-
 ; Function: argparse_get_next_value
 ; Description: Generic function that attempts to retrieve the
 ;   next argument from the argument list.
-; Syntax: argparse_get_next_value: state cmdmap noarg_str unexpect_str
+; Syntax: argparse_get_next_value: state cmdmap unexpected_str expect_str
 ;   - state: The argparse progress state
 ;   - cmdmap: The compile switch declaration map
-;   - noarg_str: If no argument found after current message
-;   - unexpect_str: If the next argument is member of command set nessage
+;   - unexpected_str: If no argument found after current message
+;   - expect_str: If the next argument is member of command set nessage
 
-func argparse_get_next_value [state cmdmap noarg_str unexpect_str]
+func argparse_get_next_value [state cmdmap unexpected_str expect_str]
     ; Move the index to pass over argument
     let nstate  [] update_index: state
     ; Try to get next arglist value
-    let nextarg [] current_value: nstate noarg_str
+    let nextarg [] current_value: nstate unexpected_str
     ; If it is another primary argument fail, otherwise capture
     ?: in_cmdset: nstate nextarg
-        argparse_error_missing_field: unexpect_str
+        argparse_error_unexpected: expect_str
         let [res      get: nstate :result
             akey      get: cmdmap :keyword]
             update_index:
                 extendKV: nstate :result extendKV: res akey nextarg
 
+; Function: argparse_singlevalue
+; Description: Default handler for switches that expect one argument
+; following the command.
+; Calls:
+;   argparse_get_next_value
+; Syntax: argparse_singlevalue: state cmdmap
+;   - state: The argparse progress state
+;   - cmdmap: The compile switch declaration map
 
+func argparse_singlevalue [state cmdmap]
+    let msg [] getd: cmdmap :unexpected "expected a value"
+    argparse_get_next_value:
+        state
+        cmdmap
+        msg
+        getd: cmdmap :expected msg
+
+; Function: until_switch
+; Description: Internal function that consumes command line
+; until a registered command switch is found
 func :private until_switch [state arglist result indx]
     ; Get the effective index and check for max
     let effoff [] +: get: state :index indx
@@ -142,12 +175,14 @@ func :private until_switch [state arglist result indx]
     ; Otherwise, get the next argument
         @(
             let narg  [] get: arglist effoff
-            ; If it is a switch, finish up, otherwise add to collection
-            ?: in_cmdset: state narg
-                reduced: result
-                extend: result narg
+            ; If it is a comma, skip it
+            ?: =: narg comma
+                result
+                ; Or end if it is a swtich, otherwise add to results
+                ?: in_cmdset: state narg
+                    reduced: result
+                    list_extend!: result narg   ; Uses mutative call
         )
-
 
 ; Function: argparse_until_next_switch
 ; Description: Generic function that retrieves arguments until end
@@ -169,11 +204,30 @@ func argparse_until_next_switch [state cmdmap]
         let [res            get: nstate :result
              akey           get: cmdmap :keyword
              istate         extendKV: nstate :result extendKV: res akey alist
-             icnt count:    alist]
+             icnt           count: alist]
             [icnt inc_index_by: istate icnt]
 
+; Function: argparse_multivalue
+; Description: Default handler for switches that expect one or more argument
+; following the command.
+; Calls:
+;   argparse_until_next_switch
+; Syntax: argparse_singlevalue: state cmdmap
+;   - state: The argparse progress state
+;   - cmdmap: The compile switch declaration map
+
+func argparse_multivalue [state cmdmap]
+    let msg [] getd: cmdmap :unexpected "expected a value"
+    let incs [] argparse_until_next_switch: state cmdmap
+    ?: =: first: incs 0
+        @(
+            printnl!: msg
+            fail:
+        )
+    second: incs
+
 ; Function argparse_parse
-; Description: Process the argument based on cmaps ':fn_value' function.
+; Description: Process the argument based on cmaps ':handler_fn' function.
 ;   If there is no function found, call default processor;
 ; Syntax: argparse_parse: state arg cmap
 ;   - state: The argparse state map
@@ -181,7 +235,7 @@ func argparse_until_next_switch [state cmdmap]
 ;   - cmap:  The current arguments command map
 
 func :private argparse_parse [state arg cmap]
-    let [vfn getd: cmap :fn_value nil]
+    let [vfn getd: cmap :handler_fn nil]
         ?: vfn
             (vfn state cmap)
             argparse_default_handler: state cmap
@@ -233,7 +287,7 @@ func :private help_requested [cntrlmap arg]
         cntrlmap
 
 ; Function: parseargs
-; Description: !folds! the argument list based on the control map settings
+; Description: !fold! the argument list based on the control map settings
 ; Syntax: parseargs: arglist cntrlmap -> parsed result
 ;   - arglist: List containing arguments to parse e.g.: [-a -b foo ]
 ;   - cntrlmap: Control map declaration of the argument structure
@@ -244,7 +298,7 @@ func parseargs [arglist cntrlmap]
     ;   Verify control map
     ?: and: cntrlmap (not empty?: cntrlmap)
         nil
-        argparse_error_missing_field: "cntrlmap"
+        end_of_args: "missing cntrlmap"
     ;   Verify arguments
     ?: and: arglist (not empty?: arglist)
         nil
