@@ -354,7 +354,7 @@ func regex_match?[s pattern]
 
 
 func  tokenize [s patterns ignores]
-	?: or: string?: s io?: s
+	?: string?: s
 		foidl_tokenize: s patterns ignores
 		[] ; Return empty list if s not string or channel
 

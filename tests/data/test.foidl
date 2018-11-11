@@ -60,6 +60,5 @@ func :private foobar? [a b]
     "\q"    :single_quote
      "\n"   :newline
      "\t"   :tab}
-
     a
 

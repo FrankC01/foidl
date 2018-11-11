@@ -26,7 +26,6 @@ include cmdline
 include lexer
 
 include foidlc_utils
-include scanner
 include genhdr
 include state
 include tvalidate
@@ -96,13 +95,11 @@ func processTokens [cmap tokens]
 	endCompile: cmap
 
 func process [cmap]
-	; print!: "Command line is " printnl!: cmap
+	print!: "Command line is " printnl!: cmap
 	?: get: cmap :source
-		lex: get: cmap :source
+		; Lex for tokens, ignoring comments
+		lex: get: cmap :source #{:comment}
 		printnl!: "Invalid command line"
-	;?: and: or: get: cmap :compile get: cmap :genhdr get: cmap :source
-	;	processTokens: cmap scanner: get: cmap :source
-	;	nowork: cmap
 
 
 func main [argv]

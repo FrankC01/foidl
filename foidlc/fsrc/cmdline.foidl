@@ -21,6 +21,7 @@
 module cmdline
 
 include argparse
+include langcorem
 
 ; These commands expect arguments following the command switch
 ; We use the argparse utility handler functions, we could have defined
@@ -88,17 +89,30 @@ var :private foidlc_command_map {
     "-pi" debug_print_ir
 }
 
+; Function: cl_validate
+; Description: Takes the parsed command line and validates against conflicts
+; and extends for appropriate flags
+
+func :private cl_validate [cmap]
+    let rset! [] set_inst!:
+    ; If compile flag, add to set
+    ?: getd: cmap :compile nil
+        extend!: rset! :compile
+        nil
+    ; If genhdr flag, add to set
+    ?: getd: cmap :genhdr nil
+        extend!: rset! :genhdr
+        nil
+
+    match count: rset!
+    | 0         failWith: "Error: Must specify -c or -g command"        ; Neither -c or -g
+    | 2         failWith: "Error: -c and -g are mutually exclusive"     ; Both -c and -g
+    | :default  let [kres get: cmap first: rset!]                       ; Just right
+                        map_extend!:
+                            map_extend!: cmap :source kres
+                            :outchannel nil
+
 ; Function: cmdlineparse
 ; Description: ingests command line and set expected keys
 func cmdlineparse [argv]
-    let result []
-        extendKV:
-            parseargs: rest: argv foidlc_command_map
-            :outchannel nil
-    let compile_flag [] getd: result :compile nil
-    let genhdr_flag [] getd: result :genhdr nil
-    ?: compile_flag
-        extendKV: result :source compile_flag
-        ?: genhdr_flag
-            extendKV: result :source genhdr_flag
-            extendKV: result :source nil
+    cl_validate: parseargs: rest: argv foidlc_command_map

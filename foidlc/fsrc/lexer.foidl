@@ -20,11 +20,11 @@
 
 module lexer
 
+include langcorem
+
 ; Using RTL regex_match to construct the foidlc lexer
 
 var patterns [
-    ; Reserved words
-    ;   Keywords and reserved symbols
     {
         :type   :module
         :regex  regex: "module"
@@ -86,10 +86,9 @@ var patterns [
         :regex  regex: "(\+|-|/|\*):{1,1}?"
     }
     {
-        :type   :boolpred
+        :type   :boolpred_call
         :regex  regex: "(=|>=|<=|>|<|not=):"
     }
-    ;   Collection wrapper symbols
     {
         :type   :lbracket
         :regex  regex: "\["     ;   Used for list
@@ -134,8 +133,6 @@ var patterns [
         :type   :keyword
         :regex  regex: ":[a-zA-Z]([a-zA-Z0-9_]*)?"
     }
-    ;   Literals
-    ;   String is in RTL for now but should move hear
     {
         :type   :real_number
         :regex  regex: "-?(?:0|[1-9]\d*)\.\d*(?:[eE][+\-]?\d+)?"
@@ -165,7 +162,6 @@ var patterns [
         :type   :char
         :regex  regex:  "\'[0-9a-zA-Z]*?\'"
     }
-    ; Symbols
     {
         :type   :symbol_pred
         :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?\?"
@@ -182,7 +178,6 @@ var patterns [
         :type   :if_expr
         :regex  regex: "\?:"
     }
-    ; Comment char
     {
         :type   :comment
         :regex  regex: ";.*"
@@ -197,34 +192,58 @@ var ignores [
     }
 ]
 
-func dump_toks [toks]
+; Debug fold expression for printing only
+func :private token_print [acc el]
+    printnl!: el
+    acc
+
+; Debug printing of token_type results
+func :private dump_toks [toks_tuple]
+    print!: nlchr
     printnl!: "Tokenized content top down"
-
-    let rev_toks []
-        fold: ^[a m]
-            @(
-                printnl!: m
-                extend: a m
-            ) [] toks
-
+    fold: token_print nil get: toks_tuple 0
     print!: nlchr
     printnl!: "Tokenized content reversed"
-    fold: ^[a m] @(printnl!: m a) nil rev_toks
+    fold: token_print nil get: toks_tuple 1
+    toks_tuple
 
-func token_results [toks]
+; Function: token_tuple
+; Description: Cleans (drops) out tokens to ignore and returns a tuple of
+; top down and reversed token lists
+func :private token_tuple [toks dropset]
+    ;   Reverse and clean tokens
+    let [cleantoks
+            fold: ^[acc el]
+                ?: get: dropset get: el :token_type
+                    acc
+                    extend!: acc el
+                []
+                toks
+        topdown fold: ^[acc el] extend!: acc el [] cleantoks]
+        [topdown cleantoks]
+
+; Function: process_tokens
+; Description: Takes results of tokenize and prepare result
+; Syntax: process_tokens: toks dropset
+;   toks - collection of tokens
+;   dropset - a set of one or more token_type keywords to drop from results
+func :private process_tokens [toks dropset]
     match count: toks
-    | 0     printnl!: "No tokens found"
-    | 1     printnl!: get: toks 0
-    | :default dump_toks: toks
+    | 0     @(printnl!: "No tokens scanned" [])
+    | 1     @(printnl!: get: toks 0 [])
+    | :default token_tuple: toks dropset
 
 ; Function: lex
 ; Description: Perform a lexical scan of source and
-; return a list tuple of top_down and bottom up token lists
+; return a tuple of top_down and bottom up token lists
 ; Checks tokens for error and, if found, prints error and exits
+; Syntax: lex: source_file dropset
+;   source_file - valid foidl source or header file
+;   dropset - a set of one or more token_type keywords to drop from results
 
-func lex [source_file]
+func lex [source_file dropset]
     let [src_string quaf!: source_file
          toks tokenize: src_string patterns ignores]
-         token_results: toks
+         process_tokens: toks dropset
 
 
