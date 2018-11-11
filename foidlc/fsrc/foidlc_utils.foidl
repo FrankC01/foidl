@@ -20,17 +20,33 @@
 
 module foidlc_utils
 
-include foidlrtm
+include langcorem
 
-var version "FOIDL compiler version = 0.1.3 - Level 1 Bootstrap Generation 3"
-var hdrPreDefs <"foidlrtm2" "foidlrt2" "langcorem2" "langcore2">
+var version "foidl bootstraped compiler version 0.01.00"
+var hdrPreDefs <"foidlrt" "langcore">
 
 ;	Miscellaneous functions for compiler initialization
+
+func module_name_validation [tokens]
+	let [first_tok first: tokens
+		 mname_tok second: tokens]
+		?: and: =: get: first_tok :token_type :module
+				=: get: mname_tok :token_type :symbol
+			mname_tok
+			@(
+				write!: cerr "Exception: A valid module statement must be first, found "
+				write!: cerr get: first_tok :token_type
+				write!: cerr " "
+				write!: cerr get: mname_tok :token_str
+				write!: cerr nlchr
+				fail:
+			)
+
 
 func subsMain [acc token]
 	?: =: get: token :type :function
 		?: =: get: token :lexeme "main"
-			foidl_extendKV!: token :lexeme "user_main"
+			map_extend!: token :lexeme "user_main"
 			nil
 		nil
 	acc
@@ -42,17 +58,21 @@ func buildOutName  [base isdir mname tail]
 
 func prepareOutput [cmap mname tail]
 	?: get: cmap :output
-		let [ 	outp 	get: cmap :output ]
-			foidl_extendKV!: cmap :outchannel
+		let [outp 	get: cmap :output]
+			map_extend!: cmap :outchannel
 					open!: {
 						:channel buildOutName: outp last: outp mname tail
 						:open :w
 						:buffer :block
 						:write_handler :char }
-		foidl_extendKV!: cmap :outchannel cout
+		map_extend!: cmap :outchannel cout
 
 func endCompile [cmap]
 	?: =: get: cmap :outchannel cout
 		nil
 		close!: get: cmap :outchannel
+
+
+func build_handler [cmap]
+
 

@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; test
-; minilex test file
+; lex test file
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
@@ -18,7 +18,7 @@
 ; limitations under the License.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module foo
+module test
 
 var map {}
 var set #{}
@@ -62,3 +62,4 @@ func :private foobar? [a b]
      "\t"   :tab}
     a
 
+; Bottom comment

@@ -192,58 +192,58 @@ var ignores [
     }
 ]
 
-; Debug fold expression for printing only
-func :private token_print [acc el]
-    printnl!: el
-    acc
-
-; Debug printing of token_type results
-func :private dump_toks [toks_tuple]
-    print!: nlchr
-    printnl!: "Tokenized content top down"
-    fold: token_print nil get: toks_tuple 0
-    print!: nlchr
-    printnl!: "Tokenized content reversed"
-    fold: token_print nil get: toks_tuple 1
-    toks_tuple
-
-; Function: token_tuple
-; Description: Cleans (drops) out tokens to ignore and returns a tuple of
-; top down and reversed token lists
-func :private token_tuple [toks dropset]
-    ;   Reverse and clean tokens
-    let [cleantoks
-            fold: ^[acc el]
-                ?: get: dropset get: el :token_type
-                    acc
-                    extend!: acc el
-                []
-                toks
-        topdown fold: ^[acc el] extend!: acc el [] cleantoks]
-        [topdown cleantoks]
+; Function: clean_tokens
+; Description: Eliminates token types matching in dropset
+;   toks - collection of tokens
+;   dropset - a set of one or more token_type keywords to drop from results
+func :private clean_tokens [toks dropset]
+    fold:
+        ^[acc el]
+            ?: get: dropset get: el :token_type
+                acc
+                list_extend!: acc el
+        [] toks
 
 ; Function: process_tokens
 ; Description: Takes results of tokenize and prepare result
 ; Syntax: process_tokens: toks dropset
 ;   toks - collection of tokens
 ;   dropset - a set of one or more token_type keywords to drop from results
-func :private process_tokens [toks dropset]
+
+func :private process_tokens [source_file toks dropset def_fn]
     match count: toks
-    | 0     @(printnl!: "No tokens scanned" [])
-    | 1     @(printnl!: get: toks 0 [])
-    | :default token_tuple: toks dropset
+    | 0     @(
+                print!: "Error: file: "
+                print!: source_file
+                printnl!: " is empty. "
+                fail: )
+    | 1     @(
+                print!: "Error: token scan halted: "
+                printnl!: get: toks zero
+                fail: )
+    | :default (def_fn toks dropset)
+
+; Function: lexscan
+; Description: Tokenizes source content and prepare results by
+; calling provided function reference
+; Syntax: lexscan: source_file dropset def_fn
+;   source_file - fully qualified source file name
+;   dropset - a set of one or more token_types to drop from results
+;   def_fn - Function reference taking token list and dropset arguments
+
+func :private lexscan [source_file dropset def_fn]
+    let [src_string quaf!: source_file
+         toks tokenize: src_string patterns ignores]
+         process_tokens: source_file toks dropset def_fn
 
 ; Function: lex
 ; Description: Perform a lexical scan of source and
-; return a tuple of top_down and bottom up token lists
+; returns a top down ordered list of tokens.
 ; Checks tokens for error and, if found, prints error and exits
 ; Syntax: lex: source_file dropset
 ;   source_file - valid foidl source or header file
 ;   dropset - a set of one or more token_type keywords to drop from results
 
 func lex [source_file dropset]
-    let [src_string quaf!: source_file
-         toks tokenize: src_string patterns ignores]
-         process_tokens: toks dropset
-
+    lexscan: source_file dropset clean_tokens
 

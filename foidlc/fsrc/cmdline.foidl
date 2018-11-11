@@ -61,6 +61,10 @@ var :private include_path_cmd {
 ; These commands are flags only and use the argparse default
 ; handler that sets keyword result to true if found
 
+var :private building_runtime {
+    :help       "Building runtime. Ignore preloading langcore.defs"
+    :keyword    :printtoks}
+
 var :private debug_print_tokens {
     :help       "Debug: prints output of lexical scan"
     :keyword    :printtoks}
@@ -84,6 +88,7 @@ var :private foidlc_command_map {
     "-o" output_cmd
     "-I" include_path_cmd
     "-v" foidlc_version
+    "-r" building_runtime
     "-pt" debug_print_tokens
     "-pa" debug_print_ast
     "-pi" debug_print_ir
@@ -105,7 +110,7 @@ func :private cl_validate [cmap]
         nil
 
     match count: rset!
-    | 0         failWith: "Error: Must specify -c or -g command"        ; Neither -c or -g
+    | 0         map_extend!: cmap :outchannel nil
     | 2         failWith: "Error: -c and -g are mutually exclusive"     ; Both -c and -g
     | :default  let [kres get: cmap first: rset!]                       ; Just right
                         map_extend!:

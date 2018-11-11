@@ -36,12 +36,12 @@ include astprint
 include irgen
 include emit
 
-func failEnvironment [src elm]
-	write!: cerr "Unable to resolve "
-	write!: cerr elm
-	write!: cerr " in environment settings"
-	write!: cerr nlchr
-	fail:
+;func failEnvironment [src elm]
+;	write!: cerr "Unable to resolve "
+;	write!: cerr elm
+;	write!: cerr " in environment settings"
+;	write!: cerr nlchr
+;	fail:
 
 func foldTDump [acc val]
 	printnl!: val
@@ -75,32 +75,39 @@ func fullCompile [cmap tokens]
 			emit: get: cmap :outchannel ir
 		)
 
-func processTokens [cmap tokens]
-	let tail []
-		?: get: cmap :compile
-			".ll"
-			".defs"
-	prepareOutput: cmap get: first: tokens :lexeme tail
+func :private process [cmap tokens]
+	;prepareOutput: cmap get: first: tokens :lexeme tail
 	;	Debugging aid
-	?: get: cmap :printtoks
-		printTokens: tokens
-		nil
+	;?: get: cmap :printtoks
+	;	printTokens: tokens
+	;	nil
 	; Real deal
-	?: get: cmap :genhdr
-		hdrCompile: cmap tokens
-		?: get: cmap :compile
-			fullCompile: cmap tokens
-			nil
+	;?: get: cmap :genhdr
+	;	hdrCompile: cmap tokens
+	;	?: get: cmap :compile
+	;		fullCompile: cmap tokens
+	;		nil
 	; Close it up
-	endCompile: cmap
+	;endCompile: cmap
 
-func process [cmap]
-	print!: "Command line is " printnl!: cmap
-	?: get: cmap :source
-		; Lex for tokens, ignoring comments
-		lex: get: cmap :source #{:comment}
-		printnl!: "Invalid command line"
+func :private execute [argv cmap]
+	?: get: cmap :version
+		printnl!: version
+		?: get: cmap :source
+			; Lex for tokens, ignoring comments and validate module position
+			let [tokens lex: get: cmap :source #{:comment}
+			 	 mname_tok module_name_validation: tokens]
+			 	 ; Process the tokens
+			 	 process:
+			 	 	extendKV: cmap :module_name get: mname_tok :token_str
+					tokens
+			@(
+				write!: cerr "Exception: Command line makes no sense: "
+				write!: cerr rest: argv
+				write!: cerr nlchr
+				fail:
+			)
 
 
 func main [argv]
-	process: cmdlineparse: argv
+	execute: argv cmdlineparse: argv
