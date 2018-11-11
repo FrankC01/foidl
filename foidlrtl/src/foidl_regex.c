@@ -138,6 +138,8 @@ PFRTAny foidl_tokenize(PFRTAny s, PFRTAny patterns, PFRTAny ignores) {
 	// 3. call underylying regex searches
 	// 4. Convert the return
 	PFRTAny mylist = empty_list;
+	if( s == empty_string || s->count < 1)
+		return mylist;
 
 	token_block	block;
 	block.token_cnt = 0;

@@ -527,7 +527,10 @@ PFRTAny 	foidl_close_bang(PFRTIOChannel chan) {
 PFRTAny foidl_io_quaf_bang(PFRTIOChannel chan) {
 	if(canRead(chan) == true) {
 		PFRTIOBuffer b = chan->bufferptr;
-		return allocStringWithCopyCnt(b->buffersize, b->bufferPtr);
+		if(b->buffersize == 0)
+			return empty_string;
+		else
+			return allocStringWithCopyCnt(b->buffersize, b->bufferPtr);
 	}
 	else {
 		return nil;

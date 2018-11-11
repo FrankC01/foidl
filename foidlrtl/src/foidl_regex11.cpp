@@ -22,7 +22,8 @@ static regex intpattern ("^[-+]?[0-9][0-9]*$");
 static regex realpattern("^[-+]?[0-9]*\\.{1,1}[0-9]+$");
 static regex hexpattern ("^0[xX]{1,1}[a-fA-F0-9]+$");
 static regex bitpattern ("^0[bB]{1,1}[0-1]+$");
-static regex *NLCR = _new_regex("\r?[\n]");
+//static regex *NLCR = _new_regex("\r?[\n]");
+static regex *NLCR = _new_regex("(\r\n|[\r\n])");
 static regex *simple_str = _new_regex("\"(.|\n)*?\"");
 // static regex *comment = _new_regex("\"([\\s\\S]+?)\"");
 

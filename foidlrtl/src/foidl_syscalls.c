@@ -8,6 +8,7 @@
 
 #define SYSCALLS_IMPL
 #include <foidlrt.h>
+#include <stdio.h>
 #ifdef _MSC_VER
 #include <io.h>
 #include <stdlib.h>
@@ -67,7 +68,10 @@ void *foidl_open_ro_mmap_file(char * fname) {
 
     // Get the memory mapped file for reading
     #ifdef _MSC_VER
-    return malloc(size);
+    char *mscbuffer = (char *) malloc(size);
+    _read(fd, mscbuffer, size);
+    return mscbuffer;
+    // return malloc(size);
     #else
     return mmap(0, size, PROT_READ, MAP_PRIVATE, fd, 0);
     #endif
