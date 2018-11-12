@@ -209,14 +209,18 @@ func :private clean_tokens [toks dropset]
 ; Syntax: process_tokens: toks dropset
 ;   toks - collection of tokens
 ;   dropset - a set of one or more token_type keywords to drop from results
+;   def_fn - function to process succesful scan
+;   keep_empty - Prevents fail on empty token file
 
-func :private process_tokens [source_file toks dropset def_fn]
+func :private process_tokens [source_file toks dropset def_fn keep_empty]
     match count: toks
     | 0     @(
-                print!: "Error: file: "
+                print!: "Warning: file: "
                 print!: source_file
                 printnl!: " is empty. "
-                fail: )
+                ?: keep_empty
+                    toks
+                    fail: )
     | 1     @(
                 print!: "Error: token scan halted: "
                 printnl!: get: toks zero
@@ -230,11 +234,12 @@ func :private process_tokens [source_file toks dropset def_fn]
 ;   source_file - fully qualified source file name
 ;   dropset - a set of one or more token_types to drop from results
 ;   def_fn - Function reference taking token list and dropset arguments
+;   keep_empty - Prevents fail on empty token file
 
-func :private lexscan [source_file dropset def_fn]
+func :private lexscan [source_file dropset def_fn keep_empty]
     let [src_string quaf!: source_file
          toks tokenize: src_string patterns ignores]
-         process_tokens: source_file toks dropset def_fn
+         process_tokens: source_file toks dropset def_fn keep_empty
 
 ; Function: lex
 ; Description: Perform a lexical scan of source and
@@ -243,7 +248,8 @@ func :private lexscan [source_file dropset def_fn]
 ; Syntax: lex: source_file dropset
 ;   source_file - valid foidl source or header file
 ;   dropset - a set of one or more token_type keywords to drop from results
+;   keep_empty - Prevents fail on empty token file
 
-func lex [source_file dropset]
-    lexscan: source_file dropset clean_tokens
+func lex [source_file dropset keep_empty]
+    lexscan: source_file dropset clean_tokens keep_empty
 

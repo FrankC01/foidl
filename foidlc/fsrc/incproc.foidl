@@ -73,7 +73,7 @@ func incl_fold [tokens accum cntr]
 			| :default accum
 
 func parse_val_map [accum fqfp]
-	let [ 	tkns 	lex: fqfp #{:comments}
+	let [ 	tkns 	lex: fqfp #{:comments} false
 			ignr0	firstmodule: tkns
 			sm 		readySymbolMap: get: tkns zero ]
 	   @(

@@ -63,7 +63,7 @@ var :private include_path_cmd {
 
 var :private building_runtime {
     :help       "Building runtime. Ignore preloading langcore.defs"
-    :keyword    :printtoks}
+    :keyword    :compiling_runtime}
 
 var :private debug_print_tokens {
     :help       "Debug: prints output of lexical scan"
@@ -109,13 +109,31 @@ func :private cl_validate [cmap]
         extend!: rset! :genhdr
         nil
 
-    match count: rset!
+    ; Validate -g or -c command
+    match ecmap count: rset!
     | 0         map_extend!: cmap :outchannel nil
     | 2         failWith: "Error: -c and -g are mutually exclusive"     ; Both -c and -g
     | :default  let [kres get: cmap first: rset!]                       ; Just right
                         map_extend!:
                             map_extend!: cmap :source kres
-                            :outchannel nil
+                            :command first: rset!
+
+    ; For genhdr warn if invalid switches exist
+    match get: ecmap :command
+    | :compile  ecmap
+    | :genhdr   ?: or: get: ecmap :printast get: ecmap :printir
+                    @(
+                        write!: cerr "Generating header ignores "
+                        ?: get: ecmap :printast
+                            write!: cerr "-pa "
+                            nil
+                        ?: get: ecmap :printir
+                            write!: cerr "-pi "
+                            nil
+                        write!: cerr nlchr
+                        ecmap
+                    )
+                    ecmap
 
 ; Function: cmdlineparse
 ; Description: ingests command line and set expected keys

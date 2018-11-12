@@ -1,0 +1,223 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; handler
+; Compilation handler builder
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module handler
+
+include langcorem
+
+include lexer
+include foidlc_utils
+
+; Function: token_printer
+; Description: Prints token list
+; Syntax: token_printer: state
+;   state - Command line flags and state settings
+
+func :private token_print [state]
+    fold:
+        ^[acc el] write!: cout el
+        nil get: state :tokens
+
+; Function: lex_source
+; Description: Lexical scan of source file and initial validation
+; Syntax: lex_source: cmap source
+;   keep_empty - Prevents fail on empty token file
+;   state - Command line flags and state settings
+
+func :private lex_source [keep_empty state]
+    let [tokens lex: get: state :sourcefile #{:comment} keep_empty
+         mname_tok module_name_validation: tokens]
+            map_extend!:
+                map_extend!: state :module_name get: mname_tok :token_str
+                :tokens tokens
+
+; Function: setup_output
+; Description: Opens a channel for indicated output or uses
+; cout and sets in cmap, which is returned
+; Syntax: setup_output: state
+;   state - Command line flags and state settings
+
+func :private setup_output [state output]
+    ?: output
+        map_extend!: state :outchannel
+                open!: {
+                    :channel output
+                    :open :w
+                    :buffer :block
+                    :write_handler :char }
+        map_extend!: state :outchannel cout
+
+func :private setup_symboltable [state]
+    printnl!: "Setting up sym table"
+    state
+
+func :private preload_langincs [state]
+    printnl!: "Process RTL headers"
+    state
+
+func :private process_includes [state]
+    printnl!: "Process includes"
+    state
+
+func :private ast_print2 [state] ; Temporary name
+    printnl!: "Print AST"
+    state
+
+func :private consume_include [state]
+    printnl!: "Consume include"
+    state
+
+func :private consume_includes [state]
+    printnl!: "Consume includes"
+    state
+
+func :private reverse_tokens [state]
+    printnl!: "Reversing tokens"
+    state
+
+func :private parse_tokens   [state]
+    printnl!: "Create AST"
+    state
+
+func :private ast_print   [state]
+    printnl!: "Print AST"
+    state
+
+func :private parse_tree   [state]
+    printnl!: "Creating PAST"
+    state
+
+func :private produce_ir   [state]
+    printnl!: "Creating 3AC"
+    state
+
+func :private ir_print   [state]
+    printnl!: "Print 3AC"
+    state
+
+func :private emit_llvm   [state]
+    printnl!: "Emit LLVM"
+    state
+
+func :private genheader [state]
+    printnl!: "Generate header"
+    state
+
+func :private close_output [state]
+    printnl!: "Closing output"
+    state
+
+func :private faux_step [s state]
+    print!: "Place holder step for " printnl!: s
+    state
+
+func :private skip_step [state]
+    state
+
+; Function: build_handler
+; Description: Constructs a compilation pipeline based on the
+; command line information
+; Syntax: build_handler: cmap
+;   cmap - Command line flags and settings
+; pipeline examples
+; If -c command
+;   lex_source          - inserts tokens into state
+;   [token_print]       - optionally print tokens
+;   setup_output        - opens an output channel
+;   setup_symboltable   - sets a symbol table up
+;   [preload_langincs]  - Preprocess foidlrt and langcore if !-r
+;   process_includes    - seperate include(s) from main tokens
+;   consume_includes    - consume includes, calls consume_include for each
+;   reverse_tokens      - support bottom up parsing
+;   parse_tokens        - parse the tokens to abstract syntax tree (AST)
+;   [ast_print]         - optionally prints AST
+;   parse_tree          - walks AST, generate parse abstract syntax tree (PAST)
+;   produce_ir          - walks PAST, creates three address code list (3AC)
+;   [ir_print]          - optionally print 3AC
+;   emit_llvm           - Emits LLVM-IR from 3AC
+;   close_output        - Closes output channel
+;
+; If -g command
+;   lex_source          - inserts tokens into state
+;   [token_print]       - optionally print tokens
+;   setup_output        - opens an output channel
+;   genheader           - Emits foidl defs
+;   close_output        - Closes output channel
+;
+; If -i command
+;   lex_source          - inserts tokens into state
+;   consume_include     - Generate symbol table references
+
+
+func build_handler_and_run [cmap]
+
+    let state []
+        {
+            :cmap           cmap
+            :source         get: cmap :source
+        }
+
+    match pipeline get: cmap :command
+    | :compile  [
+                (faux_step "lex_source false") ; (lex_source false)
+                ?: get: cmap :printtoks
+                    (faux_step "token_print")
+                    skip_step
+                (faux_step "setup_output")
+                (faux_step "setup_symboltable")
+                ?: get: cmap :compiling_runtime
+                    skip_step
+                    (faux_step "preload_langincs")
+                (faux_step "process_includes")
+                (faux_step "consume_includes")
+                (faux_step "reverse_tokens")
+                (faux_step "parse_tokens")
+                ?: get: cmap :printast
+                    (faux_step "ast_print")
+                    skip_step
+                (faux_step "parse_tree")
+                (faux_step "produce_ir")
+                ?: get: cmap :printir
+                    (faux_step "ir_print")
+                    skip_step
+                (faux_step "emit_llvm")
+                (faux_step "close_output")
+                ]
+    | :genhdr   [
+                (faux_step "lex_source false") ; (lex_source false)
+                ?: get: cmap :printtoks
+                    (faux_step "token_print")
+                    skip_step
+                (faux_step "setup_output")
+                (faux_step "genheader")
+                (faux_step "close_output")
+                ]
+    | :include  [
+                (faux_step "lex_source true") ; (lex_source true)
+                (faux_step "consume_include")
+                ]
+    | :default  @(
+                    write!: cerr "Invalid switch found in build_handler "
+                    write!: cerr %0
+                    write!: cerr nlchr
+                    fail:
+                )
+    fold: ^[acc el] (el acc) state pipeline
+

@@ -73,6 +73,3 @@ func endCompile [cmap]
 		close!: get: cmap :outchannel
 
 
-func build_handler [cmap]
-
-

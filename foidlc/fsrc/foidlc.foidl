@@ -24,6 +24,7 @@ include langcorem
 
 include cmdline
 include lexer
+include handler
 
 include foidlc_utils
 include genhdr
@@ -91,22 +92,25 @@ func :private process [cmap tokens]
 	;endCompile: cmap
 
 func :private execute [argv cmap]
+	printnl!: cmap
 	?: get: cmap :version
 		printnl!: version
 		?: get: cmap :source
+			build_handler_and_run: cmap
+			cmap
 			; Lex for tokens, ignoring comments and validate module position
-			let [tokens lex: get: cmap :source #{:comment}
-			 	 mname_tok module_name_validation: tokens]
+			;let [tokens lex: get: cmap :source #{:comment} false
+			; 	 mname_tok module_name_validation: tokens]
 			 	 ; Process the tokens
-			 	 process:
-			 	 	extendKV: cmap :module_name get: mname_tok :token_str
-					tokens
-			@(
-				write!: cerr "Exception: Command line makes no sense: "
-				write!: cerr rest: argv
-				write!: cerr nlchr
-				fail:
-			)
+			; 	 process:
+			; 	 	extendKV: cmap :module_name get: mname_tok :token_str
+			;		tokens
+			;@(
+			;	write!: cerr "Exception: Command line makes no sense: "
+			;	write!: cerr rest: argv
+			;	write!: cerr nlchr
+			;	fail:
+			;)
 
 
 func main [argv]
