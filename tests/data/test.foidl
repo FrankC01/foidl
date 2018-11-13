@@ -41,7 +41,11 @@ string which continues across lines
 "
 var chr 'A'
 var qstr "A string containing \dq embedded \dq string"
-var kvar :mykeyword
+var :private kvar :mykeyword
+var chr 'B'
+
+func foobar! [a b]
+func foobar! []
 
 func :private foobar? [a b]
     ?: -: 9 10

@@ -1,0 +1,125 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; handler
+; Compilation handler builder
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module token_utils
+include langcorem
+
+; Exception format strings
+var :private excp_stub "Exception: {"
+var :private excp_lcsplit "}:{"
+var :private excp_lcend "} - "
+
+func :private fail_token_header [tok]
+    write!: cerr excp_stub
+    write!: cerr get: tok :lineno
+    write!: cerr excp_lcsplit
+    write!: cerr get: tok :colno
+    write!: cerr excp_lcend
+
+; Fail on token issue
+func fail_on_token [toks indx s]
+    let tok [] get: toks indx
+    fail_token_header: tok
+    write!: cerr s
+    write!: cerr get: tok :token_str
+    write!: cerr nlchr
+    fail:
+
+; Fail with reason
+
+func fail_with_cause [toks indx s]
+    let tok [] get: toks indx
+    fail_token_header: tok
+    write!: cerr s
+    write!: cerr nlchr
+    fail:
+
+; Function: is_token_type?
+; Description: Tests if token is of ttype
+
+func is_token_type? [toks indx ttype]
+    =: get: get: toks indx :token_type ttype
+
+; Function: is_token_type_in_set?
+; Description: Tests if token_type is in set of ttype_set
+
+func is_token_type_in_set? [toks indx ttype_set]
+    getd: ttype_set get: get: toks indx :token_type false
+
+; Common type test sets
+
+var symbol_types #{:symbol :symbol_pred :symbol_bang}
+
+; Function: tokens_to_type
+; Description: Creates a list of tokens until ttype (non inclusive)
+
+func tokens_to_type [toks cindx ttype]
+    fold:
+        ^[acc indx]
+            ?: is_token_type?: toks indx ttype
+                reduced: acc
+                list_extend!: acc get: toks indx
+        list_inst!: series: cindx count: toks 1
+
+; Function: get_validate_funcargs
+; Description: Returns validated function arglist
+; Syntax: get_validate_funcargs: toks cindx
+;   toks - Token list
+;   cindx - Current index, assumed to be function symbol
+; Fails:
+;   if lbracket/rbracket not detected
+;   if count of args > 15
+;   if all args > 0 are symbol types
+
+func get_validate_funcargs [toks cindx]
+    ; Check that token after cindx is lbracket
+    let lbrk? [] not: is_token_type?: toks inc: cindx :lbracket
+    ?: lbrk?
+        fail_on_token: toks inc: cindx " expected '[' after function symbol, found "
+        ; Gather to rbracket
+        let [sdx        +: cindx two                        ; Increment index past '['
+             arglist    tokens_to_type: toks sdx :rbracket  ; Search for bracket
+             acnt       count: arglist                      ; Get count results
+             ldx        +: sdx acnt]                        ; Should be ']'
+             ?: is_token_type?: toks ldx :rbracket
+                ; Validate less than 16
+                 ?: <: acnt sixteen
+                    ?: =: acnt zero
+                        arglist
+                        fold:
+                            ^[acc el]
+                                ?: get: symbol_types get: el :token_type
+                                    list_extend!: acc get: el :token_str
+                                    fail_with_cause:
+                                        toks
+                                        cindx
+                                        " only symbols allowed in func arglist."
+                            list_inst!: arglist
+                    fail_with_cause: toks cindx " function args exceeded."
+                fail_with_cause: toks cindx " missing ']' to close function args."
+
+
+; Function: token_count_to_type
+; Description: Get count of tokens to ttype (non inclusive)
+
+func token_count_to_type [toks cindx ttype]
+    fold:
+        ^[acc indx] ?: is_token_type?: toks indx ttype reduced: acc inc: acc
+        0 series: cindx count: toks 1

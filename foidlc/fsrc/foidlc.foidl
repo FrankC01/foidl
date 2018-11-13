@@ -92,7 +92,6 @@ func :private process [cmap tokens]
 	;endCompile: cmap
 
 func :private execute [argv cmap]
-	printnl!: cmap
 	?: get: cmap :version
 		printnl!: version
 		?: get: cmap :source

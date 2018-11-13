@@ -1,7 +1,7 @@
 /*
 	foidl_globals.c
 	Library common/globals
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -45,7 +45,7 @@ PFRTAny whitespace;
 #define addCharToSet(lset,lsym) foidl_set_extend_bang(lset,lsym)
 
 void foidl_rtl_init_globals() {
-	
+
 	//	Utilitity counters
 
 	genint(zero,0x00);
@@ -87,7 +87,7 @@ void foidl_rtl_init_globals() {
 	gencharToSet(boundarySet, lbracket,'[');
 	gencharToSet(boundarySet, rbracket,']');
 	gencharToSet(boundarySet, langle,'<');
-	gencharToSet(boundarySet, rangle,'>');	
+	gencharToSet(boundarySet, rangle,'>');
 	gencharToSet(boundarySet, comma,',');
 	gencharToSet(boundarySet, lbrace,'{');
 	gencharToSet(boundarySet, rbrace,'}');
@@ -102,16 +102,20 @@ void foidl_rtl_init_globals() {
 	genchar(tmchr,'*');
 	genchar(prchr, '.');
 	gencharToSet(boundarySet, carchr,'^');
-	gencharToSet(boundarySet, eqchr,'=');	
+	gencharToSet(boundarySet, eqchr,'=');
 	gencharToSet(boundarySet, addchr,'+');
 	gencharToSet(boundarySet, subchr,'-');
 	gencharToSet(boundarySet, divchr,'/');
 	gencharToSet(boundarySet, exchr,'!');
-	gencharToSet(boundarySet, atchr,'@'); 	
+	gencharToSet(boundarySet, atchr,'@');
 	gencharToSet(boundarySet, pctchr,'%');
 
 	gencharToSet(boundarySet, tbchr,0x09);	//	tab
+#ifdef _MSC_VER
+	gencharToSet(boundarySet, nlchr,0x0A0D); //	windows newline/carriage return
+#else
 	gencharToSet(boundarySet, nlchr,0x0A); 	//	newline
+#endif
 	gencharToSet(boundarySet, crchr,0x0D); 	//	carriage return
 	gencharToSet(boundarySet, spchr,0x20); 	//	space
 	gencharToSet(boundarySet, dqchr,0x22); 	//  quote
@@ -121,7 +125,7 @@ void foidl_rtl_init_globals() {
 	addCharToSet(boundarySetLite, lbracket);
 	addCharToSet(boundarySetLite, rbracket);
 	addCharToSet(boundarySetLite, langle);
-	addCharToSet(boundarySetLite, rangle);	
+	addCharToSet(boundarySetLite, rangle);
 	addCharToSet(boundarySetLite, comma);
 	addCharToSet(boundarySetLite, lbrace);
 	addCharToSet(boundarySetLite, rbrace);
@@ -134,7 +138,7 @@ void foidl_rtl_init_globals() {
 	addCharToSet(boundarySetLite, eqchr);
 	addCharToSet(boundarySetLite, divchr);
 	addCharToSet(boundarySetLite, exchr);
-	addCharToSet(boundarySetLite, atchr); 	
+	addCharToSet(boundarySetLite, atchr);
 	addCharToSet(boundarySetLite, pctchr);
 	addCharToSet(boundarySetLite, tildchr);
 	addCharToSet(boundarySetLite, tbchr);	//	tab
@@ -144,7 +148,7 @@ void foidl_rtl_init_globals() {
 	addCharToSet(boundarySetLite, dqchr); 	//  quote
 	addCharToSet(boundarySetLite, sqchr); 	//  apostrophe
 	addCharToSet(boundarySetLite, eschr); 	// 	backslash
-	
+
 	addCharToSet(whitespace, tbchr);	//	tab
 	addCharToSet(whitespace, nlchr); 	//	newline
 	addCharToSet(whitespace, crchr); 	//	carriage return
@@ -190,7 +194,7 @@ static char cinbuffer[cbsize];
 const struct FRTIOBufferG _cin_buffer = {
 	global_signature,
 	io_class,
-	mem_block_buffer,	
+	mem_block_buffer,
 	cbsize,
 	0,0,0,0,0,0,0,
 	cinbuffer
@@ -209,7 +213,7 @@ const struct FRTIOChannelG _cin_base = {
 	0,
 	cin_reader,
 	(PFRTFuncRef) nil,
-	cin_buffer	
+	cin_buffer
 };
 
 PFRTIOChannel const cin = (PFRTIOChannel) &_cin_base.fclass;
@@ -223,8 +227,8 @@ const struct FRTIOChannelG _cout_base = {
 	open_write_only,
 	no_buffer,
 	1,
-	(PFRTFuncRef) nil,	
-	cout_writer, 	
+	(PFRTFuncRef) nil,
+	cout_writer,
 	(PFRTIOBuffer) nil
 };
 
@@ -239,8 +243,8 @@ const struct FRTIOChannelG _cerr_base = {
 	open_write_only,
 	no_buffer,
 	2,
-	(PFRTFuncRef) nil,	
-	cout_writer, 	
+	(PFRTFuncRef) nil,
+	cout_writer,
 	(PFRTIOBuffer) nil
 };
 

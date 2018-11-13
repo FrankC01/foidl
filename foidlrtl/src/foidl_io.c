@@ -511,12 +511,12 @@ PFRTAny 	foidl_close_bang(PFRTIOChannel chan) {
 	if(chan->fclass == io_class
 		&& chan->ftype != closed_type
 		&& (chan != cin || chan != cout || chan != cerr)) {
-		chan->ftype = closed_type;
-		if(chan->openflag == open_write_only) {
-			io_blockBufferClose(chan);
-			foidl_fclose(chan->handle);
-		}
-		deallocChannelBuffer(chan);
+			chan->ftype = closed_type;
+			if(chan->openflag == open_write_only) {
+				io_blockBufferClose(chan);
+				foidl_fclose(chan->handle);
+			}
+			deallocChannelBuffer(chan);
 	}
 	else
 		writeCerrNl(already_closed_channel);
