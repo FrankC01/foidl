@@ -120,7 +120,13 @@ func :private cl_validate [cmap]
 
     ; For genhdr warn if invalid switches exist
     match get: ecmap :command
-    | :compile  ecmap
+    | :compile  ?: not: get: ecmap :includes
+                    @(
+                        write!: cerr "Compilation requires setting include paths"
+                        write!: cerr nlchr
+                        fail:
+                    )
+                    ecmap
     | :genhdr   ?: or: get: ecmap :printast get: ecmap :printir
                     @(
                         write!: cerr "Generating header ignores "
@@ -134,6 +140,7 @@ func :private cl_validate [cmap]
                         ecmap
                     )
                     ecmap
+    | :default ecmap
 
 ; Function: cmdlineparse
 ; Description: ingests command line and set expected keys

@@ -123,3 +123,82 @@ func token_count_to_type [toks cindx ttype]
     fold:
         ^[acc indx] ?: is_token_type?: toks indx ttype reduced: acc inc: acc
         0 series: cindx count: toks 1
+
+; Function: tpdwn_process_func
+; Description: HOF called by tpdwn_vf_processor to handle
+; function token types. Only handles public funcs. Validates
+; a symbol follows 'func' as well as a valid arglist follows
+; the symbol before invoking a passed in handler reference, providing
+; reference with outputchannel symbol token arglist and arglist count.
+; Syntax: tpdwn_process_func: f_fn ochan toks cindx mxcnt
+;   v_fn    - Function reference to variable handler
+;   ochan   - The output channel
+;   toks    - The list of tokens
+;   cindx   - Current index into token list
+;   mxcnt   - Number of tokens in toks
+
+func tpdwn_process_func [f_fn toks cindx mxcnt]
+    ; If ttype after var is :private... skip
+    let nindx [] inc: cindx
+    ?: is_token_type?: toks nindx :private
+        inc: cindx
+        ; Otherwise process it
+        ?: is_token_type_in_set?: toks nindx symbol_types
+            let [ntok       get: toks nindx
+                 arglist    get_validate_funcargs: toks nindx
+                 acnt       count: arglist
+                 findx      +: nindx +: acnt two]
+                @(
+                    (f_fn ntok arglist acnt)
+                    inc: findx
+                )
+            ; Fail syntax
+            fail_on_token: toks nindx " expected symbol after 'func', found "
+
+; Function: tpdwn_process_var
+; Description: HOF called by tpdwn_vf_processor to handle
+; variable token types. Only handles public vars and
+; validates a symbol follows the 'var' before invoking
+; a passed in handler reference with the symbol token
+; only
+; Syntax: tpdwn_process_var: toks cindx mxcnt v_fn
+;   v_fn    - Function reference to variable handler
+;   toks    - The list of tokens
+;   cindx   - Current index into token list
+;   mxcnt   - Number of tokens in toks
+
+func tpdwn_process_var [v_fn toks cindx mxcnt]
+    ; If ttype after var is :private... skip
+    let nindx [] inc: cindx
+    ?: is_token_type?: toks nindx :private
+        inc: cindx
+        ; If next is symbol ... success
+        ?: is_token_type_in_set?: toks nindx symbol_types
+            let [ntok get: toks nindx]
+                @(
+                    (v_fn ntok)
+                    inc: nindx
+                )
+            ; Fail syntax
+            fail_on_token: toks nindx " expected symbol after 'var', found "
+
+; Function: tpdwn_vf_processor
+; Description: Generic processor of top down token lists for
+; variable and function tokens. Commonly used in folding of
+; tokens
+; Syntax: tpdwn_vf_processor: v_fn f_fn tks mxcnt acc ndx
+;   v_fn   - Function reference to variable handler
+;   f_fn   - Function reference to function handler
+;   toks   - The list of tokens
+;   mxcnt  - Number of tokens in toks
+;   acc    - Accumulator (integer)
+;   ndx    - Index (integer)
+
+func tpdwn_vf_processor [v_fn f_fn toks mxcnt acc ndx]
+     ?: >=: acc mxcnt
+        reduced: acc
+        let [tok get: toks acc]
+            match get: tok :token_type
+            | :variable     tpdwn_process_var: v_fn toks acc mxcnt
+            | :function     tpdwn_process_func: f_fn toks acc mxcnt
+            | :default inc: acc

@@ -20,76 +20,10 @@
 
 module foidlc
 
-include langcorem
-
 include cmdline
-include lexer
 include handler
 
-include foidlc_utils
-include genhdr
-include state
-include tvalidate
-include symbolmgmt
-include incproc
-include astgen
-include astprint
-include irgen
-include emit
-
-;func failEnvironment [src elm]
-;	write!: cerr "Unable to resolve "
-;	write!: cerr elm
-;	write!: cerr " in environment settings"
-;	write!: cerr nlchr
-;	fail:
-
-func foldTDump [acc val]
-	printnl!: val
-	val
-
-func printTokens [tokens]
-	fold: foldTDump nil tokens
-	print!: "Total tokens produced = "
-	printnl!: count: tokens
-
-func hdrCompile [cmap tokens]
-	genhdr: get: cmap :outchannel tokens
-
-func standardHdrFold [accum val]
-	extend!: accum val
-
-func fullCompile [cmap tokens]
-	fold: subsMain nil tokens
-	processIncludes: get: cmap :includes
-		filterIncludes: tokens fold: standardHdrFold <> hdrPreDefs
-	valSyntax: tokens
-	let [	ast 	genAst:
-		   	ir  	genIR: ast ]
-		@(
-			?: get: cmap :printast
-				astPrint: ast
-				nil
-			?: get: cmap :printir
-				irPrint: ir
-				nil
-			emit: get: cmap :outchannel ir
-		)
-
-func :private process [cmap tokens]
-	;prepareOutput: cmap get: first: tokens :lexeme tail
-	;	Debugging aid
-	;?: get: cmap :printtoks
-	;	printTokens: tokens
-	;	nil
-	; Real deal
-	;?: get: cmap :genhdr
-	;	hdrCompile: cmap tokens
-	;	?: get: cmap :compile
-	;		fullCompile: cmap tokens
-	;		nil
-	; Close it up
-	;endCompile: cmap
+var version "foidlc version 0.01.00  (Self-hosted)"
 
 func :private execute [argv cmap]
 	?: get: cmap :version
@@ -97,20 +31,6 @@ func :private execute [argv cmap]
 		?: get: cmap :source
 			build_handler_and_run: cmap
 			cmap
-			; Lex for tokens, ignoring comments and validate module position
-			;let [tokens lex: get: cmap :source #{:comment} false
-			; 	 mname_tok module_name_validation: tokens]
-			 	 ; Process the tokens
-			; 	 process:
-			; 	 	extendKV: cmap :module_name get: mname_tok :token_str
-			;		tokens
-			;@(
-			;	write!: cerr "Exception: Command line makes no sense: "
-			;	write!: cerr rest: argv
-			;	write!: cerr nlchr
-			;	fail:
-			;)
-
 
 func main [argv]
 	execute: argv cmdlineparse: argv

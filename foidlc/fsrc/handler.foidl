@@ -23,7 +23,6 @@ module handler
 include langcorem
 
 include lexer
-include foidlc_utils
 include token_utils
 
 var selfhost_comment ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -44,6 +43,26 @@ func :private write_comment_block_and_module [ochan modname]
     write!: ochan "module " write!: ochan modname
     write!: ochan nlchr
 
+; Function: module_name_validation
+; Description: Takes top entry from token list and validates
+; it is a module statement and returns it. If not, report error
+; Syntax: module_name_validation: toks
+;   toks - Token list
+
+func :private module_name_validation [toks]
+    let [first_tok first: toks
+         mname_tok second: toks]
+        ?: and: =: get: first_tok :token_type :module
+                =: get: mname_tok :token_type :symbol
+            mname_tok
+            @(
+                write!: cerr "Exception: A valid module statement must be first, found "
+                write!: cerr get: first_tok :token_type
+                write!: cerr " "
+                write!: cerr get: mname_tok :token_str
+                write!: cerr nlchr
+                fail:
+            )
 
 ; Function: token_printer
 ; Description: Prints token list
@@ -94,8 +113,34 @@ func :private setup_symboltable [state]
     printnl!: "Setting up sym table"
     state
 
-func :private preload_langincs [state]
-    printnl!: "Process RTL headers"
+; Include processing
+
+var :private include_rthdrs <"foidlrt" "langcore">
+var :private include_tail ".defs"
+var :private include_existserr " Unable to resolve include file: "
+
+var :private include_cache map_inst!:
+var :private include_paths list_inst!:
+
+; Function: preload_langhdrs
+; Description: Load the foidlrt and langcore headers to
+; feed the symbol table prior to parsing tokens
+; Syntax: preload_langhdrs: state
+;   state - Command line flags and state settings
+
+func :private preload_langhdrs [state]
+    let paths [] get: get: state :cmap :includes
+    ?: not: paths
+        @(
+            write!: cerr "Won't be able to locate "
+            write!: cerr include_rthdrs
+            write!: cerr ": set '-I' path(s) for runtime header location(s)"
+            write!: cerr nlchr
+            fail:
+        )
+        nil
+
+    print!: "Paths to search " printnl!: paths
     state
 
 func :private process_includes [state]
@@ -103,7 +148,7 @@ func :private process_includes [state]
     state
 
 func :private ast_print2 [state] ; Temporary name
-    printnl!: "Print AST"
+    print!: "Print AST"
     state
 
 func :private consume_include [state]
@@ -145,14 +190,14 @@ func :private emit_llvm   [state]
 ; Function: func_genhdr_writer
 ; Description: Writes out function signature in genheader processing
 ; Syntax: func_genhdr_writer: ochan stok arglist acnt
-;   ochan
-;   stok
-;   arglist
-;   acnt
+;   ochan   - The output channel
+;   ntok    - The symbol found for the function
+;   arglist - List of argument symbols (if any)
+;   acnt    - Count of args in arglist
 
-func :private func_genhdr_writer [ochan stok arglist acnt]
+func :private func_genhdr [ochan ntok arglist acnt]
     write!: ochan "func "
-    write!: ochan get: stok :token_str
+    write!: ochan get: ntok :token_str
     write!: ochan " ["
     ?: >: acnt zero
         fold:
@@ -169,65 +214,17 @@ func :private func_genhdr_writer [ochan stok arglist acnt]
     write!: ochan "]"
     write!: ochan nlchr
 
-; Function: process_func
-; Description: HOF to gather, validate and process functions in token list
-; Syntax: process_func: ochan toks
-func :private process_func [ochan toks cindx mxcnt func_fn]
-    ; If ttype after var is :private... skip
-    let nindx [] inc: cindx
-    ?: is_token_type?: toks nindx :private
-        inc: cindx
-        ; Otherwise process it
-        ?: is_token_type_in_set?: toks nindx symbol_types
-            let [stok       get: toks nindx
-                 arglist    get_validate_funcargs: toks nindx
-                 acnt       count: arglist
-                 findx      +: nindx +: acnt two]
-                @(
-                    (func_fn ochan stok arglist acnt)
-                    inc: findx
-                )
-            ; Fail syntax
-            fail_on_token: toks nindx " expected symbol after 'func', found "
-
-; Function: var_genhdr_writer
+; Function: var_genhdr
 ; Description: Writes out variable signature in genheader processing
-; Syntax: func_genhdr_writer: ochan stok arglist acnt
-;   ochan
-;   stok
-;   arglist
-;   acnt
+; Syntax: func_genhdr_writer: ochan ntok
+;   ochan   - The output channel
+;   ntok    - The symbol found for the variable
 
-func :private var_genhdr_writer [ochan ntok]
+func :private var_genhdr [ochan ntok]
     write!: ochan "var "
     write!: ochan get: ntok :token_str
     write!: ochan " any"
     write!: ochan nlchr
-
-func :private process_var [ochan toks cindx mxcnt var_fn]
-    ; If ttype after var is :private... skip
-    let nindx [] inc: cindx
-    ?: is_token_type?: toks nindx :private
-        inc: cindx
-        ; If next is symbol ... success
-        ?: is_token_type_in_set?: toks nindx symbol_types
-            let [ntok get: toks nindx]
-                @(
-                    (var_fn ochan ntok)
-                    inc: nindx
-                )
-            ; Fail syntax
-            fail_on_token: toks nindx " expected symbol after 'var', found "
-
-func :private header_token_consumer [tks ochan acc ndx]
-    let [cnt count: tks]
-         ?: >=: acc cnt
-            reduced: acc
-            let [tok get: tks acc]
-                match get: tok :token_type
-                | :variable     process_var: ochan tok tks acc cnt var_genhdr_writer
-                | :function     process_func: ochan tks acc cnt func_genhdr_writer
-                | :default inc: acc
 
 ; Function: genheader
 ; Description: Generates module, public vars and public funcs
@@ -241,12 +238,17 @@ func :private header_token_consumer [tks ochan acc ndx]
 ;   state - Command line flags and state settings
 
 func :private genheader [state]
-    printnl!: "Generate header"
     let ochan [] get: state :outchannel
     let tks [] get: state :tokens
+    let maxcount [] count: tks
     write_comment_block_and_module: ochan get: state :module_name
-    ; Now walk through and spit vars
-    fold: (header_token_consumer tks ochan) 0 infinite
+    ; Walk tokens and spit vars and funcs
+    fold:
+        (tpdwn_vf_processor
+            (var_genhdr ochan)
+            (func_genhdr ochan) tks maxcount)
+        0 infinite
+    write!: ochan nlchr
     state
 
 ; Function: close_output
@@ -264,6 +266,7 @@ func :private close_output [state]
 ; Function: skip_step
 ; Description: Passthrough step returns state and
 ; is used when the debugging (-pt, -pa, -pi) are not specified
+
 func :private skip_step [state]
     state
 
@@ -325,7 +328,7 @@ func build_handler_and_run [cmap]
                 (faux_step "setup_symboltable")
                 ?: get: cmap :compiling_runtime
                     skip_step
-                    (faux_step "preload_langincs")
+                    preload_langhdrs
                 (faux_step "process_includes")
                 (faux_step "consume_includes")
                 (faux_step "reverse_tokens")

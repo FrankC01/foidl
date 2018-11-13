@@ -22,28 +22,14 @@ module foidlc_utils
 
 include langcorem
 
-var version "foidl bootstraped compiler version 0.01.00"
 var hdrPreDefs <"foidlrt" "langcore">
 
 ;	Miscellaneous functions for compiler initialization
 
-func module_name_validation [tokens]
-	let [first_tok first: tokens
-		 mname_tok second: tokens]
-		?: and: =: get: first_tok :token_type :module
-				=: get: mname_tok :token_type :symbol
-			mname_tok
-			@(
-				write!: cerr "Exception: A valid module statement must be first, found "
-				write!: cerr get: first_tok :token_type
-				write!: cerr " "
-				write!: cerr get: mname_tok :token_str
-				write!: cerr nlchr
-				fail:
-			)
-
+; Depricated functions
 
 func subsMain [acc token]
+	printnl!: "subsMain is DEPRECATD"
 	?: =: get: token :type :function
 		?: =: get: token :lexeme "main"
 			map_extend!: token :lexeme "user_main"
@@ -52,11 +38,13 @@ func subsMain [acc token]
 	acc
 
 func buildOutName  [base isdir mname tail]
+	printnl!: "buildOutName is DEPRECATD"
 	?: =: isdir divchr
 		extend: extend: base mname tail
 		extend: base tail
 
 func prepareOutput [cmap mname tail]
+	printnl!: "prepareOutput is DEPRECATD"
 	?: get: cmap :output
 		let [outp 	get: cmap :output]
 			map_extend!: cmap :outchannel
@@ -68,6 +56,7 @@ func prepareOutput [cmap mname tail]
 		map_extend!: cmap :outchannel cout
 
 func endCompile [cmap]
+	printnl!: "endCompile is DEPRECATD"
 	?: =: get: cmap :outchannel cout
 		nil
 		close!: get: cmap :outchannel
