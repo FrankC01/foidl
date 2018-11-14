@@ -31,15 +31,15 @@ var patterns [
     }
     {
         :type   :include
-        :regex  regex: "include"
+        :regex  regex: "include$"
     }
     {
         :type   :variable
-        :regex  regex: "var"
+        :regex  regex: "var$"
     }
     {
         :type   :function
-        :regex  regex: "func"
+        :regex  regex: "func$"
     }
     {
         :type   :private

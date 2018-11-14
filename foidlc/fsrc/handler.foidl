@@ -86,6 +86,8 @@ func :private token_print [state]
 ;   state - Command line flags and state settings
 
 func :private lex_source [keep_empty state]
+    print!: "Lexing source -> "
+    printnl!: get: state :source
     let [tokens lex: get: state :source #{:comment} keep_empty
          mname_tok module_name_validation: tokens]
             map_extend!:
@@ -122,6 +124,31 @@ var :private include_existserr " Unable to resolve include file: "
 var :private include_cache map_inst!:
 var :private include_paths list_inst!:
 
+; Function: capture_includes
+; Description: Local capture of include paths when
+; command is to compile
+
+func :private capture_includes [state]
+    fold:
+        ^[acc clineinc]  list_extend!: acc clineinc
+        include_paths get: get: state :cmap :includes
+    state
+
+; Function: resolve_include_location
+; Description: For each file, search the include paths and test
+; for existence
+
+func :private resolve_include_location [incfile]
+    let fullfile [] extend: incfile include_tail
+    fold: ^[res ipath]
+            @(
+                let fqn [] extend: ipath fullfile
+                ?: fileExists?: fqn
+                    reduced: fqn
+                    res
+            )
+        nil include_paths
+
 ; Function: preload_langhdrs
 ; Description: Load the foidlrt and langcore headers to
 ; feed the symbol table prior to parsing tokens
@@ -129,18 +156,29 @@ var :private include_paths list_inst!:
 ;   state - Command line flags and state settings
 
 func :private preload_langhdrs [state]
-    let paths [] get: get: state :cmap :includes
-    ?: not: paths
-        @(
-            write!: cerr "Won't be able to locate "
-            write!: cerr include_rthdrs
-            write!: cerr ": set '-I' path(s) for runtime header location(s)"
-            write!: cerr nlchr
-            fail:
-        )
+    ; For each include file, determine path based on
+    ; include searching
+    let res []
+        fold:
+            ^[acc incfile]
+                let [hit resolve_include_location: incfile]
+                    ?: hit
+                        list_extend!: acc hit
+                        acc
+            list_inst!: include_rthdrs
+    ?: not=: count: res two
+        failWith: "Something is awry"
         nil
-
-    print!: "Paths to search " printnl!: paths
+    let stuff []
+        fold:
+            ^[a b]
+                list_extend!:
+                    a
+                    build_handler_and_run: {
+                        :source     b
+                        :command    :procinc
+                    }
+            list_inst!: res
     state
 
 func :private process_includes [state]
@@ -152,7 +190,8 @@ func :private ast_print2 [state] ; Temporary name
     state
 
 func :private consume_include [state]
-    printnl!: "Consume include"
+    print!: "Consume include. Token count -> "
+    printnl!: count: get: state :tokens
     state
 
 func :private consume_includes [state]
@@ -318,50 +357,53 @@ func build_handler_and_run [cmap]
             :source         get: cmap :source
         }
 
+    ; Capture the include paths if coming in with :compile
+
     match pipeline get: cmap :command
-    | :compile  [
-                (lex_source false)
-                ?: get: cmap :printtoks
-                    token_print
-                    skip_step
-                setup_output
-                (faux_step "setup_symboltable")
-                ?: get: cmap :compiling_runtime
-                    skip_step
-                    preload_langhdrs
-                (faux_step "process_includes")
-                (faux_step "consume_includes")
-                (faux_step "reverse_tokens")
-                (faux_step "parse_tokens")
-                ?: get: cmap :printast
-                    (faux_step "ast_print")
-                    skip_step
-                (faux_step "parse_tree")
-                (faux_step "produce_ir")
-                ?: get: cmap :printir
-                    (faux_step "ir_print")
-                    skip_step
-                (faux_step "emit_llvm")
-                close_output
-                ]
-    | :genhdr   [
-                (lex_source false)
-                ?: get: cmap :printtoks
-                    token_print
-                    skip_step
-                setup_output
-                genheader
-                close_output
-                ]
-    | :include  [
-                (faux_step "lex_source true") ; (lex_source true)
-                (faux_step "consume_include")
-                ]
-    | :default  @(
-                    write!: cerr "Invalid switch found in build_handler "
-                    write!: cerr %0
-                    write!: cerr nlchr
-                    fail:
-                )
+        | :compile  [
+                    capture_includes
+                    (lex_source false)
+                    ?: get: cmap :printtoks
+                        token_print
+                        skip_step
+                    setup_output
+                    (faux_step "setup_symboltable")
+                    ?: get: cmap :compiling_runtime
+                        skip_step
+                        preload_langhdrs
+                    (faux_step "process_includes")
+                    (faux_step "consume_includes")
+                    (faux_step "reverse_tokens")
+                    (faux_step "parse_tokens")
+                    ?: get: cmap :printast
+                        (faux_step "ast_print")
+                        skip_step
+                    (faux_step "parse_tree")
+                    (faux_step "produce_ir")
+                    ?: get: cmap :printir
+                        (faux_step "ir_print")
+                        skip_step
+                    (faux_step "emit_llvm")
+                    close_output
+                    ]
+        | :genhdr   [
+                    (lex_source false)
+                    ?: get: cmap :printtoks
+                        token_print
+                        skip_step
+                    setup_output
+                    genheader
+                    close_output
+                    ]
+        | :procinc  [
+                    (lex_source true)
+                    consume_include
+                    ]
+        | :default  @(
+                        write!: cerr "Invalid switch found in build_handler "
+                        write!: cerr %0
+                        write!: cerr nlchr
+                        fail:
+                    )
     fold: ^[acc el] (el acc) state pipeline
 
