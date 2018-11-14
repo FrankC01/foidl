@@ -39,7 +39,7 @@ var patterns [
     }
     {
         :type   :function
-        :regex  regex: "func"
+        :regex  regex: "func "
     }
     {
         :type   :private
