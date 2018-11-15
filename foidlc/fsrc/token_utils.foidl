@@ -51,6 +51,13 @@ func fail_with_cause [toks indx s]
     write!: cerr nlchr
     fail:
 
+; Fail if looking for list (func arg, lambda arg, let args)
+func :private fail_not_list_token [toks cindx]
+    fail_on_token: toks inc: cindx " expected '[' found "
+
+func :private fail_not_symbol [toks cindx]
+    fail_on_token: toks inc: cindx " expected symbol found "
+
 ; Function: is_token_type?
 ; Description: Tests if token is of ttype
 
@@ -62,6 +69,19 @@ func is_token_type? [toks indx ttype]
 
 func is_token_type_in_set? [toks indx ttype_set]
     getd: ttype_set get: get: toks indx :token_type false
+
+; Function: source_pos_to_str
+; Description: Formats a tokens line and column
+; Syntax: source_pos_to_str: token
+
+func source_pos_to_str [token]
+    extend:
+        extend:
+            extend:
+                extend: "{" get: token :lineno
+                ":"
+            get: token :colno
+        "}"
 
 ; Common type test sets
 
@@ -78,6 +98,20 @@ func tokens_to_type [toks cindx ttype]
                 list_extend!: acc get: toks indx
         list_inst!: series: cindx count: toks 1
 
+
+func index_to_nextoftype [toks cindx ttype]
+    let mxcnt [] count: toks
+    let res []
+        fold:
+            ^[acc indx]
+                ?: is_token_type?: toks indx ttype
+                    reduced: acc
+                    inc: acc
+            cindx series: cindx mxcnt 1
+    ?: =: res mxcnt
+        zero
+        res
+
 ; Function: get_validate_funcargs
 ; Description: Returns validated function arglist
 ; Syntax: get_validate_funcargs: toks cindx
@@ -92,7 +126,7 @@ func get_validate_funcargs [toks cindx]
     ; Check that token after cindx is lbracket
     let lbrk? [] not: is_token_type?: toks inc: cindx :lbracket
     ?: lbrk?
-        fail_on_token: toks inc: cindx " expected '[' after function symbol, found "
+        fail_not_list_token: toks inc: cindx
         ; Gather to rbracket
         let [sdx        +: cindx two                        ; Increment index past '['
              arglist    tokens_to_type: toks sdx :rbracket  ; Search for bracket
@@ -137,7 +171,7 @@ func token_count_to_type [toks cindx ttype]
 ;   cindx   - Current index into token list
 ;   mxcnt   - Number of tokens in toks
 
-func tpdwn_process_func [f_fn toks cindx mxcnt]
+func :private tpdwn_process_func [f_fn toks cindx mxcnt]
     ; If ttype after var is :private... skip
     let nindx [] inc: cindx
     ?: is_token_type?: toks nindx :private
@@ -167,7 +201,7 @@ func tpdwn_process_func [f_fn toks cindx mxcnt]
 ;   cindx   - Current index into token list
 ;   mxcnt   - Number of tokens in toks
 
-func tpdwn_process_var [v_fn toks cindx mxcnt]
+func :private tpdwn_process_var [v_fn toks cindx mxcnt]
     ; If ttype after var is :private... skip
     let nindx [] inc: cindx
     ?: is_token_type?: toks nindx :private
@@ -194,7 +228,7 @@ func tpdwn_process_var [v_fn toks cindx mxcnt]
 ;   acc    - Accumulator (integer)
 ;   ndx    - Index (integer)
 
-func tpdwn_vf_processor [v_fn f_fn toks mxcnt acc ndx]
+func :private tpdwn_vf_processor [v_fn f_fn toks mxcnt acc ndx]
      ?: >=: acc mxcnt
         reduced: acc
         let [tok get: toks acc]
@@ -202,3 +236,109 @@ func tpdwn_vf_processor [v_fn f_fn toks mxcnt acc ndx]
             | :variable     tpdwn_process_var: v_fn toks acc mxcnt
             | :function     tpdwn_process_func: f_fn toks acc mxcnt
             | :default inc: acc
+
+; Function: process_tpdwn_vf
+; Description: HOF that iterates through token list to process var
+; and function statements using supplied handlers
+; Syntax: process_tpdwn_vf: state var_handler func_handler
+;   state - Command line flags and state settings
+;   var_handler - Variable handler for context processing
+;   func_handler - Function handler for context processing
+
+func process_tpdwn_vf [state var_handler func_handler]
+    let toks [] get: state :tokens
+    let maxcount [] count: toks
+    ; Walk tokens
+    fold:
+        (tpdwn_vf_processor var_handler func_handler toks maxcount)
+        0 infinite
+
+func get_if_symbol_or_fail [toks ndx]
+    ?:  false?: is_token_type_in_set?: toks ndx symbol_types
+        fail_with_cause: toks ndx " expected symbol"
+        get: get: toks ndx :token_str
+
+
+func any_count [acount]
+    true
+
+; Function: get_valid_symlist
+; Description: HOF Generic extraction and validation of symbols
+; from list.
+; Syntax: get_valid_symlist: toks cindx
+;   nlist_fn - Not list lbracket handler
+;   acnt_fn - Valid count of list entries check
+;   toks - Token list
+;   cindx - Current index
+; Fails:
+;   if lbracket/rbracket calls not list fn_ref
+;   if count of args > max_cap
+;   if all args > 0 are symbol types calls not symbol fn_ref
+
+func get_valid_symlist [nlist_fn acnt_fn toks cindx]
+    ; Check that token after cindx is lbracket
+    let nlbrk? [] not: is_token_type?: toks inc: cindx :lbracket
+    ?: nlbrk?
+        (nlist_fn toks inc: cindx)
+        ; Gather to rbracket
+        let [sdx        +: cindx two                        ; Increment index past '['
+             arglist    tokens_to_type: toks sdx :rbracket  ; Search for bracket
+             acnt       count: arglist                      ; Get count results
+             ldx        +: sdx acnt]                        ; Should be ']'
+             ?: is_token_type?: toks ldx :rbracket
+                let [vcnt (acnt_fn acnt)]
+                    ?: =: acnt zero
+                        arglist
+                        fold:
+                            ^[acc el]
+                                ?: get: symbol_types get: el :token_type
+                                    list_extend!: acc get: el :token_str
+                                    fail_not_symbol: toks cindx
+                            list_inst!: arglist
+                fail_with_cause: toks cindx " missing ']' to close list."
+
+; Function: capture_include
+; Description:
+; Syntax:
+
+func :private capture_include [mlist toks acc ndx]
+    let fetched [] get_valid_symlist: get_if_symbol_or_fail any_count toks ndx
+    ?: string?: fetched
+        @(
+            list_extend!: mlist fetched
+            inc: ndx
+        )
+        @(
+            fold:
+                ^[a b] list_extend!: a b
+                mlist fetched
+            +: ndx +: count: fetched two
+        )
+
+; Function: dispatch_while_ttype
+; Description:
+; Syntax:
+
+func :private dispatch_while_ttype [d_fn ttype toks acc ndx]
+    let nindx [] index_to_nextoftype: toks acc ttype
+    ?: >: nindx zero
+        (d_fn toks acc nindx)
+        ;capture_include: mlist toks acc nindx
+        reduced: acc
+
+; Function: process_tpdwn_inc
+; Description: Extract all includes into single list
+; Syntax: process_tpdwn_inc
+
+func process_tpdwn_inc [toks]
+    let maxcount [] count: toks
+    let mlist [] list_inst!:
+    ; Reduce tokens looking for :include token type
+    let fndx [] index_to_nextoftype: toks 0 :include
+    ?: >: fndx zero
+        fold:
+            (dispatch_while_ttype
+                (capture_include mlist)
+                :include toks) fndx series: 0 maxcount 1
+        nil
+    mlist

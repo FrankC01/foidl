@@ -20,6 +20,8 @@
 
 module test
 
+include fingbat
+
 var map {}
 var set #{}
 var vector <>
@@ -46,6 +48,7 @@ var chr 'B'
 
 func foobar! [a b]
 func foobar! []
+    nil
 
 func :private foobar? [a b]
     ?: -: 9 10

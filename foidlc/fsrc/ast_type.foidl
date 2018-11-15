@@ -1,0 +1,66 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ast_type
+; AST type model
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module ast_type
+include langcorem
+
+var :private ast_type {
+    ;   Reference types
+    :varref             {:type :varref          :name nil}
+    :funcref            {:type :funcref         :name nil :argcnt zero}
+    ;   Declaration types
+    :module             {:type :module          :name nil :externs nil :literals nil :lambdas nil}
+    :variable           {:type :variable        :name nil :is_private false}
+    :function           {:type :function        :name nil :arglist nil :is_private false}
+    ;   Expression types
+    :lambda             {:type :lambda          :arglist nil :is_private true}
+    :if                 {:type :if}
+    :let                {:type :let             :let_pairs nil}
+    :let_pair           {:type :let_pair}
+    :match              {:type :match           :match_guards nil}
+    :match_guard        {:type :match_guard     :is_default false}
+    :group              {:type :group           :exprcnt zero :exprs nil}
+    :partial            {:type :partial         :exprcnt zero :exprs nil}
+    ; Data types
+    :empty_collection   {:type :empty_collection :cotype nil}
+    :collection         {:type :collection      :coltype nil}
+    :literal            {:type :literal         :littype nil}
+    :symbol             {:type :symbol}
+}
+
+var coltype_set    #{:list :map :set :vector}
+var littype_set    #{:string :keyword :integer :real :char}
+
+; Function: type_instance
+; Description: Return a new AST type instance. All are imbued
+; with source reference (string) and token
+; Syntax: type_instance: typekw source token
+;   typekw  - The AST type keyword
+;   source  - Name of source file
+;   token   - The source file token (has sourcepos, etc.)
+
+func type_instance [typekw source token]
+    let typeinst [] getd: ast_type typekw nil
+    ?: nil?: typeinst
+        failWith: extend: "Unrecognized AST type " typekw
+        let []
+            map_extend!:                            ; Extend new instance with token
+                extendKV: typeinst :source source   ; Create new instance and extend
+                :token token

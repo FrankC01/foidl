@@ -1,0 +1,165 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; symbol_table
+; Compilation symbol_table
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module symbol_table
+include langcorem
+
+include token_utils
+
+; The symbol_table establishes an overall compilation context that
+; supports pushes and pops to a table list of scoped symbol tables,
+; which are associative data structures
+;
+; context {
+;   :name   string           ; Compilation unit
+;   :stack  stack of tables  ; See tables below push/pop front
+; }
+;
+;  talble {
+;   :name   string          ; Module name
+;   :table  map             ; key:symbol value:reference
+; }
+;
+;  reference {
+;   :symbol string          ; Reference symbol
+;   :table  {}              ; An AST varref or funcref type
+; }
+;
+
+; Root symbol table context
+
+var :private context map_inst!:
+
+; Utility functions
+
+; Function: is_name_unique
+; Description: Scans context stack looking for match on name
+; Syntax: is_name_unique: name
+;   name    - name of stack entry to search
+
+func :private is_name_unique [name]
+    fold:
+        ^[acc entry]
+            ?: =: name get: entry :name
+                reduced: true
+                false
+        false get: context :stack
+
+; Function: reference_for
+; Description: Returns symbol reference for name
+; Syntax: reference_for: symbol_name
+;   symbol_name - symbol being search for
+
+func :private reference_for [symbol_name]
+    fold:
+        ^[acc entry]
+            let [name get: entry :name
+                 hit getd: get: entry :table symbol_name nil]
+                ?: hit
+                    reduced: {:table name :entry hit}
+                    acc
+        nil get: context :stack
+
+; Function: reference_for
+; Description: Returns symbol reference for name
+; Syntax: reference_for: symbol_name
+;   symbol_name - symbol being search for
+
+func :private add_to_current [symbol_name reference]
+    map_extend!: get: first: get: context :stack :table
+        symbol_name reference
+
+; Function: st_compilation_unit
+; Description: Establishes the compilation unit context
+; for symbol management. If not already existing, sets
+; name and creates a mutable list (for pushing and popping)
+; Syntax: st_compilation_unit: name
+;   name - String for context name
+
+func st_compilation_unit [name]
+    ?: empty?: context
+        @(
+            map_extend!: context :name name
+            map_extend!: context :stack list_inst!:
+            print!: "Symbol table context established for " printnl!: name
+        )
+        failWith: "Symbol Table context already initialized"
+
+; Function: st_push_table
+; Description: Push/create a new table to the
+; context symbol table list.
+; Syntax: st_push_table: name
+;   name - String for context name
+
+func st_push_table [name]
+    ; Search on collision of name
+    let hit [] is_name_unique: name
+    ; If not true, push new table on stack
+    ?: not: hit
+        let [stab map_inst!:]
+            push!:
+                get: context :stack
+                map_extend!:
+                    map_extend!: stab :name name
+                    :table map_inst!:
+        ; Collision - exit
+        failWith: extend: "Symbol table already exists for " name
+
+; Function: st_pop_table
+; Description: Pop the top of the stack entries
+; Syntax: st_pop_table:
+
+func st_pop_table []
+    ?: =: count: get: context :stack zero
+        failWith: "Attempting to pop empty symbol stack"
+        pop!: get: context :stack
+
+; Function: st_add_symbolref
+; Description: Puts a symbol in current stack top table
+; Syntax: st_add_symbolref: symbol_name reference
+;   symbol_name - string
+;   reference   - AST reference type
+
+func st_add_symbolref [symbol_name reference]
+    let sref [] reference_for: symbol_name
+    ; If the ref found is in the same stack it is an error
+    ?: and: sref =: get: reference :source get: sref :source
+        @(
+            write!: cerr "Exception Symbol '"
+            write!: cerr symbol_name
+            write!: cerr "' already declared at line/column  "
+            write!: cerr source_pos_to_str: get: reference :token
+            write!: cerr nlchr
+            fail:
+            )
+        ; If not in same, it is a warning
+        ?: sref
+            @(
+                write!: cerr "Warning: Symbol '"
+                write!: cerr symbol_name
+                write!: cerr "' hides declaration in "
+                write!: cerr get: reference :source
+                write!: cerr " at line/column  "
+                write!: cerr source_pos_to_str: get: reference :token
+                add_to_current: symbol_name reference
+            )
+            ; Otherwise it is clear as a bell
+            add_to_current: symbol_name reference
+
