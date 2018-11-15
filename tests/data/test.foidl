@@ -20,8 +20,6 @@
 
 module test
 
-include fingbat
-
 var map {}
 var set #{}
 var vector <>

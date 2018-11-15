@@ -58,6 +58,11 @@ func :private fail_not_list_token [toks cindx]
 func :private fail_not_symbol [toks cindx]
     fail_on_token: toks inc: cindx " expected symbol found "
 
+func get_if_symbol_or_fail [toks ndx]
+    ?:  false?: is_token_type_in_set?: toks ndx symbol_types
+        fail_with_cause: toks ndx " expected symbol"
+        get: get: toks ndx :token_str
+
 ; Function: is_token_type?
 ; Description: Tests if token is of ttype
 
@@ -253,15 +258,6 @@ func process_tpdwn_vf [state var_handler func_handler]
         (tpdwn_vf_processor var_handler func_handler toks maxcount)
         0 infinite
 
-func get_if_symbol_or_fail [toks ndx]
-    ?:  false?: is_token_type_in_set?: toks ndx symbol_types
-        fail_with_cause: toks ndx " expected symbol"
-        get: get: toks ndx :token_str
-
-
-func any_count [acount]
-    true
-
 ; Function: get_valid_symlist
 ; Description: HOF Generic extraction and validation of symbols
 ; from list.
@@ -302,7 +298,13 @@ func get_valid_symlist [nlist_fn acnt_fn toks cindx]
 ; Syntax:
 
 func :private capture_include [mlist toks acc ndx]
-    let fetched [] get_valid_symlist: get_if_symbol_or_fail any_count toks ndx
+    let fetched []
+        get_valid_symlist:
+            get_if_symbol_or_fail
+            ^[acnt] true
+            toks
+            ndx
+
     ?: string?: fetched
         @(
             list_extend!: mlist fetched

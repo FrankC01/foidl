@@ -129,7 +129,7 @@ var :private include_rthdrs <"foidlrt" "langcore">
 var :private include_tail ".defs"
 var :private include_existserr " Unable to resolve include file: "
 
-var :private include_cache map_inst!:
+var :private include_cache set_inst!:
 var :private include_paths list_inst!:
 
 ; Function: capture_includes
@@ -143,8 +143,11 @@ func :private capture_includes [state]
     state
 
 ; Function: resolve_include_location
-; Description: For each file, search the include paths and test
-; for existence
+; Description: For each file, append the fail (.defs) extension
+; and search each of the include paths (-I ...) for file existence
+; Syntax: resolve_include_location: incfile
+;   incfile - primary name of include file to resolve
+;
 
 func :private resolve_include_location [incfile]
     let fullfile [] extend: incfile include_tail
@@ -157,6 +160,44 @@ func :private resolve_include_location [incfile]
             )
         nil include_paths
 
+; Function: full_include_paths
+; Description: Iterates include file through include paths
+; and verify existence
+; Syntax: full_include_paths: acc incfile
+;   acc - Positive result accumulator
+;   incfile - primary name of include file to resolve
+
+func :private full_include_paths [acc incfile]
+    let hit [] resolve_include_location: incfile
+    ?: hit
+        list_extend!: acc hit
+        @(
+            write!: cerr "Exception: Can't find include file - "
+            write!: cerr incfile
+            write!: cerr nlchr
+            fail:
+        )
+
+; Function: include_reducer
+; Description: Checks cache for existence, otherwise
+; parses and processes the include file
+; Syntax: include_reducer: acc incfile
+;   acc - result accumulator
+;   incfile - fully qualified include file
+
+func :private include_reducer [acc incfile]
+    ?: nil?: getd: include_cache incfile nil
+        @(
+            set_extend!: include_cache incfile
+            list_extend!:
+                acc
+                build_handler_and_run: {
+                    :source     incfile
+                    :command    :procinc
+                }
+        )
+        acc
+
 ; Function: preload_langhdrs
 ; Description: Load the foidlrt and langcore headers to
 ; feed the symbol table prior to parsing tokens
@@ -166,27 +207,8 @@ func :private resolve_include_location [incfile]
 func :private preload_langhdrs [state]
     ; For each include file, determine path based on
     ; include searching
-    let res []
-        fold:
-            ^[acc incfile]
-                let [hit resolve_include_location: incfile]
-                    ?: hit
-                        list_extend!: acc hit
-                        acc
-            list_inst!: include_rthdrs
-    ?: not=: count: res two
-        failWith: "Something is awry"
-        nil
-    let stuff []
-        fold:
-            ^[a b]
-                list_extend!:
-                    a
-                    build_handler_and_run: {
-                        :source     b
-                        :command    :procinc
-                    }
-            list_inst!: res
+    let res []  fold: full_include_paths list_inst!: include_rthdrs
+    fold: include_reducer list_inst!: res
     state
 
 ; Function: process_includes
@@ -255,12 +277,16 @@ func :private consume_include [state]
 ;   state - Command line flags and state settings
 
 func :private consume_includes [state]
-    print!: "Consume includes " printnl!: get: state :inclist
+    let res []
+            fold:
+                full_include_paths
+                list_inst!: get: state :inclist
+    fold: include_reducer list_inst!: res
     state
 
 func :private reverse_tokens [state]
-    printnl!: "Reversing tokens"
-    state
+    map_extend!: state :tokens
+        fold: ^[acc orig] extend!: acc orig list_inst!: get: state :tokens
 
 func :private parse_tokens   [state]
     printnl!: "Create AST"
@@ -427,7 +453,7 @@ func build_handler_and_run [cmap]
                         preload_langhdrs
                     process_includes
                     consume_includes
-                    (faux_step "reverse_tokens")
+                    reverse_tokens
                     (faux_step "parse_tokens")
                     ?: get: cmap :printast
                         (faux_step "ast_print")
