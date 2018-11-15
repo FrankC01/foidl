@@ -112,7 +112,10 @@ void foidl_rtl_init_globals() {
 
 	gencharToSet(boundarySet, tbchr,0x09);	//	tab
 #ifdef _MSC_VER
-	gencharToSet(boundarySet, nlchr,0x0A0D); //	windows newline/carriage return
+	nlchr = allocCharWithValue(0x0A0D);
+	nlchr->count = 2;
+	foidl_set_extend_bang(boundarySet,nlchr);
+	// gencharToSet(boundarySet, nlchr,0x0A0D); //	windows newline/carriage return
 #else
 	gencharToSet(boundarySet, nlchr,0x0A); 	//	newline
 #endif
