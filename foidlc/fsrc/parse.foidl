@@ -1,0 +1,196 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; parse
+; Compiler parse and semantic verification
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module parse
+
+include langcorem
+include ast_type
+include symbol_table
+include parse_utils
+
+; Parse is responsible for consuming the list of tokens and
+; returning an AST for all types found in token list.
+
+; Function:
+; Description:
+; Syntax:
+
+func :private unhandled_type [pmap token]
+    write!: cerr "Unhandled type "
+    write!: cerr token
+    write!: cerr nlchr
+    fail:
+
+; Function: module_handler
+; Description: Finalize mmodule by:
+;   Popping stack to get symbol for module
+;   Consume the rest of the stack as declarations (assumed)
+;   Returning reduced module map
+
+func :private module_handler  [mmodule ast_tree token srcname]
+    let msym [] get: get: first: ast_tree :token :token_str
+    pop!: ast_tree
+    map_extend!:
+        map_extend!:
+            map_extend!: mmodule NAME msym
+            DECLARATIONS ast_tree
+        TOKEN token
+    reduced: mmodule
+
+; Function: variable_handler
+; Description: Finalize 'var' by
+;   Instantiate variable AST node
+;   Reconcile :private or public
+;   Grab expression (TODO allow for 'var varname' only putting in nil)
+;   Putting node back in stack
+
+func :private variable_handler  [mmodule ast_tree token srcname]
+    let vnode [] type_with_exprs: :variable srcname token
+    process_for_private: vnode ast_tree
+    let nexpr [] first: ast_tree
+    ; End condition or next is decl... default to nil expression
+    ?: or: =: count: ast_tree zero is_decl?: nexpr
+        extend!: get: vnode EXPRS st_lookup: "nil"
+        @(
+            extend!: get: vnode EXPRS first: ast_tree
+            drop!: ast_tree one
+        )
+    extend!: ast_tree vnode
+
+func :private function_handler  [mmodule ast_tree token srcname]
+    let fnode [] type_with_exprs: :variable srcname token
+    process_for_private: fnode ast_tree
+    print!: "Function handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private if_handler  [mmodule ast_tree token srcname]
+    print!: "If handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private let_handler  [mmodule ast_tree token srcname]
+    print!: "Let handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private match_handler  [mmodule ast_tree token srcname]
+    print!: "Match handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private match_guard_handler  [mmodule ast_tree token srcname]
+    print!: "Match guard handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private match_exprref_handler  [mmodule ast_tree token srcname]
+    print!: "Match expression ref handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private lambda_handler [mmodule ast_tree token srcname]
+    print!: "Lambda handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private partial_handler [mmodule ast_tree token srcname]
+    print!: "Partial handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private right_paren_handler [mmodule ast_tree token srcname]
+    print!: "Right Paren (group/partial) handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private math_call_handler [mmodule ast_tree token srcname]
+    print!: "Math call handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private math_ref_handler [mmodule ast_tree token srcname]
+    print!: "Math ref handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private func_call_handler [mmodule ast_tree token srcname]
+    print!: "Function call handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private collection_start_handler [mmodule ast_tree token srcname]
+    print!: "Collection Start handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private collection_end_handler [mmodule ast_tree token srcname]
+    print!: "Collection End handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private private_handler [mmodule ast_tree token srcname]
+    extend!: ast_tree type_instance: :private srcname token
+
+func :private literal_handler [mmodule ast_tree token srcname]
+    print!: "Literal handler: " printnl!: get: token :token_str
+    ast_tree
+
+func :private symbol_handler [mmodule ast_tree token srcname]
+    extend!:
+        ast_tree
+        map_extend!:
+            type_instance: :symbol srcname token
+            NAME get: token :token_str
+
+var :private parse_map {
+    :module         module_handler
+    :variable       variable_handler
+    :function       function_handler
+    :if_expr        if_handler
+    :let            let_handler
+    :match          match_handler
+    :match_guard    match_guard_handler
+    :match_exprref  match_exprref_handler
+    :lambda         lambda_handler
+    :lparen         partial_handler
+    :rparen         right_paren_handler
+    :math_call      math_call_handler
+    :math_ref       math_ref_handler
+    :funccall       func_call_handler
+    :funccall_pred  func_call_handler
+    :funccall_bang  func_call_handler
+    :langle         collection_start_handler
+    :lbracket       collection_start_handler
+    :lbrace         collection_start_handler
+    :lset           collection_start_handler
+    :rbrace         collection_end_handler
+    :rbracket       collection_end_handler
+    :rangle         collection_end_handler
+    :private        private_handler
+    :string         literal_handler
+    :char           literal_handler
+    :bit            literal_handler
+    :hex            literal_handler
+    :integer        literal_handler
+    :real_number    literal_handler
+    :keyword        literal_handler
+    :symbol_pred    symbol_handler
+    :symbol_bang    symbol_handler
+    :symbol         symbol_handler
+
+}
+
+func :private parse_dispatch [mmodule srcname ast_tree token]
+    let d_fn [] getd: parse_map get: token :token_type unhandled_type
+    (d_fn mmodule ast_tree token srcname)
+
+func parse [token_list source]
+    let mmodule [] type_instance: :module source nil
+    let ast [] fold: (parse_dispatch mmodule source) list_inst!: token_list
+    printnl!: "Resulting AST"
+    printnl!: ast
+    ast

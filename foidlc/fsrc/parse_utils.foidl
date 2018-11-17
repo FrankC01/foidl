@@ -1,0 +1,70 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; parse_utils
+; Parse utilities
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module parse_utils
+
+include langcorem
+include ast_type
+
+; Function: process_for_private
+; Description: Used by vars and funcs which have
+; optional ':private' modifier on declaration
+; Syntax: process_for_private: node ast_tree
+
+func process_for_private [node ast_tree]
+    let vpsym [] get: first: ast_tree TYPE
+    ?: =: vpsym :private
+        @(
+            map_extend!: node IS_PRIVATE true
+            drop!: ast_tree one
+            let [vvsym get: first: ast_tree NAME]
+                map_extend!: node NAME vvsym
+            drop!: ast_tree one
+        )
+        @(
+            map_extend!: node NAME get: vpsym NAME
+            drop!: ast_tree one
+        )
+
+; Function:
+; Description:
+; Syntax:
+
+func index_to_tokentype [ast_tree pred_fn]
+    fold:
+        ^[res ndx]
+            ?: (pred_fn get: ast_tree ndx)
+                reduced: ndx
+                res
+        zero series: zero count: ast_tree one
+
+; Function:
+; Description:
+; Syntax:
+
+func verify_symbol_coll [node]
+    true
+
+; Function:
+; Description:
+; Syntax:
+
+func verify_func_args []
+    true

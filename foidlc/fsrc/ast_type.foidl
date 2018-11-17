@@ -21,17 +21,61 @@
 module ast_type
 include langcorem
 
+; Make keys standout in source using AST
+
+var EXPRS           :exprs
+var IS_PRIVATE      :is_private
+var NAME            :name
+var DECLARATIONS    :declarations
+var TOKEN           :token
+var SOURCE          :source
+var TYPE            :type
+var ARGCNT          :argcnt
+var ARGLIST         :arglist
+var LITTYPE         :littype
+var EXTERNS         :externs
+var LITERALS        :literals
+var LAMBDAS         :lambdas
+
 var :private ast_type {
     ;   Reference types
-    :varref             {:type :varref          :name nil}
-    :funcref            {:type :funcref         :name nil :argcnt zero}
-    :literalref         {:type :literalref      :littype nil}
-    ;   Declaration types
-    :module             {:type :module          :name nil :externs nil :literals nil :lambdas nil}
-    :variable           {:type :variable        :name nil :is_private false}
-    :function           {:type :function        :name nil :arglist nil :is_private false}
-    ;   Expression types
-    :lambda             {:type :lambda          :arglist nil :is_private true}
+    :varref  {
+        TYPE        :varref
+        NAME        nil}
+    :funcref {
+        TYPE        :funcref
+        NAME        nil
+        ARGCNT      zero}
+    ;   Reference types with psuedo names
+    :literalref {
+        TYPE        :literalref
+        NAME        nil
+        LITTYPE     nil}
+    ;   Declaration types (things with names)
+    :module   {
+        TYPE        :module
+        NAME        nil
+        EXTERNS     nil
+        LITERALS    nil
+        LAMBDAS     nil
+        DECLARATIONS nil}
+    ;   Declarations with expressions
+    :variable  {
+        TYPE        :variable
+        NAME        nil
+        IS_PRIVATE  false}
+    :function  {
+        TYPE        :function
+        NAME        nil
+        ARGLIST     nil
+        IS_PRIVATE  false}
+    ;   Expression types with psuedo names
+    :lambda  {
+        TYPE        :lambda
+        NAME        nil
+        ARGLIST     nil
+        IS_PRIVATE  true}
+    ;   Expression types (without names) with expressions
     :if                 {:type :if}
     :let                {:type :let             :let_pairs nil}
     :let_pair           {:type :let_pair}
@@ -39,14 +83,28 @@ var :private ast_type {
     :match_guard        {:type :match_guard     :is_default false}
     :group              {:type :group           :exprcnt zero :exprs nil}
     :partial            {:type :partial         :exprcnt zero :exprs nil}
-    ; Data types
+    ;   Data types with expressions
     :empty_collection   {:type :empty_collection :cotype nil}
     :collection         {:type :collection      :coltype nil}
-    :symbol             {:type :symbol}
+    ;   Data types with expressions which are references.
+    :symbol   {
+        TYPE        :symbol
+        NAME        nil}
+    :private  {
+        TYPE    :private}
 }
 
-var coltype_set    #{:list :map :set :vector}
-var littype_set    #{:string :keyword :integer :real :char}
+; Sets of things for utility
+var coltype_set #{:list :map :set :vector}
+var littype_set #{:string :keyword :integer :real_number :hex :bin :char}
+var decl_set    #{:function :variable}
+
+; Function:
+; Description:
+; Syntax:
+
+func is_decl? [node]
+    getd: decl_set get: node :type false
 
 ; Function: type_instance
 ; Description: Return a new AST type instance. All are imbued
@@ -62,5 +120,16 @@ func type_instance [typekw source token]
         failWith: extend: "Unrecognized AST type " typekw
         let []
             map_extend!:                            ; Extend new instance with token
-                extendKV: typeinst :source source   ; Create new instance and extend
-                :token token
+                extendKV: typeinst SOURCE source   ; Create new instance and extend
+                TOKEN token
+
+; Function: type_with_exprs
+; Description: Imbues an expression list on the AST type node
+; Syntax: type_with_exprs: typekw source token
+;   typekw  - The AST type keyword
+;   source  - Name of source file
+;   token   - The source file token (has sourcepos, etc.)
+
+func type_with_exprs [typekw source token]
+    let node [] type_instance: typekw source token
+    map_extend!: node EXPRS list_inst!:

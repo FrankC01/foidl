@@ -96,8 +96,8 @@ func :private reverse_lookup [symbol_name acc entry]
 ;   symbol_name - symbol being search for
 
 func :private reference_for [symbol_name]
-    fold: (reverse_lookup symbol_name)
-        ;^[acc entry]
+    fold:
+        (reverse_lookup symbol_name)
         nil get: st_context :stack
 
 ; Function: add_to_current
@@ -196,3 +196,10 @@ func st_add_symbolref [symbol_name reference]
             warn_and_add: sref symbol_name reference
             except_and_fail: sref symbol_name reference
 
+; Function: st_lookup
+; Description: Finds a symbol reference or nil
+; Syntax: st_lookup: symbol_name
+;   symbol_name - string
+
+func st_lookup [symbol_name]
+    reference_for: symbol_name

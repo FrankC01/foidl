@@ -387,6 +387,8 @@ PFRTAny 	foidl_drop(PFRTAny arg, PFRTAny coll) {
 PFRTAny 	foidl_drop_bang(PFRTAny coll, PFRTAny arg) {
 	if(coll->ftype == vector2_type)
 		return vector_drop_bang(coll,arg);
+	else if (coll->ftype == list2_type)
+		return list_drop_bang(coll, arg);
 	else
 		unknown_handler();
 	return coll;

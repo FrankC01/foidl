@@ -913,6 +913,7 @@ extern 	PFRTAny  list_update(PFRTAny,PFRTAny,PFRTAny);
 extern 	PFRTAny  list_update_bang(PFRTAny,PFRTAny,PFRTAny);
 extern 	PFRTAny  list_pop(PFRTAny);
 extern 	PFRTAny  list_pop_bang(PFRTAny);
+extern  PFRTAny  list_drop_bang(PFRTAny,PFRTAny);
 extern 	PFRTAny  list_push(PFRTAny,PFRTAny);
 extern 	PFRTAny  list_push_bang(PFRTAny,PFRTAny);
 extern 	PFRTAny  list_first(PFRTAny);

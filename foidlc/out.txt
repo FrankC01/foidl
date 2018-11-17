@@ -1,0 +1,26 @@
+Resulting AST
+{
+:literals,nil,
+:token,{:colno,1,:token_type,:module,:token_str,module,:lineno,21},
+:declarations,
+    [
+    {:is_private,false,
+    :type,:variable,
+    :name,reference,
+    :source,../tests/data/simple.foidl,
+    :expr,
+        [
+            {:token,{:colno,5,:token_type,:symbol,:token_str,nil,:lineno,31},:type,:varref,:name,nil,:source,foidlrt},
+            {:token,{:colno,15,:token_type,:symbol,:token_str,true,:lineno,23},:type,:symbol,:source,../tests/data/simple.foidl}
+        ],:token,{:colno,1,:token_type,:variable,:token_str,var,:lineno,23}},
+    {:is_private,false,
+    :type,:variable,
+    :name,otherref,
+    :source,../tests/data/simple.foidl,
+    :expr,
+        [{:token,{:colno,5,:token_type,:symbol,:token_str,nil,:lineno,31},:type,:varref,:name,nil,:source,foidlrt},{:token,{:colno,15,:token_type,:symbol,:token_str,true,:lineno,23},:type,:symbol,:source,../tests/data/simple.foidl}],:token,{:colno,1,:token_type,:variable,:token_str,var,:lineno,25}}],
+:lambdas,nil,
+:name,simple,
+:source,../tests/data/simple.foidl,:type,:module,
+:externs,nil
+}
