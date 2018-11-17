@@ -25,6 +25,7 @@ var :private ast_type {
     ;   Reference types
     :varref             {:type :varref          :name nil}
     :funcref            {:type :funcref         :name nil :argcnt zero}
+    :literalref         {:type :literalref      :littype nil}
     ;   Declaration types
     :module             {:type :module          :name nil :externs nil :literals nil :lambdas nil}
     :variable           {:type :variable        :name nil :is_private false}
@@ -41,7 +42,6 @@ var :private ast_type {
     ; Data types
     :empty_collection   {:type :empty_collection :cotype nil}
     :collection         {:type :collection      :coltype nil}
-    :literal            {:type :literal         :littype nil}
     :symbol             {:type :symbol}
 }
 

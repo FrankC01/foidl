@@ -20,32 +20,30 @@
 
 module test
 
-var map {}
-var set #{}
-var vector <>
-var list []
+var map_exp {}
+var set_exp #{}
+var vector_exp <>
+var list_exp []
 
 var ivar 220013
-var ivar -334992
+var nivar -334992
 
 var rvar 0.9
-var rvar -1.9
-var rvar 6.02e-23
+var nrvar -1.9
+var nervar 6.02e-23
 var hvar 0xfead9866
-var hvar 0Xfead9866
 var bvar 0b10010101
-var bvar 0B10010101
 var str "My string"
 var lstr "My very long multiline
 string which continues across lines
 "
-var chr 'A'
+var chr_a 'A'
 var qstr "A string containing \dq embedded \dq string"
 var :private kvar :mykeyword
-var chr 'B'
+var chr_b 'B'
 
 func foobar! [a b]
-func foobar! []
+func foobar21! []
     nil
 
 func :private foobar? [a b]

@@ -27,7 +27,7 @@ include token_utils
 ; supports pushes and pops to a table list of scoped symbol tables,
 ; which are associative data structures
 ;
-; context {
+; st_context {
 ;   :name   string           ; Compilation unit
 ;   :stack  stack of tables  ; See tables below push/pop front
 ; }
@@ -43,14 +43,34 @@ include token_utils
 ; }
 ;
 
-; Root symbol table context
+; Root symbol table st_context
 
-var :private context map_inst!:
+var :private st_context map_inst!:
 
 ; Utility functions
 
+func :private print_table [table]
+    fold:
+        ^[acc entry]
+            @(
+                print!: key: entry
+                print!: "   "
+                printnl!: value: entry)
+        nil table
+
+func dump_symbols []
+    fold:
+        ^[acc entry]
+            @(
+                print!: nlchr
+                print!: "Symbol Table " printnl!: get: entry :name
+                printnl!: "---------------------------------------"
+                print_table: get: entry :table
+            )
+        nil get: st_context :stack
+
 ; Function: is_name_unique
-; Description: Scans context stack looking for match on name
+; Description: Scans st_context stack looking for match on name
 ; Syntax: is_name_unique: name
 ;   name    - name of stack entry to search
 
@@ -60,7 +80,15 @@ func :private is_name_unique [name]
             ?: =: name get: entry :name
                 reduced: true
                 false
-        false get: context :stack
+        false get: st_context :stack
+
+func :private reverse_lookup [symbol_name acc entry]
+    let [name get: entry :name
+         etab get: entry :table
+         hit get: etab symbol_name]
+        ?: nil?: hit
+            acc
+            reduced: hit
 
 ; Function: reference_for
 ; Description: Returns symbol reference for name
@@ -68,45 +96,42 @@ func :private is_name_unique [name]
 ;   symbol_name - symbol being search for
 
 func :private reference_for [symbol_name]
-    fold:
-        ^[acc entry]
-            let [name get: entry :name
-                 hit getd: get: entry :table symbol_name nil]
-                ?: hit
-                    reduced: {:table name :entry hit}
-                    acc
-        nil get: context :stack
+    fold: (reverse_lookup symbol_name)
+        ;^[acc entry]
+        nil get: st_context :stack
 
-; Function: reference_for
-; Description: Returns symbol reference for name
-; Syntax: reference_for: symbol_name
-;   symbol_name - symbol being search for
+; Function: add_to_current
+; Description: Insert entry into top of stack symbol table
+; Syntax: add_to_current: symbol_name reference
+;   symbol_name - symbol being inserted
+;   reference - caller defined reference data
 
 func :private add_to_current [symbol_name reference]
-    map_extend!: get: first: get: context :stack :table
+    map_extend!:
+        get:
+            first: get: st_context :stack
+            :table
         symbol_name reference
 
 ; Function: st_compilation_unit
-; Description: Establishes the compilation unit context
+; Description: Establishes the compilation unit st_context
 ; for symbol management. If not already existing, sets
 ; name and creates a mutable list (for pushing and popping)
 ; Syntax: st_compilation_unit: name
-;   name - String for context name
+;   name - String for st_context name
 
 func st_compilation_unit [name]
-    ?: empty?: context
-        @(
-            map_extend!: context :name name
-            map_extend!: context :stack list_inst!:
-            print!: "Symbol table context established for " printnl!: name
-        )
-        failWith: "Symbol Table context already initialized"
+    ?: empty?: st_context
+        map_extend!:
+            map_extend!: st_context :name name
+            :stack list_inst!:
+        failWith: "Symbol Table st_context already initialized"
 
 ; Function: st_push_table
 ; Description: Push/create a new table to the
-; context symbol table list.
+; st_context symbol table list.
 ; Syntax: st_push_table: name
-;   name - String for context name
+;   name - String for st_context name
 
 func st_push_table [name]
     ; Search on collision of name
@@ -115,7 +140,7 @@ func st_push_table [name]
     ?: not: hit
         let [stab map_inst!:]
             push!:
-                get: context :stack
+                get: st_context :stack
                 map_extend!:
                     map_extend!: stab :name name
                     :table map_inst!:
@@ -127,9 +152,34 @@ func st_push_table [name]
 ; Syntax: st_pop_table:
 
 func st_pop_table []
-    ?: =: count: get: context :stack zero
+    ?: =: count: get: st_context :stack zero
         failWith: "Attempting to pop empty symbol stack"
-        pop!: get: context :stack
+        pop!: get: st_context :stack
+
+func :private except_and_fail [sref symbol_name reference]
+    write!: cerr "Exception: Symbol '"
+    write!: cerr symbol_name
+    write!: cerr "' in "
+    write!: cerr get: reference :source
+    write!: cerr source_pos_to_str: get: reference :token
+    write!: cerr " already declared in "
+    write!: cerr get: sref :source
+    write!: cerr source_pos_to_str: get: sref :token
+    ;write!: cerr source_pos_to_str: get: sref :token
+    write!: cerr nlchr
+    fail:
+
+func :private warn_and_add [sref symbol_name reference]
+    write!: cerr "Warning: '"
+    write!: cerr symbol_name
+    write!: cerr "' in "
+    write!: cerr get: reference :source
+    write!: cerr source_pos_to_str: get: reference :token
+    write!: cerr " redefines same symbol named in "
+    write!: cerr get: sref :source
+    write!: cerr source_pos_to_str: get: sref :token
+    write!: cerr nlchr
+    add_to_current: symbol_name reference
 
 ; Function: st_add_symbolref
 ; Description: Puts a symbol in current stack top table
@@ -140,26 +190,9 @@ func st_pop_table []
 func st_add_symbolref [symbol_name reference]
     let sref [] reference_for: symbol_name
     ; If the ref found is in the same stack it is an error
-    ?: and: sref =: get: reference :source get: sref :source
-        @(
-            write!: cerr "Exception Symbol '"
-            write!: cerr symbol_name
-            write!: cerr "' already declared at line/column  "
-            write!: cerr source_pos_to_str: get: reference :token
-            write!: cerr nlchr
-            fail:
-            )
-        ; If not in same, it is a warning
-        ?: sref
-            @(
-                write!: cerr "Warning: Symbol '"
-                write!: cerr symbol_name
-                write!: cerr "' hides declaration in "
-                write!: cerr get: reference :source
-                write!: cerr " at line/column  "
-                write!: cerr source_pos_to_str: get: reference :token
-                add_to_current: symbol_name reference
-            )
-            ; Otherwise it is clear as a bell
-            add_to_current: symbol_name reference
+    ?: nil?: sref
+        add_to_current: symbol_name reference
+        ?: not: =: get: reference :source get: sref :source
+            warn_and_add: sref symbol_name reference
+            except_and_fail: sref symbol_name reference
 

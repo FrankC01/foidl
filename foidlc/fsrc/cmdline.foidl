@@ -69,6 +69,10 @@ var :private debug_print_tokens {
     :help       "Debug: prints output of lexical scan"
     :keyword    :printtoks}
 
+var :private debug_print_symtree {
+    :help       "Debug: prints symbol tree(s) before parsing"
+    :keyword    :printsyms}
+
 var :private debug_print_ast {
     :help       "Debug: prints ast genreated"
     :keyword    :printast}
@@ -90,6 +94,7 @@ var :private foidlc_command_map {
     "-v" foidlc_version
     "-r" building_runtime
     "-pt" debug_print_tokens
+    "-ps" debug_print_symtree
     "-pa" debug_print_ast
     "-pi" debug_print_ir
 }
@@ -108,7 +113,6 @@ func :private cl_validate [cmap]
     ?: getd: cmap :genhdr nil
         extend!: rset! :genhdr
         nil
-
     ; Validate -g or -c command
     match ecmap count: rset!
     | 0         map_extend!: cmap :outchannel nil
@@ -127,7 +131,8 @@ func :private cl_validate [cmap]
                         fail:
                     )
                     ecmap
-    | :genhdr   ?: or: get: ecmap :printast get: ecmap :printir
+    | :genhdr   ?: or: get: ecmap :printsyms
+                    or: get: ecmap :printast get: ecmap :printir
                     @(
                         write!: cerr "Generating header ignores "
                         ?: get: ecmap :printast
@@ -135,6 +140,9 @@ func :private cl_validate [cmap]
                             nil
                         ?: get: ecmap :printir
                             write!: cerr "-pi "
+                            nil
+                        ?: get: ecmap :printsyms
+                            write!: cerr "-ps "
                             nil
                         write!: cerr nlchr
                         ecmap

@@ -186,6 +186,7 @@ func :private full_include_paths [acc incfile]
 ;   incfile - fully qualified include file
 
 func :private include_reducer [acc incfile]
+    ; If not already in cache
     ?: nil?: getd: include_cache incfile nil
         @(
             set_extend!: include_cache incfile
@@ -196,6 +197,7 @@ func :private include_reducer [acc incfile]
                     :command    :procinc
                 }
         )
+        ; Else ignore re-processing
         acc
 
 ; Function: preload_langhdrs
@@ -219,6 +221,7 @@ func :private preload_langhdrs [state]
 
 func :private process_includes [state]
     map_extend!: state :inclist process_tpdwn_inc: get: state :tokens
+
 
 func :private ast_print2 [state] ; Temporary name
     print!: "Print AST"
@@ -256,7 +259,7 @@ func :private func_to_symboltable [symtablectxt ntok arglist acnt]
 
 ; Function: consume_include
 ; Description: Process a single include file header, primarily
-; to populate scoped symtbol table
+; to populate scoped symtbol table with var and func references
 ; Syntax: consume_include: state
 ;   state - Scoped variation of the base file command and state info
 
@@ -277,16 +280,51 @@ func :private consume_include [state]
 ;   state - Command line flags and state settings
 
 func :private consume_includes [state]
+    let ilist [] get: get: state :inclist :incs
     let res []
             fold:
                 full_include_paths
-                list_inst!: get: state :inclist
+                list_inst!: ilist
     fold: include_reducer list_inst!: res
+    consume_include: state
     state
 
+; Function: symboltrees_print
+; Description: Print symbol tree(s)
+; Syntax: symboltrees_print: state
+;   state - Command line flags and state settings
+
+func :private symboltrees_print [state]
+    dump_symbols:
+    state
+
+; Function: token_capture
+; Description: Helper function to accumulate
+; tokens if index is not in set of indexes
+; Syntax: token_capture: rlist iset toks acc ndx
+;   rlist - Result list of tokens
+;   iset -  Set of token indexes to ignore
+;   toks - Token list
+;   acc - Ignored
+;   ndx - Current index counter
+
+func :private token_capture [rlist iset toks acc ndx]
+    let ntok [] get: toks ndx
+    ?: get: iset ndx
+        acc
+        extend!: rlist ntok
+
+; Function: reverse_tokens
+; Description: Reverse token list, ignoring includes and drop original
+; Syntax: reverse_tokens: state
+;   state - Command line flags and state settings
+
 func :private reverse_tokens [state]
-    map_extend!: state :tokens
-        fold: ^[acc orig] extend!: acc orig list_inst!: get: state :tokens
+    let iset [] get: get: state :inclist :inci
+    let rlist [] list_inst!:
+    let toks [] get: state :tokens
+    fold: (token_capture rlist iset toks) zero series: zero count: toks 1
+    map_extend!: state :tokens rlist
 
 func :private parse_tokens   [state]
     printnl!: "Create AST"
@@ -408,6 +446,7 @@ func :private faux_step [s state]
 ;   [preload_langincs]  - Preprocess foidlrt and langcore if !-r
 ;   process_includes    - seperate include(s) from main tokens
 ;   consume_includes    - consume includes, calls consume_include for each
+;   [symbols_print]     - *NEW* prints all symbol tables (long output)
 ;   reverse_tokens      - support bottom up parsing
 ;   parse_tokens        - parse the tokens to abstract syntax tree (AST)
 ;   [ast_print]         - optionally prints AST
@@ -453,6 +492,9 @@ func build_handler_and_run [cmap]
                         preload_langhdrs
                     process_includes
                     consume_includes
+                    ?: get: cmap :printsyms
+                        symboltrees_print
+                        skip_step
                     reverse_tokens
                     (faux_step "parse_tokens")
                     ?: get: cmap :printast

@@ -63,6 +63,11 @@ func get_if_symbol_or_fail [toks ndx]
         fail_with_cause: toks ndx " expected symbol"
         get: get: toks ndx :token_str
 
+func :private valid_funcarg_count [acnt toks cindx]
+    ?: <: acnt sixteen
+        acnt
+        fail_with_cause: toks cindx " maximum 16 arguments exceeded for function."
+
 ; Function: is_token_type?
 ; Description: Tests if token is of ttype
 
@@ -117,42 +122,41 @@ func index_to_nextoftype [toks cindx ttype]
         zero
         res
 
-; Function: get_validate_funcargs
-; Description: Returns validated function arglist
-; Syntax: get_validate_funcargs: toks cindx
-;   toks - Token list
-;   cindx - Current index, assumed to be function symbol
-; Fails:
-;   if lbracket/rbracket not detected
-;   if count of args > 15
-;   if all args > 0 are symbol types
 
-func get_validate_funcargs [toks cindx]
+; Function: get_valid_symlist
+; Description: HOF Generic extraction and validation of symbols
+; from list.
+; Syntax: get_valid_symlist: toks cindx
+;   nlist_fn - Not list lbracket handler
+;   acnt_fn - Valid count of list entries check
+;   toks - Token list
+;   cindx - Current index
+; Fails:
+;   if lbracket/rbracket calls not list fn_ref
+;   if count of args > max_cap
+;   if all args > 0 are symbol types calls not symbol fn_ref
+
+func get_valid_symlist [nlist_fn acnt_fn toks cindx]
     ; Check that token after cindx is lbracket
-    let lbrk? [] not: is_token_type?: toks inc: cindx :lbracket
-    ?: lbrk?
-        fail_not_list_token: toks inc: cindx
+    let nlbrk? [] not: is_token_type?: toks inc: cindx :lbracket
+    ?: nlbrk?
+        (nlist_fn toks inc: cindx)
         ; Gather to rbracket
         let [sdx        +: cindx two                        ; Increment index past '['
              arglist    tokens_to_type: toks sdx :rbracket  ; Search for bracket
              acnt       count: arglist                      ; Get count results
              ldx        +: sdx acnt]                        ; Should be ']'
              ?: is_token_type?: toks ldx :rbracket
-                ; Validate less than 16
-                 ?: <: acnt sixteen
+                let [vcnt (acnt_fn acnt toks cindx)]
                     ?: =: acnt zero
                         arglist
                         fold:
                             ^[acc el]
                                 ?: get: symbol_types get: el :token_type
                                     list_extend!: acc get: el :token_str
-                                    fail_with_cause:
-                                        toks
-                                        cindx
-                                        " only symbols allowed in func arglist."
+                                    fail_not_symbol: toks cindx
                             list_inst!: arglist
-                    fail_with_cause: toks cindx " function args exceeded."
-                fail_with_cause: toks cindx " missing ']' to close function args."
+                fail_with_cause: toks cindx " missing ']' to close list."
 
 
 ; Function: token_count_to_type
@@ -184,7 +188,11 @@ func :private tpdwn_process_func [f_fn toks cindx mxcnt]
         ; Otherwise process it
         ?: is_token_type_in_set?: toks nindx symbol_types
             let [ntok       get: toks nindx
-                 arglist    get_validate_funcargs: toks nindx
+                 arglist    get_valid_symlist:
+                                get_if_symbol_or_fail
+                                valid_funcarg_count
+                                toks
+                                nindx
                  acnt       count: arglist
                  findx      +: nindx +: acnt two]
                 @(
@@ -258,41 +266,6 @@ func process_tpdwn_vf [state var_handler func_handler]
         (tpdwn_vf_processor var_handler func_handler toks maxcount)
         0 infinite
 
-; Function: get_valid_symlist
-; Description: HOF Generic extraction and validation of symbols
-; from list.
-; Syntax: get_valid_symlist: toks cindx
-;   nlist_fn - Not list lbracket handler
-;   acnt_fn - Valid count of list entries check
-;   toks - Token list
-;   cindx - Current index
-; Fails:
-;   if lbracket/rbracket calls not list fn_ref
-;   if count of args > max_cap
-;   if all args > 0 are symbol types calls not symbol fn_ref
-
-func get_valid_symlist [nlist_fn acnt_fn toks cindx]
-    ; Check that token after cindx is lbracket
-    let nlbrk? [] not: is_token_type?: toks inc: cindx :lbracket
-    ?: nlbrk?
-        (nlist_fn toks inc: cindx)
-        ; Gather to rbracket
-        let [sdx        +: cindx two                        ; Increment index past '['
-             arglist    tokens_to_type: toks sdx :rbracket  ; Search for bracket
-             acnt       count: arglist                      ; Get count results
-             ldx        +: sdx acnt]                        ; Should be ']'
-             ?: is_token_type?: toks ldx :rbracket
-                let [vcnt (acnt_fn acnt)]
-                    ?: =: acnt zero
-                        arglist
-                        fold:
-                            ^[acc el]
-                                ?: get: symbol_types get: el :token_type
-                                    list_extend!: acc get: el :token_str
-                                    fail_not_symbol: toks cindx
-                            list_inst!: arglist
-                fail_with_cause: toks cindx " missing ']' to close list."
-
 ; Function: capture_include
 ; Description:
 ; Syntax:
@@ -301,7 +274,7 @@ func :private capture_include [mlist toks acc ndx]
     let fetched []
         get_valid_symlist:
             get_if_symbol_or_fail
-            ^[acnt] true
+            ^[acnt t i] true
             toks
             ndx
 
@@ -321,10 +294,38 @@ func :private capture_include [mlist toks acc ndx]
 ; Description:
 ; Syntax:
 
-func :private dispatch_while_ttype [d_fn ttype toks acc ndx]
+func :private capture_include_index [indexset toks sindx]
+    set_extend!: indexset sindx
+    let ntok [] get: toks sindx
+    ; If the next is symbol, nothing more to do already captures
+    ?: =: get: ntok :token_type :symbol
+        indexset
+        ?: =: get: ntok :token_type :lbracket
+            fold:
+                ^[acc ndx]
+                    @(
+                        set_extend!: acc ndx
+                        ?: =: get: get: toks ndx :token_type :rbracket
+                            reduced: acc
+                            acc
+                    )
+                    indexset series: inc: sindx count: toks 1
+            fail_on_token:
+                toks sindx
+                " - expected symbol or list to follow include. Found "
+
+; Function: dispatch_while_ttype
+; Description:
+; Syntax:
+
+func :private dispatch_while_ttype [d_fn inci ttype toks acc ndx]
     let nindx [] index_to_nextoftype: toks acc ttype
     ?: >: nindx zero
-        (d_fn toks acc nindx)
+        @(
+            set_extend!: inci nindx ; Capture include token
+            capture_include_index: inci toks inc: nindx
+            (d_fn toks acc nindx)
+        )
         ;capture_include: mlist toks acc nindx
         reduced: acc
 
@@ -334,13 +335,14 @@ func :private dispatch_while_ttype [d_fn ttype toks acc ndx]
 
 func process_tpdwn_inc [toks]
     let maxcount [] count: toks
-    let mlist [] list_inst!:
+    let mlists [] {:incs list_inst!: :inci set_inst!:}
     ; Reduce tokens looking for :include token type
     let fndx [] index_to_nextoftype: toks 0 :include
     ?: >: fndx zero
         fold:
             (dispatch_while_ttype
-                (capture_include mlist)
+                (capture_include get: mlists :incs)
+                get: mlists :inci
                 :include toks) fndx series: 0 maxcount 1
         nil
-    mlist
+    mlists
