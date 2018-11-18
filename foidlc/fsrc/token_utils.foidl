@@ -26,7 +26,7 @@ var :private excp_stub "Exception: {"
 var :private excp_lcsplit "}:{"
 var :private excp_lcend "} - "
 
-func :private fail_token_header [tok]
+func fail_token_header [tok]
     write!: cerr excp_stub
     write!: cerr get: tok :lineno
     write!: cerr excp_lcsplit
@@ -192,13 +192,14 @@ func :private tpdwn_process_func [f_fn toks cindx mxcnt]
                                 get_if_symbol_or_fail
                                 valid_funcarg_count
                                 toks
-                                nindx
-                 acnt       count: arglist
-                 findx      +: nindx +: acnt two]
-                @(
-                    (f_fn ntok arglist acnt)
-                    inc: findx
-                )
+                                nindx]
+                 ?: nil?: arglist
+                    fail_with_cause: toks nindx "Missing function arguments"
+                    @(
+
+                        (f_fn ntok arglist count: arglist)
+                        inc: +: nindx +: count: arglist two
+                    )
             ; Fail syntax
             fail_on_token: toks nindx " expected symbol after 'func', found "
 

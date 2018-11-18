@@ -239,7 +239,7 @@ func :private var_to_symboltable [symtablectxt ntok]
         ts
         map_extend!:    ; Extend so name is direct member of ref
             type_instance: :varref symtablectxt ntok
-            :name ts
+            NAME ts
 
 ; Function: func_to_symboltable
 ; Description: Puts unction entry to symbol table
@@ -255,8 +255,8 @@ func :private func_to_symboltable [symtablectxt ntok arglist acnt]
         map_extend!:
             map_extend!:    ; Extend so name is direct member of ref
                 type_instance: :funcref symtablectxt ntok
-                :name ts
-            :argcnt acnt
+                NAME ts
+            ARGCNT acnt
 
 ; Function: consume_include
 ; Description: Process a single include file header, primarily

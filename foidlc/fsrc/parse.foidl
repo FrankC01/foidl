@@ -74,11 +74,19 @@ func :private variable_handler  [mmodule ast_tree token srcname]
         )
     extend!: ast_tree vnode
 
+; Function: function_handler
+; Description: Finalize 'func' by
+;   Instantiate function node
+;   Reconcile :private or public
+;   Verify arglist (collection dependency)
+;   Grab expression (TODO allow for 'func funcname []' only putting in nil)
+;
+
 func :private function_handler  [mmodule ast_tree token srcname]
-    let fnode [] type_with_exprs: :variable srcname token
+    let fnode [] type_with_exprs: :function srcname token
     process_for_private: fnode ast_tree
-    print!: "Function handler: " printnl!: get: token :token_str
-    ast_tree
+    verify_func_args: fnode ast_tree
+    extend!: ast_tree fnode
 
 func :private if_handler  [mmodule ast_tree token srcname]
     print!: "If handler: " printnl!: get: token :token_str
@@ -124,20 +132,37 @@ func :private func_call_handler [mmodule ast_tree token srcname]
     print!: "Function call handler: " printnl!: get: token :token_str
     ast_tree
 
+; Function:
+; Description:
+; Syntax:
+
 func :private collection_start_handler [mmodule ast_tree token srcname]
-    print!: "Collection Start handler: " printnl!: get: token :token_str
-    ast_tree
+    extend!:
+        ast_tree
+        parse_collection: token ast_tree srcname
+
+; Function:
+; Description:
+; Syntax:
 
 func :private collection_end_handler [mmodule ast_tree token srcname]
-    print!: "Collection End handler: " printnl!: get: token :token_str
-    ast_tree
-
-func :private private_handler [mmodule ast_tree token srcname]
-    extend!: ast_tree type_instance: :private srcname token
+    extend!: ast_tree token
 
 func :private literal_handler [mmodule ast_tree token srcname]
     print!: "Literal handler: " printnl!: get: token :token_str
     ast_tree
+
+; Function:
+; Description:
+; Syntax:
+
+
+func :private private_handler [mmodule ast_tree token srcname]
+    extend!: ast_tree type_instance: :private srcname token
+
+; Function:
+; Description:
+; Syntax:
 
 func :private symbol_handler [mmodule ast_tree token srcname]
     extend!:

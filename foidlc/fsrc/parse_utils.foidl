@@ -22,6 +22,7 @@ module parse_utils
 
 include langcorem
 include ast_type
+include token_utils
 
 ; Function: process_for_private
 ; Description: Used by vars and funcs which have
@@ -29,31 +30,119 @@ include ast_type
 ; Syntax: process_for_private: node ast_tree
 
 func process_for_private [node ast_tree]
-    let vpsym [] get: first: ast_tree TYPE
+    let pnode [] first: ast_tree
+    let vpsym [] get: pnode TYPE
     ?: =: vpsym :private
         @(
             map_extend!: node IS_PRIVATE true
             drop!: ast_tree one
             let [vvsym get: first: ast_tree NAME]
-                map_extend!: node NAME vvsym
-            drop!: ast_tree one
+                map_extend!: node NAME get: vvsym NAME
         )
-        @(
-            map_extend!: node NAME get: vpsym NAME
-            drop!: ast_tree one
-        )
+        map_extend!: node NAME get: pnode NAME
+    drop!: ast_tree one
 
 ; Function:
 ; Description:
 ; Syntax:
 
-func index_to_tokentype [ast_tree pred_fn]
+func :private index_to_reduction [ast_tree pred_fn res ndx]
+    ?: (pred_fn get: ast_tree ndx)
+        reduced: ndx
+        res
+
+; Function:
+; Description:
+; Syntax:
+
+func index_to_type [ast_tree pred_fn]
     fold:
-        ^[res ndx]
-            ?: (pred_fn get: ast_tree ndx)
-                reduced: ndx
-                res
+        (index_to_reduction ast_tree pred_fn)
         zero series: zero count: ast_tree one
+
+
+; Function:
+; Description:
+; Syntax:
+
+func until_pred [foreach_fn init]
+    fold: foreach_fn init infinite
+
+; Collection type support
+
+var :private coll_lookup {
+    :lbracket   :rbracket
+    :lbrace     :rbrace
+    :lset       :rbrace
+    :lvector    :rvector
+}
+
+var :private coll_type {
+    :lbracket   :list
+    :lbrace     :map
+    :lset       :set
+    :lvector    :vector
+}
+
+; Function: collindex_pred
+; Description: Predicate used during collection
+; building that tests if passed is token type of
+; endtype
+; Syntax:
+
+func :private collindex_pred [endtype tok]
+    =: get: tok :token_type endtype
+
+; Function: for_each_collelem
+; Description: Process each ast_tree expression until
+; predicate returns true
+; Syntax:
+
+func :private for_each_collelem [pred_fn ast_tree node indx]
+    ?: (pred_fn first: ast_tree)
+        reduced: node
+        @(
+            list_extend!: get: node EXPRS first: ast_tree
+            pop!: ast_tree
+            node
+        )
+
+
+; Function: parse_collection
+; Description: Processing a collection by locating it's
+; companion closing token and inferencing type and
+; collecting elements. Maps have a modulo 2 test
+; Syntax:
+
+func parse_collection [stok ast_tree srcname]
+    let stype [] get: stok :token_type
+    let tail [] get: coll_lookup stype
+    let ctype [] get: coll_type stype
+    let pred_fn [] (collindex_pred tail)
+    let tindx [] index_to_type: ast_tree pred_fn
+    let node []
+        ?: =: tindx zero
+            map_extend!:
+                type_with_exprs: :empty_collection srcname stok
+                COLLTYPE ctype
+            until_pred:
+                (for_each_collelem pred_fn ast_tree)
+                map_extend!:
+                    type_with_exprs: :collection srcname stok
+                    COLLTYPE ctype
+
+    ?: =: get: node COLLTYPE :map
+        ?: =: mod: count get: node EXPRS zero
+            nil
+            @(
+                write!: cerr "Map requires even pairs"
+                fail:
+            )
+        nil
+
+    pop!: ast_tree  ;   Get rid of tail
+    node
+
 
 ; Function:
 ; Description:
@@ -62,9 +151,24 @@ func index_to_tokentype [ast_tree pred_fn]
 func verify_symbol_coll [node]
     true
 
-; Function:
-; Description:
-; Syntax:
+; Function: verify_func_args
+; Description: Checks that argsig exists, and if not empty
+; verify all are symbols then set in node after removing
+; from ast_tree.
 
-func verify_func_args []
-    true
+func :private invalid_arglist [fnode node]
+    let tok [] get: fnode :token
+    fail_token_header: tok
+    write!: cerr " function "
+    write!: cerr get: fnode NAME
+    write!: cerr " expects arglist [...]"
+    write!: cerr nlchr
+    fail:
+
+func verify_func_args [node ast_tree]
+    let ifla [] is_funclambda_args?: first: ast_tree
+    ?: ifla
+        map_extend!: node ARGLIST first: ast_tree
+        invalid_arglist: node first: ast_tree
+
+    pop!: ast_tree

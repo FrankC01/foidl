@@ -20,6 +20,7 @@
 
 module simple
 
-var :private reference true
+var :private prvvar true
+var pubvar true
 
-
+func pubfunc [a]
