@@ -270,11 +270,19 @@ PFRTAny 	list_update_bang(PFRTAny l, PFRTAny i, PFRTAny v) {
 }
 
 PFRTAny	list_first(PFRTAny l) {
-	return ((PFRTList) l)->root->data;
+	PFRTList list = (PFRTList) l;
+	if( list->count == 0)
+		return nil;
+	else
+		return list->root->data;
 }
 
 PFRTAny	list_second(PFRTAny l) {
-	return ((PFRTList) l)->root->next->data;
+	PFRTList list = (PFRTList) l;
+	if( list->count < 2)
+		return nil;
+	else
+		return list->root->next->data;
 }
 
 PFRTAny list_rest(PFRTAny src) {

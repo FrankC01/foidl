@@ -22,8 +22,8 @@ module parse
 
 include langcorem
 include ast_type
-include symbol_table
 include parse_utils
+
 
 ; Parse is responsible for consuming the list of tokens and
 ; returning an AST for all types found in token list.
@@ -67,7 +67,7 @@ func :private variable_handler  [mmodule ast_tree token srcname]
     let nexpr [] first: ast_tree
     ; End condition or next is decl... default to nil expression
     ?: or: =: count: ast_tree zero is_decl?: nexpr
-        extend!: get: vnode EXPRS st_lookup: "nil"
+        add_nil_expr: vnode
         @(
             extend!: get: vnode EXPRS first: ast_tree
             drop!: ast_tree one
@@ -86,6 +86,7 @@ func :private function_handler  [mmodule ast_tree token srcname]
     let fnode [] type_with_exprs: :function srcname token
     process_for_private: fnode ast_tree
     verify_func_args: fnode ast_tree
+    get_func_exprs: fnode ast_tree
     extend!: ast_tree fnode
 
 func :private if_handler  [mmodule ast_tree token srcname]
@@ -146,19 +147,27 @@ func :private collection_start_handler [mmodule ast_tree token srcname]
 ; Syntax:
 
 func :private collection_end_handler [mmodule ast_tree token srcname]
-    extend!: ast_tree token
-
-func :private literal_handler [mmodule ast_tree token srcname]
-    print!: "Literal handler: " printnl!: get: token :token_str
-    ast_tree
+    extend!:
+        ast_tree
+        token
 
 ; Function:
 ; Description:
 ; Syntax:
 
+func :private literal_handler [mmodule ast_tree token srcname]
+    extend!:
+        ast_tree
+        type_literal_ref: mmodule token srcname
+
+; Function:
+; Description:
+; Syntax:
 
 func :private private_handler [mmodule ast_tree token srcname]
-    extend!: ast_tree type_instance: :private srcname token
+    extend!:
+        ast_tree
+        type_instance: :private srcname token
 
 ; Function:
 ; Description:
@@ -214,7 +223,7 @@ func :private parse_dispatch [mmodule srcname ast_tree token]
     (d_fn mmodule ast_tree token srcname)
 
 func parse [token_list source]
-    let mmodule [] type_instance: :module source nil
+    let mmodule [] type_module_create: source nil
     let ast [] fold: (parse_dispatch mmodule source) list_inst!: token_list
     printnl!: "Resulting AST"
     printnl!: ast

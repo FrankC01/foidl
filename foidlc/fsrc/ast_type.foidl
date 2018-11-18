@@ -106,14 +106,18 @@ var :private ast_type {
 var collection_set #{:empty_collection :collection}
 var coltype_set #{:list :map :set :vector}
 var littype_set #{:string :keyword :integer :real_number :hex :bin :char}
-var decl_set    #{:function :variable}
+var decl_set    #{:function :variable :include :module}
 
 ; Function:
 ; Description:
 ; Syntax:
 
 func is_decl? [node]
-    getd: decl_set get: node :type false
+    getd: decl_set get: node TYPE false
+
+; Function:
+; Description:
+; Syntax:
 
 func is_funclambda_args? [node]
     ?: getd: collection_set get: node TYPE false
@@ -149,3 +153,28 @@ func type_instance [typekw source token]
 func type_with_exprs [typekw source token]
     let node [] type_instance: typekw source token
     map_extend!: node EXPRS list_inst!:
+
+func type_literal_ref [mmodule token source]
+    let ttype [] get: token :token_type
+    let lmap [] get: get: mmodule LITERALS ttype
+    let lref [] type_instance: :literalref source token
+    map_extend!: lref LITTYPE ttype
+    map_extend!: lmap get: token :token_str lref
+    lref
+
+; Function:
+; Description:
+; Syntax:
+
+func :private gen_literal_map [mnode]
+        fold:
+            ^[acc x]
+                map_extend!: acc x map_inst!:
+            map_inst!: littype_set
+
+func type_module_create [source token]
+    let mnode [] type_with_exprs: :module source token
+    map_extend!:
+        mnode
+        LITERALS
+        gen_literal_map: mnode

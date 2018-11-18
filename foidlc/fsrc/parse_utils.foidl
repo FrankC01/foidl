@@ -23,6 +23,14 @@ module parse_utils
 include langcorem
 include ast_type
 include token_utils
+include symbol_table
+
+
+func add_nil_expr [node]
+    ?: =: count: get: node EXPRS zero
+        extend!: get: node EXPRS st_lookup: "nil"
+        failWith: "Attempt to add nil to populated list"
+    node
 
 ; Function: process_for_private
 ; Description: Used by vars and funcs which have
@@ -61,8 +69,8 @@ func index_to_type [ast_tree pred_fn]
         zero series: zero count: ast_tree one
 
 
-; Function:
-; Description:
+; Function: until_pred
+; Description: Iterates until predicate reduces
 ; Syntax:
 
 func until_pred [foreach_fn init]
@@ -131,8 +139,8 @@ func parse_collection [stok ast_tree srcname]
                     type_with_exprs: :collection srcname stok
                     COLLTYPE ctype
 
-    ?: =: get: node COLLTYPE :map
-        ?: =: mod: count get: node EXPRS zero
+    ?: and: =: get: node TYPE :collection =: get: node COLLTYPE :map
+        ?: =: mod: count: get: node EXPRS two zero
             nil
             @(
                 write!: cerr "Map requires even pairs"
@@ -144,18 +152,6 @@ func parse_collection [stok ast_tree srcname]
     node
 
 
-; Function:
-; Description:
-; Syntax:
-
-func verify_symbol_coll [node]
-    true
-
-; Function: verify_func_args
-; Description: Checks that argsig exists, and if not empty
-; verify all are symbols then set in node after removing
-; from ast_tree.
-
 func :private invalid_arglist [fnode node]
     let tok [] get: fnode :token
     fail_token_header: tok
@@ -165,10 +161,66 @@ func :private invalid_arglist [fnode node]
     write!: cerr nlchr
     fail:
 
+func :private invalid_arg [fnode node]
+    let tok [] get: fnode :token
+    fail_token_header: tok
+    write!: cerr " function "
+    write!: cerr get: fnode NAME
+    write!: cerr " expects symbols in arglist. Found "
+    write!: cerr get: node TYPE
+    write!: cerr nlchr
+    fail:
+
+; Function:
+; Description:
+; Syntax:
+
+func :private verify_symbol_list [fnode node]
+    ?: =: get: node TYPE :empty_collection
+        node
+        let [exprs get: node EXPRS]
+            fold: ^[res el]
+                ?: =: get: el TYPE :symbol
+                    res
+                    invalid_arg: fnode el
+                node exprs
+
+; Function: verify_func_args
+; Description: Checks that argsig exists, and if not empty
+; verify all are symbols then set in node after removing
+; from ast_tree.
+
 func verify_func_args [node ast_tree]
     let ifla [] is_funclambda_args?: first: ast_tree
     ?: ifla
-        map_extend!: node ARGLIST first: ast_tree
+        map_extend!:
+            node
+            ARGLIST
+            verify_symbol_list: node first: ast_tree
         invalid_arglist: node first: ast_tree
-
     pop!: ast_tree
+
+; Function:
+; Description:
+; Syntax:
+
+func :private for_each_expr [node ast_tree res ndx]
+    let fval [] first: ast_tree
+    ?: or: nil?: fval is_decl?: fval
+        ?: =: count: get: node EXPRS zero
+            reduced: add_nil_expr: node
+            reduced: node
+        @(
+            list_extend!: get: node EXPRS fval
+            pop!: ast_tree
+            node
+        )
+
+; Function:
+; Description:
+; Syntax:
+
+func get_func_exprs [node ast_tree]
+    until_pred:
+        (for_each_expr node ast_tree)
+        node
