@@ -89,9 +89,6 @@ var :private ast_type {
         PREDICATE   nil
         EXPRS       nil}
     ;   Expression types (without names) typed expr and expressions
-    :if {
-        TYPE        :if
-        PREDICATE   nil}
     ;   Expression types (without names) with typed expressions
     :let                {:type :let             :let_pairs nil}
     :let_pair           {:type :let_pair}
@@ -99,8 +96,14 @@ var :private ast_type {
     :match_default {
         TYPE        :match_default }
 
-    :group              {:type :group           :exprcnt zero :exprs nil}
-    :partial            {:type :partial         :exprcnt zero :exprs nil}
+    ;   Expression types with expressions
+    :if {
+        TYPE        :if}
+    :group   {
+        TYPE        :group}
+    :partial  {
+        TYPE        :partial}
+
     ;   Data types with expressions
     :empty_collection   {
         TYPE        :empty_collection
@@ -139,6 +142,9 @@ func is_named? [node]
 func is_ref? [node]
     getd: ref_set get: node TYPE false
 
+func is_colltype? [node]
+    getd: collection_set get: node TYPE false
+
 func has_exprs? [node]
     let exp [] get: node EXPRS
     ?: nil?: exp
@@ -146,6 +152,7 @@ func has_exprs? [node]
         ?: =: count: exp zero
             false
             true
+
 ; Function:
 ; Description:
 ; Syntax:

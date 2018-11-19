@@ -25,12 +25,17 @@ include ast_type
 func :private print_name [node]
     print!: " [name: "
     print!: get: node NAME
-    printnl!: "]"
+    print!: "]"
 
 func :private print_ref [node]
     print!: " [references: "
     print!: get: get: node TOKEN :token_str
-    printnl!: "]"
+    print!: "]"
+
+func :private print_ctype [node]
+    print!: " [type: "
+    print!: get: node COLLTYPE
+    print!: "]"
 
 func :private print_node [res node]
     print!: res
@@ -40,20 +45,18 @@ func :private print_node [res node]
         | is_decl?: node  print_name: node
         | is_named?: node print_name: node
         | is_ref?: node print_ref: node
+        | is_colltype?: node print_ctype: node
 
-
+    print!: nlchr
     match node
     | has_exprs?: node  fold: print_node
                     extend: "--" res
                     get: node EXPRS
-    | :default print!: nlchr
-
-
     res
 
 func print_ast [node]
     print!: nlchr
     printnl!:"Abstract Syntax Tree"
     printnl!:"--------------------"
-    fold: print_node "-> " get: node EXPRS
+    fold: print_node "-> " [node]
     print!: nlchr

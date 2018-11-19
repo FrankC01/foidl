@@ -20,8 +20,9 @@
 
 module simple
 
-var :private prvvar true
-var pubvar "String"
+var mevec <a b c>
 
 func foo []
-    true
+    ?: a
+        b
+        e

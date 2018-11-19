@@ -82,9 +82,14 @@ func :private function_handler  [mmodule ast_tree token srcname]
     get_func_exprs: fnode ast_tree
     extend!: ast_tree fnode
 
+; Function: if_handler
+; Description: Parse 3 expression flow control
+
 func :private if_handler  [mmodule ast_tree token srcname]
-    print!: "If handler: " printnl!: get: token :token_str
-    ast_tree
+    let inode [] type_with_exprs: :if srcname token
+    parse_if: inode ast_tree
+    extend!: ast_tree inode
+
 
 func :private let_handler  [mmodule ast_tree token srcname]
     print!: "Let handler: " printnl!: get: token :token_str
@@ -114,7 +119,6 @@ func :private match_exprref_handler  [mmodule ast_tree token srcname]
 func :private match_default_handler  [mmodule ast_tree token srcname]
     let mdnode [] type_instance: :match_default srcname token
     extend!: ast_tree mdnode
-
 
 ; Function: match_default_handler
 ; Description:

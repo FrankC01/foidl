@@ -82,14 +82,14 @@ var :private coll_lookup {
     :lbracket   :rbracket
     :lbrace     :rbrace
     :lset       :rbrace
-    :lvector    :rvector
+    :langle     :rangle
 }
 
 var :private coll_type {
     :lbracket   :list
     :lbrace     :map
     :lset       :set
-    :lvector    :vector
+    :langle     :vector
 }
 
 ; Function: collindex_pred
@@ -123,6 +123,7 @@ func :private for_each_collelem [pred_fn ast_tree node indx]
 ; Syntax:
 
 func parse_collection [stok ast_tree srcname]
+    printnl!: stok
     let stype [] get: stok :token_type
     let tail [] get: coll_lookup stype
     let ctype [] get: coll_type stype
@@ -143,7 +144,9 @@ func parse_collection [stok ast_tree srcname]
         ?: =: mod: count: get: node EXPRS two zero
             nil
             @(
+                fail_token_header: stok
                 write!: cerr "Map requires even pairs"
+                write!: cerr nlchr
                 fail:
             )
         nil
@@ -266,3 +269,33 @@ func get_single_expr [node ast_tree]
             pop!: ast_tree
             node
         )
+
+func :private validate_expressions [mnode estr acc node]
+    ?: and: node not: is_decl?: node
+        list_extend!: acc node
+        @(
+            fail_token_header: get: mnode :token
+            write!: cerr estr
+            write!: cerr nlchr
+            fail:
+        )
+
+
+; Function: parse_if
+; Description: Parse 3 expressions ensuring non are
+; not nil or a declaration
+
+func parse_if [node ast_tree]
+    let if_expr []
+                [
+                    first: ast_tree
+                    second: ast_tree
+                    get: ast_tree two
+                ]
+    fold:
+        (validate_expressions
+            node
+            " incomplete if statement. Requires three (3) expressions.")
+        get: node EXPRS if_expr
+    drop!: ast_tree three
+
