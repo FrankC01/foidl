@@ -1,0 +1,59 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; print_ast
+; Pretty AST printer
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module print_ast
+
+include ast_type
+
+func :private print_name [node]
+    print!: " [name: "
+    print!: get: node NAME
+    printnl!: "]"
+
+func :private print_ref [node]
+    print!: " [references: "
+    print!: get: get: node TOKEN :token_str
+    printnl!: "]"
+
+func :private print_node [res node]
+    print!: res
+    print!: get: node TYPE
+
+    match node
+        | is_decl?: node  print_name: node
+        | is_named?: node print_name: node
+        | is_ref?: node print_ref: node
+
+
+    match node
+    | has_exprs?: node  fold: print_node
+                    extend: "--" res
+                    get: node EXPRS
+    | :default print!: nlchr
+
+
+    res
+
+func print_ast [node]
+    print!: nlchr
+    printnl!:"Abstract Syntax Tree"
+    printnl!:"--------------------"
+    fold: print_node "-> " get: node EXPRS
+    print!: nlchr

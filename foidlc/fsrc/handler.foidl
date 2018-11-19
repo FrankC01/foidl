@@ -26,6 +26,7 @@ include lexer
 include token_utils
 include symbol_table
 include ast_type
+include print_ast
 include parse
 
 var selfhost_comment ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -224,10 +225,6 @@ func :private process_includes [state]
     map_extend!: state :inclist process_tpdwn_inc: get: state :tokens
 
 
-func :private ast_print2 [state] ; Temporary name
-    print!: "Print AST"
-    state
-
 ; Function: var_to_symboltable
 ; Description: Puts variable entry to symbol table
 ; Syntax: func_to_symboltable: ntok arglist acnt
@@ -329,8 +326,6 @@ func :private reverse_tokens [state]
 
 ; Function: parse_tokens
 ; Description: Bottom up parse of tokens to resulting AST
-; Syntax: parse_tokens: state
-;   state - Command line flags and state settings
 
 func :private parse_tokens   [state]
     map_extend!:
@@ -338,8 +333,11 @@ func :private parse_tokens   [state]
         :ast
         parse: get: state :tokens get: state :source
 
+; Function: ast_print
+; Description: Prints the AST to screen
+
 func :private ast_print   [state]
-    printnl!: "Print AST"
+    print_ast: get: state :ast
     state
 
 func :private parse_tree   [state]
@@ -506,7 +504,7 @@ func build_handler_and_run [cmap]
                     reverse_tokens
                     parse_tokens
                     ?: get: cmap :printast
-                        (faux_step "ast_print")
+                        ast_print
                         skip_step
                     (faux_step "parse_tree")
                     (faux_step "produce_ir")

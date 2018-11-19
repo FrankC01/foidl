@@ -38,6 +38,8 @@ var LITTYPE         :littype
 var EXTERNS         :externs
 var LITERALS        :literals
 var LAMBDAS         :lambdas
+var PAIRS           :pairs
+var PREDICATE       :predicate
 
 var :private ast_type {
     ;   Reference types
@@ -53,47 +55,61 @@ var :private ast_type {
         TYPE        :literalref
         NAME        nil
         LITTYPE     nil}
-    ;   Declaration types (things with names)
+    ;   Declaration types (things with names) and expressions
     :module   {
-        TYPE        :module
+        TYPE        :module             ; module symbol [declarations]
         NAME        nil
         EXTERNS     nil
         LITERALS    nil
         LAMBDAS     nil
         DECLARATIONS nil}
-    ;   Declarations with expressions
     :variable  {
-        TYPE        :variable
+        TYPE        :variable           ; var [:private] symbol expression?
         NAME        nil
         IS_PRIVATE  false}
     :function  {
-        TYPE        :function
+        TYPE        :function           ; func [:private] symbol [arglist] expression*
         NAME        nil
         ARGLIST     nil
         IS_PRIVATE  false}
-    ;   Expression types with psuedo names
+    ;   Expression types with psuedo names and expressions
     :lambda  {
-        TYPE        :lambda
+        TYPE        :lambda             ; ^[arglist] expression?
         NAME        nil
         ARGLIST     nil
         IS_PRIVATE  true}
-    ;   Expression types (without names) with expressions
-    :if                 {:type :if}
+    :match  {
+        TYPE        :match
+        NAME        nil
+        PAIRS       nil}    ;   List of match guards
+    ;   Expression types with psuedo names and typed expression(s)
+    :match_guard {
+        TYPE        :match_guard        ; | pred expr
+        NAME        nil
+        PREDICATE   nil
+        EXPRS       nil}
+    ;   Expression types (without names) typed expr and expressions
+    :if {
+        TYPE        :if
+        PREDICATE   nil}
+    ;   Expression types (without names) with typed expressions
     :let                {:type :let             :let_pairs nil}
     :let_pair           {:type :let_pair}
-    :match              {:type :match           :match_guards nil}
-    :match_guard        {:type :match_guard     :is_default false}
+
+    :match_default {
+        TYPE        :match_default }
+
     :group              {:type :group           :exprcnt zero :exprs nil}
     :partial            {:type :partial         :exprcnt zero :exprs nil}
     ;   Data types with expressions
     :empty_collection   {
         TYPE        :empty_collection
         COLLTYPE    nil
-        ELMCNT      0}
+        ELMCNT      zero}
     :collection         {
         TYPE        :collection
         COLLTYPE    nil
-        ELMCNT      0}
+        ELMCNT      zero}
     ;   Data types with expressions which are references.
     :symbol   {
         TYPE        :symbol
@@ -107,6 +123,8 @@ var collection_set #{:empty_collection :collection}
 var coltype_set #{:list :map :set :vector}
 var littype_set #{:string :keyword :integer :real_number :hex :bin :char}
 var decl_set    #{:function :variable :include :module}
+var name_set    #{:module :function :variable :symbol}
+var ref_set     #{:literalref :funcref :varref}
 
 ; Function:
 ; Description:
@@ -114,6 +132,26 @@ var decl_set    #{:function :variable :include :module}
 
 func is_decl? [node]
     getd: decl_set get: node TYPE false
+
+func is_named? [node]
+    getd: name_set get: node TYPE false
+
+func is_ref? [node]
+    getd: ref_set get: node TYPE false
+
+func has_exprs? [node]
+    let exp [] get: node EXPRS
+    ?: nil?: exp
+        false
+        ?: =: count: exp zero
+            false
+            true
+; Function:
+; Description:
+; Syntax:
+
+func is_not_decl? [node]
+    not: getd: decl_set get: node TYPE false
 
 ; Function:
 ; Description:

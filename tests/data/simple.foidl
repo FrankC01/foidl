@@ -21,9 +21,7 @@
 module simple
 
 var :private prvvar true
-var pubvar 1
+var pubvar "String"
 
-
-func pubfunc [a b]
-
-func p2func []
+func foo []
+    true

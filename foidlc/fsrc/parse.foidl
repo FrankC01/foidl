@@ -64,14 +64,7 @@ func :private module_handler  [mmodule ast_tree token srcname]
 func :private variable_handler  [mmodule ast_tree token srcname]
     let vnode [] type_with_exprs: :variable srcname token
     process_for_private: vnode ast_tree
-    let nexpr [] first: ast_tree
-    ; End condition or next is decl... default to nil expression
-    ?: or: =: count: ast_tree zero is_decl?: nexpr
-        add_nil_expr: vnode
-        @(
-            extend!: get: vnode EXPRS first: ast_tree
-            drop!: ast_tree one
-        )
+    get_var_expr: vnode ast_tree
     extend!: ast_tree vnode
 
 ; Function: function_handler
@@ -101,17 +94,37 @@ func :private match_handler  [mmodule ast_tree token srcname]
     print!: "Match handler: " printnl!: get: token :token_str
     ast_tree
 
+; Function: match_guard_handler
+; Description:
+; Syntax:
+
 func :private match_guard_handler  [mmodule ast_tree token srcname]
-    print!: "Match guard handler: " printnl!: get: token :token_str
-    ast_tree
+    let mgnode [] type_instance: :match_guard srcname token
+    extend!: ast_tree mgnode
+
 
 func :private match_exprref_handler  [mmodule ast_tree token srcname]
     print!: "Match expression ref handler: " printnl!: get: token :token_str
     ast_tree
 
+; Function: match_default_handler
+; Description:
+; Syntax:
+
+func :private match_default_handler  [mmodule ast_tree token srcname]
+    let mdnode [] type_instance: :match_default srcname token
+    extend!: ast_tree mdnode
+
+
+; Function: match_default_handler
+; Description:
+; Syntax:
+
 func :private lambda_handler [mmodule ast_tree token srcname]
-    print!: "Lambda handler: " printnl!: get: token :token_str
-    ast_tree
+    let lnode [] type_with_exprs: :lambda srcname token
+    verify_func_args: lnode ast_tree
+    ;get_func_exprs: fnode ast_tree
+    extend!: ast_tree lnode
 
 func :private partial_handler [mmodule ast_tree token srcname]
     print!: "Partial handler: " printnl!: get: token :token_str
@@ -133,25 +146,21 @@ func :private func_call_handler [mmodule ast_tree token srcname]
     print!: "Function call handler: " printnl!: get: token :token_str
     ast_tree
 
-; Function:
+; Function: collection_start_handler
 ; Description:
 ; Syntax:
 
 func :private collection_start_handler [mmodule ast_tree token srcname]
-    extend!:
-        ast_tree
-        parse_collection: token ast_tree srcname
+    extend!: ast_tree parse_collection: token ast_tree srcname
 
-; Function:
+; Function: collection_end_handler
 ; Description:
 ; Syntax:
 
 func :private collection_end_handler [mmodule ast_tree token srcname]
-    extend!:
-        ast_tree
-        token
+    extend!: ast_tree token
 
-; Function:
+; Function: literal_handler
 ; Description:
 ; Syntax:
 
@@ -160,7 +169,7 @@ func :private literal_handler [mmodule ast_tree token srcname]
         ast_tree
         type_literal_ref: mmodule token srcname
 
-; Function:
+; Function: private_handler
 ; Description:
 ; Syntax:
 
@@ -169,7 +178,7 @@ func :private private_handler [mmodule ast_tree token srcname]
         ast_tree
         type_instance: :private srcname token
 
-; Function:
+; Function: symbol_handler
 ; Description:
 ; Syntax:
 
@@ -189,6 +198,7 @@ var :private parse_map {
     :match          match_handler
     :match_guard    match_guard_handler
     :match_exprref  match_exprref_handler
+    :default        match_default_handler
     :lambda         lambda_handler
     :lparen         partial_handler
     :rparen         right_paren_handler
@@ -224,7 +234,5 @@ func :private parse_dispatch [mmodule srcname ast_tree token]
 
 func parse [token_list source]
     let mmodule [] type_module_create: source nil
-    let ast [] fold: (parse_dispatch mmodule source) list_inst!: token_list
-    printnl!: "Resulting AST"
-    printnl!: ast
-    ast
+    fold: (parse_dispatch mmodule source) list_inst!: token_list
+
