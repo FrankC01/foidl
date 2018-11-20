@@ -22,7 +22,8 @@ module simple
 
 var mevec <a b c>
 
-func foo []
-    ?: a
-        b
-        e
+func foo [bucci]
+
+    match c
+    | a %0
+

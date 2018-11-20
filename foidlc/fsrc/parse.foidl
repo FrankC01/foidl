@@ -95,22 +95,30 @@ func :private let_handler  [mmodule ast_tree token srcname]
     print!: "Let handler: " printnl!: get: token :token_str
     ast_tree
 
+; Function: match_guard_handler
+; Description:
+; Syntax:
+
 func :private match_handler  [mmodule ast_tree token srcname]
-    print!: "Match handler: " printnl!: get: token :token_str
-    ast_tree
+    let mnode [] type_with_exprs: :match srcname token
+    parse_match: mnode ast_tree
+    extend!: ast_tree mnode
 
 ; Function: match_guard_handler
 ; Description:
 ; Syntax:
 
 func :private match_guard_handler  [mmodule ast_tree token srcname]
-    let mgnode [] type_instance: :match_guard srcname token
+    let mgnode [] type_with_exprs: :match_guard srcname token
+    parse_match_guard: mgnode ast_tree
     extend!: ast_tree mgnode
 
-
 func :private match_exprref_handler  [mmodule ast_tree token srcname]
-    print!: "Match expression ref handler: " printnl!: get: token :token_str
-    ast_tree
+    extend!:
+        ast_tree
+        map_extend!:
+            type_instance: :match_exprref srcname token
+            NAME get: token :token_str
 
 ; Function: match_default_handler
 ; Description:

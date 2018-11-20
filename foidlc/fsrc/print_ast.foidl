@@ -42,7 +42,7 @@ func :private print_node [res node]
     print!: get: node TYPE
 
     match node
-        | is_decl?: node  print_name: node
+        | is_decl: node  print_name: node
         | is_named?: node print_name: node
         | is_ref?: node print_ref: node
         | is_colltype?: node print_ctype: node

@@ -25,6 +25,7 @@ include langcorem
 
 var EXPRS           :exprs
 var IS_PRIVATE      :is_private
+var IS_DEFAULT      :is_default
 var NAME            :name
 var DECLARATIONS    :exprs
 var TOKEN           :token
@@ -38,7 +39,7 @@ var LITTYPE         :littype
 var EXTERNS         :externs
 var LITERALS        :literals
 var LAMBDAS         :lambdas
-var PAIRS           :pairs
+var PAIRS           :exprs
 var PREDICATE       :predicate
 
 var :private ast_type {
@@ -55,6 +56,9 @@ var :private ast_type {
         TYPE        :literalref
         NAME        nil
         LITTYPE     nil}
+    :match_exprref {
+        TYPE        :match_exprref
+        NAME        nil}
     ;   Declaration types (things with names) and expressions
     :module   {
         TYPE        :module             ; module symbol [declarations]
@@ -80,30 +84,28 @@ var :private ast_type {
         IS_PRIVATE  true}
     :match  {
         TYPE        :match
-        NAME        nil
-        PAIRS       nil}    ;   List of match guards
+        NAME        nil                 ;   Either symbol or psuedo named
+        PREDICATE   nil}
+
     ;   Expression types with psuedo names and typed expression(s)
-    :match_guard {
-        TYPE        :match_guard        ; | pred expr
-        NAME        nil
-        PREDICATE   nil
-        EXPRS       nil}
     ;   Expression types (without names) typed expr and expressions
     ;   Expression types (without names) with typed expressions
-    :let                {:type :let             :let_pairs nil}
+    :let  {
+        TYPE        :let
+        PAIRS       nil}
     :let_pair           {:type :let_pair}
-
     :match_default {
         TYPE        :match_default }
-
     ;   Expression types with expressions
     :if {
         TYPE        :if}
+    :match_guard {
+        TYPE        :match_guard
+        IS_DEFAULT  false}       ; | pred expr
     :group   {
         TYPE        :group}
     :partial  {
         TYPE        :partial}
-
     ;   Data types with expressions
     :empty_collection   {
         TYPE        :empty_collection
@@ -126,14 +128,14 @@ var collection_set #{:empty_collection :collection}
 var coltype_set #{:list :map :set :vector}
 var littype_set #{:string :keyword :integer :real_number :hex :bin :char}
 var decl_set    #{:function :variable :include :module}
-var name_set    #{:module :function :variable :symbol}
+var name_set    #{:module :function :variable :symbol :match :match_exprref}
 var ref_set     #{:literalref :funcref :varref}
 
 ; Function:
 ; Description:
 ; Syntax:
 
-func is_decl? [node]
+func is_decl [node]
     getd: decl_set get: node TYPE false
 
 func is_named? [node]
@@ -144,6 +146,9 @@ func is_ref? [node]
 
 func is_colltype? [node]
     getd: collection_set get: node TYPE false
+
+func decl_or_guard [node]
+    or: is_decl: node =: get: node TYPE :match_guard
 
 func has_exprs? [node]
     let exp [] get: node EXPRS

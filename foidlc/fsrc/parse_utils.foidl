@@ -123,7 +123,7 @@ func :private for_each_collelem [pred_fn ast_tree node indx]
 ; Syntax:
 
 func parse_collection [stok ast_tree srcname]
-    printnl!: stok
+
     let stype [] get: stok :token_type
     let tail [] get: coll_lookup stype
     let ctype [] get: coll_type stype
@@ -211,7 +211,7 @@ func verify_func_args [node ast_tree]
 
 func is_next_nil_or_decl? [list_coll]
     let nval [] first: list_coll
-    or: nil?: nval is_decl?: nval
+    or: nil?: nval is_decl: nval
 
 ; Function: for_each_expr
 ; Description: Consumes expression until end or
@@ -270,8 +270,8 @@ func get_single_expr [node ast_tree]
             node
         )
 
-func :private validate_expressions [mnode estr acc node]
-    ?: and: node not: is_decl?: node
+func :private validate_expressions [mnode estr pred_fn acc node]
+    ?: and: node not:  (pred_fn node)
         list_extend!: acc node
         @(
             fail_token_header: get: mnode :token
@@ -283,19 +283,129 @@ func :private validate_expressions [mnode estr acc node]
 
 ; Function: parse_if
 ; Description: Parse 3 expressions ensuring non are
-; not nil or a declaration
+; nil or a declaration
 
 func parse_if [node ast_tree]
-    let if_expr []
-                [
-                    first: ast_tree
-                    second: ast_tree
-                    get: ast_tree two
-                ]
+    let if_expr [] [first: ast_tree, second: ast_tree, get: ast_tree two]
     fold:
         (validate_expressions
             node
-            " incomplete if statement. Requires three (3) expressions.")
+            " incomplete if statement. Requires three (3) expressions."
+            decl_or_guard)
         get: node EXPRS if_expr
     drop!: ast_tree three
 
+; Exception... TODO - Need string formatter
+
+func :private invalid_match [node s]
+    fail_token_header: get: node :token
+    write!: cerr s
+    write!: cerr nlchr
+    fail:
+
+; Function: while_guard
+; Descriptions: Get next object from ast_list and if
+; nil or not a match_guard, exit. Otherwise if it
+; is a default match guard, ensure it goes to end otherwise
+; if normal then put in expression list
+
+func :private while_guard [ast_tree defhit match_exprs ndx]
+    let nxt [] first: ast_tree
+    print!: "Next in while_guard " printnl!: nxt
+    ?: or: nil?: nxt not=: get: nxt TYPE :match_guard
+        reduced: match_exprs
+        let [ign pop!: ast_tree]
+            ?: get: nxt IS_DEFAULT
+                @(
+                    printnl!: "Found default"
+                    list_extend!: defhit nxt
+                    match_exprs
+                )
+                @(
+                    list_extend!: match_exprs nxt
+                )
+
+
+; Function: add_default_guard
+; Description: Adds a default match guard to the match
+; expression list
+
+func :private add_default_guard [mnode]
+    let srcname [] get: mnode SOURCE
+    let token []  get: mnode TOKEN
+    let nilref [] st_lookup: "nil"
+    let defref [] type_instance: :match_default srcname token
+    let mguard [] type_with_exprs: :match_guard srcname token
+    let exprl []  get: mguard EXPRS
+    let mexprs [] get: mnode EXPRS
+
+    map_extend!: mguard IS_DEFAULT true
+    list_extend!: list_extend!: exprl defref nilref
+    list_extend!: mexprs mguard
+
+
+; Function: parse_match
+; Description: match has form:
+;   match symbol? expression [match_guard]+
+
+func parse_match [node ast_tree]
+    ; Get the index to the guards
+    let mgindx []
+        index_to_type:
+            ast_tree
+            ^[n]
+                or: nil?: n =: get: n TYPE :match_guard
+
+    ; Error check
+    match mgindx
+        | zero  invalid_match: node " no match guards found"
+        ; Expression, no result symbol TODO: Make psuedo name
+        | one   @(
+                    map_extend!:
+                        node
+                        PREDICATE first: ast_tree
+                )
+        ; Result symbol and expression
+        | two   ?: =: get: first: ast_tree TYPE :symbol
+                    @(
+                        map_extend!:
+                            node
+                            NAME get: first: ast_tree NAME
+                        pop!: ast_tree
+                        map_extend!:
+                            node
+                            PREDICATE first: ast_tree
+                    )
+                    invalid_match: node " match result requires symbol"
+        ; Invalid entries between 'match' and first guard
+        | :default  invalid_match: node " match invalid form"
+    pop!: ast_tree
+    let tail_list [] list_inst!:
+    until_pred: (while_guard ast_tree tail_list) get: node EXPRS
+    match count: tail_list
+    | 0     add_default_guard: node
+    | 1     list_extend!: get: node EXPRS get: tail_list zero
+    | 2     @(
+                write!: cerr "Only 1 default allowed in match expression"
+                fail:
+            )
+    node
+
+
+; Function: parse_match_guard
+; Description: Parse 2 expressions ensuring non are
+; nil, match_guard or a declaration
+
+func parse_match_guard [node ast_tree]
+    let mguard [] [first: ast_tree, second: ast_tree]
+    fold:
+        (validate_expressions
+            node
+            " incomplete match guard. Requires two (2) expressions."
+            decl_or_guard)
+        get: node EXPRS mguard
+
+    drop!: ast_tree two
+    ?: =: get: first: mguard TYPE :match_default
+        map_extend!: node IS_DEFAULT true
+        nil
