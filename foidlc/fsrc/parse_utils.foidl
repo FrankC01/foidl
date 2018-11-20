@@ -311,7 +311,6 @@ func :private invalid_match [node s]
 
 func :private while_guard [ast_tree defhit match_exprs ndx]
     let nxt [] first: ast_tree
-    print!: "Next in while_guard " printnl!: nxt
     ?: or: nil?: nxt not=: get: nxt TYPE :match_guard
         reduced: match_exprs
         let [ign pop!: ast_tree]
