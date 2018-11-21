@@ -93,11 +93,9 @@ var :private ast_type {
     ; let symbol? [let_pair*] expression
     :let  {
         TYPE        :let
-        PAIRS       nil}
-    ; symbol expression
-    :let_pair {
-        :type :let_pair}
-    ; :default
+        NAME        nil
+        ARGLIST     nil}
+    ; :match_default
     :match_default {
         TYPE        :match_default }
     ; ?: pred expression expression

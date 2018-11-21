@@ -23,11 +23,5 @@ module simple
 var mevec <a b c>
 
 func foo [bucci]
-
-    ?: match d c
-        | a (a  a b c)
-        | b ^[x] x
-        (/ d)
-        +
-
-    b + - * /
+    let a [a 5]
+        b

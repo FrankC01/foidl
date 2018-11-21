@@ -366,7 +366,7 @@ func parse_partial [stok srcname node ast_tree]
 
 ; Exception... TODO - Need string formatter
 
-func :private invalid_match [node s]
+func :private invalid_match_let [node s]
     fail_token_header: get: node :token
     write!: cerr s
     write!: cerr nlchr
@@ -427,7 +427,7 @@ func parse_match [node ast_tree]
 
     ; Error check
     match mgindx
-        | zero  invalid_match: node " no match guards found"
+        | zero  invalid_match_let: node " no match guards found"
         ; Expression, no result symbol TODO: Make psuedo name
         | one   @(
                     map_extend!:
@@ -445,9 +445,9 @@ func parse_match [node ast_tree]
                             node
                             PREDICATE first: ast_tree
                     )
-                    invalid_match: node " match result requires symbol"
+                    invalid_match_let: node " match result requires symbol"
         ; Invalid entries between 'match' and first guard
-        | :default  invalid_match: node " match invalid form"
+        | :default  invalid_match_let: node " match invalid form"
     pop!: ast_tree
     let tail_list [] list_inst!:
     until_pred: (while_guard ast_tree tail_list) get: node EXPRS
@@ -479,3 +479,45 @@ func parse_match_guard [node ast_tree]
     ?: =: get: first: mguard TYPE :match_default
         map_extend!: node IS_DEFAULT true
         nil
+    node
+
+; Function: parse_let
+; Description: Parse 2 expressions ensuring non are
+; nil, match_guard or a declaration
+
+func parse_let [node ast_tree]
+    ; Check if has result symbol
+    let fst [] first: ast_tree
+    match get: fst TYPE
+        | :symbol
+                    @(
+                        pop!: ast_tree
+                        map_extend!: node NAME fst
+                    )
+        | :collection
+                    nil
+        | :empty_collection
+                    nil
+        | :default
+                    invalid_match_let: node " unknown expression in let "
+    ; Next should be let local argument collection
+    let lpairs [args   first: ast_tree]
+         ?: is_colltype?: args
+            ?: =: get: args COLLTYPE :list
+                @(
+                    pop!: ast_tree
+                    map_extend!: node ARGLIST args
+                    args
+                )
+                invalid_match_let: node " missing let local pairs signature"
+            invalid_match_let: node " let requires local pairs signature"
+    ; Let local pairs should be % 2 where first is symbol
+    ?: =:  mod: count: get: lpairs EXPRS two zero
+        nil
+        invalid_match_let: node " let requires even local pairs signature"
+
+    ; Finally, should have 1 expression
+    get_single_expr: node ast_tree
+
+
+

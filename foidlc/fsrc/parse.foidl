@@ -91,27 +91,37 @@ func :private if_handler  [mmodule ast_tree token srcname]
     extend!: ast_tree inode
 
 
+; Function: let_handler
+; Description:
+
 func :private let_handler  [mmodule ast_tree token srcname]
-    print!: "Let handler: " printnl!: get: token :token_str
-    ast_tree
+    extend!:
+        ast_tree
+        parse_let:
+            type_with_exprs: :let srcname token
+            ast_tree
 
 ; Function: match_handler
 ; Description:
 ; Syntax:
 
 func :private match_handler  [mmodule ast_tree token srcname]
-    let mnode [] type_with_exprs: :match srcname token
-    parse_match: mnode ast_tree
-    extend!: ast_tree mnode
+    extend!:
+        ast_tree
+        parse_match:
+            type_with_exprs: :match srcname token
+            ast_tree
 
 ; Function: match_guard_handler
 ; Description:
 ; Syntax:
 
 func :private match_guard_handler  [mmodule ast_tree token srcname]
-    let mgnode [] type_with_exprs: :match_guard srcname token
-    parse_match_guard: mgnode ast_tree
-    extend!: ast_tree mgnode
+    extend!:
+        ast_tree
+        parse_match_guard:
+            type_with_exprs: :match_guard srcname token
+            ast_tree
 
 ; Function: match_exprref_handler
 ; Description:
@@ -129,8 +139,9 @@ func :private match_exprref_handler  [mmodule ast_tree token srcname]
 ; Syntax:
 
 func :private match_default_handler  [mmodule ast_tree token srcname]
-    let mdnode [] type_instance: :match_default srcname token
-    extend!: ast_tree mdnode
+    extend!:
+        ast_tree
+        type_instance: :match_default srcname token
 
 ; Function: lambda_handler
 ; Description:
@@ -255,7 +266,7 @@ var :private parse_map {
 }
 
 func :private parse_dispatch [mmodule srcname ast_tree token]
-    printnl!: token
+    ;printnl!: token
     let d_fn [] getd: parse_map get: token :token_type unhandled_type
     (d_fn mmodule ast_tree token srcname)
 
