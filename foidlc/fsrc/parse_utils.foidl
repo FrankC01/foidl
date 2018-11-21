@@ -92,13 +92,13 @@ var :private coll_type {
     :langle     :vector
 }
 
-; Function: collindex_pred
-; Description: Predicate used during collection
-; building that tests if passed is token type of
+; Function: ttype_pred
+; Description: Predicate used during expression
+; building that tests if passed in token type of
 ; endtype
 ; Syntax:
 
-func :private collindex_pred [endtype tok]
+func :private ttype_pred [endtype tok]
     =: get: tok :token_type endtype
 
 ; Function: for_each_collelem
@@ -107,14 +107,30 @@ func :private collindex_pred [endtype tok]
 ; Syntax:
 
 func :private for_each_collelem [pred_fn ast_tree node indx]
-    ?: (pred_fn first: ast_tree)
+    let n [] first: ast_tree
+    ?: (pred_fn n)
         reduced: node
         @(
-            list_extend!: get: node EXPRS first: ast_tree
             pop!: ast_tree
+            list_extend!: get: node EXPRS n
             node
         )
 
+; Function: for_each_expr_excpt
+; Description: Collects expression until end_fn returns true
+; or if excp_fn throws a type issue (typically)
+
+func :private for_each_expr_excpt [end_fn excp_fn ast_tree node indx]
+    ; If the
+    let n [] first: ast_tree
+    ?: (end_fn n)
+        reduced: node
+        @(
+            (excp_fn n)
+            pop!: ast_tree
+            list_extend!: get: node EXPRS n
+            node
+        )
 
 ; Function: parse_collection
 ; Description: Processing a collection by locating it's
@@ -127,7 +143,7 @@ func parse_collection [stok ast_tree srcname]
     let stype [] get: stok :token_type
     let tail [] get: coll_lookup stype
     let ctype [] get: coll_type stype
-    let pred_fn [] (collindex_pred tail)
+    let pred_fn [] (ttype_pred tail)
     let tindx [] index_to_type: ast_tree pred_fn
     let node []
         ?: =: tindx zero
@@ -295,6 +311,45 @@ func parse_if [node ast_tree]
         get: node EXPRS if_expr
     drop!: ast_tree three
 
+; Function: excp_if_in_typeset
+; Description: Throws exception if node AST type
+; is in typeset
+
+func :private excp_if_in_typeset [pnode typeset node]
+    ?: get: typeset get: node TYPE
+        @(
+            let tok [] get: node TOKEN
+            fail_token_header: tok
+            write!: cerr get: pnode TYPE
+            write!: cerr " does not expect type "
+            write!: cerr get: node TYPE
+            write!: cerr nlchr
+            fail:
+        )
+        node
+
+; Function: parse_partial
+; Description: Parse expressions ensuring non are
+; nil, declaration or match_guards
+
+func parse_partial [stok srcname node ast_tree]
+    let pred_fn [] (ttype_pred :rparen)
+    let tindx [] index_to_type: ast_tree pred_fn
+    match tindx
+        | zero      fail:
+        | :default  until_pred:
+                        (for_each_expr_excpt
+                            pred_fn
+                            (excp_if_in_typeset
+                                node
+                                #{:match_guard :function :variable :include :module})
+                            ast_tree)
+                            node
+
+    pop!: ast_tree
+
+
+
 ; Exception... TODO - Need string formatter
 
 func :private invalid_match [node s]
@@ -311,18 +366,19 @@ func :private invalid_match [node s]
 
 func :private while_guard [ast_tree defhit match_exprs ndx]
     let nxt [] first: ast_tree
-    ?: or: nil?: nxt not=: get: nxt TYPE :match_guard
+    ?: nil?: nxt
         reduced: match_exprs
-        let [ign pop!: ast_tree]
-            ?: get: nxt IS_DEFAULT
-                @(
-                    printnl!: "Found default"
-                    list_extend!: defhit nxt
-                    match_exprs
-                )
-                @(
-                    list_extend!: match_exprs nxt
-                )
+        ?: =: get: nxt TYPE :match_guard
+            let [ign pop!: ast_tree]
+                ?: get: nxt IS_DEFAULT
+                    @(
+                        list_extend!: defhit nxt
+                        match_exprs
+                    )
+                    @(
+                        list_extend!: match_exprs nxt
+                    )
+            reduced: match_exprs
 
 
 ; Function: add_default_guard
@@ -381,6 +437,7 @@ func parse_match [node ast_tree]
     pop!: ast_tree
     let tail_list [] list_inst!:
     until_pred: (while_guard ast_tree tail_list) get: node EXPRS
+
     match count: tail_list
     | 0     add_default_guard: node
     | 1     list_extend!: get: node EXPRS get: tail_list zero

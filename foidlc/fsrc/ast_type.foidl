@@ -51,7 +51,6 @@ var :private ast_type {
         TYPE        :funcref
         NAME        nil
         ARGCNT      zero}
-    ;   Reference types with psuedo names
     :literalref {
         TYPE        :literalref
         NAME        nil
@@ -59,66 +58,76 @@ var :private ast_type {
     :match_exprref {
         TYPE        :match_exprref
         NAME        nil}
-    ;   Declaration types (things with names) and expressions
+    ;   Declaration types
+    ; module symbol declarations*
     :module   {
-        TYPE        :module             ; module symbol [declarations]
+        TYPE        :module
         NAME        nil
         EXTERNS     nil
         LITERALS    nil
         LAMBDAS     nil
         DECLARATIONS nil}
+    ; var :private? symbol expression?
     :variable  {
-        TYPE        :variable           ; var [:private] symbol expression?
+        TYPE        :variable
         NAME        nil
         IS_PRIVATE  false}
+    ; func :private? symbol [symbol*] expression*
     :function  {
-        TYPE        :function           ; func [:private] symbol [arglist] expression*
+        TYPE        :function
         NAME        nil
         ARGLIST     nil
         IS_PRIVATE  false}
-    ;   Expression types with psuedo names and expressions
+    ;   Expression types
+    ; ^[symbol*] expression?
     :lambda  {
-        TYPE        :lambda             ; ^[arglist] expression?
+        TYPE        :lambda
         NAME        nil
         ARGLIST     nil
         IS_PRIVATE  true}
+    ; match symbol? expression match_guard+
     :match  {
         TYPE        :match
-        NAME        nil                 ;   Either symbol or psuedo named
+        NAME        nil
         PREDICATE   nil}
-
-    ;   Expression types with psuedo names and typed expression(s)
-    ;   Expression types (without names) typed expr and expressions
-    ;   Expression types (without names) with typed expressions
+    ; let symbol? [let_pair*] expression
     :let  {
         TYPE        :let
         PAIRS       nil}
-    :let_pair           {:type :let_pair}
+    ; symbol expression
+    :let_pair {
+        :type :let_pair}
+    ; :default
     :match_default {
         TYPE        :match_default }
-    ;   Expression types with expressions
+    ; ?: pred expression expression
     :if {
         TYPE        :if}
+    ; | pred expr
     :match_guard {
         TYPE        :match_guard
-        IS_DEFAULT  false}       ; | pred expr
+        IS_DEFAULT  false}
+    ; @( expression+ )
     :group   {
         TYPE        :group}
+    ; (expression+)
     :partial  {
         TYPE        :partial}
-    ;   Data types with expressions
+    ; [] {} <> #{}
     :empty_collection   {
         TYPE        :empty_collection
         COLLTYPE    nil
         ELMCNT      zero}
+    ; [expression+] {expression expression,...} <expression+> #{expression+}
     :collection         {
         TYPE        :collection
         COLLTYPE    nil
         ELMCNT      zero}
-    ;   Data types with expressions which are references.
+    ; symbol
     :symbol   {
         TYPE        :symbol
         NAME        nil}
+    ; :private
     :private  {
         TYPE    :private}
 }
@@ -128,7 +137,7 @@ var collection_set #{:empty_collection :collection}
 var coltype_set #{:list :map :set :vector}
 var littype_set #{:string :keyword :integer :real_number :hex :bin :char}
 var decl_set    #{:function :variable :include :module}
-var name_set    #{:module :function :variable :symbol :match :match_exprref}
+var name_set    #{:module :function :variable :symbol :lambda :match :match_exprref}
 var ref_set     #{:literalref :funcref :varref}
 
 ; Function:

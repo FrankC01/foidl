@@ -24,6 +24,10 @@ var mevec <a b c>
 
 func foo [bucci]
 
-    match c
-    | a %0
+
+    ?: match c
+        | a (a  a b c)
+        | b ^[x] x
+        b
+        a
 
