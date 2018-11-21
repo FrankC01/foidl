@@ -157,12 +157,15 @@ func :private partial_handler [mmodule ast_tree token srcname]
 func :private right_paren_handler [mmodule ast_tree token srcname]
     extend!: ast_tree token
 
-func :private math_call_handler [mmodule ast_tree token srcname]
-    print!: "Math call handler: " printnl!: get: token :token_str
-    ast_tree
+; Function: math_ref_handler
+; Description: Part of partial processing
+; Syntax:
 
 func :private math_ref_handler [mmodule ast_tree token srcname]
-    print!: "Math ref handler: " printnl!: get: token :token_str
+    extend!: ast_tree parse_mathref: get: token :token_str
+
+func :private math_call_handler [mmodule ast_tree token srcname]
+    print!: "Math call handler: " printnl!: get: token :token_str
     ast_tree
 
 func :private func_call_handler [mmodule ast_tree token srcname]
@@ -252,6 +255,7 @@ var :private parse_map {
 }
 
 func :private parse_dispatch [mmodule srcname ast_tree token]
+    printnl!: token
     let d_fn [] getd: parse_map get: token :token_type unhandled_type
     (d_fn mmodule ast_tree token srcname)
 

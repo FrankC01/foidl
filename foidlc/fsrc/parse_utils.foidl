@@ -76,6 +76,20 @@ func index_to_type [ast_tree pred_fn]
 func until_pred [foreach_fn init]
     fold: foreach_fn init infinite
 
+
+var :private math_ref_lookup {
+    '+'     "add"
+    '-'     "sub"
+    '/'     "div"
+    '*'     "mul"
+}
+
+func parse_mathref [token_str]
+    let lu []
+        st_lookup:
+            get: math_ref_lookup
+            first: token_str
+
 ; Collection type support
 
 var :private coll_lookup {

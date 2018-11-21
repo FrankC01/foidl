@@ -156,7 +156,7 @@ var patterns [
     }
     {
         :type   :math_ref
-        :regex  regex: "(\+|-|/|\*)"
+        :regex  regex: "(\+|-|\/|\*)"
     }
     {
         :type   :char
