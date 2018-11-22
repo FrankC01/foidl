@@ -20,8 +20,12 @@
 
 module simple
 
-var mevec <a b c>
 
-func foo [bucci]
-    let a [a 5]
-        b
+func fauxfunc [a b]
+    +: a b
+
+func foo [arg1]
+    let a [b 5]
+        +: arg1 b
+
+    fauxfunc: a 9

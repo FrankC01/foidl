@@ -85,6 +85,10 @@ var :private ast_type {
         NAME        nil
         ARGLIST     nil
         IS_PRIVATE  true}
+    ; symbol: expression*
+    :call {
+        TYPE        :call
+        NAME        nil}
     ; match symbol? expression match_guard+
     :match  {
         TYPE        :match
@@ -135,8 +139,25 @@ var collection_set #{:empty_collection :collection}
 var coltype_set #{:list :map :set :vector}
 var littype_set #{:string :keyword :integer :real_number :hex :bin :char}
 var decl_set    #{:function :variable :include :module}
-var name_set    #{:module :function :variable :symbol :lambda :match :match_exprref}
 var ref_set     #{:literalref :funcref :varref}
+
+var name_set #{
+    :module
+    :function
+    :variable
+    :symbol
+    :lambda
+    :call
+    :match
+    :match_exprref}
+
+var invalid_set #{
+    :match_guard
+    :function
+    :variable
+    :include
+    :module
+    :match_exprref}
 
 ; Function:
 ; Description:
@@ -232,6 +253,8 @@ func :private gen_literal_map [mnode]
 func type_module_create [source token]
     let mnode [] type_with_exprs: :module source token
     map_extend!:
-        mnode
-        LITERALS
-        gen_literal_map: mnode
+        map_extend!:
+            mnode
+            LITERALS
+            gen_literal_map: mnode
+        EXTERNS map_inst!:

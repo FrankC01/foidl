@@ -146,6 +146,22 @@ func :private for_each_expr_excpt [end_fn excp_fn ast_tree node indx]
             node
         )
 
+; Function: for_each_ndx_excpt
+; Description: Collects expression until end_fn returns true
+; or if excp_fn throws a type issue (typically)
+
+func :private for_each_ndx_excpt [end_fn excp_fn ast_tree node indx]
+    ; If the
+    let n [] first: ast_tree
+    ?: (end_fn n indx)
+        reduced: node
+        @(
+            (excp_fn n)
+            pop!: ast_tree
+            list_extend!: get: node EXPRS n
+            node
+        )
+
 ; Function: parse_collection
 ; Description: Processing a collection by locating it's
 ; companion closing token and inferencing type and
@@ -300,8 +316,12 @@ func get_single_expr [node ast_tree]
             node
         )
 
+; Function: validate_expressions
+; Description: Validates a node is not nil and inverse of
+; predicate
+
 func :private validate_expressions [mnode estr pred_fn acc node]
-    ?: and: node not:  (pred_fn node)
+    ?: and: node not: (pred_fn node)
         list_extend!: acc node
         @(
             fail_token_header: get: mnode :token
@@ -309,6 +329,59 @@ func :private validate_expressions [mnode estr pred_fn acc node]
             write!: cerr nlchr
             fail:
         )
+
+
+; Function: call_argcnt_pred
+; Description: tests if argcount matches
+
+func :private call_argcnt_pred [argcnt node indx]
+    >=: indx argcnt
+
+; Function: process_call
+; Description: Verify argument match based on cref
+; then check if external type
+
+func :private process_call [cref externs node ast_tree]
+    ?: =: get: cref :type :funcref
+        ?: <=: get: cref ARGCNT count: ast_tree
+            @(
+                let pred_fn [] (call_argcnt_pred get: cref ARGCNT)
+                until_pred:
+                    (for_each_ndx_excpt
+                        pred_fn
+                        (excp_if_in_typeset node invalid_set)
+                        ast_tree)
+                        node
+                ?: =: get: cref SOURCE get: node SOURCE
+                    nil
+                    map_extend!: externs get: cref NAME cref
+                node
+            )
+            failWith: "Not enough remaining to fulfill function call"
+        failWith: "Not a function ref"
+
+; Function: parse_functioncall
+; Description:
+func parse_functioncall [node ast_tree externs]
+    let cref []
+        st_lookup:
+            dropLast:
+                get: get: node :token :token_str
+    ?: cref
+        process_call: cref externs node ast_tree
+        failWith: "Problem resolving math reference"
+    map_extend!: node NAME get: cref NAME
+
+
+; Function: parse_mathcall
+; Description: Gets math reference based on single character
+
+func parse_mathcall [node ast_tree externs]
+    let cref [] parse_mathref: get: get: node :token :token_str
+    ?: cref
+        process_call: cref externs node ast_tree
+        failWith: "Problem resolving math reference"
+    map_extend!: node NAME get: cref NAME
 
 
 ; Function: parse_if
@@ -356,7 +429,7 @@ func parse_partial [stok srcname node ast_tree]
                             pred_fn
                             (excp_if_in_typeset
                                 node
-                                #{:match_guard :function :variable :include :module})
+                                invalid_set)
                             ast_tree)
                             node
 

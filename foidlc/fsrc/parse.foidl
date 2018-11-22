@@ -169,19 +169,36 @@ func :private right_paren_handler [mmodule ast_tree token srcname]
     extend!: ast_tree token
 
 ; Function: math_ref_handler
-; Description: Part of partial processing
+; Description: Reference to math operator handler
 ; Syntax:
 
 func :private math_ref_handler [mmodule ast_tree token srcname]
     extend!: ast_tree parse_mathref: get: token :token_str
 
+; Function: math_call_handler
+; Description: Handler for calling math function syntax sugar
+; Syntax:
+
 func :private math_call_handler [mmodule ast_tree token srcname]
-    print!: "Math call handler: " printnl!: get: token :token_str
-    ast_tree
+    extend!:
+        ast_tree
+            parse_mathcall:
+                type_with_exprs: :call srcname token
+                ast_tree
+                get: mmodule EXTERNS
+
+
+; Function: func_call_handler
+; Description: Handler for function call token
+; Syntax:
 
 func :private func_call_handler [mmodule ast_tree token srcname]
-    print!: "Function call handler: " printnl!: get: token :token_str
-    ast_tree
+    extend!:
+        ast_tree
+            parse_functioncall:
+                type_with_exprs: :call srcname token
+                ast_tree
+                get: mmodule EXTERNS
 
 ; Function: collection_start_handler
 ; Description:

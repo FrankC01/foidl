@@ -331,7 +331,7 @@ func :private parse_tokens   [state]
     map_extend!:
         state
         :ast
-        parse: get: state :tokens get: state :source
+        parse: get: state :tokens get: state :module_name
 
 ; Function: ast_print
 ; Description: Prints the AST to screen
