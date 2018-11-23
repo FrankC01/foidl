@@ -1,8 +1,0 @@
-
-module test
-
-func :private argparse_default [accum cmdmap]
-    let [   res       1;get: accum :result
-            akey      2;get: cmdmap :keyword
-          ]
-          extendKV: accum :result extendKV: res akey true

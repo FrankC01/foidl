@@ -134,12 +134,13 @@ var :private ast_type {
         TYPE    :private}
 }
 
-; Sets of things for utility
-var collection_set #{:empty_collection :collection}
-var coltype_set #{:list :map :set :vector}
-var littype_set #{:string :keyword :integer :real_number :hex :bin :char}
-var decl_set    #{:function :variable :include :module}
-var ref_set     #{:literalref :funcref :varref}
+; Convenience sets for predicates
+
+var collection_set  #{:empty_collection :collection}
+var coltype_set     #{:list :map :set :vector}
+var littype_set     #{:string :keyword :integer :real_number :hex :bin :char}
+var decl_set        #{:function :variable :include :module}
+var ref_set         #{:literalref :funcref :varref}
 
 var name_set #{
     :module
@@ -156,12 +157,9 @@ var invalid_set #{
     :function
     :variable
     :include
-    :module
-    :match_exprref}
+    :module}
 
-; Function:
-; Description:
-; Syntax:
+; Predicates
 
 func is_decl [node]
     getd: decl_set get: node TYPE false
@@ -186,16 +184,8 @@ func has_exprs? [node]
             false
             true
 
-; Function:
-; Description:
-; Syntax:
-
 func is_not_decl? [node]
     not: getd: decl_set get: node TYPE false
-
-; Function:
-; Description:
-; Syntax:
 
 func is_funclambda_args? [node]
     ?: getd: collection_set get: node TYPE false
@@ -213,12 +203,13 @@ func is_funclambda_args? [node]
 ;   token   - The source file token (has sourcepos, etc.)
 
 func type_instance [typekw source token]
-    let typeinst [] getd: ast_type typekw nil
+    let typeinst []
+        getd: ast_type typekw nil
     ?: nil?: typeinst
         failWith: extend: "Unrecognized AST type " typekw
         let []
             map_extend!:                            ; Extend new instance with token
-                extendKV: typeinst SOURCE source   ; Create new instance and extend
+                extendKV: typeinst SOURCE source    ; Create new instance and extend
                 TOKEN token
 
 ; Function: type_with_exprs
@@ -232,12 +223,23 @@ func type_with_exprs [typekw source token]
     let node [] type_instance: typekw source token
     map_extend!: node EXPRS list_inst!:
 
+; Function: type_literal_ref
+; Description: Constructs a literal reference storing the
+; base type in modules literal map
+
 func type_literal_ref [mmodule token source]
-    let ttype [] get: token :token_type
-    let lmap [] get: get: mmodule LITERALS ttype
-    let lref [] type_instance: :literalref source token
-    map_extend!: lref LITTYPE ttype
-    map_extend!: lmap get: token :token_str lref
+    let ttype []
+        get: token :token_type
+    ; Create the literal reference
+    let lref []
+        map_extend!:
+            type_instance: :literalref source token
+            LITTYPE ttype
+    ; Add to the global (module) literal map
+    map_extend!:
+        get: get: mmodule LITERALS ttype
+        get: token :token_str lref
+    ; Return the literal reference
     lref
 
 ; Function:
@@ -245,16 +247,21 @@ func type_literal_ref [mmodule token source]
 ; Syntax:
 
 func :private gen_literal_map [mnode]
-        fold:
-            ^[acc x]
-                map_extend!: acc x map_inst!:
-            map_inst!: littype_set
+    fold:
+        ^[acc x]
+            map_extend!: acc x map_inst!:
+        map_inst!: littype_set
+
+; Function:
+; Description:
+; Syntax:
 
 func type_module_create [source token]
-    let mnode [] type_with_exprs: :module source token
+    let mnode []
+        type_with_exprs: :module source token
+
     map_extend!:
         map_extend!:
             mnode
-            LITERALS
-            gen_literal_map: mnode
+            LITERALS gen_literal_map: mnode
         EXTERNS map_inst!:

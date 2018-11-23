@@ -3,92 +3,93 @@
 ; {} optional - zero or more
 ; [] zero or one
 ; 'term' terminal
-; non-term (no quotes) - non terminal
-; reg_ex(...) - regular expression
+; NON-TERMINAL
+; reg_ex(...) - regular
 
-S =: module
+S =: MODULE
 
-module =: 'module' symbol {i_decls} {decltypes}
+MODULE =: 'module' SYMBOL {IDECLS} {DECLTYPES}
 
-idecls =: 'include' (idecl_list | symbol_type)
-idelc_list =: '[' symbol {[,] symbol} ']'
+IDECLS =: 'include' (IDECL_LIST | SYMBOL)
 
-decl_types =: {var_decl | func_decl}
+IDELC_LIST =: '[' SYMBOL {[,] SYMBOL} ']'
 
-var_decl =: 'var' symbol_type [expression]
+DECLTYPES =: {VAR_DECL | FUNC_DECL}
 
-func_decl =: 'func' symbol_type symbol_list {expression}
+VAR_DECL =: 'var' SYMBOL_TYPE [EXPRESSION]
 
-expression =: literal
-			| symbol_type
-			| collection
-			| func_call
-			| if_expr
-			| partial expr
-			| group_expr
-			| let_expr
-			| match_expr
-			| lambda_expr
+FUNC_DECL =: 'func' SYMBOL_TYPE SYMBOL_LIST {EXPRESSION}
 
-func_call =: func_prefix expression {expression}
-func_prefix =: symbol_type ":"
+EXPRESSION =: LITERAL
+			| SYMBOL_TYPE
+			| COLLECTION
+			| FUNC_CALL
+			| IF_EXPR
+			| PARTIAL EXPR
+			| GROUP_EXPR
+			| LET_EXPR
+			| MATCH_EXPR
+			| LAMBDA_EXPR
 
-; Partials are interesting:
-; 1. If the symbol type is func reference and argument counts align, then it becomes a call
-; 2. If the symbol type is func reference and arg count in partial is less, it's a partial declaration
-; 3. If the symbol type is lambda reference and argument counts align, then it becomes a call
-; 4. If the symbol type is lambda reference and arg count in partial is less, it's a partial declaration
-; 5. Otherwise they are partial invocations
+FUNC_CALL =: FUNC_PREFIX EXPRESSION {EXPRESSION}
 
-partial_expr =: "(" (func_prefix | symbol_type) {expression} ")"
+PARTIAL_EXPR =: "(" SYMBOL_TYPE {EXPRESSION} ")"
 
-group_expr =: "@(" expression {expression} ")"
+GROUP_EXPR =: "@(" EXPRESSION {EXPRESSION} ")"
 
-let_expr =: "let" [symbol_type] "[" symbol_type expression {symbol_type expression} "]" expression
+LET_EXPR =: "let" [SYMBOL_TYPE] "[" SYMBOL_TYPE EXPRESSION {SYMBOL_TYPE EXPRESSION} "]" EXPRESSION
 
-match_expr =: 'match' [symbol_type] expression match_pair
+MATCH_EXPR =: 'match' [SYMBOL_TYPE] EXPRESSION MATCH_PAIR
 
-match_pair =: '|' expression expression {match_pair}
-			| ':default' expression
+MATCH_PAIR =: '|' EXPRESSION EXPRESSION {MATCH_PAIR}
+			| ':default' EXPRESSION
 
-; Lambdas my be interesting:
-; 1. If the body has not references to funcargs, letargs, letresult it's straight up
-; 2. Otherwise it is a closure. Closures need free variable management:
-;	1. Each free variable inserts into the begining of the declared symbol_list
-;	2. It needs to imbue those free vars at the point of declaration
+LAMBDA_EXPR =: '^' SYMBOL_LIST EXPRESSION
 
-lambda_expr =: '^' symbol_list expression
+COLLECTION 	=: MAP_COLLECTION
+			| LIST_COLLECTION
+			| VECTOR_COLLECTION
+			| SET_COLLECTION
 
-symbol_list =: "[" "]"
-			| "[" symbol_type {[,] symbol_type} "]"
-
-symbol_type =: symbol 							; foo
-			| reg_ex([a-zA-Z][a-zA-Z0-9_]+!)	; fo_o!
-			| reg_ex([a-zA-Z][a-zA-Z0-9_]+\?)	; f_oo?
-
-symbol =: reg_ex([a-zA-Z]([a-zA-Z0-9_]*)?)
-
-collection =: map_collection
-			| list_collection
-			| vector_collection
-			| set_collection
-
-map_collection =: "{" expression expression {[,] expression expression} "}"
+MAP_COLLECTION =: "{" EXPRESSION EXPRESSION {[,] EXPRESSION EXPRESSION} "}"
 				| "{" "}"
 
-list_collection =: "[" expression {[,] expression } "]"
+LIST_COLLECTION =: "[" EXPRESSION {[,] EXPRESSION } "]"
 				| "[" "]"
 
-set_collection =: "#{" expression {[,] expression} "}"
+SET_COLLECTION =: "#{" EXPRESSION {[,] EXPRESSION} "}"
 				| "#{" "}"
 
-vector_collection =: "<" expression {[,] expression} ">"
+VECTOR_COLLECTION =: "<" EXPRESSION {[,] EXPRESSION} ">"
 				| "<" ">"
 
-literal =: integer 	; 1234
-		| real		; 0.1, 19.52, 1.39489384938493849384983
-		| hex		; 0x9ab5
-		| bit 		; 0b01010101
-		| string 	; "Something in quotes"
-		| keyword   ; :master
-		| char 		; 'c', 'd', '1'
+LITERAL =: INTEGER
+		| REAL
+		| HEX
+		| BIT
+		| STRING
+		| KEYWORD
+		| CHAR
+
+SYMBOL_LIST =: "[" "]"
+			| "[" SYMBOL_TYPE {[,] SYMBOL_TYPE} "]"
+
+SYMBOL_TYPE =: SYMBOL
+			| reg_ex("[a-zA-Z][a-zA-Z0-9_]+!")
+			| reg_ex("[a-zA-Z][a-zA-Z0-9_]+\?")
+
+SYMBOL 		=: reg_ex("[a-zA-Z]([a-zA-Z0-9_]*)?")
+
+FUNC_PREFIX =: SYMBOL_TYPE ":"
+
+INTEGER 	=:	regex("-?[0-9]+")
+REAL 		=: 	regex("-?(?:0|[1-9]\d*)\.\d*(?:[eE][+\-]?\d+)?")
+HEX 		=: 	regex("0[xX][0-9a-fA-F]+")
+BIT 		=: 	regex("0[bB][0-1]+")
+STRING		=: 	regex("\"(.|\n)*?\"")
+KEYWORD 	=: 	regex(":[a-zA-Z]([a-zA-Z0-9_]*)?")
+CHAR 		=:  regex("\'[0-9a-zA-Z]*?\'")
+
+COMMENT 	=:	regex(";.*")
+IGNORES 	=: 	regex("[,\t ]+")
+NLCR 		=:  regex("(\r\n|[\r\n])")

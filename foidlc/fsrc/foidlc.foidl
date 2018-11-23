@@ -23,7 +23,13 @@ module foidlc
 include cmdline
 include handler
 
-var version "foidlc version 0.01.00  (Self-hosted)"
+var version "foidlc version 0.01.00 (Self-hosted)"
+
+; Function: execute
+; Description: Core compiler execution. If version (-v)
+; was not specified on the command line, either
+; a header generation (-g) or compilation (-c) is requested
+; Help (-h) is handled by cmdlineparse
 
 func :private execute [argv cmap]
 	?: get: cmap :version
@@ -31,6 +37,9 @@ func :private execute [argv cmap]
 		?: get: cmap :source
 			build_handler_and_run: cmap
 			cmap
+
+; Function: main
+; Description: Main entry point to program/application
 
 func main [argv]
 	execute: argv cmdlineparse: argv

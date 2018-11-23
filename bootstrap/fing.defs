@@ -1,5 +1,0 @@
-
-module fing
-
-var foo? Any
-var bar! Any
