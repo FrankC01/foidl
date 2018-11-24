@@ -26,13 +26,71 @@ void foildl_rtl_init_strings() {
 	kwMap = foidl_map_inst_bang();
 }
 
+static PFRTAny replace_with(char el) {
+	switch(el) {
+		case 't':
+			return tbchr;
+		case 'q':
+			return sqchr;
+		case 'd':
+			return dqchr;
+		case 'n':
+			return nlchr;
+	}
+	return nil;
+}
+
+static char* escape_scan(char *i) {
+
+	if (strchr(i,'`') != NULL) {
+		char *dupe = foidl_xall(strlen(i)+1);
+		int s = 0;
+		int d = 0;
+		while(i[s] != 0) {
+			if(i[s] == '`' && i[s-1] != '\\' && (i[s+1] != 0 || i[s+1] != ' ')) {
+				PFRTAny rep = replace_with(i[s+1]);
+				if(rep != nil) {
+					dupe[d] = ((unsigned char*) (&rep->value))[0];
+					++d;
+					if(rep->count == 2) {
+						dupe[d] = ((unsigned char*) (&rep->value))[1];
+						++d;
+					}
+				}
+				s+=2;
+			}
+			else {
+				dupe[d] = i[s];
+				++d;
+				++s;
+			}
+		}
+		return dupe;
+	}
+	else {
+		return (char *) NULL;
+	}
+}
+
+/*
+	Registers strings in map and eliminate duplicates
+*/
+
 PFRTAny  foidl_reg_string(char *i) {
-	// printf("Registering string %s\n", i);
 	FRTAny 	anyStr = {scalar_class,string_type,strlen(i),0,i};
 	PFRTAny res = map_get(strMap,&anyStr);
 	if(res == nil) {
-		res = allocGlobalStringCopy(anyStr.value);
-		foidl_map_extend_bang(strMap,res,res);
+		PFRTAny sval = nil;
+		PFRTAny skey = allocGlobalStringCopy(anyStr.value);
+		char *es = escape_scan(i);
+		if(es != NULL) {
+			sval = allocGlobalString(es);
+		}
+		else {
+			sval = skey;
+		}
+		foidl_map_extend_bang(strMap,skey,sval);
+		res = sval;
 	}
 	return res;
 }
