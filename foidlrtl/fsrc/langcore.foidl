@@ -313,6 +313,9 @@ func strb [arg]
 func hasChar [s chr]
 	foidl_hasChar: s chr
 
+func format [s coll]
+	foidl_format: s coll
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Regex functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

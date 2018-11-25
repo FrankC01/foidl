@@ -223,9 +223,10 @@ func 	foidl_strb [arg]
 func 	foidl_collc2str [coll]
 func 	foidl_strcatnc [str cnt chr]
 func 	foidl_strcatns [str cnt chs]
+func    foidl_format [str coll]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Fundemental String Functions
+; Fundemental Regex Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 func    foidl_regex [s]

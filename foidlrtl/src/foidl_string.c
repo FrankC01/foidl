@@ -73,7 +73,8 @@ static char* escape_scan(char *i) {
 }
 
 /*
-	Registers strings in map and eliminate duplicates
+	Registers strings in map, expand any control
+	statements and eliminate duplicates
 */
 
 PFRTAny  foidl_reg_string(char *i) {
@@ -94,6 +95,10 @@ PFRTAny  foidl_reg_string(char *i) {
 	}
 	return res;
 }
+
+/*
+	Registers keywords in map and eliminate duplicates
+*/
 
 PFRTAny  foidl_reg_keyword(char *i) {
 	FRTAny 	anyKW = {scalar_class,keyword_type,strlen(i),0,i};
@@ -162,10 +167,11 @@ PFRTAny 	string_extend(PFRTAny s, PFRTAny v) {
 	uint32_t bcnt=0;
 	uint32_t tcnt = s->count;
 	switch(v->ftype) {
+		// Should checck for control characters (tab, nl, quote, dbl quote)
 		case 	character_type:
 			{
-			p1 = (char *) &v->value;
-			tcnt += bcnt = 1;
+				p1 = (char *) &v->value;
+				tcnt += bcnt = 1;
 			}
 			break;
 		case 	keyword_type:
@@ -181,6 +187,7 @@ PFRTAny 	string_extend(PFRTAny s, PFRTAny v) {
 				tcnt += bcnt = strlen(p1);
 			}
 			break;
+		// Does this make sense?
 		case 	nil_type:
 			p1 = (char *) nilstr->value;
 			tcnt += bcnt = nilstr->count;
@@ -196,6 +203,9 @@ PFRTAny 	string_extend(PFRTAny s, PFRTAny v) {
 	return res;
 }
 
+/*
+	Concatenate cnt number of characters to string
+*/
 PFRTAny foidl_strcatnc(PFRTAny s, PFRTAny cnt, PFRTAny chc) {
 	ft 		nlen = s->count + (uint32_t) cnt->value + 1;
 	PFRTAny res = allocAny(scalar_class,string_type,(void *) nlen);
@@ -284,8 +294,9 @@ PFRTAny 	foidl_hasChar(PFRTAny s, PFRTAny c) {
 }
 
 PFRTAny 	foidl_collc2str(PFRTAny v) {
-	ft 	nlen = v->count+1;
-	PFRTAny res = allocAny(scalar_class,string_type,(void *) nlen);
+	ft 			nlen = v->count+1;
+	PFRTAny 	res = allocAny(scalar_class,string_type,(void *) nlen);
+
 	res->count = nlen -1;
 	res->value = foidl_xall(nlen);
 	PFRTIterator mi = iteratorFor(v);
@@ -306,3 +317,4 @@ PFRTAny 	foidl_string_from(PFRTAny s, PFRTAny d) {
 PFRTAny 	foidl_trim(PFRTAny s) {
 	return s;
 }
+

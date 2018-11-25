@@ -25,6 +25,7 @@ static regex bitpattern ("^0[bB]{1,1}[0-1]+$");
 //static regex *NLCR = _new_regex("\r?[\n]");
 static regex *NLCR = _new_regex("(\r\n|[\r\n])");
 static regex *simple_str = _new_regex("\"(.|\n)*?\"");
+static regex *frmtstr = _new_regex("\\{.*?\\}");
 // static regex *comment = _new_regex("\"([\\s\\S]+?)\"");
 
 EXTERNC void * foidl_xall(uint32_t sz);
@@ -80,6 +81,24 @@ EXTERNC void* _string_to_regex(const char* s) {
     // cout << " compiling regex " << s << endl;
     regex* re = _new_regex(s);
     return static_cast<void *>(re);
+}
+
+EXTERNC void* _format_string(const char *strng, char **rep, int rcnt) {
+    string base(strng);
+    string result;
+    smatch m;
+    int pos=0;
+
+    while (regex_search (base,m,*frmtstr)) {
+        result += m.prefix().str() + rep[pos];
+        base = m.suffix().str();
+        ++pos;
+    }
+    if( pos != rcnt ) {
+        cerr << "Count found does not match inbound match set" << endl;
+    }
+    result += base;
+    return foidl_reg_string(result.c_str());
 }
 
 

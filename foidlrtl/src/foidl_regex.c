@@ -74,6 +74,64 @@ PFRTAny foidl_regex_match_qmark(PFRTAny s, PFRTAny pattern) {
 	return false;
 }
 
+PFRTAny 	foidl_format(PFRTAny s, PFRTAny coll) {
+	if(s->ftype == string_type &&
+		(coll->ftype == vector2_type || coll->ftype == list2_type)) {
+		if(coll->count == 0)
+			return s;
+		PFRTAny entry = nil;
+		PFRTIterator li = iteratorFor(coll);
+		char **sarray  = foidl_xall(coll->count * sizeof(ft));
+		char *delarray = foidl_xall(coll->count * sizeof(int));
+		int count  = 0;
+		int delcnt = 0;
+		while((entry = iteratorNext(li)) != end) {
+			switch(entry->ftype) {
+				case 	string_type:
+				case 	keyword_type:
+					sarray[count] = entry->value;
+					break;
+				case 	regex_type:
+					sarray[count] = ((PFRTRegEx) entry)->value->value;
+					break;
+				case 	character_type:
+					{
+						char *p = foidl_xall(entry->count + 1);
+						strncpy(p, (char *)entry->value, entry->count);
+						sarray[count] = p;
+						delarray[delcnt]=count;
+						++delcnt;
+					}
+					break;
+				case integer_type:
+					{
+						char *p = foidl_xall(50);
+						sprintf(p, "%lld", (ft) entry->value );
+						sarray[count] = p;
+						delarray[delcnt]=count;
+						++delcnt;
+					}
+					break;
+				default:
+					unknown_handler();
+			}
+
+			count++;
+		}
+		PFRTAny result = _format_string((const char*) s->value, sarray, count);
+		for(int x = 0; x < delcnt; x++)
+			foidl_xdel(sarray[delarray[x]]);
+		foidl_xdel(sarray);
+		foidl_xdel(delarray);
+		return result;
+	}
+	else {
+		unknown_handler();
+	}
+
+	return s;
+}
+
 constKeyword(typeKW,":type");
 constKeyword(regexKW,":regex");
 
