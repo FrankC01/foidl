@@ -22,16 +22,10 @@ module token_utils
 include langcorem
 
 ; Exception format strings
-var :private excp_stub "Exception: {"
-var :private excp_lcsplit "}:{"
-var :private excp_lcend "} - "
+var :private excp_stub "Exception: {}:{} - "
 
 func fail_token_header [tok]
-    write!: cerr excp_stub
-    write!: cerr get: tok :lineno
-    write!: cerr excp_lcsplit
-    write!: cerr get: tok :colno
-    write!: cerr excp_lcend
+    write!: cerr format: excp_stub [get: tok :lineno get: tok :colno]
 
 ; Fail on token issue
 func fail_on_token [toks indx s]
@@ -45,8 +39,7 @@ func fail_on_token [toks indx s]
 ; Fail with reason
 
 func fail_with_cause [toks indx s]
-    let tok [] get: toks indx
-    fail_token_header: tok
+    fail_token_header: get: toks indx
     write!: cerr s
     write!: cerr nlchr
     fail:

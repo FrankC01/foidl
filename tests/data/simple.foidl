@@ -18,8 +18,8 @@
 ; limitations under the License.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module simple
 
+module simple
 
 func fauxfunc [a b]
     +: a b
@@ -32,6 +32,7 @@ func foo [arg1]
     | 1     fauxfunc: %0 9
     | 2     let a [b 5]
                 +: arg1 noarg:
+
 
 
 

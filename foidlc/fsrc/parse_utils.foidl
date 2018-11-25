@@ -29,7 +29,7 @@ include symbol_table
 func add_nil_expr [node]
     ?: =: count: get: node EXPRS zero
         extend!: get: node EXPRS st_lookup: "nil"
-        failWith: "Attempt to add nil to populated list"
+        failWith: "Attempt to add nil to populated list `n"
     node
 
 ; Function: process_for_private
@@ -191,9 +191,7 @@ func parse_collection [stok ast_tree srcname]
             nil
             @(
                 fail_token_header: stok
-                write!: cerr "Map requires even pairs"
-                write!: cerr nlchr
-                fail:
+                failWith: "Map requires even pairs `n"
             )
         nil
 
@@ -202,23 +200,18 @@ func parse_collection [stok ast_tree srcname]
 
 
 func :private invalid_arglist [fnode node]
-    let tok [] get: fnode :token
-    fail_token_header: tok
-    write!: cerr " function "
-    write!: cerr get: fnode NAME
-    write!: cerr " expects arglist [...]"
-    write!: cerr nlchr
-    fail:
+    fail_token_header: get: fnode :token
+    failWith:
+        format:
+            " function {} expects arglist [...]`n"
+            [get :fnode NAME]
 
 func :private invalid_arg [fnode node]
-    let tok [] get: fnode :token
-    fail_token_header: tok
-    write!: cerr " function "
-    write!: cerr get: fnode NAME
-    write!: cerr " expects symbols in arglist. Found "
-    write!: cerr get: node TYPE
-    write!: cerr nlchr
-    fail:
+    fail_token_header: get: fnode :token
+    failWith:
+        format:
+            " function {} expects symbols in arglist. Found {}`n"
+            [get: fnode NAME get: fnode TYPE]
 
 ; Function:
 ; Description:
@@ -306,9 +299,7 @@ func get_single_expr [node ast_tree]
     ?: is_next_nil_or_decl?: ast_tree
         @(
             fail_token_header: get: node :token
-            write!: cerr " expected a single expression to follow "
-            write!: cerr nlchr
-            fail:
+            failWith: " expected a single expression to follow.`n"
         )
         @(
             list_extend!: get: node EXPRS first: ast_tree
@@ -357,8 +348,8 @@ func :private process_call [cref externs node ast_tree]
                     map_extend!: externs get: cref NAME cref
                 node
             )
-            failWith: "Not enough remaining to fulfill function call"
-        failWith: "Not a function ref"
+            failWith: "Not enough remaining to fulfill function call.`n"
+        failWith: "Not a function ref.`n"
 
 ; Function: parse_functioncall
 ; Description:
@@ -369,7 +360,7 @@ func parse_functioncall [node ast_tree externs]
                 get: get: node :token :token_str
     ?: cref
         process_call: cref externs node ast_tree
-        failWith: "Problem resolving math reference"
+        failWith: "Problem resolving math reference.`n"
     map_extend!: node NAME get: cref NAME
 
 
@@ -380,7 +371,7 @@ func parse_mathcall [node ast_tree externs]
     let cref [] parse_mathref: get: get: node :token :token_str
     ?: cref
         process_call: cref externs node ast_tree
-        failWith: "Problem resolving math reference"
+        failWith: "Problem resolving math reference.`n"
     map_extend!: node NAME get: cref NAME
 
 
@@ -405,13 +396,11 @@ func parse_if [node ast_tree]
 func :private excp_if_in_typeset [pnode typeset node]
     ?: get: typeset get: node TYPE
         @(
-            let tok [] get: node TOKEN
-            fail_token_header: tok
-            write!: cerr get: pnode TYPE
-            write!: cerr " does not expect type "
-            write!: cerr get: node TYPE
-            write!: cerr nlchr
-            fail:
+            fail_token_header: get: node TOKEN
+            failWith:
+                format:
+                    "{} does not expect type {}.`n"
+                    [get: pnode TYPE get: node TYPE]
         )
         node
 
