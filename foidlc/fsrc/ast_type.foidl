@@ -156,6 +156,7 @@ var invalid_set #{
     :match_guard
     :function
     :variable
+    :rparen
     :include
     :module}
 

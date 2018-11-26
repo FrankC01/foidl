@@ -326,7 +326,10 @@ func :private call_argcnt_pred [argcnt node indx]
 ; then check if external type
 
 func :private process_call [cref externs node ast_tree]
-    ?: =: get: cref :type :funcref
+    print!: format:
+        "Processing {} function call expecting {} args with tree list count {}.`n"
+        [get: cref NAME get: cref ARGCNT count: ast_tree]
+    ?: =: get: cref TYPE :funcref
         ?: <=: get: cref ARGCNT count: ast_tree
             @(
                 let pred_fn [] (call_argcnt_pred get: cref ARGCNT)
@@ -403,12 +406,21 @@ func parse_if [node ast_tree]
 ; is in typeset
 
 func :private excp_if_in_typeset [pnode typeset node]
-    ?: get: typeset get: node TYPE
-        token_exception:
+    let node_type []
+        ?: get: node TYPE
+            get: node TYPE
+            get: node :token_type
+    let node_token []
+        ?: get: node TOKEN
             get: node TOKEN
+            node
+
+    ?: get: typeset node_type
+        token_exception:
+            node_token
             format:
-                "`q{}`q does not expect type `q{}`q"
-                [get: pnode TYPE get: node TYPE]
+                "`q{}`q does not expect argument of type `q{}`q"
+                [get: pnode TYPE node_type]
         node
 
 ; Function: parse_partial

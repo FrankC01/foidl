@@ -25,7 +25,7 @@ func fauxfunc [a b]
     +: a b
 
 func noarg []
-    9
+
 
 func foo [arg1]
     match arg1
