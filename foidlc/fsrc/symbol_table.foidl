@@ -20,7 +20,7 @@
 
 module symbol_table
 include langcorem
-
+include errors
 include token_utils
 
 ; The symbol_table establishes an overall compilation context that
@@ -125,7 +125,7 @@ func st_compilation_unit [name]
         map_extend!:
             map_extend!: st_context :name name
             :stack list_inst!:
-        failWith: "Symbol Table st_context already initialized"
+        exception: "Symbol Table st_context already initialized"
 
 ; Function: st_push_table
 ; Description: Push/create a new table to the
@@ -145,7 +145,8 @@ func st_push_table [name]
                     map_extend!: stab :name name
                     :table map_inst!:
         ; Collision - exit
-        failWith: extend: "Symbol table already exists for " name
+        exception:
+            format: "Symbol table already exists for {}" [name]
 
 ; Function: st_pop_table
 ; Description: Pop the top of the stack entries
@@ -153,32 +154,35 @@ func st_push_table [name]
 
 func st_pop_table []
     ?: =: count: get: st_context :stack zero
-        failWith: "Attempting to pop empty symbol stack"
+        exception: "Attempting to pop empty symbol stack"
         pop!: get: st_context :stack
 
 func :private except_and_fail [sref symbol_name reference]
-    write!: cerr "Exception: Symbol '"
-    write!: cerr symbol_name
-    write!: cerr "' in "
-    write!: cerr get: reference :source
-    write!: cerr source_pos_to_str: get: reference :token
-    write!: cerr " already declared in "
-    write!: cerr get: sref :source
-    write!: cerr source_pos_to_str: get: sref :token
-    ;write!: cerr source_pos_to_str: get: sref :token
-    write!: cerr nlchr
-    fail:
+    token_exception:
+        get: reference :token
+        format:
+            "Symbol `q{}`q in {} {} already declared in {} {}"
+            [
+                symbol_name
+                get: reference :source
+                source_pos_to_str: get: reference :token
+                get: sref :source
+                source_pos_to_str: get: sref :token
+            ]
 
 func :private warn_and_add [sref symbol_name reference]
-    write!: cerr "Warning: '"
-    write!: cerr symbol_name
-    write!: cerr "' in "
-    write!: cerr get: reference :source
-    write!: cerr source_pos_to_str: get: reference :token
-    write!: cerr " redefines same symbol named in "
-    write!: cerr get: sref :source
-    write!: cerr source_pos_to_str: get: sref :token
-    write!: cerr nlchr
+    write!:
+        cerr
+        format:
+            "Warning: `q{}`q {} {} redeclares `q{}`q at {} {}.`n"
+            [
+                symbol_name
+                get: reference :source
+                source_pos_to_str: get: reference :token
+                symbol_name
+                get: sref :source
+                source_pos_to_str: get: sref :token
+            ]
     add_to_current: symbol_name reference
 
 ; Function: st_add_symbolref

@@ -23,7 +23,7 @@ module parse
 include langcorem
 include ast_type
 include parse_utils
-
+include errors
 
 ; Parse is responsible for consuming the list of tokens and
 ; returning an AST for all types found in token list.
@@ -33,10 +33,11 @@ include parse_utils
 ; Syntax:
 
 func :private unhandled_type [pmap token]
-    write!: cerr "Unhandled type "
-    write!: cerr token
-    write!: cerr nlchr
-    fail:
+    token_exception:
+        token
+        format:
+            "Parser unhandled type {}"
+            [get: token :token_type]
 
 ; Function: module_handler
 ; Description: Finalize mmodule by:

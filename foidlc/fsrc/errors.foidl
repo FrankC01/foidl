@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; simple
-; simple file
+; errors
+; Compiler errors and exceptions
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
@@ -18,18 +18,24 @@
 ; limitations under the License.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+module errors
 
-module simple
+; Function: exception
+; Description: Writes exception with except_str and exits
 
-func fauxfunc [a b]
-    +: a b
+func exception [except_str]
+    failWith:
+        format:
+            "Exception: {}. exiting...`n"
+            [except_str]
 
-func noarg []
-    9
+; Function: token_exception
+; Description: Writes exception with line and column of error,
+; except_str and exits
 
-func foo [arg1]
-    match arg1
-    | 1     fauxfunc: %0 9
-    | 2     let a [b 5]
-                +: arg1 noarg:
+func token_exception [token except_str]
+    failWith:
+        format:
+            "Exception: {}:{} {}. exiting...`n"
+            [get: token :lineno get: token :colno except_str]
 

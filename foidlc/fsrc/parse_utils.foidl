@@ -24,12 +24,13 @@ include langcorem
 include ast_type
 include token_utils
 include symbol_table
+include errors
 
 
 func add_nil_expr [node]
     ?: =: count: get: node EXPRS zero
         extend!: get: node EXPRS st_lookup: "nil"
-        failWith: "Attempt to add nil to populated list `n"
+        token_exception: get: node :token "Attempt to add nil to populated list"
     node
 
 ; Function: process_for_private
@@ -189,10 +190,7 @@ func parse_collection [stok ast_tree srcname]
     ?: and: =: get: node TYPE :collection =: get: node COLLTYPE :map
         ?: =: mod: count: get: node EXPRS two zero
             nil
-            @(
-                fail_token_header: stok
-                failWith: "Map requires even pairs `n"
-            )
+            token_exception: stok "Map requires even pairs"
         nil
 
     pop!: ast_tree  ;   Get rid of tail
@@ -200,17 +198,17 @@ func parse_collection [stok ast_tree srcname]
 
 
 func :private invalid_arglist [fnode node]
-    fail_token_header: get: fnode :token
-    failWith:
+    token_exception:
+        get: fnode :token
         format:
-            " function {} expects arglist [...]`n"
+            " function {} expects arglist [...]"
             [get :fnode NAME]
 
 func :private invalid_arg [fnode node]
-    fail_token_header: get: fnode :token
-    failWith:
+    token_exception:
+        get: fnode :token
         format:
-            " function {} expects symbols in arglist. Found {}`n"
+            " function {} expects symbols in arglist. Found {}"
             [get: fnode NAME get: fnode TYPE]
 
 ; Function:
@@ -297,10 +295,9 @@ func get_var_expr [node ast_tree]
 
 func get_single_expr [node ast_tree]
     ?: is_next_nil_or_decl?: ast_tree
-        @(
-            fail_token_header: get: node :token
-            failWith: " expected a single expression to follow.`n"
-        )
+        token_exception:
+            get: node :token
+            " expects a single expression to follow"
         @(
             list_extend!: get: node EXPRS first: ast_tree
             pop!: ast_tree
@@ -314,12 +311,8 @@ func get_single_expr [node ast_tree]
 func :private validate_expressions [mnode estr pred_fn acc node]
     ?: and: node not: (pred_fn node)
         list_extend!: acc node
-        @(
-            fail_token_header: get: mnode :token
-            write!: cerr estr
-            write!: cerr nlchr
-            fail:
-        )
+        token_exception:
+            get: mnode :token estr
 
 
 ; Function: call_argcnt_pred
@@ -348,8 +341,16 @@ func :private process_call [cref externs node ast_tree]
                     map_extend!: externs get: cref NAME cref
                 node
             )
-            failWith: "Not enough remaining to fulfill function call.`n"
-        failWith: "Not a function ref.`n"
+            token_exception:
+                get: cref :token
+                format:
+                    "`q{}`q expects {} args, found {}"
+                    [get: get: cref :token :token_str get: cref ARGCNT count: ast_tree]
+        token_exception:
+            get: cref :token
+            format:
+                "`q{}`q is not a valid function reference"
+                [get: cref :type]
 
 ; Function: parse_functioncall
 ; Description:
@@ -360,7 +361,11 @@ func parse_functioncall [node ast_tree externs]
                 get: get: node :token :token_str
     ?: cref
         process_call: cref externs node ast_tree
-        failWith: "Problem resolving math reference.`n"
+        token_exception:
+            get: node :token
+            format:
+            "Unable to resolve function `q{}`q"
+            [get: get: node :token :token_str]
     map_extend!: node NAME get: cref NAME
 
 
@@ -371,7 +376,11 @@ func parse_mathcall [node ast_tree externs]
     let cref [] parse_mathref: get: get: node :token :token_str
     ?: cref
         process_call: cref externs node ast_tree
-        failWith: "Problem resolving math reference.`n"
+        token_exception:
+            get: node :token
+            format:
+                "{} is not a valid math function reference"
+                [get: get: node :token :token_str]
     map_extend!: node NAME get: cref NAME
 
 
@@ -395,13 +404,11 @@ func parse_if [node ast_tree]
 
 func :private excp_if_in_typeset [pnode typeset node]
     ?: get: typeset get: node TYPE
-        @(
-            fail_token_header: get: node TOKEN
-            failWith:
-                format:
-                    "{} does not expect type {}.`n"
-                    [get: pnode TYPE get: node TYPE]
-        )
+        token_exception:
+            get: node TOKEN
+            format:
+                "`q{}`q does not expect type `q{}`q"
+                [get: pnode TYPE get: node TYPE]
         node
 
 ; Function: parse_partial
@@ -429,10 +436,9 @@ func parse_partial [stok srcname node ast_tree]
 ; Exception... TODO - Need string formatter
 
 func :private invalid_match_let [node s]
-    fail_token_header: get: node :token
-    write!: cerr s
-    write!: cerr nlchr
-    fail:
+    token_exception:
+        get: node :token
+        s
 
 ; Function: while_guard
 ; Descriptions: Get next object from ast_list and if
@@ -517,10 +523,9 @@ func parse_match [node ast_tree]
     match count: tail_list
     | 0     add_default_guard: node
     | 1     list_extend!: get: node EXPRS get: tail_list zero
-    | 2     @(
-                write!: cerr "Only 1 default allowed in match expression"
-                fail:
-            )
+    | 2     token_exception:
+                get: node :token
+                "Only 1 default allowed in match expression"
     node
 
 

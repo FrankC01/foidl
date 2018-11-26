@@ -19,30 +19,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 module token_utils
+
 include langcorem
-
-; Exception format strings
-var :private excp_stub "Exception: {}:{} - "
-
-func fail_token_header [tok]
-    write!: cerr format: excp_stub [get: tok :lineno get: tok :colno]
+include errors
 
 ; Fail on token issue
 func fail_on_token [toks indx s]
     let tok [] get: toks indx
-    fail_token_header: tok
-    write!: cerr s
-    write!: cerr get: tok :token_str
-    write!: cerr nlchr
-    fail:
+    token_exception:
+        tok
+        format: "{} {}" [s get: tok :token_str]
 
 ; Fail with reason
 
 func fail_with_cause [toks indx s]
-    fail_token_header: get: toks indx
-    write!: cerr s
-    write!: cerr nlchr
-    fail:
+    token_exception:
+        get: toks indx
+        s
 
 ; Fail if looking for list (func arg, lambda arg, let args)
 func :private fail_not_list_token [toks cindx]
@@ -78,13 +71,9 @@ func is_token_type_in_set? [toks indx ttype_set]
 ; Syntax: source_pos_to_str: token
 
 func source_pos_to_str [token]
-    extend:
-        extend:
-            extend:
-                extend: "{" get: token :lineno
-                ":"
-            get: token :colno
-        "}"
+    format:
+        "{}:{}"
+        [get: token :lineno get: token :colno]
 
 ; Common type test sets
 
