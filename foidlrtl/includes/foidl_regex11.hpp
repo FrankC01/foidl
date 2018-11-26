@@ -33,10 +33,6 @@ typedef struct {
 } token_block, *ptoken_block;
 
 
-EXTERNC int     _is_symbol(const char* s);
-EXTERNC int     _is_keyword(const char* s);
-EXTERNC int     _is_number(const char* s);
-
 EXTERNC void*   _string_to_regex(const char* s);
 EXTERNC int     _is_match(const char* s, const char* pattern);
 EXTERNC int     _is_matchp(const char* s, void* pattern);

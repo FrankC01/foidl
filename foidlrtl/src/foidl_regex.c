@@ -13,43 +13,25 @@
 
 // Symbol compiled regex
 
-// static regex_t recall;
-// static regex_t resymbol;
-// static regex_t rekeyword;
-// static regex_t reinteger;
-// static regex_t rereal;
-// static regex_t rehex;
-
-// static const char *sympattern 	= "[a-zA-Z]{1}[a-zA-Z0-9_.\\?\\!]*$";
-// static const char *callpattern	= "[a-zA-Z]{1}[a-zA-Z0-9_.\\?\\!]*:$";
-// static const char *kwdpattern 	= ":[a-zA-Z0-9]{1}[a-zA-Z0-9_.\\?\\!]*$";
-// static const char *intpattern 	= "^[-+]?[0-9][0-9]*$";
-// static const char *realpattern 	= "^[-+]?[0-9]*\\.{1,1}[0-9]+$";
-// static const char *hexpattern 	= "^0[xX]{1,1}[a-fA-F0-9]+$";
-// static const char *bitpattern 	= "^0[bB]{1,1}[0-1]+$";
-
-constKeyword(callKW,":call");
-constKeyword(symbolKW,":symbol");
-constKeyword(letKW,":let");
-constKeyword(matchKW,":match");
-constKeyword(integerKW,":integer");
-constKeyword(realKW,":real");
-constKeyword(hexidecimalKW,":hexidecimal");
-constKeyword(binaryKW,":binary");
 constKeyword(unknownKW,":unknown");
-
-// void* const simple_str = _string_to_regex("\"([\\s\\S]+?)\"");
+constKeyword(typeKW,":type");
+constKeyword(regexKW,":regex");
+constKeyword(errorKW,":error");
+constKeyword(strKW,":string");
+constKeyword(token_typeKW,":token_type");
+constKeyword(token_strKW,":token_str");
+constKeyword(linenoKW,":lineno");
+constKeyword(colnoKW,":colno");
 
 
 // Take input foidl string and return foidl_regex type
 
 PFRTAny	foidl_regex(PFRTAny s) {
-
 	if(s->fclass == scalar_class && s->ftype == string_type) {
 		return allocRegex(s,_string_to_regex(s->value));
 	}
 	else {
-		printf("Skipped for pattern processing 0x%08x\n",s->ftype);
+		printf("Skipped for pattern processing 0x%08llx\n",s->ftype);
 	}
 	return nil;
 }
@@ -132,10 +114,7 @@ PFRTAny 	foidl_format(PFRTAny s, PFRTAny coll) {
 	return s;
 }
 
-constKeyword(typeKW,":type");
-constKeyword(regexKW,":regex");
-
-void gen_block(PFRTAny patterns,PFRTAny ignores, token_block *block) {
+static void gen_block(PFRTAny patterns,PFRTAny ignores, token_block *block) {
 	ft pcnt = ((PFRTList) patterns)->count;
 	ft icnt = ((PFRTList) ignores)->count;
 
@@ -181,13 +160,6 @@ void gen_block(PFRTAny patterns,PFRTAny ignores, token_block *block) {
 
 	return;
 }
-
-constKeyword(errorKW,":error");
-constKeyword(strKW,":string");
-constKeyword(token_typeKW,":token_type");
-constKeyword(token_strKW,":token_str");
-constKeyword(linenoKW,":lineno");
-constKeyword(colnoKW,":colno");
 
 PFRTAny foidl_tokenize(PFRTAny s, PFRTAny patterns, PFRTAny ignores) {
 	// 1. Get size of list and create array(s) of pointers for
@@ -261,60 +233,6 @@ PFRTAny foidl_tokenize(PFRTAny s, PFRTAny patterns, PFRTAny ignores) {
 }
 
 
-PFRTAny foidl_valid_symbol(PFRTAny s) {
-	if(s->fclass == scalar_class && s->ftype == string_type) {
-		if(_is_symbol(s->value))
-			return true;
-		else
-			return false;
-	}
-	return false;
-}
-
-PFRTAny foidl_valid_keyword(PFRTAny s) {
-	if(s->fclass == scalar_class &&
-		( s->ftype == keyword_type
-		|| s->ftype == string_type)) {
-		if(_is_keyword(s->value)) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-	else {
-		printf("%s not tested\n", s->value);
-	}
-	return false;
-}
-
-PFRTAny foidl_valid_number(PFRTAny s) {
-	if(s->fclass == scalar_class && s->ftype == string_type) {
-		if(_is_number(s->value))
-			return true;
-	}
-	return false;
-}
-
-PFRTAny foidl_categorize_num(PFRTAny s) {
-	// if(s->fclass == scalar_class && s->ftype == string_type) {
-	// 	if(!regexec(&reinteger,s->value, 0, NULL, 0))
-	// 		return integerKW;
-	// 	if(!regexec(&rereal,s->value, 0, NULL, 0))
-	// 		return realKW;
-	// 	if(!regexec(&rehex,s->value, 0, NULL, 0))
-	// 		return hexidecimalKW;
-	// 	else
-	// 		unknown_handler();
-	// }
-	// else {
-	// 	printf("%s not tested\n", s->value);
-	// 	unknown_handler();
-	// }
-	return false;
-
-}
-
 PFRTAny foidl_regex_cmp_qmark(PFRTAny pattern, PFRTAny arg) {
 	PFRTAny res = false;
 	// int result;
@@ -328,55 +246,5 @@ PFRTAny foidl_regex_cmp_qmark(PFRTAny pattern, PFRTAny arg) {
 	return res;
 }
 
-PFRTAny foidl_categorize(PFRTAny s) {
-	PFRTAny res = unknownKW;
-// 	if(s->fclass == scalar_class && s->ftype == string_type) {
-// 		if(!regexec(&resymbol,s->value, 0, NULL, 0))
-// 			return symbolKW;
-// 		if(!regexec(&recall,s->value, 0, NULL, 0))
-// 			return callKW;
-
-// 	}
-	return res;
-}
-
 void foidl_rt_init_regex() {
-	/*
-	//	Symbol testing
-	testregex("",sympattern);
-	testregex("h",sympattern);
-	testregex("hello",sympattern);
-	testregex("hello1234*",sympattern);
-	testregex("hello_???4?",sympattern);
-	testregex("a._..b._1234",sympattern);
-	*/
-	/*
-	//	Keyword testing
-	testregex("",&rekeyword);
-	testregex(":",&rekeyword);
-	testregex(":foo",&rekeyword);
-	testregex("hello_???4?",&rekeyword);
-	testregex(":hello_???4?",&rekeyword);
-	testregex("hello_???4?:",&rekeyword);
-	*/
-	/*
-	//	Integer Testing
-	testregex("0",&reinteger);
-	testregex("-0",&reinteger);
-	testregex("+0",&reinteger);
-	testregex("1",&reinteger);
-	testregex("-1",&reinteger);
-	testregex("+1",&reinteger);
-	testregex("21987322901",&reinteger);
-	testregex("21987F22901",&reinteger);
-	*/
-
-	// Hex testing
-	/*
-	testregex("0x",&rehex);
-	testregex("0X",&rehex);
-	testregex("0Xg",&rehex);
-	testregex("0x739FABCD",&rehex);
-	testregex("0x0000ABCD",&rehex);
-	*/
 }

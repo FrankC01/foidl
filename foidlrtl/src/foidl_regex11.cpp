@@ -15,19 +15,13 @@ using namespace std;
 
 regex* _new_regex(const char*);
 
-static regex sympattern("[a-zA-Z]{1}[a-zA-Z0-9_.\\?\\!]*$");
-static regex callpattern("[a-zA-Z]{1}[a-zA-Z0-9_.\\?\\!]*:$");
-static regex kwdpattern (":[a-zA-Z0-9]{1}[a-zA-Z0-9_.\\?\\!]*$");
-static regex intpattern ("^[-+]?[0-9][0-9]*$");
-static regex realpattern("^[-+]?[0-9]*\\.{1,1}[0-9]+$");
-static regex hexpattern ("^0[xX]{1,1}[a-fA-F0-9]+$");
-static regex bitpattern ("^0[bB]{1,1}[0-1]+$");
-//static regex *NLCR = _new_regex("\r?[\n]");
+// Predefined patterns. Should move to compiler?
+
 static regex *NLCR = _new_regex("(\r\n|[\r\n])");
 static regex *simple_str = _new_regex("\"(.|\n)*?\"");
 static regex *frmtstr = _new_regex("\\{.*?\\}");
-// static regex *comment = _new_regex("\"([\\s\\S]+?)\"");
 
+// Core functions to avoid cleaning up foidlrt.h at the moment
 EXTERNC void * foidl_xall(uint32_t sz);
 EXTERNC void foidl_xdel(void *v);
 EXTERNC void * foidl_reg_string(const char *i);
@@ -43,21 +37,21 @@ ptoken _build_token(string &word, int ti, int lc, int sp ) {
     return _tok;
 }
 
-EXTERNC int _is_symbol(const char* s) {
-    return regex_match(s, sympattern);
-}
+// EXTERNC int _is_symbol(const char* s) {
+//     return regex_match(s, sympattern);
+// }
 
-EXTERNC int _is_keyword(const char* s) {
-    return regex_match(s, kwdpattern);
-}
+// EXTERNC int _is_keyword(const char* s) {
+//     return regex_match(s, kwdpattern);
+// }
 
-EXTERNC int _is_number(const char* s) {
-     if( regex_match(s, intpattern)) return 1;
-     if( regex_match(s, realpattern)) return 1;
-     if( regex_match(s, hexpattern)) return 1;
-     if( regex_match(s, bitpattern)) return 1;
-     return 0;
-}
+// EXTERNC int _is_number(const char* s) {
+//      if( regex_match(s, intpattern)) return 1;
+//      if( regex_match(s, realpattern)) return 1;
+//      if( regex_match(s, hexpattern)) return 1;
+//      if( regex_match(s, bitpattern)) return 1;
+//      return 0;
+// }
 
 // Match with conversion of pattern string to regex
 // Expensive!
@@ -109,13 +103,6 @@ EXTERNC void _reduce_tokens(const char*s, ptoken_block block) {
     int lc =  1;
     int sp =  1;
     int nomatcherr = 0;
-    // for(int i=0; i<block->pattern_cnt;i++) {
-    //     cout << "Pattern : "
-    //         << block->type_array[i]
-    //         << " addr: "
-    //         << block->regex_array[i]
-    //         << endl;
-    // }
     while(!content.empty()) {
         int  err=0;
         int  res=0;
