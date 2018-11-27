@@ -1,0 +1,57 @@
+; ------------------------------------------------------------------------------
+; Copyright 2018 Frank V. Castellucci
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+; ------------------------------------------------------------------------------
+
+; Simple ZipCode Formatter
+
+module zipcodefmt
+
+; The tests contained within implement foidl code that implements formatting a zipcode.
+; 
+; Following are the formatters rules:
+;   - a fully qualified zipcode is in the form of nnnnn-nnnn.
+;       - contains all numerics starting with 5 digits, the '-' character, and ending with 4 digits
+;       - if included, the '-' must be positioned at index 5 (assuming zero-based indicies) 
+;       - the first 5 digits are referred to as the 'prefix' and the last 4 digits as the 'postfix'
+;   - if input is empty, then return '--'
+;   - if input does not contain all numerics, except for the '-' character, then return '--'
+;   - if input contains the '-' character at any position other than index 5, then return '--'
+;   - if input matches nnnnn-, then return nnnnn
+;   - if input matches nnnnn-0000, then return nnnnn with no '-0000' ending characters
+;   - if input matches nnnnn-n, nnnnn-nn, nnnnn-nnn, then return nnnnn-n000, nnnnn-nn00, or
+;     nnnnn-nnn0. This means we pad 0's to the output's postfix such that it contains 4 digits 
+;
+; Following are the logical functional pieces of the formatter:
+; 
+;   - Check for empty input string (will return '--')
+;   - Decompose input into 2 parts 
+;       - zipcode prefix (1st 5 digits)
+;       - zipcode postfix (last 4 digitsd, if provided)
+;   - Check for invalid prefix (will return '--')
+;   - ???
+
+func greeting [msg]
+    print!: "Hello there "
+    print!: msg
+    printnl!: "! Welcome to Zip Code Formatter Examples"
+
+func emptyGreeting [msg]
+    printnl!: empty?: msg
+    ; Hmmmm.... Something wrong here. I guess 'nil' does not evaluate to empty
+    ; or am I calling it wrong?
+
+func main [argv]
+    greeting: get: argv 1
+    emptyGreeting: get: argv 1
