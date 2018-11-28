@@ -1,7 +1,7 @@
 /*
 	foidl_predicate.c
 	Library predicate management
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -23,7 +23,7 @@ PFRTAny foidl_falsey_qmark(PFRTAny el) {
 }
 
 PFRTAny foidl_and(PFRTAny lhs, PFRTAny rhs) {
-	return ((foidl_truthy_qmark(lhs) == true) 
+	return ((foidl_truthy_qmark(lhs) == true)
 		&& (foidl_truthy_qmark(rhs) == true)) ? true : false;
 }
 
@@ -57,7 +57,7 @@ PFRTAny scalar_equality(PFRTAny lhs, PFRTAny rhs) {
 			}
 		}
 		else {
-			if( (lhs->ftype == string_type && rhs->ftype == keyword_type) 
+			if( (lhs->ftype == string_type && rhs->ftype == keyword_type)
 				||
 				(rhs->ftype == string_type && lhs->ftype == keyword_type) ) {
 				if (0 != strcmp((char *)lhs->value,(char *)rhs->value))
@@ -102,7 +102,7 @@ PFRTAny foidl_lt_qmark(PFRTAny lhs, PFRTAny rhs) {
 	if(lhs->fclass == rhs->fclass && lhs->ftype == rhs->ftype) {
 		switch(lhs->ftype) {
 			case 	character_type:
-			case 	integer_type:				
+			case 	integer_type:
 				res = lhs->value < rhs->value ? true : false;
 				break;
 			default:
@@ -114,7 +114,7 @@ PFRTAny foidl_lt_qmark(PFRTAny lhs, PFRTAny rhs) {
 }
 
 PFRTAny foidl_lteq_qmark(PFRTAny lhs, PFRTAny rhs) {
-	return (foidl_lt_qmark(lhs,rhs) == true || 
+	return (foidl_lt_qmark(lhs,rhs) == true ||
 			foidl_equal_qmark(lhs,rhs) == true) ? true : false;
 }
 
@@ -123,7 +123,7 @@ PFRTAny foidl_gt_qmark(PFRTAny lhs, PFRTAny rhs) {
 	if(lhs->fclass == rhs->fclass && lhs->ftype == rhs->ftype) {
 		switch(lhs->ftype) {
 			case 	character_type:
-			case 	integer_type:				
+			case 	integer_type:
 				res = lhs->value > rhs->value ? true : false;
 				break;
 			default:
@@ -134,8 +134,8 @@ PFRTAny foidl_gt_qmark(PFRTAny lhs, PFRTAny rhs) {
 	return res;
 }
 
-PFRTAny foidl_gteq_qmark(PFRTAny lhs, PFRTAny rhs) {	
-	return (foidl_gt_qmark(lhs,rhs) == true || 
+PFRTAny foidl_gteq_qmark(PFRTAny lhs, PFRTAny rhs) {
+	return (foidl_gt_qmark(lhs,rhs) == true ||
 			foidl_equal_qmark(lhs,rhs) == true) ? true : false;
 }
 
@@ -157,39 +157,43 @@ PFRTAny foidl_io_qmark(PFRTAny el) {
 PFRTAny function_strict_arg(PFRTAny fn, PFRTAny cnt) {
 	if(fn->ftype == funcref_type && ((PFRTFuncRef) fn)->argcount == (ft) cnt->value)
 		return true;
-	else if(fn->ftype == lambref_type && 
+	else if(fn->ftype == lambref_type &&
 		((PFRTLambdaRef)fn)->ffuncref->argcount == (ft) cnt->value)
 		return true;
 	else if(fn->ftype == funcinst_type) {
 		PFRTFuncRef2 fn2 = (PFRTFuncRef2) fn;
 		if((ft) cnt->value == (fn2->mcount - fn2->args->count))
 			return true;
-		else 
+		else
 			return false;
-	} 
-		
+	}
+
 	else
-		return false;	
+		return false;
 }
 
 PFRTAny foidl_collection_qmark(PFRTAny el) {
 	return (el->fclass == io_class ||
-		(el->fclass == collection_class && 
+		(el->fclass == collection_class &&
 		(el->ftype == map2_type || el->ftype == list2_type
 		 || el->ftype == list2_type || el->ftype == vector2_type
 		 || el->ftype == set2_type|| el->ftype == series_type))) ? true : false;
 }
 
 PFRTAny foidl_extendable_qmark(PFRTAny el) {
-	return (foidl_collection_qmark(el) == true 
+	return (foidl_collection_qmark(el) == true
 		|| el->ftype == string_type
 		|| el->ftype == keyword_type) ?
 		true : false;
 }
 
 PFRTAny foidl_empty_qmark(PFRTAny el) {
-	return ((foidl_collection_qmark(el) == true ||
-		el->ftype == string_type) && el->count == 0) ? true : false;
+	if(foidl_collection_qmark(el) == true || el->ftype == string_type)
+		return el->count == 0 ? true : false;
+	else
+		return true;
+	// return ((foidl_collection_qmark(el) == true ||
+	// 	el->ftype == string_type) && el->count == 0) ? true : false;
 }
 
 //	Type equalities
@@ -239,7 +243,7 @@ PFRTAny foidl_series_qmark(PFRTAny el) {
 }
 
 
-//	Internal type predicates 
+//	Internal type predicates
 
 PFRTAny string_type_qmark(PFRTAny el) {
 	return (el->ftype == string_type || el->ftype == keyword_type) ?

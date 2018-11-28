@@ -1,5 +1,5 @@
 ; ------------------------------------------------------------------------------
-; Copyright 2018 Frank V. Castellucci
+; Copyright 2018 John Bucci
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@
 module zipcodefmt
 
 ; The tests contained within implement foidl code that implements formatting a zipcode.
-; 
+;
 ; Following are the formatters rules:
 ;   - a fully qualified zipcode is in the form of nnnnn-nnnn.
 ;       - contains all numerics starting with 5 digits, the '-' character, and ending with 4 digits
-;       - if included, the '-' must be positioned at index 5 (assuming zero-based indicies) 
+;       - if included, the '-' must be positioned at index 5 (assuming zero-based indicies)
 ;       - the first 5 digits are referred to as the 'prefix' and the last 4 digits as the 'postfix'
 ;   - if input is empty, then return '--'
 ;   - if input does not contain all numerics, except for the '-' character, then return '--'
@@ -31,12 +31,12 @@ module zipcodefmt
 ;   - if input matches nnnnn-, then return nnnnn
 ;   - if input matches nnnnn-0000, then return nnnnn with no '-0000' ending characters
 ;   - if input matches nnnnn-n, nnnnn-nn, nnnnn-nnn, then return nnnnn-n000, nnnnn-nn00, or
-;     nnnnn-nnn0. This means we pad 0's to the output's postfix such that it contains 4 digits 
+;     nnnnn-nnn0. This means we pad 0's to the output's postfix such that it contains 4 digits
 ;
 ; Following are the logical functional pieces of the formatter:
-; 
+;
 ;   - Check for empty input string (will return '--')
-;   - Decompose input into 2 parts 
+;   - Decompose input into 2 parts
 ;       - zipcode prefix (1st 5 digits)
 ;       - zipcode postfix (last 4 digitsd, if provided)
 ;   - Check for invalid prefix (will return '--')
@@ -46,12 +46,24 @@ func greeting [msg]
     print!: "Hello there "
     print!: msg
     printnl!: "! Welcome to Zip Code Formatter Examples"
+    ; Frank: With the recent addition of the 'format:' function you could
+    ; reduce compiler and runtime overhead. Following is a rewrite of this using that
+    ; print!: "Hello there {}! Welcome to Zip Code Formatter example" [msg]
 
 func emptyGreeting [msg]
     printnl!: empty?: msg
     ; Hmmmm.... Something wrong here. I guess 'nil' does not evaluate to empty
     ; or am I calling it wrong?
+    ; Frank: empty? works with collections and strings but you found a bug
+    ; as 'nil' should return 'true' on empty. I fixed that in the runtime and
+    ; checked in
 
 func main [argv]
     greeting: get: argv 1
     emptyGreeting: get: argv 1
+    ; Frank: As my style, if I am going to call the same function to get
+    ; the same result (as you are in getting the arglist first value) I
+    ; tend to declare it locally by using 'let':
+    ; let msg [] get: argv 1
+    ; greeting: msg
+    ; emptyGreeting: msg
