@@ -1,0 +1,120 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ast_validate
+; AST type validation model
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module ast_validate
+include langcorem
+
+include ast_type
+include symbol_table
+include errors
+
+; Function: dispatch_ast
+; Description: Dispatches validation function
+; on each node in expressions
+
+func :private dispatch_ast [state result self]
+    fold:
+        ^[acc ast_node]
+            let [e get: ast_node EVAL
+                 p (e state)]
+                (p result ast_node)
+        result getd: self EXPRS []
+
+; Function: add_to_symboltable
+; Description: Take a list of symbols and store them to
+; the symbol table in lexical scope
+
+func :private add_to_symboltable [refkw slist]
+    fold:
+        ^[fn sym]
+            ?: =: get: sym TYPE :symbol
+                @(
+                    (fn
+                        get: sym NAME
+                        map_extend!:
+                            type_instance:
+                                refkw
+                                get: sym SOURCE
+                                get: sym TOKEN
+                            NAME get: sym NAME
+                        )
+                    fn
+                )
+                exception:
+                    format:
+                        "Attempt to store {} in symbol table"
+                        [get: sym TYPE]
+        st_add_symbolref slist
+
+func default_validate [state result self]
+    print!:
+        format:
+            "default_validate on {}.`n" [get: self TYPE]
+
+func module_validate [state result self]
+    printnl!: "Validating module"
+    dispatch_ast: state result self
+
+func variable_validate [state result self]
+    printnl!: "Validating module"
+
+; Function: function_validate
+; Description: push/pop symbol_table for args then
+; evaluate expressions
+
+func function_validate [state result self]
+    printnl!: "Validating function"
+    st_push_table: get: self NAME
+    add_to_symboltable: :funcargref get: get: self ARGLIST EXPRS
+    dispatch_ast: state result self
+    st_pop_table:
+
+func lambda_validate [state result self]
+    printnl!: "Validating module"
+
+func call_validate [state result self]
+    printnl!: "Validating Function Call"
+    dispatch_ast: state result self
+
+func match_validate [state result self]
+    printnl!: "Validating module"
+
+func let_validate [state result self]
+    printnl!: "Validating module"
+
+func if_validate [state result self]
+    printnl!: "Validating module"
+
+func group_validate [state result self]
+    printnl!: "Validating module"
+
+func partial_validate [state result self]
+    printnl!: "Validating module"
+
+func emtpycollection_validate [state result self]
+    printnl!: "Validating module"
+
+func collection_validate [state result self]
+    printnl!: "Validating module"
+
+func symbol_validate [state result self]
+    print!: "Validating Symbol" printnl!: self
+    printnl!: st_lookup: get: self NAME
+

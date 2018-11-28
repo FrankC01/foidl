@@ -192,6 +192,10 @@ func parse_collection [stok ast_tree srcname]
             nil
             token_exception: stok "Map requires even pairs"
         nil
+    ; Set the collection count
+    map_extend!:
+        node
+        ARGCNT count: get: node EXPRS
 
     pop!: ast_tree  ;   Get rid of tail
     node
@@ -326,9 +330,6 @@ func :private call_argcnt_pred [argcnt node indx]
 ; then check if external type
 
 func :private process_call [cref externs node ast_tree]
-    print!: format:
-        "Processing {} function call expecting {} args with tree list count {}.`n"
-        [get: cref NAME get: cref ARGCNT count: ast_tree]
     ?: =: get: cref TYPE :funcref
         ?: <=: get: cref ARGCNT count: ast_tree
             @(

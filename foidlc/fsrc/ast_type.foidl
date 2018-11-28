@@ -21,6 +21,8 @@
 module ast_type
 include langcorem
 
+include ast_validate
+
 ; Make keys standout in source using AST
 
 var EXPRS           :exprs
@@ -41,23 +43,32 @@ var LITERALS        :literals
 var LAMBDAS         :lambdas
 var PAIRS           :exprs
 var PREDICATE       :predicate
+var EVAL            :eval_fn
 
 var :private ast_type {
     ;   Reference types
     :varref  {
         TYPE        :varref
-        NAME        nil}
+        NAME        nil
+        EVAL        default_validate}
     :funcref {
         TYPE        :funcref
         NAME        nil
-        ARGCNT      zero}
+        ARGCNT      zero
+        EVAL        default_validate}
+    :funcargref {
+        TYPE        :funcargref
+        NAME        nil
+        EVAL        default_validate}
     :literalref {
         TYPE        :literalref
         NAME        nil
-        LITTYPE     nil}
+        LITTYPE     nil
+        EVAL        default_validate}
     :match_exprref {
         TYPE        :match_exprref
-        NAME        nil}
+        NAME        nil
+        EVAL        default_validate}
     ;   Declaration types
     ; module symbol declarations*
     :module   {
@@ -66,72 +77,88 @@ var :private ast_type {
         EXTERNS     nil
         LITERALS    nil
         LAMBDAS     nil
-        DECLARATIONS nil}
+        DECLARATIONS nil
+        EVAL        module_validate}
     ; var :private? symbol expression?
     :variable  {
         TYPE        :variable
         NAME        nil
-        IS_PRIVATE  false}
+        IS_PRIVATE  false
+        EVAL        default_validate}
     ; func :private? symbol [symbol*] expression*
     :function  {
         TYPE        :function
         NAME        nil
         ARGLIST     nil
-        IS_PRIVATE  false}
+        IS_PRIVATE  false
+        EVAL        function_validate}
     ;   Expression types
     ; ^[symbol*] expression?
     :lambda  {
         TYPE        :lambda
         NAME        nil
         ARGLIST     nil
-        IS_PRIVATE  true}
+        IS_PRIVATE  true
+        EVAL        default_validate}
     ; symbol: expression*
     :call {
         TYPE        :call
-        NAME        nil}
+        NAME        nil
+        EVAL        call_validate}
     ; match symbol? expression match_guard+
     :match  {
         TYPE        :match
         NAME        nil
-        PREDICATE   nil}
+        PREDICATE   nil
+        EVAL        default_validate}
     ; let symbol? [let_pair*] expression
     :let  {
         TYPE        :let
         NAME        nil
-        ARGLIST     nil}
+        ARGLIST     nil
+        EVAL        default_validate}
     ; :match_default
     :match_default {
-        TYPE        :match_default }
+        TYPE        :match_default
+        EVAL        default_validate }
     ; ?: pred expression expression
     :if {
-        TYPE        :if}
+        TYPE        :if
+        EVAL        default_validate}
     ; | pred expr
     :match_guard {
         TYPE        :match_guard
-        IS_DEFAULT  false}
+        IS_DEFAULT  false
+        EVAL        default_validate}
     ; @( expression+ )
     :group   {
-        TYPE        :group}
+        TYPE        :group
+        EVAL        default_validate}
     ; (expression+)
     :partial  {
-        TYPE        :partial}
+        TYPE        :partial
+        EVAL        default_validate}
     ; [] {} <> #{}
     :empty_collection   {
         TYPE        :empty_collection
         COLLTYPE    nil
-        ELMCNT      zero}
+        ELMCNT      zero
+        EVAL        default_validate}
     ; [expression+] {expression expression,...} <expression+> #{expression+}
     :collection         {
         TYPE        :collection
         COLLTYPE    nil
-        ELMCNT      zero}
+        ELMCNT      zero
+        EVAL        default_validate}
     ; symbol
     :symbol   {
         TYPE        :symbol
-        NAME        nil}
+        NAME        nil
+        EVAL        symbol_validate}
     ; :private
     :private  {
-        TYPE    :private}
+        TYPE        :private
+        EVAL        default_validate}
 }
 
 ; Convenience sets for predicates

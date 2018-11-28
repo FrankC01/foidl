@@ -331,8 +331,11 @@ func :private ast_print   [state]
     print_ast: get: state :ast
     state
 
-func :private parse_tree   [state]
-    printnl!: "Creating PAST"
+func :private validate_ast   [state]
+    printnl!: "Validating AST"
+    let ast [] get: state :ast
+    let mvfn [] get: ast EVAL
+    (mvfn state list_inst!: ast)
     state
 
 func :private produce_ir   [state]
@@ -447,7 +450,7 @@ func :private faux_step [s state]
 ;   reverse_tokens      - support bottom up parsing
 ;   parse_tokens        - parse the tokens to abstract syntax tree (AST)
 ;   [ast_print]         - optionally prints AST
-;   parse_tree          - walks AST, refactor, generate parse abstract syntax tree (PAST)
+;   validate_ast        - walk AST, refactor, optimize and more semantic checks
 ;   produce_ir          - walks PAST, creates three address code list (3AC)
 ;   [ir_print]          - optionally print 3AC
 ;   emit_llvm           - Emits LLVM-IR from 3AC
@@ -497,7 +500,7 @@ func build_handler_and_run [cmap]
                     ?: get: cmap :printast
                         ast_print
                         skip_step
-                    (faux_step "parse_tree")
+                    validate_ast
                     (faux_step "produce_ir")
                     ?: get: cmap :printir
                         (faux_step "ir_print")
