@@ -48,7 +48,11 @@ func greeting [msg]
     printnl!: "! Welcome to Zip Code Formatter Examples"
     ; Frank: With the recent addition of the 'format:' function you could
     ; reduce compiler and runtime overhead. Following is a rewrite of this using that
-    ; print!: "Hello there {}! Welcome to Zip Code Formatter example" [msg]
+    ;
+    ; print!:
+    ;   format:
+    ;       "Hello there {}! Welcome to Zip Code Formatter example.`n"
+    ;       [msg]
 
 func emptyGreeting [msg]
     printnl!: empty?: msg
