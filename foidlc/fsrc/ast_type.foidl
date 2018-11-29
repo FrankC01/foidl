@@ -50,7 +50,7 @@ var :private ast_type {
     :varref  {
         TYPE        :varref
         NAME        nil
-        EVAL        default_validate}
+        EVAL        ref_validate}
     :funcref {
         TYPE        :funcref
         NAME        nil
@@ -64,7 +64,7 @@ var :private ast_type {
         TYPE        :literalref
         NAME        nil
         LITTYPE     nil
-        EVAL        default_validate}
+        EVAL        ref_validate}
     :match_exprref {
         TYPE        :match_exprref
         NAME        nil
@@ -84,7 +84,7 @@ var :private ast_type {
         TYPE        :variable
         NAME        nil
         IS_PRIVATE  false
-        EVAL        default_validate}
+        EVAL        variable_validate}
     ; func :private? symbol [symbol*] expression*
     :function  {
         TYPE        :function
@@ -124,7 +124,7 @@ var :private ast_type {
     ; ?: pred expression expression
     :if {
         TYPE        :if
-        EVAL        default_validate}
+        EVAL        if_validate}
     ; | pred expr
     :match_guard {
         TYPE        :match_guard
@@ -133,7 +133,7 @@ var :private ast_type {
     ; @( expression+ )
     :group   {
         TYPE        :group
-        EVAL        default_validate}
+        EVAL        group_validate}
     ; (expression+)
     :partial  {
         TYPE        :partial
@@ -143,13 +143,13 @@ var :private ast_type {
         TYPE        :empty_collection
         COLLTYPE    nil
         ELMCNT      zero
-        EVAL        default_validate}
+        EVAL        emptycollection_validate}
     ; [expression+] {expression expression,...} <expression+> #{expression+}
     :collection         {
         TYPE        :collection
         COLLTYPE    nil
         ELMCNT      zero
-        EVAL        default_validate}
+        EVAL        collection_validate}
     ; symbol
     :symbol   {
         TYPE        :symbol

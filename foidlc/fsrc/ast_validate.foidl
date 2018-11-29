@@ -22,20 +22,31 @@ module ast_validate
 include langcorem
 
 include ast_type
+include print_ast
 include symbol_table
 include errors
+
+
+; Function: dispatch_fn
+; Description: Invokes eval methon on ast_node
+
+func :private dispatch_fn [state result ast_node]
+    let a_fn [] get: ast_node EVAL
+    (a_fn state result ast_node)
 
 ; Function: dispatch_ast
 ; Description: Dispatches validation function
 ; on each node in expressions
 
 func :private dispatch_ast [state result self]
-    fold:
-        ^[acc ast_node]
-            let [e get: ast_node EVAL
-                 p (e state)]
-                (p result ast_node)
-        result getd: self EXPRS []
+    fold: (dispatch_fn state) result getd: self EXPRS []
+
+; Function: get_expressions
+; Description: Dispatches validation function
+; for each member of exprs
+
+func :private get_expressions [state exprs]
+    fold: (dispatch_fn state) [] exprs
 
 ; Function: add_to_symboltable
 ; Description: Take a list of symbols and store them to
@@ -63,58 +74,166 @@ func :private add_to_symboltable [refkw slist]
                         [get: sym TYPE]
         st_add_symbolref slist
 
+
+; Function: register_extern
+; Description: Checks if symbol reference is from this
+; compilation source and, if not, adds to the externs
+; map
+
+func :private register_extern [state sref]
+    ?: =: get: state :module_name get: sref SOURCE
+        sref
+        @(
+            map_extend!:
+                get: get: state :ast EXTERNS
+                get: sref NAME
+                sref
+            sref
+        )
+
+
+; Function: default_validate
+; Description: Function as placeholder for invoking
+; validate function for node
+
 func default_validate [state result self]
     print!:
         format:
             "default_validate on {}.`n" [get: self TYPE]
+    result
+
+; Function: module_validate
 
 func module_validate [state result self]
-    printnl!: "Validating module"
     dispatch_ast: state result self
+    print_ast: self
+
+; Function: variable_validate
+; Description: Evaluate expression on rhs
 
 func variable_validate [state result self]
-    printnl!: "Validating module"
+    ; TODO: Reclaim old list
+    ; list_delete: get: self EXPRS
+    map_extend!: self EXPRS
+        get_expressions: state get: self EXPRS
+    list_extend!: result self
+
 
 ; Function: function_validate
 ; Description: push/pop symbol_table for args then
 ; evaluate expressions
 
 func function_validate [state result self]
-    printnl!: "Validating function"
     st_push_table: get: self NAME
     add_to_symboltable: :funcargref get: get: self ARGLIST EXPRS
-    dispatch_ast: state result self
+    ; TODO: Reclaim old list
+    ; list_delete: get: self EXPRS
+    map_extend!: self EXPRS
+        get_expressions: state get: self EXPRS
     st_pop_table:
+    list_extend!: result self
 
 func lambda_validate [state result self]
-    printnl!: "Validating module"
+    printnl!: "Validating lambda"
+    result
+
+; Function: call_validate
+; Description: Validate function calls
 
 func call_validate [state result self]
     printnl!: "Validating Function Call"
-    dispatch_ast: state result self
+    ; TODO: Reclaim old list
+    ; list_delete: get: self EXPRS
+    map_extend!: self EXPRS
+        get_expressions: state get: self EXPRS
+    list_extend!: result self
 
 func match_validate [state result self]
-    printnl!: "Validating module"
+    printnl!: "Validating match"
+    result
 
 func let_validate [state result self]
-    printnl!: "Validating module"
+    printnl!: "Validating let"
+    result
+
+
+; Function: if_validate
+; Description: Validates pred then else
 
 func if_validate [state result self]
-    printnl!: "Validating module"
+    printnl!: "Validating if"
+    ; TODO: Reclaim old list
+    ; list_delete: get: self EXPRS
+    map_extend!: self EXPRS
+        get_expressions: state get: self EXPRS
+    list_extend!: result self
+
+; Function: group_validate
+; Description: Validate expressions in group
 
 func group_validate [state result self]
-    printnl!: "Validating module"
+    printnl!: "Validating group"
+    ; TODO: Reclaim old list
+    ; list_delete: get: self EXPRS
+    map_extend!: self EXPRS
+        get_expressions: state get: self EXPRS
+    list_extend!: result self
 
 func partial_validate [state result self]
-    printnl!: "Validating module"
+    printnl!: "Validating partial"
+    result
 
-func emtpycollection_validate [state result self]
-    printnl!: "Validating module"
+var :private empty_lookup {
+    :list     "empty_list"
+    :vector   "empty_vector"
+    :map      "empty_map"
+    :set      "empty_set"
+}
+
+; Function: emptycollection_validate
+; Description: Decipher type and resolve to
+; langcore 'empty_x' reference
+
+func emptycollection_validate [state result self]
+    printnl!: self
+    list_extend!:
+        result
+        st_lookup: get: empty_lookup get: self COLLTYPE
+
+; Function: collection_validate
+; Description: Evaluate members of collection we
+; don't care about type yet
 
 func collection_validate [state result self]
-    printnl!: "Validating module"
+    printnl!: "Validating collection"
+    printnl!: self
+    ;result
+    ; TODO: Reclaim old list
+    ; list_delete: get: self EXPRS
+    map_extend!: self EXPRS
+        get_expressions: state get: self EXPRS
+    list_extend!: result self
+
+; Function: ref_validate
+; Description: Pass through validation of
+; reference types
+
+func ref_validate [state result self]
+    list_extend!: result self
+
+; Function: symbol_validate
+; Description: Resolves symbol in symbol table and
+; registers in external map if resolved from
+; external unit (e.g. langcore, etc)
 
 func symbol_validate [state result self]
-    print!: "Validating Symbol" printnl!: self
-    printnl!: st_lookup: get: self NAME
+    let sref [] st_lookup: get: self NAME
+    ?: nil?: sref
+        token_exception:
+            get: self TOKEN
+            format:
+                "Unable to resolve symbol {}" [get: self NAME]
+        list_extend!:
+            result
+            register_extern: state sref
 

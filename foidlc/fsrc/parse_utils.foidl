@@ -424,27 +424,61 @@ func :private excp_if_in_typeset [pnode typeset node]
                 [get: pnode TYPE node_type]
         node
 
-; Function: parse_partial
-; Description: Parse expressions ensuring non are
-; nil, declaration or match_guards
 
-func parse_partial [stok srcname node ast_tree]
-    let pred_fn [] (ttype_pred :rparen)
-    let tindx [] index_to_type: ast_tree pred_fn
-    match tindx
+func :private expressions_to_type [node ast_tree ttype]
+    let pred_fn [] (ttype_pred ttype)
+    match index_to_type: ast_tree pred_fn
         | zero      fail:
         | :default  until_pred:
                         (for_each_expr_excpt
-                            pred_fn
+                            (ttype_pred :rparen)
                             (excp_if_in_typeset
                                 node
                                 invalid_set)
                             ast_tree)
                             node
 
+; Function: parse_partial
+; Description: Parse expressions ensuring non are
+; nil, declaration or match_guards
+
+func parse_partial [stok srcname node ast_tree]
+    ;let pred_fn [] (ttype_pred :rparen)
+    ;let tindx [] index_to_type: ast_tree pred_fn
+    expressions_to_type: node ast_tree :rparen
+;    match count_to_type: ast_tree :rparen
+;        | zero      fail:
+;        | :default  until_pred:
+;                        (for_each_expr_excpt
+;                            (ttype_pred :rparen)
+;                            (excp_if_in_typeset
+;                                node
+;                                invalid_set)
+;                            ast_tree)
+;                            node
+
     pop!: ast_tree
 
 
+; Function: parse_group
+; Description: Parse expressions until rparen
+
+func parse_group [stok srcname node ast_tree]
+    ;let pred_fn [] (ttype_pred :rparen)
+    ;let tindx [] index_to_type: ast_tree pred_fn
+    expressions_to_type: node ast_tree :rparen
+;    match count_to_type: ast_tree :rparen
+;        | zero  fail:
+;        | :default  until_pred:
+;                        (for_each_expr_excpt
+;                            (ttype_pred :rparen)
+;                            (excp_if_in_typeset
+;                                node
+;                                invalid_set)
+;                            ast_tree)
+;                            node
+
+    pop!: ast_tree
 
 ; Exception... TODO - Need string formatter
 

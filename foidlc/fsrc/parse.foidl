@@ -33,11 +33,10 @@ include errors
 ; Syntax:
 
 func :private unhandled_type [pmap token]
-    token_exception:
-        token
+    exception:
         format:
             "Parser unhandled type {}"
-            [get: token :token_type]
+            [token]
 
 ; Function: module_handler
 ; Description: Finalize mmodule by:
@@ -153,9 +152,16 @@ func :private lambda_handler [mmodule ast_tree token srcname]
     verify_func_args: lnode ast_tree
     extend!: ast_tree get_single_expr: lnode ast_tree
 
+; Function: group_handler
+; Description:
+
+func :private group_handler [mmodule ast_tree token srcname]
+    let gnode [] type_with_exprs: :group srcname token
+    parse_group: token srcname gnode ast_tree
+    extend!: ast_tree gnode
+
 ; Function: partial_handler
 ; Description:
-; Syntax:
 
 func :private partial_handler [mmodule ast_tree token srcname]
     let pnode [] type_with_exprs: :partial srcname token
@@ -255,6 +261,7 @@ var :private parse_map {
     :match_exprref  match_exprref_handler
     :default        match_default_handler
     :lambda         lambda_handler
+    :group          group_handler
     :lparen         partial_handler
     :rparen         right_paren_handler
     :math_call      math_call_handler

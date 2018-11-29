@@ -21,15 +21,25 @@
 
 module simple
 
+var svar 1
+
+
 func fauxfunc [a b]
-    +: a b
+    +: a +: b svar
 
 func noarg []
 
+func iftest [a b]
+    ?: a
+        noarg:
+        @(
+            (fauxfunc a)
+            b
+        )
 
-func foo [arg1]
-    match arg1
-    | 1     fauxfunc: %0 9
-    | 2     let a [b 5]
-                +: arg1 noarg:
+;func foo [arg1]
+;    match arg1
+;    | 1     fauxfunc: %0 9
+;    | 2     let a [b 5]
+;                +: arg1 noarg:
 
