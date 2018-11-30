@@ -55,16 +55,23 @@ func :private print_table [table]
             @(
                 print!: key: entry
                 print!: "   "
-                printnl!: value: entry)
+                printnl!: value: entry
+            )
         nil table
+
+; Public debug functions
+
+func dump_tos_symbols []
+    print_table: get: first: get: st_context :stack :table
 
 func dump_symbols []
     fold:
         ^[acc entry]
             @(
-                print!: nlchr
-                print!: "Symbol Table " printnl!: get: entry :name
-                printnl!: "---------------------------------------"
+                print!:
+                    format:
+                        " Symbol Table: {}`n ---------------------------------------`n"
+                        [get: entry :name]
                 print_table: get: entry :table
             )
         nil get: st_context :stack

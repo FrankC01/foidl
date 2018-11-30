@@ -29,6 +29,9 @@ func fauxfunc [a b]
 
 func :private noarg! []
 
+    let foo [simba +: 2 2]
+        let [] +: 1 simba
+
 func iftest [a b]
     ?: a
         noarg!:

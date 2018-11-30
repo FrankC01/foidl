@@ -69,6 +69,18 @@ var :private ast_type {
         TYPE        :match_exprref
         NAME        nil
         EVAL        default_validate}
+    :match_resref {
+        TYPE        :match_resref
+        NAME        nil
+        EVAL        default_validate}
+    :let_resref {
+        TYPE        :let_resref
+        NAME        nil
+        EVAL        default_validate}
+    :let_argref {
+        TYPE        :let_argref
+        NAME        nil
+        EVAL        default_validate}
     ;   Declaration types
     ; module symbol declarations*
     :module   {
@@ -116,7 +128,10 @@ var :private ast_type {
         TYPE        :let
         NAME        nil
         ARGLIST     nil
-        EVAL        default_validate}
+        EVAL        let_validate}
+    ; empty expressions or [symbol expression]+
+    :let_pairs  {
+        TYPE        :let_pairs}
     ; :match_default
     :match_default {
         TYPE        :match_default

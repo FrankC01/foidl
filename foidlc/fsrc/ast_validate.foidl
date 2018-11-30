@@ -28,7 +28,7 @@ include errors
 
 
 ; Function: dispatch_fn
-; Description: Invokes eval methon on ast_node
+; Description: Invokes eval method on ast_node
 
 func :private dispatch_fn [state result ast_node]
     let a_fn [] get: ast_node EVAL
@@ -48,31 +48,36 @@ func :private dispatch_ast [state result self]
 func :private get_expressions [state exprs]
     fold: (dispatch_fn state) [] exprs
 
+; Function: insert_symbol_type
+; Description: Create a AST element of refkw making
+; the name either refname or name of original symbol
+; and add to the symbol table in lexical scope
+
+func :private insert_symbol_type [refkw sym refname]
+    st_add_symbolref:
+        get: sym NAME
+        map_extend!:
+            type_instance:
+                refkw
+                get: sym SOURCE
+                get: sym TOKEN
+            NAME ?: refname refname get: sym NAME
+    sym
+
 ; Function: add_to_symboltable
-; Description: Take a list of symbols and store them to
+; Description: Take a straight list of symbols and store them to
 ; the symbol table in lexical scope
 
 func :private add_to_symboltable [refkw slist]
     fold:
         ^[fn sym]
             ?: =: get: sym TYPE :symbol
-                @(
-                    (fn
-                        get: sym NAME
-                        map_extend!:
-                            type_instance:
-                                refkw
-                                get: sym SOURCE
-                                get: sym TOKEN
-                            NAME get: sym NAME
-                        )
-                    fn
-                )
+                insert_symbol_type: refkw sym nil
                 exception:
                     format:
                         "Attempt to store {} in symbol table"
                         [get: sym TYPE]
-        st_add_symbolref slist
+       nil slist
 
 
 ; Function: register_extern
@@ -141,7 +146,6 @@ func lambda_validate [state result self]
 ; Description: Validate function calls
 
 func call_validate [state result self]
-    printnl!: "Validating Function Call"
     ; TODO: Reclaim old list
     ; list_delete: get: self EXPRS
     map_extend!: self EXPRS
@@ -152,16 +156,89 @@ func match_validate [state result self]
     printnl!: "Validating match"
     result
 
-func let_validate [state result self]
-    printnl!: "Validating let"
-    result
+; Let naming templates
 
+var let_no_name_template "let_{}_{}"
+var let_name_template "let_{}_{}_{}"
+
+; Function: let_arg_validate
+; Description: Validate let args symbol and expression
+
+func :private let_arg_validate [state argexpr acc ndx]
+    ?: =: mod: ndx two zero
+        @(
+            let [ argsym get: argexpr ndx
+                  argtok get: argsym TOKEN
+                  argname get: argsym NAME]
+                insert_symbol_type:
+                    :let_argref
+                    argsym
+                    format:
+                        let_name_template
+                        [get: argtok :lineno get: argtok :colno argname]
+                list_extend!: acc get: argexpr ndx
+        )
+        dispatch_fn: state acc get: argexpr ndx
+
+; Function: let_validate
+; Description: Validate let args (if not empty) and
+; expression
+
+func let_validate [state result self]
+    let token [] get: self TOKEN
+    let letres [] get: self NAME
+    let hasname [] not: nil?: letres
+    let bfrmt [] [get: token :lineno get: token :colno]
+    ?: hasname
+        map_extend!:
+            self
+            NAME format:
+                    let_name_template
+                    [get: token :lineno get: token :colno get: get: self NAME NAME]
+        map_extend!:
+            self
+            NAME format:
+                    let_no_name_template
+                    [get: token :lineno get: token :colno]
+
+
+    ; Create 'let' lexical scope
+    st_push_table: get: self NAME
+    ; Process let pairs from arglist (if any)
+    ; process and put symbols (lhs) into lexical
+    ; scope symbols
+    let arglist [] get: self ARGLIST
+    let argexpr [] get: arglist EXPRS
+    let letpairs []
+        type_instance: :let_pairs get: arglist SOURCE  get: arglist TOKEN
+
+    map_extend!:
+        self
+        ARGLIST
+        map_extend!:
+            letpairs
+            EXPRS
+            ?: =: count: argexpr zero
+                []
+                fold: (let_arg_validate state argexpr) list_inst!: series: zero count: argexpr one
+
+    ; TODO: Reclaim old list
+    ; list_delete: get: self EXPRS
+    ; Process 'let' expression
+    map_extend!: self EXPRS
+        get_expressions: state get: self EXPRS
+    ; Remove 'let' lexical scope
+    st_pop_table:
+    ; Add result name to now current lexical scope
+    ?: hasname
+        insert_symbol_type: :let_resref letres get: self NAME
+        nil
+    list_extend!: result self
 
 ; Function: if_validate
 ; Description: Validates pred then else
 
 func if_validate [state result self]
-    printnl!: "Validating if"
     ; TODO: Reclaim old list
     ; list_delete: get: self EXPRS
     map_extend!: self EXPRS
@@ -172,20 +249,27 @@ func if_validate [state result self]
 ; Description: Validate expressions in group
 
 func group_validate [state result self]
-    printnl!: "Validating group"
     ; TODO: Reclaim old list
     ; list_delete: get: self EXPRS
     map_extend!: self EXPRS
         get_expressions: state get: self EXPRS
     list_extend!: result self
 
+; Function: partial_validate
+; Description: Validates expressions in partial
+; TODO: Get the first expression and ensure
+; it is not a:
+;   literalref
+;   ummmmm
 func partial_validate [state result self]
-    printnl!: "Validating partial"
     ; TODO: Reclaim old list
     ; list_delete: get: self EXPRS
     map_extend!: self EXPRS
         get_expressions: state get: self EXPRS
     list_extend!: result self
+
+; Used for assigning foidl representation of
+; empty collection types (RTL instantiated)
 
 var :private empty_lookup {
     :list     "empty_list"
@@ -206,12 +290,9 @@ func emptycollection_validate [state result self]
 
 ; Function: collection_validate
 ; Description: Evaluate members of collection we
-; don't care about type yet
+; don't care about type until we are emitting LLVM
 
 func collection_validate [state result self]
-    printnl!: "Validating collection"
-    printnl!: self
-    ;result
     ; TODO: Reclaim old list
     ; list_delete: get: self EXPRS
     map_extend!: self EXPRS
