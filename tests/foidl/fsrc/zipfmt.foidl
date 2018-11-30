@@ -43,31 +43,37 @@ module zipcodefmt
 ;   - ???
 
 func greeting [msg]
-    print!: "Hello there "
-    print!: msg
-    printnl!: "! Welcome to Zip Code Formatter Examples"
-    ; Frank: With the recent addition of the 'format:' function you could
-    ; reduce compiler and runtime overhead. Following is a rewrite of this using that
-    ;
-    ; print!:
-    ;   format:
-    ;       "Hello there {}! Welcome to Zip Code Formatter example.`n"
-    ;       [msg]
+    ; Inefficient way of printing greeting
+    ; print!: "Hello there "
+    ; print!: msg
+    ; printnl!: "! Welcome to Zip Code Formatter Examples"
+
+    print!:
+        format:
+            "Hello there {}! Welcome to Zip Code Formatter example.`n"
+            [msg]
 
 func emptyGreeting [msg]
     printnl!: empty?: msg
-    ; Hmmmm.... Something wrong here. I guess 'nil' does not evaluate to empty
-    ; or am I calling it wrong?
-    ; Frank: empty? works with collections and strings but you found a bug
-    ; as 'nil' should return 'true' on empty. I fixed that in the runtime and
-    ; checked in
+
+func matchZip [zip]
+    match matchResult count: zip
+        | <: %0 5       "Invalid. Less than 5"
+        | =: %0 5       "Valid. Count = 5"
+        | =: %0 10      "Valid. Count = 10"
+        | >: %0 10      "Invalid. Greater than 10"
+
+func validChars[zip]
+    let re [] regex "1-9"    
+    regex_match?: zip "[1-9]"
 
 func main [argv]
-    greeting: get: argv 1
-    emptyGreeting: get: argv 1
-    ; Frank: As my style, if I am going to call the same function to get
-    ; the same result (as you are in getting the arglist first value) I
-    ; tend to declare it locally by using 'let':
-    ; let msg [] get: argv 1
-    ; greeting: msg
-    ; emptyGreeting: msg
+    ; Greeting
+    let msg [] get: argv 1
+    greeting: msg
+
+    ; Zip playground
+    let zip [] get: argv 2
+    printnl!: format: "Given Zip Code is {}." [zip]
+    printnl!: matchZip: zip
+    printnl!: format: "Zip Code contains valid characters: {}." [validChars: zip]
