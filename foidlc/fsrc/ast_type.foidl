@@ -137,7 +137,7 @@ var :private ast_type {
     ; (expression+)
     :partial  {
         TYPE        :partial
-        EVAL        default_validate}
+        EVAL        partial_validate}
     ; [] {} <> #{}
     :empty_collection   {
         TYPE        :empty_collection

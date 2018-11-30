@@ -27,11 +27,11 @@ var svar 1
 func fauxfunc [a b]
     +: a +: b svar
 
-func noarg []
+func :private noarg! []
 
 func iftest [a b]
     ?: a
-        noarg:
+        noarg!:
         @(
             (fauxfunc a)
             b

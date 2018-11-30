@@ -218,7 +218,7 @@ func :private process_includes [state]
 
 ; Function: var_to_symboltable
 ; Description: Puts variable entry to symbol table
-; Syntax: func_to_symboltable: ntok arglist acnt
+; Syntax: var_to_symboltable: ntok
 ;   ntok    - The symbol token found for the variable
 
 func :private var_to_symboltable [symtablectxt ntok]
@@ -275,7 +275,21 @@ func :private consume_includes [state]
                 full_include_paths
                 list_inst!: ilist
     fold: include_reducer list_inst!: res
-    consume_include: state
+    state
+
+; Function: process_local_declarations
+; Description: Store our local var/func declarations in symbol
+; table
+
+func :private process_local_declarations [state]
+    let mname [] get: state :module_name
+    st_push_table: mname
+    let ochan [] get: state :outchannel
+    ; Walk tokens and capture vars and funcs in symbol table context
+    process_local_vf:
+        state
+        (var_to_symboltable mname)
+        (func_to_symboltable mname)
     state
 
 ; Function: symboltrees_print
@@ -446,6 +460,7 @@ func :private faux_step [s state]
 ;   [preload_langincs]  - Preprocess foidlrt and langcore if !-r
 ;   process_includes    - seperate include(s) from main tokens
 ;   consume_includes    - consume includes, calls consume_include for each
+;   process_local_declarations - Put our var/funcs into symbol table
 ;   [symboltrees_print] - *NEW* prints all symbol tables (long output)
 ;   reverse_tokens      - support bottom up parsing
 ;   parse_tokens        - parse the tokens to abstract syntax tree (AST)
@@ -492,6 +507,7 @@ func build_handler_and_run [cmap]
                         preload_langhdrs
                     process_includes
                     consume_includes
+                    process_local_declarations
                     ?: get: cmap :printsyms
                         symboltrees_print
                         skip_step

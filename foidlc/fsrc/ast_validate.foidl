@@ -181,7 +181,11 @@ func group_validate [state result self]
 
 func partial_validate [state result self]
     printnl!: "Validating partial"
-    result
+    ; TODO: Reclaim old list
+    ; list_delete: get: self EXPRS
+    map_extend!: self EXPRS
+        get_expressions: state get: self EXPRS
+    list_extend!: result self
 
 var :private empty_lookup {
     :list     "empty_list"
