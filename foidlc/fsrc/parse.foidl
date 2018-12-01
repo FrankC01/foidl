@@ -177,14 +177,12 @@ func :private right_paren_handler [mmodule ast_tree token srcname]
 
 ; Function: math_ref_handler
 ; Description: Reference to math operator handler
-; Syntax:
 
 func :private math_ref_handler [mmodule ast_tree token srcname]
     extend!: ast_tree parse_mathref: get: token :token_str
 
 ; Function: math_call_handler
 ; Description: Handler for calling math function syntax sugar
-; Syntax:
 
 func :private math_call_handler [mmodule ast_tree token srcname]
     extend!:
@@ -194,6 +192,16 @@ func :private math_call_handler [mmodule ast_tree token srcname]
                 ast_tree
                 get: mmodule EXTERNS
 
+; Function: boolpref_handler
+; Description: Handler for calling boolean predicate syntax sugar
+
+func :private boolpref_handler [mmodule ast_tree token srcname]
+    extend!:
+        ast_tree
+            parse_boolpredcall:
+                type_with_exprs: :call srcname token
+                ast_tree
+                get: mmodule EXTERNS
 
 ; Function: func_call_handler
 ; Description: Handler for function call token
@@ -267,6 +275,7 @@ var :private parse_map {
     :rparen         right_paren_handler
     :math_call      math_call_handler
     :math_ref       math_ref_handler
+    :boolpred_call  boolpref_handler
     :funccall       func_call_handler
     :funccall_pred  func_call_handler
     :funccall_bang  func_call_handler

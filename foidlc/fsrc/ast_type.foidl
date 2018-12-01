@@ -29,6 +29,7 @@ var EXPRS           :exprs
 var IS_PRIVATE      :is_private
 var IS_DEFAULT      :is_default
 var NAME            :name
+var PRED_REFERENCE  :pred_reference
 var DECLARATIONS    :exprs
 var TOKEN           :token
 var SOURCE          :source
@@ -68,7 +69,11 @@ var :private ast_type {
     :match_exprref {
         TYPE        :match_exprref
         NAME        nil
-        EVAL        default_validate}
+        EVAL        match_exprref_validate}
+    :match_predref {
+        TYPE        :match_predref
+        NAME        nil
+        EVAL        ref_validate}
     :match_resref {
         TYPE        :match_resref
         NAME        nil
@@ -119,10 +124,20 @@ var :private ast_type {
         EVAL        call_validate}
     ; match symbol? expression match_guard+
     :match  {
-        TYPE        :match
-        NAME        nil
-        PREDICATE   nil
-        EVAL        match_validate}
+        TYPE            :match
+        NAME            nil
+        PREDICATE       nil
+        PRED_REFERENCE  nil
+        EVAL            match_validate}
+    ; | pred expr
+    :match_guard {
+        TYPE        :match_guard
+        IS_DEFAULT  false
+        EVAL        match_guard_validate}
+    ; :match_default
+    :match_default {
+        TYPE        :match_default
+        EVAL        match_default_validate}
     ; let symbol? [let_pair*] expression
     :let  {
         TYPE        :let
@@ -132,19 +147,10 @@ var :private ast_type {
     ; empty expressions or [symbol expression]+
     :let_pairs  {
         TYPE        :let_pairs}
-    ; :match_default
-    :match_default {
-        TYPE        :match_default
-        EVAL        default_validate }
     ; ?: pred expression expression
     :if {
         TYPE        :if
         EVAL        if_validate}
-    ; | pred expr
-    :match_guard {
-        TYPE        :match_guard
-        IS_DEFAULT  false
-        EVAL        match_guard_validate}
     ; @( expression+ )
     :group   {
         TYPE        :group

@@ -48,6 +48,18 @@ func :private dispatch_ast [state result self]
 func :private get_expressions [state exprs]
     fold: (dispatch_fn state) [] exprs
 
+; Function: insert_string_type
+; Description: Create a AST element of refkw making
+; the name either refname or name of original symbol
+; and add to the symbol table in lexical scope
+
+func :private insert_string_type [refkw s source token refname]
+    st_add_symbolref:
+        s
+        map_extend!:
+            type_instance: refkw source token
+            NAME ?: refname refname s
+
 ; Function: insert_symbol_type
 ; Description: Create a AST element of refkw making
 ; the name either refname or name of original symbol
@@ -62,7 +74,6 @@ func :private insert_symbol_type [refkw sym refname]
                 get: sym SOURCE
                 get: sym TOKEN
             NAME ?: refname refname get: sym NAME
-    sym
 
 ; Function: add_to_symboltable
 ; Description: Take a straight list of symbols and store them to
@@ -184,7 +195,7 @@ func let_validate [state result self]
     let token [] get: self TOKEN
     let letres [] get: self NAME
     let hasname [] not: nil?: letres
-    let bfrmt [] [get: token :lineno get: token :colno]
+
     ?: hasname
         map_extend!:
             self
@@ -234,15 +245,113 @@ func let_validate [state result self]
 ; Function: match_validate
 ; Description: Validates guards and return expressions
 
+; Let naming templates
+
+var match_no_name_template "match_{}_{}"
+var match_name_template "match_{}_{}_{}"
+var match_pred_template "{}_predref"
+
 func match_validate [state result self]
-    printnl!: "Validating match"
-    dispatch_ast: state result self
-    result
+    let token [] get: self TOKEN
+    let nameres [] get: self NAME
+    let hasname [] not: nil?: nameres
+    let mpref   [] format: match_no_name_template [get: token :lineno get: token :colno]
+    ; Do name resolution
+    ?: hasname
+        map_extend!:
+            self
+            NAME format:
+                    match_name_template
+                    [get: token :lineno get: token :colno nameres]
+        map_extend!: self NAME mpref
+
+    ; Get the predicate name for later reference
+    let mpredref [] map_extend!:
+        type_instance: :match_predref get: self SOURCE token
+        NAME format: match_pred_template [mpref]
+
+    ; Evaluate the predicate
+    map_extend!:
+        self
+        PREDICATE
+        first: dispatch_fn: state [] get: self PREDICATE
+
+    ; Setup the predicate results
+    map_extend!: self PRED_REFERENCE mpredref
+    let mres [] [mpredref]
+    ; Validate the guards
+    dispatch_ast: state mres self
+    ; Pop my reference
+    pop!: mres
+    ; Extend self
+    map_extend!: self EXPRS mres
+    ; Put result in lexical symbol table if hasname
+    ?: hasname
+        insert_string_type:
+            :match_resref
+            nameres
+            get: self SOURCE
+            token
+            get: self NAME
+        nil
+    list_extend!: result self
+
+; Simple single expression types
+
+var :private mg_simple_set
+    #{:varref :funcref :funcargref :literalref :match_predref :let_resref :let_argref}
+
+; Function: mg_simple_lhs
+; Description: Called when simple type lhs, expands to:
+;   =: %0 rhs
+func :private mg_simple_lhs [mref state result self]
+    ; Get the first arg and substitute with =: val %0
+    let mgcall []
+        map_extend!:
+            type_with_exprs: :call get: self SOURCE get: self TOKEN
+            NAME "eq"
+    map_extend!:
+        mgcall
+        EXPRS
+        list_extend!:
+            list_extend!: get: mgcall EXPRS  mref
+            first: result
+    pop!: result
+    push!: result mgcall
+
+; Function: match_guard_validate
+; Description: Validate match guards. If it is not
+; default guard, check if lhs is simple:
+; litref, varref, funcref, matchresref, letresref
 
 func match_guard_validate [state result self]
-    printnl!: "Validating match guard"
-    print!: "   " printnl!: self
-    result
+    let mref [] first: result
+    let mres [] [mref]
+    let gexpr [] dispatch_ast: state mres self
+    ; pop the reference
+    pop!: mres
+    ; Go for simple expansion
+    match get: self IS_DEFAULT
+        | false ?: get: mg_simple_set get: first: gexpr TYPE
+                    mg_simple_lhs: mref state gexpr self
+                    nil
+    ; Extend self
+    map_extend!: self EXPRS gexpr
+    ;print_ast: self
+    list_extend!: result self
+
+; Function: match_default_validate
+; Description: Validate match_default
+
+func match_default_validate [state result self]
+    list_extend!: result self
+
+; Function: match_exprref_validate
+; Description: Substitution with passed in
+; reference
+
+func match_exprref_validate [state result self]
+    list_extend!: result first: result
 
 ; Function: if_validate
 ; Description: Validates pred then else

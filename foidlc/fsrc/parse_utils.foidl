@@ -91,6 +91,19 @@ func parse_mathref [token_str]
             get: math_ref_lookup
             first: token_str
 
+
+var :private bool_ref_lookup {
+    "=:"     "eq"
+    "<:"     "lt"
+    ">:"     "gt"
+    "<=:"    "lteq"
+    ">=:"    "gteq"
+    "not=:"  "neq"
+}
+
+func parse_boolcall [token_str]
+    st_lookup: get: bool_ref_lookup token_str
+
 ; Collection type support
 
 var :private coll_lookup {
@@ -387,6 +400,19 @@ func parse_mathcall [node ast_tree externs]
                 [get: get: node :token :token_str]
     map_extend!: node NAME get: cref NAME
 
+; Function: parse_mathcall
+; Description: Gets math reference based on single character
+
+func parse_boolpredcall [node ast_tree externs]
+    let cref [] parse_boolcall: get: get: node :token :token_str
+    ?: cref
+        process_call: cref externs node ast_tree
+        token_exception:
+            get: node :token
+            format:
+                "{} is not a valid math function reference"
+                [get: get: node :token :token_str]
+    map_extend!: node NAME get: cref NAME
 
 ; Function: parse_if
 ; Description: Parse 3 expressions ensuring non are

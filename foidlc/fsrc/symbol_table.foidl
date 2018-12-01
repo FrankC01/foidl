@@ -119,6 +119,7 @@ func :private add_to_current [symbol_name reference]
             first: get: st_context :stack
             :table
         symbol_name reference
+    reference
 
 ; Function: st_compilation_unit
 ; Description: Establishes the compilation unit st_context
