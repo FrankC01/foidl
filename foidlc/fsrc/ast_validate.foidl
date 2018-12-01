@@ -261,12 +261,25 @@ func group_validate [state result self]
 ; it is not a:
 ;   literalref
 ;   ummmmm
+
+var :private invalid_first_arg
+    #{:match_guard :literalref}
+
 func partial_validate [state result self]
     ; TODO: Reclaim old list
     ; list_delete: get: self EXPRS
     map_extend!: self EXPRS
         get_expressions: state get: self EXPRS
-    list_extend!: result self
+
+    ; Check that first arg is usable as partial
+    let pexpr [] get: self EXPRS
+    ?: =: count: pexpr zero
+        list_extend!: result self
+        ?: get: invalid_first_arg get: first: pexpr TYPE
+            token_exception:
+                get: self TOKEN
+                "Invalid first arg to partial"
+            list_extend!: result self
 
 ; Used for assigning foidl representation of
 ; empty collection types (RTL instantiated)

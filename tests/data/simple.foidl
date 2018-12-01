@@ -35,10 +35,7 @@ func :private noarg! []
 func iftest [a b]
     ?: a
         noarg!:
-        @(
-            (fauxfunc a)
-            b
-        )
+        (fauxfunc 1)
 
 ;func foo [arg1]
 ;    match arg1

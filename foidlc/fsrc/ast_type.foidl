@@ -55,7 +55,7 @@ var :private ast_type {
         TYPE        :funcref
         NAME        nil
         ARGCNT      zero
-        EVAL        default_validate}
+        EVAL        ref_validate}
     :funcargref {
         TYPE        :funcargref
         NAME        nil
