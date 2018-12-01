@@ -47,6 +47,13 @@ func :private print_node [res node]
         | is_ref?: node print_ref: node
         | is_colltype?: node print_ctype: node
 
+    match get: node TYPE
+    | :match_guard
+        @(
+            print!: " is default: "
+            print!: get: node IS_DEFAULT
+        )
+
     print!: nlchr
     match node
     | has_exprs?: node  fold: print_node

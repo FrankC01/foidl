@@ -466,20 +466,29 @@ func :private invalid_match_let [node s]
 ; is a default match guard, ensure it goes to end otherwise
 ; if normal then put in expression list
 
+func :private is_default_guard [first_expr]
+    =: get: first_expr TYPE :match_default
+
 func :private while_guard [ast_tree defhit match_exprs ndx]
     let nxt [] first: ast_tree
     ?: nil?: nxt
         reduced: match_exprs
         ?: =: get: nxt TYPE :match_guard
             let [ign pop!: ast_tree]
-                ?: get: nxt IS_DEFAULT
-                    @(
-                        list_extend!: defhit nxt
-                        match_exprs
-                    )
-                    @(
-                        list_extend!: match_exprs nxt
-                    )
+                @(
+                    ?: is_default_guard: first: get: nxt EXPRS
+                        @(
+                            map_extend!:
+                                nxt
+                                IS_DEFAULT
+                                true
+                            list_extend!: defhit nxt
+                            match_exprs
+                        )
+                        @(
+                            list_extend!: match_exprs nxt
+                        )
+                )
             reduced: match_exprs
 
 
@@ -488,6 +497,7 @@ func :private while_guard [ast_tree defhit match_exprs ndx]
 ; expression list
 
 func :private add_default_guard [mnode]
+    ;print!: "Adding default guard to " printnl!: mnode
     let srcname [] get: mnode SOURCE
     let token []  get: mnode TOKEN
     let nilref [] st_lookup: "nil"
@@ -536,9 +546,17 @@ func parse_match [node ast_tree]
                     invalid_match_let: node " match result requires symbol"
         ; Invalid entries between 'match' and first guard
         | :default  invalid_match_let: node " match invalid form"
+
     pop!: ast_tree
+
+    ;print!: "`nMatch wg inbound. expressions => `n"
+    ;printnl!: ast_tree
+
     let tail_list [] list_inst!:
     until_pred: (while_guard ast_tree tail_list) get: node EXPRS
+
+    ;print!: "`nMatch wg outcome. tail list => `n" printnl!: tail_list
+    ;print!: "`nMatch wg outcome. expr list => `n" printnl!: get: node EXPRS
 
     match count: tail_list
     | 0     add_default_guard: node
@@ -554,18 +572,23 @@ func parse_match [node ast_tree]
 ; nil, match_guard or a declaration
 
 func parse_match_guard [node ast_tree]
-    let mguard [] [first: ast_tree, second: ast_tree]
+    ?: <: count: ast_tree two
+        exception: "Invalid expression count for match guard"
+        nil
+
+    let mguard [] [
+        get: ast_tree zero
+        get: ast_tree one]
+
     fold:
         (validate_expressions
             node
             " incomplete match guard. Requires two (2) expressions."
             decl_or_guard)
         get: node EXPRS mguard
-
-    drop!: ast_tree two
-    ?: =: get: first: mguard TYPE :match_default
-        map_extend!: node IS_DEFAULT true
-        nil
+    pop!: ast_tree
+    pop!: ast_tree
+    ;drop!: ast_tree two
     node
 
 ; Function: parse_let

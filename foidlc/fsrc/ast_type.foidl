@@ -122,7 +122,7 @@ var :private ast_type {
         TYPE        :match
         NAME        nil
         PREDICATE   nil
-        EVAL        default_validate}
+        EVAL        match_validate}
     ; let symbol? [let_pair*] expression
     :let  {
         TYPE        :let
@@ -144,7 +144,7 @@ var :private ast_type {
     :match_guard {
         TYPE        :match_guard
         IS_DEFAULT  false
-        EVAL        default_validate}
+        EVAL        match_guard_validate}
     ; @( expression+ )
     :group   {
         TYPE        :group
@@ -245,14 +245,16 @@ func is_funclambda_args? [node]
 ;   source  - Name of source file
 ;   token   - The source file token (has sourcepos, etc.)
 
+func :private build_type [acc el]
+    map_extend!: acc key: el value: el
+
 func type_instance [typekw source token]
-    let typeinst []
-        getd: ast_type typekw nil
+    let typeinst [] fold: build_type {} getd: ast_type typekw nil
     ?: nil?: typeinst
         failWith: extend: "Unrecognized AST type " typekw
         let []
-            map_extend!:                            ; Extend new instance with token
-                extendKV: typeinst SOURCE source    ; Create new instance and extend
+            map_extend!:                               ; Create/Extend new instance with token
+                map_extend!: typeinst SOURCE source    ; Create new instance and extend
                 TOKEN token
 
 ; Function: type_with_exprs

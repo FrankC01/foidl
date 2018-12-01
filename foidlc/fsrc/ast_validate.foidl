@@ -152,10 +152,6 @@ func call_validate [state result self]
         get_expressions: state get: self EXPRS
     list_extend!: result self
 
-func match_validate [state result self]
-    printnl!: "Validating match"
-    result
-
 ; Let naming templates
 
 var let_no_name_template "let_{}_{}"
@@ -235,6 +231,19 @@ func let_validate [state result self]
         nil
     list_extend!: result self
 
+; Function: match_validate
+; Description: Validates guards and return expressions
+
+func match_validate [state result self]
+    printnl!: "Validating match"
+    dispatch_ast: state result self
+    result
+
+func match_guard_validate [state result self]
+    printnl!: "Validating match guard"
+    print!: "   " printnl!: self
+    result
+
 ; Function: if_validate
 ; Description: Validates pred then else
 
@@ -257,13 +266,9 @@ func group_validate [state result self]
 
 ; Function: partial_validate
 ; Description: Validates expressions in partial
-; TODO: Get the first expression and ensure
-; it is not a:
-;   literalref
-;   ummmmm
 
 var :private invalid_first_arg
-    #{:match_guard :literalref}
+    #{:match_guard :literalref :variable :function :module :include}
 
 func partial_validate [state result self]
     ; TODO: Reclaim old list
