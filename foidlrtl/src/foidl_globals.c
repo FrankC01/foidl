@@ -19,6 +19,13 @@ globalScalarConst(end,end_type,(void *) 0,1);
 globalScalarConst(empty_string,string_type,(void *) "",0);
 globalScalarConst(space_string,string_type,(void *) " ",1);
 
+constString(cinstr,"cin");
+constString(coutstr,"cout");
+constString(cerrstr,"cerr");
+constString(nilstr,"nil");
+constString(truestr,"true");
+constString(falsestr,"false");
+
 
 // Character types
 
@@ -176,19 +183,12 @@ globalFuncConst(cin_reader,1,io_consReader);
 globalFuncConst(byte_reader,1,io_byteReader);
 globalFuncConst(char_reader,1,io_charReader);
 globalFuncConst(string_reader,1,io_stringReader);
-
 globalFuncConst(char_writer,1,io_charWriter);
 
 //	IO Writer Functions types
 
 extern PFRTAny 	io_consWriter(PFRTIOChannel, PFRTAny);
 globalFuncConst(cout_writer,2,io_consWriter);
-
-constString(cinstr,"cin");
-constString(coutstr,"cout");
-constString(cerrstr,"cerr");
-constString(nilstr,"nil");
-
 
 uint32_t const cbsize = 4096;
 

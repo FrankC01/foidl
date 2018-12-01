@@ -94,6 +94,15 @@ PFRTAny 	foidl_format(PFRTAny s, PFRTAny coll) {
 						++delcnt;
 					}
 					break;
+				case nil_type:
+					sarray[count] = nilstr->value;
+					break;
+				case boolean_type:
+					if(((ft) entry->value) == 1)
+						sarray[count] = truestr->value;
+					else
+						sarray[count] = falsestr->value;
+					break;
 				default:
 					unknown_handler();
 			}

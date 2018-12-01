@@ -623,7 +623,7 @@ extern PFRTAny 	zero, one,two,three,four,five,six,seven,eight;
 extern PFRTAny 	nine,ten,eleven,twelve,thirteen,fourteen,fifteen,sixteen;
 extern PFRTAny 	empty_string, space_string;
 extern PFRTIOChannel 	cin,cout,cerr;
-extern PFRTAny 	nilstr;
+extern PFRTAny 	nilstr, truestr, falsestr;
 #endif
 
 #ifndef TYPE_IMPL
