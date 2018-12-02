@@ -61,6 +61,13 @@ func :private print_node [res node]
                     get: node EXPRS
     res
 
+func print_list_ast [title nlist]
+    print!: nlchr
+    printnl!: title
+    printnl!:"--------------------"
+    fold: print_node "-> " nlist
+    print!: nlchr
+
 func print_ast [node]
     print!: nlchr
     printnl!:"Abstract Syntax Tree"
