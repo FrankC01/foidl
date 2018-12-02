@@ -51,11 +51,11 @@ func :private foobar? [a b]
         foobar!: +
         foobar?: b
 
-    let a [b +: 1 1]
-        ^[v] (foobar? b)
+    let d [c +: 1 1]
+        ^[v] (foobar? c)
 
-    match a +: 1 2
-    | 1     +: %0 "A string \t with \dq ' quoted ' \dq \n \n "
+    match e +: 1 2
+    | 1     +: %0 "A string `t with `d ' quoted ' `d `n `n "
 
     :func
 

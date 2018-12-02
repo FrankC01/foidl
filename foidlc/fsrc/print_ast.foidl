@@ -28,8 +28,12 @@ func :private print_name [node]
     print!: "]"
 
 func :private print_ref [node]
+    let rname [] get: node NAME
+    let sname [] get: get: node TOKEN :token_str
     print!: " [references: "
-    print!: get: get: node TOKEN :token_str
+    ?: rname
+        print!: rname
+        print!: sname
     print!: "]"
 
 func :private print_ctype [node]

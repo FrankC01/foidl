@@ -201,12 +201,13 @@ func :private warn_and_add [sref symbol_name reference]
 
 func st_add_symbolref [symbol_name reference]
     let sref [] reference_for: symbol_name
-    ; If the ref found is in the same stack it is an error
+    ; If the ref found a warning is display
     ?: nil?: sref
         add_to_current: symbol_name reference
-        ?: not: =: get: reference :source get: sref :source
-            warn_and_add: sref symbol_name reference
-            except_and_fail: sref symbol_name reference
+        warn_and_add: sref symbol_name reference
+        ;?: not: =: get: reference :source get: sref :source
+        ;    warn_and_add: sref symbol_name reference
+        ;    except_and_fail: sref symbol_name reference
 
 ; Function: st_lookup
 ; Description: Finds a symbol reference or nil

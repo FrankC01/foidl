@@ -21,12 +21,13 @@
 
 module simple
 
-var dummy 9
+func testmtch [a b c d]
 
-func iftest [a b]
-
-    let lvar [] +: 2 2
-
-    match result +: 1 1
-    | 2     true
-    | 3     ^[c d] +: c +: a +: dummy +: %0 +: b 7
+    match a
+    | 1     true
+    | 2     false
+    | 3     printnl!: %0
+    | 4     match b
+            | 1 true
+            | 2 false
+            | 3 printnl!: %0

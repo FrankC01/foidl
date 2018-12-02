@@ -195,9 +195,9 @@ var :private ast_type {
 
 var collection_set  #{:empty_collection :collection}
 var coltype_set     #{:list :map :set :vector}
-var littype_set     #{:string :keyword :integer :real_number :hex :bin :char}
+var littype_set     #{:string :keyword :integer :real_number :hex :bit :char}
 var decl_set        #{:function :variable :include :module}
-var ref_set         #{:literalref :funcref :varref}
+var ref_set         #{:literalref :funcref :varref :funcargref :match_predref}
 
 var name_set #{
     :module
