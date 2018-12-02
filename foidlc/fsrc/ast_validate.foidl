@@ -66,14 +66,12 @@ func :private insert_string_type [refkw s source token refname]
 ; and add to the symbol table in lexical scope
 
 func :private insert_symbol_type [refkw sym refname]
-    st_add_symbolref:
+    insert_string_type:
+        refkw
         get: sym NAME
-        map_extend!:
-            type_instance:
-                refkw
-                get: sym SOURCE
-                get: sym TOKEN
-            NAME ?: refname refname get: sym NAME
+        get: sym SOURCE
+        get: sym TOKEN
+        refname
 
 ; Function: add_to_symboltable
 ; Description: Take a straight list of symbols and store them to
@@ -106,7 +104,6 @@ func :private register_extern [state sref]
                 sref
             sref
         )
-
 
 ; Function: default_validate
 ; Description: Function as placeholder for invoking
@@ -149,9 +146,109 @@ func function_validate [state result self]
     st_pop_table:
     list_extend!: result self
 
+; Test candidates for free vars
+
+var :private lambda_backrefs
+    #{:funcargref :lambda_argref :match_predref :let_resref}
+
+; Function: in_freevar_range
+; Description: Predicate to test if input line and column
+; preceed lambda line and column (i.e. FreeVar!)
+
+func :private in_freevar_range [ll lc tl tc]
+    ?: <: tl ll
+        true
+        ?: <: tc lc
+            true
+            false
+
+; Function: new_lambda_arg
+; Description: Fabricates a lambda argument and adds
+; to the argument list 'alist' and updates the location
+; in the lambda expression (elist) to refer to the arg list as well
+
+func :private new_lambda_arg [elist alist el]
+    let larg []
+        map_extend!:
+            type_instance: :lambda_argref get: el SOURCE get: el TOKEN
+            NAME get: get: el TOKEN :token_str
+    update!: elist index_of: elist el larg
+    list_extend!:alist larg
+
+; Function: walk_lambda
+; Description: Deep walks the lambda expression, looking for
+; candiate free variables
+
+func :private walk_lambda [ll lc alist elist acc el]
+    let tl [] get: get: el TOKEN :lineno
+    let tc [] get: get: el TOKEN :colno
+    ; If a candidate and the sourcepos is less than
+    ; our tokens, it's a winner
+    ?: getd: lambda_backrefs get: el TYPE false
+        ?:  in_freevar_range: ll lc tl tc
+            @(
+                ; Generate the lambda arg and subsitute in
+                ; current expression and argument lists
+                new_lambda_arg: elist alist el
+                list_extend!: acc el
+            )
+            nil
+        nil
+
+    ?: get: el EXPRS
+        fold: (walk_lambda ll lc alist get: el EXPRS) acc get: el EXPRS
+        nil
+    acc
+
+; Function: lambda_validate
+; Description: Validate lambda and refactor
+; for closures. Closures free variables become
+; arguments to lambda entry point
+
+var :private lambda_name_template "lambda_{}_{}"
+
 func lambda_validate [state result self]
-    printnl!: "Validating lambda"
-    result
+    let ll [] get: get: self TOKEN :lineno
+    let lc [] get: get: self TOKEN :colno
+
+    ; Fabricate a name
+    let lname [] format: lambda_name_template [ll lc]
+    map_extend!: self NAME lname
+
+    ; Setup lexical scope and add our argument names
+    st_push_table: lname
+    add_to_symboltable: :lambda_argref get: get: self ARGLIST EXPRS
+    ; Setup for free var substitutions
+    let alist [] list_inst!:
+    ; Evaluate expressions and replace free-vars
+    let clist []
+        fold:
+            (walk_lambda
+                ll
+                lc
+                alist
+                get: self EXPRS)
+            list_inst!: get_expressions: state get: self EXPRS
+    ; Release lexical scope
+    st_pop_table:
+    ; Extend the lambda proper arg list
+    ; TODO: Free old args afterwards
+    map_extend!:
+        get: self ARGLIST
+        EXPRS
+        fold:
+            ^[acc oarg]
+                list_extend!: acc oarg
+            alist get: get: self ARGLIST EXPRS
+    ; Put it in the module lambda collection
+    list_extend!:
+        get: get: state :ast LAMBDAS
+        self
+    ; print_ast: self
+    ; Create a lambda_call reference and put in results
+    list_extend!:
+        result
+        type_lambda_call: get: self SOURCE get: self TOKEN lname clist
 
 ; Function: call_validate
 ; Description: Validate function calls
@@ -165,8 +262,8 @@ func call_validate [state result self]
 
 ; Let naming templates
 
-var let_no_name_template "let_{}_{}"
-var let_name_template "let_{}_{}_{}"
+var :private let_no_name_template "let_{}_{}"
+var :private let_name_template "let_{}_{}_{}"
 
 ; Function: let_arg_validate
 ; Description: Validate let args symbol and expression
@@ -247,9 +344,10 @@ func let_validate [state result self]
 
 ; Let naming templates
 
-var match_no_name_template "match_{}_{}"
-var match_name_template "match_{}_{}_{}"
-var match_pred_template "{}_predref"
+var :private match_no_name_template "match_{}_{}"
+var :private match_name_template "match_{}_{}_{}"
+var :private match_pred_template "{}_predref"
+var :private match_local_presym  "%0"
 
 func match_validate [state result self]
     let token [] get: self TOKEN
@@ -278,13 +376,15 @@ func match_validate [state result self]
 
     ; Setup the predicate results
     map_extend!: self PRED_REFERENCE mpredref
-    let mres [] [mpredref]
-    ; Validate the guards
-    dispatch_ast: state mres self
-    ; Pop my reference
-    pop!: mres
-    ; Extend self
-    map_extend!: self EXPRS mres
+    ; Create 'match' lexical scope
+    st_push_table: get: self NAME
+    ; Put the expression reference in
+    st_add_symbolref: match_local_presym mpredref
+    ; Evaluate expressions
+    map_extend!: self EXPRS get_expressions: state get: self EXPRS
+    ; Pop 'match' lexical scope
+    st_pop_table:
+
     ; Put result in lexical symbol table if hasname
     ?: hasname
         insert_string_type:
@@ -304,6 +404,7 @@ var :private mg_simple_set
 ; Function: mg_simple_lhs
 ; Description: Called when simple type lhs, expands to:
 ;   =: %0 rhs
+
 func :private mg_simple_lhs [mref state result self]
     ; Get the first arg and substitute with =: val %0
     let mgcall []
@@ -325,20 +426,16 @@ func :private mg_simple_lhs [mref state result self]
 ; litref, varref, funcref, matchresref, letresref
 
 func match_guard_validate [state result self]
-    let mref [] first: result
+    let mref [] st_lookup: match_local_presym
     let mres [] [mref]
-    let gexpr [] dispatch_ast: state mres self
-    ; pop the reference
-    pop!: mres
-    ; Go for simple expansion
+    let gexpr [] get_expressions: state get: self EXPRS
+    ; Check for simple expansion
     match get: self IS_DEFAULT
         | false ?: get: mg_simple_set get: first: gexpr TYPE
                     mg_simple_lhs: mref state gexpr self
                     nil
-    ; Extend self
-    map_extend!: self EXPRS gexpr
     ;print_ast: self
-    list_extend!: result self
+    list_extend!: result map_extend!: self EXPRS gexpr
 
 ; Function: match_default_validate
 ; Description: Validate match_default
@@ -351,7 +448,7 @@ func match_default_validate [state result self]
 ; reference
 
 func match_exprref_validate [state result self]
-    list_extend!: result first: result
+    list_extend!: result st_lookup: match_local_presym
 
 ; Function: if_validate
 ; Description: Validates pred then else
@@ -373,11 +470,13 @@ func group_validate [state result self]
         get_expressions: state get: self EXPRS
     list_extend!: result self
 
-; Function: partial_validate
-; Description: Validates expressions in partial
+; Validates expressions in partial
 
 var :private invalid_first_arg
     #{:match_guard :literalref :variable :function :module :include}
+
+; Function: partial_validate
+; Description: Validates expressions in partial
 
 func partial_validate [state result self]
     ; TODO: Reclaim old list

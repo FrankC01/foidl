@@ -164,6 +164,31 @@ PFRTAny 	foidl_getd(PFRTAny coll, PFRTAny el, PFRTAny def) {
 	return result;
 }
 
+
+PFRTAny foidl_indexof(PFRTAny coll, PFRTAny arg) {
+	PFRTAny result = nil;
+	if(foidl_extendable_qmark(coll) == false)
+		return result;
+	switch(coll->ftype) {
+		case 	vector2_type:
+			// result = vector_first(a);
+			break;
+		case 	set2_type:
+			// result = set_first(a);
+			break;
+		case 	map2_type:
+			// result = map_first(a);
+			break;
+		case 	list2_type:
+			result = list_index_of(coll, arg);
+			break;
+		case 	string_type:
+			// result = string_first(a);
+			break;
+	}
+	return result;
+}
+
 //	Gets first element of collection or string
 
 PFRTAny 	foidl_first(PFRTAny a) {

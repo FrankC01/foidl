@@ -249,6 +249,9 @@ func getd [coll, arg, def]
 func get [coll, arg]
 	foidl_getd: coll arg nil
 
+func index_of [coll arg]
+	foidl_indexof: coll arg
+
 func flatten [coll]
 	foidl_flatten: coll
 

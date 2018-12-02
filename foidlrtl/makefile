@@ -96,7 +96,7 @@ ifeq ($(OS_NAME), Windows)
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
 	LIB64=$(LLLT) $(SYSTEM_LIB_INC_64) /out:$(STATIC_LIB) /nologo
 else
-	C64=$(CLC) -c -isystem $(INC) -march=x86-64 -fPIC -O0 -g
+	C64=$(CLC) -c -isystem $(INC)  -march=x86-64 -fPIC -O0 -g
 	CPP64=$(CPPLC) -c -isystem $(INC) -march=x86-64 -std=c++11 -fPIC -O0 -g
 	foidlrt_LIB  := libfoidlrt.a
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)

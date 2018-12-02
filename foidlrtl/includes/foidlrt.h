@@ -909,6 +909,7 @@ extern 	PFRTAny  list_extend(PFRTAny,PFRTAny);
 extern  PFRTAny  list_prepend_bang(PFRTAny,PFRTAny);
 extern 	PFRTAny  list_get(PFRTAny,PFRTAny);
 extern  PFRTAny  list_get_default(PFRTAny, PFRTAny, PFRTAny);
+extern  PFRTAny  list_index_of(PFRTAny,PFRTAny);
 extern 	PFRTAny  list_update(PFRTAny,PFRTAny,PFRTAny);
 extern 	PFRTAny  list_update_bang(PFRTAny,PFRTAny,PFRTAny);
 extern 	PFRTAny  list_pop(PFRTAny);

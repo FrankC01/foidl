@@ -243,6 +243,7 @@ func  	foidl_second [coll]
 func  	foidl_rest   [coll]
 func 	foidl_last 	 [coll]
 func  	foidl_getd 	 [coll, arg, def]
+func    foidl_indexof [coll arg]
 
 func 	foidl_reverse 	[coll]
 func 	foidl_flatten 	[coll]

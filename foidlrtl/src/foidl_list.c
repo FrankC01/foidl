@@ -231,6 +231,26 @@ PFRTAny list_get(PFRTAny l, PFRTAny index) {
 	return getListLinkNode((PFRTList) l, (ft) index->value)->data;
 }
 
+PFRTAny list_index_of(PFRTAny list, PFRTAny el) {
+	PFRTIterator li = iteratorFor(list);
+	PFRTAny 	result = nil;
+	PFRTAny 	entry = nil;
+	ft 		 	mcount=((PFRTList) list)->count;
+	if(mcount > 0) {
+		uint64_t count=0;
+		--mcount;
+		while((entry = iteratorNext(li)) != end) {
+			if(entry == el) {
+				result = allocIntegerWithValue(count);
+				break;
+			}
+			++count;
+		}
+		foidl_xdel(li);
+	}
+	return result;
+}
+
 PFRTAny list_get_default(PFRTAny l, PFRTAny index, PFRTAny def) {
 	PFRTAny  result = nil;
 	PFRTList list = (PFRTList) l;

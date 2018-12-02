@@ -61,6 +61,10 @@ var :private ast_type {
         TYPE        :funcargref
         NAME        nil
         EVAL        default_validate}
+    :lambda_argref {
+        TYPE        :lambda_argref
+        NAME        nil
+        EVAL        default_validate}
     :literalref {
         TYPE        :literalref
         NAME        nil
@@ -77,15 +81,15 @@ var :private ast_type {
     :match_resref {
         TYPE        :match_resref
         NAME        nil
-        EVAL        default_validate}
+        EVAL        ref_validate}
     :let_resref {
         TYPE        :let_resref
         NAME        nil
-        EVAL        default_validate}
+        EVAL        ref_validate}
     :let_argref {
         TYPE        :let_argref
         NAME        nil
-        EVAL        default_validate}
+        EVAL        ref_validate}
     ;   Declaration types
     ; module symbol declarations*
     :module   {
@@ -116,6 +120,11 @@ var :private ast_type {
         NAME        nil
         ARGLIST     nil
         IS_PRIVATE  true
+        EVAL        lambda_validate}
+    :lambda_call  {
+        TYPE        :lambda_call
+        NAME        nil
+        EXPRS       nil
         EVAL        default_validate}
     ; symbol: expression*
     :call {
@@ -198,7 +207,8 @@ var name_set #{
     :lambda
     :call
     :match
-    :match_exprref}
+    :match_exprref
+    :lambda_call}
 
 var invalid_set #{
     :match_guard
@@ -274,6 +284,16 @@ func type_with_exprs [typekw source token]
     let node [] type_instance: typekw source token
     map_extend!: node EXPRS list_inst!:
 
+; Function: type_lambda_call
+; Descriptions: Creates a lambda_call with
+; expressions pushed to function reference
+
+func type_lambda_call [source token name pargs]
+    let node [] type_instance: :lambda_call source token
+    map_extend!:
+        map_extend!: node EXPRS pargs
+        NAME name
+
 ; Function: type_literal_ref
 ; Description: Constructs a literal reference storing the
 ; base type in modules literal map
@@ -313,6 +333,9 @@ func type_module_create [source token]
 
     map_extend!:
         map_extend!:
-            mnode
-            LITERALS gen_literal_map: mnode
-        EXTERNS map_inst!:
+            map_extend!:
+                mnode
+                LITERALS gen_literal_map: mnode
+            EXTERNS map_inst!:
+        LAMBDAS list_inst!:
+
