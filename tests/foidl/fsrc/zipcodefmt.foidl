@@ -1,4 +1,7 @@
 ; ------------------------------------------------------------------------------
+; zipcodefmt
+; Format a zipcode based on business rules
+;
 ; Copyright 2018 John Bucci
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,7 +67,7 @@ func matchZip [zip]
         | >: %0 10      "Invalid. Greater than 10"
 
 func validChars[zip]
-    let re [] regex "1-9"    
+    let re [] regex "1-9"
     regex_match?: zip "[1-9]"
 
 func main [argv]

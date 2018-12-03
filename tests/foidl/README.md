@@ -12,4 +12,6 @@ For the consumer it is suggested that the following order provides a gradual int
 | [flowexprs.foidl](fsrc/flowexprs.foidl) | Basic flow control expressions: If, Match and local variable scope intro |
 | [letgrpexprs.foidl](fsrc/letgrpexprs.foidl) | Let and Group expressions |
 | [lcpexprs.foidl](fsrc/lcpexprs.foidl) | Lambdas, Closures and Partials |
-
+| [cmdline.foidl](fsrc/cmdline.foidl) | Demonstrates setup and execution of run-time commandline argument parser |
+| [minilex.foidl](fsrc/minilex.foidl) | Demonstrates tokenizing (lexing/scanning) using contrived regexs |
+| [zipcodefmt.foidl](fsrc/zipcodefmt.foidl) | Zip code formatter (Bucci's exploration) |

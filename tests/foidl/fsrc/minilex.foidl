@@ -23,8 +23,6 @@ module minilex
 ; Using RTL regex_match to construct a mini-lexer
 
 var patterns [
-    ; Reserved words
-    ;   Keywords and reserved symbols
     {
         :type   :module
         :regex  regex: "module"
@@ -39,7 +37,7 @@ var patterns [
     }
     {
         :type   :function
-        :regex  regex: "func"
+        :regex  regex: "func "
     }
     {
         :type   :private
@@ -86,10 +84,9 @@ var patterns [
         :regex  regex: "(\+|-|/|\*):{1,1}?"
     }
     {
-        :type   :boolpred
+        :type   :boolpred_call
         :regex  regex: "(=|>=|<=|>|<|not=):"
     }
-    ;   Collection wrapper symbols
     {
         :type   :lbracket
         :regex  regex: "\["     ;   Used for list
@@ -134,8 +131,6 @@ var patterns [
         :type   :keyword
         :regex  regex: ":[a-zA-Z]([a-zA-Z0-9_]*)?"
     }
-    ;   Literals
-    ;   String is in RTL for now but should move hear
     {
         :type   :real_number
         :regex  regex: "-?(?:0|[1-9]\d*)\.\d*(?:[eE][+\-]?\d+)?"
@@ -159,13 +154,12 @@ var patterns [
     }
     {
         :type   :math_ref
-        :regex  regex: "(\+|-|/|\*)"
+        :regex  regex: "(\+|-|\/|\*)"
     }
     {
         :type   :char
         :regex  regex:  "\'[0-9a-zA-Z]*?\'"
     }
-    ; Symbols
     {
         :type   :symbol_pred
         :regex  regex: "[a-zA-Z]([a-zA-Z0-9_]*)?\?"
@@ -182,7 +176,6 @@ var patterns [
         :type   :if_expr
         :regex  regex: "\?:"
     }
-    ; Comment char
     {
         :type   :comment
         :regex  regex: ";.*"
@@ -205,8 +198,7 @@ func dump_toks [toks]
                 printnl!: m
                 extend: a m
             ) [] toks
-    print!: nlchr
-    printnl!: "Tokenized content reversed"
+    printnl!: "`nTokenized content reversed"
     fold: ^[a m] @(printnl!: m a) nil rev_toks
 
 func token_results [toks]
@@ -221,5 +213,5 @@ func main [argv]
         let [src_string quaf!: get: argv 1
              toks tokenize: src_string patterns ignores]
              token_results: toks
-        printnl!: "usage 'minilex foidl_source"
+        printnl!: "usage 'bin/minilex fsrc/minilex.foidl'`n"
 
