@@ -66,9 +66,9 @@ func matchZip [zip]
         | =: %0 10      "Valid. Count = 10"
         | >: %0 10      "Invalid. Greater than 10"
 
-func validChars[zip]
-    let re [] regex "1-9"
-    regex_match?: zip "[1-9]"
+func validZipFmt[zip]
+    ; Indicates if given zip is in the correct format for processing
+    regex_match?: zip "\d{5}(-\d{1,4})*"
 
 func main [argv]
     ; Greeting
@@ -78,5 +78,4 @@ func main [argv]
     ; Zip playground
     let zip [] get: argv 2
     printnl!: format: "Given Zip Code is {}." [zip]
-    printnl!: matchZip: zip
-    printnl!: format: "Zip Code contains valid characters: {}." [validChars: zip]
+    printnl!: format: "Zip Code contains valid characters: {}." [validZipFmt: zip]
