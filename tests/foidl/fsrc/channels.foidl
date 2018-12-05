@@ -1,0 +1,79 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; channels
+; IO
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module channels
+
+; Channels are how foidl communicates to the outside world.
+; There are three (3) predefined channels:
+;   cin  - Reads from console (used by printnl! and print!)
+;   cout - Writes to console
+;   cerr - Writes to error console
+; Besides those, at this time, the RTL only supports file IO... let's explore
+
+; Utilities
+
+; Function: read_entire
+; Description: Reads an entire file into string using RTL 'quaf!'
+
+func :private read_entire [fname]
+    quaf!: fname
+
+; Function: slurp
+; Description: Prints entire input file to console
+; Run when command line has 1 arg. E.g. 'bin/channels fsrc/channels.foidl'
+
+func :private slurp [ifile]
+    print!: read_entire: ifile
+
+; Function: read_write
+; Description: Ingests a file (fname) a character at a time
+; and writes it to output (ofile)
+; Run when command line has 2 args. E.g. 'bin/channels fsrc/channels ./dump.txt'
+
+func :private read_write [ifile ofile]
+    let [ichan  open!: {
+                    :channel ifile
+                    :open   :r
+                    :buffer :mmap
+                    :read_handler :char}
+         ochan   open!: {
+                    :channel ofile
+                    :open :w
+                    :buffer :block
+                    :write_handler :char }]
+            @(
+                fold: ^[ofn el]
+                    @(
+                        write!: ofn el
+                        ofn
+                    )
+                ochan ichan
+                close!: ichan
+                close!: ochan
+            )
+
+func main [argv]
+    printnl!: "Welcome to the channels demonstration"
+    match count: argv
+    | 0     failWith: "Yegads, something horribly wrong"
+    | 1     printnl!: "bin/channels arguments"
+    | 2     slurp: get: argv 1
+    | 3     read_write: get: argv 1 get: argv 2
+    | :default failWith: "Unknown command line pattern"

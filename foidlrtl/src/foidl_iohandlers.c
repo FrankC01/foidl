@@ -304,7 +304,7 @@ PFRTAny io_charReader(PFRTIOChannel chn) {
 
 PFRTAny io_nextCharReader(PFRTIterator itr) {
 	PFRTChannel_Iterator citr = (PFRTChannel_Iterator) itr;
-	PFRTAny result = nil;
+	PFRTAny result = end;
 	if(citr->currRef < citr->buffer->max_read_position) {
 		result = allocCharWithValue(
 			(ft) citr->buffer->bufferPtr[citr->currRef]);
