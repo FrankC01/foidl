@@ -22,7 +22,15 @@
 module runtimetests
 
 include langcorem
-include errors
+
+; Function: exception
+; Description: Writes exception with except_str and exits
+
+func exception [except_str]
+    failWith:
+        format:
+            "Exception: {}. exiting...`n"
+            [except_str]
 
 func testEarlyUsePredicates []
     printnl!: ""
@@ -31,7 +39,7 @@ func testEarlyUsePredicates []
     ; Empty tests
     ?: empty?: ""
         printnl!: "String is empty"
-        ; exception "empty? should have return true"
+        exception "empty? should have return true"
 
 func main [argv]
     printnl!: "Welcome to runtime tests"
