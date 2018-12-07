@@ -21,8 +21,6 @@
 
 module runtimetests
 
-include langcorem
-
 ; Function: exception
 ; Description: Writes exception with except_str and exits
 
@@ -32,19 +30,51 @@ func exception [except_str]
             "Exception: {}. exiting...`n"
             [except_str]
 
-func testEarlyUsePredicates []
-    printnl!: ""
-    printnl!: "Test early use predicates"
+var :private test_content [
+    {
+        :description "empty function test"
+        :rtl_func   empty_test
+        :arg_count  1
+        :test_data  [
+                        [{} [] <> #{} 1 2 3 "String" 'c' ""]
+                        [true true true true false false false false false true]
+                    ]
+    }
+]
 
-    ; Empty tests
-    ?: empty?: ""
-        printnl!: "String is empty"
-        exception "empty? should have return true"
+; Test 'empty?' and comapre with expected result
+
+func :private empty_test [arg expected]
+    =: empty?: arg expected
+
+; Accumulate to result list, outcome of test on argument with expected result
+
+func :private test_driver [ref_fn tdat tres accum indx]
+    extend:
+        accum
+        (ref_fn
+            get: tdat indx
+            get: tres indx)
+
+; Called from 'fold' in main, refolds on data list with test function
+
+func :private run_test [accum indx]
+    printnl!: "Entering run_test as part of fold function"
+    let test_map [] get: test_content indx
+    let ref_fn []   get: test_map :rtl_func
+    let data []     get: test_map :test_data
+    let tdata []    get: data zero
+
+    fold:
+        (test_driver ref_fn tdata get: data one)
+        accum
+        series: zero count: tdata one
+
 
 func main [argv]
     printnl!: "Welcome to runtime tests"
+    printnl!: fold: run_test []  series: zero count: test_content one
 
-    ; Call test functions
-    testEarlyUsePredicates: []
 
     printnl!: ""
+
