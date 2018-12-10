@@ -119,8 +119,9 @@ func default_validate [state result self]
 
 func module_validate [state result self]
     dispatch_ast: state result self
-    print_list_ast: "Lambda ASTs" get: self LAMBDAS
-    print_ast: self
+    ;print_list_ast: "Lambda ASTs" get: self LAMBDAS
+    ;print_ast: self
+    self
 
 ; Function: variable_validate
 ; Description: Evaluate expression on rhs

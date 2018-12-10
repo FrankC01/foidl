@@ -1,0 +1,89 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ir_types
+; LLVM Generation
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module ir_types
+include ast_type
+
+; Well knowns
+var any_ptr "%`dAny`d*"
+var any_ptr_ptr "%`dAny`d**"
+var void "void"
+var void_ptr "i8*"
+var void_ptr_ptr "i8**"
+
+; Integer types
+var int_64 "i64"
+var int_32 "i32"
+var int_8 "i8"
+
+var null "null"
+var :private label "label "
+
+; Function: ir_stringify
+; Description: expand string if ? and *
+var :private bang "{}_bang"
+var :private pred "{}_qmark"
+
+func :private ir_stringify [s]
+    match last: s
+    | '?'   format: pred [dropLast: s]
+    | '!'   format: bang [dropLast: s]
+    | :default s
+
+;
+func global_variable [variable]
+
+; Function: external_function
+; Description: External function declaration
+var :private anyptr_name "%`dAny`d* %`d{}`d"
+var :private anyptr_tailname ", %`dAny`d* %`d{}`d"
+var :private extr_func "declare %`dAny`d* @`d{}`d({})`n"
+
+
+func :private anyptr_for [aptrstr r]
+    format: aptrstr [r]
+
+func external_function [funcref]
+    format:
+        extr_func
+        [
+            ir_stringify: get: funcref NAME
+            ?: =: get: funcref ARGCNT zero
+                " "
+                fold:
+                    ^[istr ndx]
+                        ?: =: ndx zero
+                            extend: istr anyptr_for: anyptr_name ndx
+                            extend: istr anyptr_for: anyptr_tailname ndx
+                    "" series: zero get: funcref ARGCNT one]
+
+; Function: external_variable
+; Description: External variable declaration
+var :private extr_var "@`d{}`d = external global %`dAny`d*, align 8`n"
+
+func external_variable [varref]
+    format: extr_var [ir_stringify: get: varref NAME]
+
+func branch []
+func unconditional_branch []
+func array_type []
+func label_type [astel suffix]
+func function_type [function]
+func lambda_type [lambda]

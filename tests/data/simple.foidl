@@ -22,7 +22,6 @@
 module simple
 
 func testmtch [a b c d]
-
     match a
     | 1     true
     | 2     false

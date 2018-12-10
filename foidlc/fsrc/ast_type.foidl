@@ -298,20 +298,35 @@ func type_lambda_call [source token name pargs]
 ; Description: Constructs a literal reference storing the
 ; base type in modules literal map
 
-func type_literal_ref [mmodule token source]
-    let ttype []
-        get: token :token_type
-    ; Create the literal reference
+var :private littype_name {
+    :string         "_STRING_{}"
+    :keyword        "_KEYWORD_{}"
+    :integer        "_INTEGER_{}"
+    :real_number    "_NUMBER_{}"
+    :hex            "_HEX_{}"
+    :bit            "_BIT_{}"
+    :char           "_CHAR_{}"
+}
+
+func :private new_lit_entry [ltype token source lmap k]
     let lref []
         map_extend!:
-            type_instance: :literalref source token
-            LITTYPE ttype
-    ; Add to the global (module) literal map
+            map_extend!:
+                type_instance: :literalref source token
+                LITTYPE ltype
+            NAME format: get: littype_name ltype [count: lmap]
     map_extend!:
-        get: get: mmodule LITERALS ttype
-        get: token :token_str lref
-    ; Return the literal reference
+        lmap
+        get: token :token_str
+        lref
     lref
+
+func type_literal_ref [mmodule token source]
+    let ltype [] get: token :token_type
+    getd:
+        get: get: mmodule LITERALS ltype
+        get: token :token_str
+        (new_lit_entry ltype token source)
 
 ; Function:
 ; Description:
@@ -327,10 +342,96 @@ func :private gen_literal_map [mnode]
 ; Description:
 ; Syntax:
 
+var :private predef_externs [
+{
+        TYPE        :varref
+        NAME        "true"
+        EVAL        default_validate
+}
+{
+        TYPE        :varref
+        NAME        "false"
+        EVAL        default_validate
+}
+{
+        TYPE        :varref
+        NAME        "nil"
+        EVAL        default_validate
+}
+{
+        TYPE        :funcref
+        NAME        "foidl_truthy?"
+        ARGCNT      one
+        EVAL        default_validate
+}
+{
+        TYPE        :funcref
+        NAME        "eq"
+        ARGCNT      two
+        EVAL        default_validate
+}
+{
+        TYPE        :funcref
+        NAME        "map_inst!"
+        ARGCNT      zero
+        EVAL        default_validate
+}
+{
+        TYPE        :funcref
+        NAME        "map_extend!"
+        ARGCNT      three
+        EVAL        default_validate
+}
+{
+        TYPE        :funcref
+        NAME        "set_inst!"
+        ARGCNT      zero
+        EVAL        default_validate
+}
+{
+        TYPE        :funcref
+        NAME        "set_extend!"
+        ARGCNT      two
+        EVAL        default_validate
+}
+{
+        TYPE        :funcref
+        NAME        "vector_inst!"
+        ARGCNT      zero
+        EVAL        default_validate
+}
+{
+        TYPE        :funcref
+        NAME        "vector_extend!"
+        ARGCNT      two
+        EVAL        default_validate
+}
+{
+        TYPE        :funcref
+        NAME        "list_inst!"
+        ARGCNT      zero
+        EVAL        default_validate
+}
+{
+        TYPE        :funcref
+        NAME        "list_extend!"
+        ARGCNT      two
+        EVAL        default_validate
+}
+
+]
+
+func :private extern_fn [mext s]
+    map_extend!:
+        mext
+        get: s NAME
+        s
+
 func type_module_create [source token]
     let mnode []
         type_with_exprs: :module source token
 
+    ; Prepare
     map_extend!:
         map_extend!:
             map_extend!:
@@ -338,4 +439,10 @@ func type_module_create [source token]
                 LITERALS gen_literal_map: mnode
             EXTERNS map_inst!:
         LAMBDAS list_inst!:
+    ; Fold in predefines
+    fold:
+        extern_fn
+        get: mnode EXTERNS
+        predef_externs
 
+    mnode
