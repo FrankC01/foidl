@@ -312,9 +312,14 @@ func :private new_lit_entry [ltype token source lmap k]
     let lref []
         map_extend!:
             map_extend!:
-                type_instance: :literalref source token
+                type_instance:
+                    :literalref
+                    source
+                    token
                 LITTYPE ltype
-            NAME format: get: littype_name ltype [count: lmap]
+            NAME format:
+                    get: littype_name ltype
+                    [count: lmap]
     map_extend!:
         lmap
         get: token :token_str

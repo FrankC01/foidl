@@ -81,6 +81,13 @@ var :private extr_var "@`d{}`d = external global %`dAny`d*, align 8`n"
 func external_variable [varref]
     format: extr_var [ir_stringify: get: varref NAME]
 
+; Function: literal
+; Description: Local, private, literal declarations
+var :private local_lit "@`d{}{}`d = private global %`dAny`d* null, align 8`n"
+
+func literal_type [mname lit]
+    format: local_lit [mname get: lit NAME]
+
 func branch []
 func unconditional_branch []
 func array_type []

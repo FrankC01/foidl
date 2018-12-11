@@ -52,28 +52,26 @@ var :private context_str "%`dAny`d = type {i64, i64, i64, i32, i8*}
 @llvm.global_ctors = appending global [1 x %VPAT]
     [%VPAT { i32 65535, void ()* @foidl_module_inits, i8* null }]`n
 declare %`dAny`d* @`dfoidl_rtl_init`d()
-
 declare %`dAny`d* @`dfoidl_convert_mainargs`d(i32 %`d.1`d, i8** %`d.2`d, i8** %`d.3`d)
-
 declare %`dAny`d* @`dfoidl_reg_character`d(i64 %`d.1`d)
-
 declare %`dAny`d* @`dfoidl_reg_integer`d(i64 %`d.1`d)
-
 declare %`dAny`d* @`dfoidl_reg_keyword`d(i8* %`d.1`d)
-
 declare %`dAny`d* @`dfoidl_reg_string`d(i8* %`d.1`d)
-
 declare %`dAny`d* @`dfoidl_tofuncref`d(i8* %`d.1`d, %`dAny`d* %`d.2`d)
-
 declare %`dAny`d* @`dfoidl_imbue`d(%`dAny`d* %`d.1`d, %`dAny`d* %`d.2`d)
-
 declare %`dAny`d* @`dfoidl_fref_instance`d(%`dAny`d* %`d.1`d)`n`n"
+
+; Function: initialize
+; Description: sets up additional context information
 
 func :private initialize [state]
     map_extend!:
         context
         :module_name get: state :module_name
     state
+
+; Function: spit_header
+; Description: Emits the static header
 
 func :private spit_header [state]
     let oc [] get: state :outchannel
@@ -82,9 +80,15 @@ func :private spit_header [state]
     write!: oc context_str
     state
 
+; Function: spit
+; Description: Writes el to ochan and returns ochan
+
 func :private spit [ochan el]
     write!: ochan el
     ochan
+
+; Function: emit_externals
+; Description: Captures an external var or func declaration type
 
 func :private emit_externals [acc el]
     let elref [] value: el
@@ -93,6 +97,9 @@ func :private emit_externals [acc el]
         list_extend!: acc external_function: elref
     acc
 
+; Function: externs
+; Description: processes any external declarations
+
 func :private externs [state]
     fold:
         emit_externals
@@ -100,8 +107,33 @@ func :private externs [state]
         get: get: state :ast EXTERNS
     state
 
+; Function: emit_literals
+; Description: Captures literal declaration instructions
+
+func :private emit_literals [acc el]
+    ?: empty?: value: el
+        acc
+        fold:
+            ^[instr lit]
+                list_extend!:
+                    instr
+                    literal_type:
+                        get: context :module_name
+                        value: lit
+            acc value: el
+
+; Function: literals
+; Description: process any literals
+
+func :private literals [state]
+    fold:
+        emit_literals
+        get: context :module_bb
+        get: get: state :ast LITERALS
+    state
+
 func emit [state]
-    externs: spit_header: initialize: state
+    literals: externs: spit_header: initialize: state
 
     fold: spit get: state :outchannel get: context :module_bb
     ;printnl!: get: get: state :ast LITERALS
