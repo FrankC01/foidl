@@ -21,6 +21,9 @@
 
 module simple
 
+var :private pfoo "pfoo"
+var foo "foo"
+
 func testmtch [a b c d]
     match a
     | 1     true

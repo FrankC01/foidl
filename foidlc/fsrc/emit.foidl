@@ -30,7 +30,6 @@ include ir_types
 ; Manages reference types (litref, etc.)
 
 var :private context {
-    :globals    map_inst!:
     :module_bb  list_inst!:
 }
 
@@ -132,8 +131,18 @@ func :private literals [state]
         get: get: state :ast LITERALS
     state
 
+func :private variables [state]
+    fold:
+        ^[acc decl]
+            ?: =: get: decl TYPE :variable
+                list_extend!: acc variable_type: decl
+                acc
+        get: context :module_bb
+        get: get: state :ast EXPRS
+    state
+
 func emit [state]
-    literals: externs: spit_header: initialize: state
+    variables: literals: externs: spit_header: initialize: state
 
     fold: spit get: state :outchannel get: context :module_bb
     ;printnl!: get: get: state :ast LITERALS
