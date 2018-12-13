@@ -19,22 +19,43 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 module ir_types
-include ast_type
+include langcorem
 
-; Well knowns
-var any_ptr "%`dAny`d*"
-var any_ptr_ptr "%`dAny`d**"
-var void "void"
-var void_ptr "i8*"
-var void_ptr_ptr "i8**"
+include ast_type
+include errors
 
 ; Integer types
-var int_64 "i64"
-var int_32 "i32"
-var int_8 "i8"
+var int_64  inttype: 64
+var int_32  inttype: 32
+var int_8   inttype: 8
 
-var null "null"
+; Well knowns
+var any         named_struct_type: "Any"
+var any_ptr     ptrtype: any
+var any_ptr_ptr ptrtype: any_ptr
+
+var void_ptr        ptrtype: int_8         ; i8*
+var void_ptr_ptr    ptrtype: void_ptr  ; i8**
+
+var null consttype: "null"
+var void consttype: "void"
+
 var :private label "label "
+
+; Templatized
+
+var :private comment "`n; {} `n"
+
+; For var and literal local declarations
+var :private global_null_decl "@`d{}`d = {} %`dAny`d* null, align 8`n"
+
+; For external function declarations
+var :private anyptr_name "%`dAny`d* %`d{}`d"
+var :private anyptr_tailname ", %`dAny`d* %`d{}`d"
+var :private extr_func "declare %`dAny`d* @`d{}`d({})`n"
+
+; For external var declarations
+var :private extr_var "@`d{}`d = {} %`dAny`d*, align 8`n"
 
 ; Function: ir_stringify
 ; Description: expand string if ? and *
@@ -43,23 +64,75 @@ var :private pred "{}_qmark"
 
 func :private ir_stringify [s]
     match last: s
-    | '?'   format: pred [dropLast: s]
-    | '!'   format: bang [dropLast: s]
+    | '?'   format!: pred [dropLast: s]
+    | '!'   format!: bang [dropLast: s]
     | :default s
+
+; Base types creation
+
+func inttype [val]
+    map_extend!:
+        {
+            :type   :int
+        }
+        :str  format!: "i{}" [val]
+
+
+func ptrtype [val]
+    map_extend!:
+        {
+            :type   :ptr
+        }
+        :str  format!: "{}*" [get: val :str]
+
+func named_struct_type [val]
+    map_extend!:
+        {
+            :type   :structure
+        }
+        :str   format!: "%`d{}`d" [val]
+
+func consttype [val]
+    map_extend!:
+        {
+            :type   :constant
+        }
+        :str    val
+
+; Basic block - named container of instructions
+
+func basic_block [val]
+    map_extend!:
+        {
+            :type           :basic_block
+            :instructions   list_inst!:
+            :inst_pos       zero
+        }
+        :str    format!: "{}:" [val]
+
+; External declaration - Applies to extern vars and funcs
+; Local declarations - Applies to private literals and private/general vars
+
+; Function: global_function
+; Description: Instantiates a function
+;   1. Create "entry:" basic block
+;   2. If return is nil, set constant void
+
+;func  global_function [val args rettype]
+;    let gf [] map_extend!:
+;                {
+;                    :type           :function
+;                    :basic_blocks   map_inst!:
+;                }
 
 
 ; Function: external_function
 ; Description: External function declaration
-var :private anyptr_name "%`dAny`d* %`d{}`d"
-var :private anyptr_tailname ", %`dAny`d* %`d{}`d"
-var :private extr_func "declare %`dAny`d* @`d{}`d({})`n"
-
-
 func :private anyptr_for [aptrstr r]
-    format: aptrstr [r]
+    format!: aptrstr [r]
 
 func external_function [funcref]
-    format:
+    format!:
         extr_func
         [
             ir_stringify: get: funcref NAME
@@ -72,27 +145,31 @@ func external_function [funcref]
                             extend: istr anyptr_for: anyptr_tailname ndx
                     "" series: zero get: funcref ARGCNT one]
 
-; Function: literal
-; Description: Local, private, literal declarations
-var :private local_lit "@`d{}{}`d = private global %`dAny`d* null, align 8`n"
+; Function: comment_type
+; Description: Formats a comment instruction
 
-func literal_type [mname lit]
-    format: local_lit [mname get: lit NAME]
+func comment_type [s]
+    format!: comment [s]
+
+; Function: literal_type
+; Description: Local, private, literal declarations
+
+func literal_type [literal]
+    format!: global_null_decl [get: literal NAME "private global"]
 
 ; Function: external_variable
 ; Description: External variable declaration
-var :private decl_var "@`d{}`d = {} %`dAny`d*, align 8`n"
 
 func external_variable [varref]
-    format: decl_var [ir_stringify: get: varref NAME "external global"]
+    format!: extr_var [ir_stringify: get: varref NAME "external global"]
 
 ; Function: variable_type
 ; Description: Local variable declarations
 
 func variable_type [variable]
     ?: get: variable IS_PRIVATE
-        format: decl_var [ir_stringify: get: variable NAME "private global"]
-        format: decl_var [ir_stringify: get: variable NAME "default global"]
+        format!: global_null_decl [ir_stringify: get: variable NAME "private global"]
+        format!: global_null_decl [ir_stringify: get: variable NAME "default global"]
 
 func branch []
 func unconditional_branch []

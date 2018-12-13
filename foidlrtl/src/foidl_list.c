@@ -345,6 +345,16 @@ PFRTAny coerce_to_list(PFRTAny stemplate, PFRTAny src) {
 	return src;
 }
 
-void  release_list(PFRTAny s) {
-	unknown_handler();
+PFRTAny release_list_bang(PFRTAny s) {
+	PFRTList list;
+	if (s->ftype == list2_type)
+		list = (PFRTList) s;
+	else
+		unknown_handler();
+
+	while(list->count > 0)
+		list_pop_bang(s);
+
+	foidl_xdel(s);
+	return nil;
 }

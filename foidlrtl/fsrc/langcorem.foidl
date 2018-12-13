@@ -22,6 +22,9 @@ module langcorem
 
 include foidlrtm
 
+func format! [s coll]
+	foidl_format!: s coll
+
 func  	extend!  	[coll arg]
 	foidl_extend!: coll arg
 

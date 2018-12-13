@@ -32,6 +32,8 @@ func  foidl_type_mdump  [obj]
 
 func 	foidl_literal_map_stats [coll]
 
+func    foidl_format! [s coll]
+
 func 	foidl_extend! [coll arg]
 
 func 	foidl_extendKV! [coll k v]

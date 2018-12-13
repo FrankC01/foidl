@@ -299,16 +299,16 @@ func type_lambda_call [source token name pargs]
 ; base type in modules literal map
 
 var :private littype_name {
-    :string         "_STRING_{}"
-    :keyword        "_KEYWORD_{}"
-    :integer        "_INTEGER_{}"
-    :real_number    "_NUMBER_{}"
-    :hex            "_HEX_{}"
-    :bit            "_BIT_{}"
-    :char           "_CHAR_{}"
+    :string         "{}_STRING_{}"
+    :keyword        "{}_KEYWORD_{}"
+    :integer        "{}_INTEGER_{}"
+    :real_number    "{}_NUMBER_{}"
+    :hex            "{}_HEX_{}"
+    :bit            "{}_BIT_{}"
+    :char           "{}_CHAR_{}"
 }
 
-func :private new_lit_entry [ltype token source lmap k]
+func :private new_lit_entry [mname ltype token source lmap k]
     let lref []
         map_extend!:
             map_extend!:
@@ -319,7 +319,7 @@ func :private new_lit_entry [ltype token source lmap k]
                 LITTYPE ltype
             NAME format:
                     get: littype_name ltype
-                    [count: lmap]
+                    [mname count: lmap]
     map_extend!:
         lmap
         get: token :token_str
@@ -331,7 +331,7 @@ func type_literal_ref [mmodule token source]
     getd:
         get: get: mmodule LITERALS ltype
         get: token :token_str
-        (new_lit_entry ltype token source)
+        (new_lit_entry get: mmodule NAME ltype token source)
 
 ; Function:
 ; Description:
@@ -440,10 +440,12 @@ func type_module_create [source token]
     map_extend!:
         map_extend!:
             map_extend!:
-                mnode
-                LITERALS gen_literal_map: mnode
-            EXTERNS map_inst!:
-        LAMBDAS list_inst!:
+                map_extend!:
+                    mnode
+                    LITERALS gen_literal_map: mnode
+                EXTERNS map_inst!:
+            LAMBDAS list_inst!:
+        NAME source
     ; Fold in predefines
     fold:
         extern_fn

@@ -30,7 +30,9 @@ include ir_types
 ; Manages reference types (litref, etc.)
 
 var :private context {
-    :module_bb  list_inst!:
+    :global_vars    map_inst!:
+    :global_funcs   map_inst!:
+    :module_bb      list_inst!:
 }
 
 var selfhost_llvm ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -50,6 +52,7 @@ var :private context_str "%`dAny`d = type {i64, i64, i64, i32, i8*}
 
 @llvm.global_ctors = appending global [1 x %VPAT]
     [%VPAT { i32 65535, void ()* @foidl_module_inits, i8* null }]`n
+; RTL helpers`n
 declare %`dAny`d* @`dfoidl_rtl_init`d()
 declare %`dAny`d* @`dfoidl_convert_mainargs`d(i32 %`d.1`d, i8** %`d.2`d, i8** %`d.3`d)
 declare %`dAny`d* @`dfoidl_reg_character`d(i64 %`d.1`d)
@@ -58,7 +61,7 @@ declare %`dAny`d* @`dfoidl_reg_keyword`d(i8* %`d.1`d)
 declare %`dAny`d* @`dfoidl_reg_string`d(i8* %`d.1`d)
 declare %`dAny`d* @`dfoidl_tofuncref`d(i8* %`d.1`d, %`dAny`d* %`d.2`d)
 declare %`dAny`d* @`dfoidl_imbue`d(%`dAny`d* %`d.1`d, %`dAny`d* %`d.2`d)
-declare %`dAny`d* @`dfoidl_fref_instance`d(%`dAny`d* %`d.1`d)`n`n"
+declare %`dAny`d* @`dfoidl_fref_instance`d(%`dAny`d* %`d.1`d)`n"
 
 ; Function: initialize
 ; Description: sets up additional context information
@@ -100,6 +103,8 @@ func :private emit_externals [acc el]
 ; Description: processes any external declarations
 
 func :private externs [state]
+    list_extend!: get: context :module_bb
+        comment_type: "External references`n"
     fold:
         emit_externals
         get: context :module_bb
@@ -117,7 +122,6 @@ func :private emit_literals [acc el]
                 list_extend!:
                     instr
                     literal_type:
-                        get: context :module_name
                         value: lit
             acc value: el
 
@@ -125,6 +129,8 @@ func :private emit_literals [acc el]
 ; Description: process any literals
 
 func :private literals [state]
+    list_extend!: get: context :module_bb
+        comment_type: "Literal references`n"
     fold:
         emit_literals
         get: context :module_bb
@@ -132,6 +138,8 @@ func :private literals [state]
     state
 
 func :private variables [state]
+    list_extend!: get: context :module_bb
+        comment_type: "Local variable references`n"
     fold:
         ^[acc decl]
             ?: =: get: decl TYPE :variable
@@ -143,6 +151,6 @@ func :private variables [state]
 
 func emit [state]
     variables: literals: externs: spit_header: initialize: state
-
+    ;printnl!: extend: "" "foo"
     fold: spit get: state :outchannel get: context :module_bb
     ;printnl!: get: get: state :ast LITERALS

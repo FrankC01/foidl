@@ -123,6 +123,13 @@ PFRTAny 	foidl_format(PFRTAny s, PFRTAny coll) {
 	return s;
 }
 
+PFRTAny 	foidl_format_bang(PFRTAny s, PFRTAny coll) {
+	PFRTAny result = foidl_format(s, coll);
+	if(coll->ftype == list2_type && coll != empty_list)
+		release_list_bang(coll);
+	return result;
+}
+
 static void gen_block(PFRTAny patterns,PFRTAny ignores, token_block *block) {
 	ft pcnt = ((PFRTList) patterns)->count;
 	ft icnt = ((PFRTList) ignores)->count;

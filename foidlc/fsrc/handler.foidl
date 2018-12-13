@@ -520,10 +520,6 @@ func build_handler_and_run [cmap]
                         ast_print
                         skip_step
                     validate_ast
-                    ;(faux_step "produce_ir")
-                    ;?: get: cmap :printir
-                    ;    (faux_step "ir_print")
-                    ;    skip_step
                     emit_llvm
                     close_output
                     ]
