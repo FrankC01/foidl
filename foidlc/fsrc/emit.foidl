@@ -86,7 +86,8 @@ func :private spit_header [state]
 ; Description: Writes el to ochan and returns ochan
 
 func :private spit [ochan el]
-    write!: ochan el
+    let write_fn [] get: el :writer
+    (write_fn ochan el)
     ochan
 
 ; Function: emit_externals
@@ -95,8 +96,8 @@ func :private spit [ochan el]
 func :private emit_externals [acc el]
     let elref [] value: el
     ?: =: get: elref TYPE :varref
-        list_extend!: acc external_variable: elref
-        list_extend!: acc external_function: elref
+        list_extend!: acc external_variable_type: elref
+        list_extend!: acc external_function_type: elref
     acc
 
 ; Function: externs
@@ -121,8 +122,7 @@ func :private emit_literals [acc el]
             ^[instr lit]
                 list_extend!:
                     instr
-                    literal_type:
-                        value: lit
+                    literal_type: value: lit
             acc value: el
 
 ; Function: literals
@@ -143,13 +143,14 @@ func :private variables [state]
     fold:
         ^[acc decl]
             ?: =: get: decl TYPE :variable
-                list_extend!: acc variable_type: decl
+                list_extend!: acc global_variable_type: decl
                 acc
         get: context :module_bb
         get: get: state :ast EXPRS
     state
 
 func emit [state]
+    ;literals: externs: spit_header: initialize: state
     variables: literals: externs: spit_header: initialize: state
     ;printnl!: extend: "" "foo"
     fold: spit get: state :outchannel get: context :module_bb

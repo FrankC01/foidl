@@ -31,20 +31,18 @@ var int_8   inttype: 8
 
 ; Well knowns
 var any         named_struct_type: "Any"
-var any_ptr     ptrtype: any
-var any_ptr_ptr ptrtype: any_ptr
+var any_ptr     ptr_type: any
+var any_ptr_ptr ptr_type: any_ptr
 
-var void_ptr        ptrtype: int_8         ; i8*
-var void_ptr_ptr    ptrtype: void_ptr  ; i8**
+var void_ptr        ptr_type: int_8         ; i8*
+var void_ptr_ptr    ptr_type: void_ptr      ; i8**
 
-var null consttype: "null"
-var void consttype: "void"
+var null const_type: "null"
+var void const_type: "void"
 
 var :private label "label "
 
 ; Templatized
-
-var :private comment "`n; {} `n"
 
 ; For var and literal local declarations
 var :private global_null_decl "@`d{}`d = {} %`dAny`d* null, align 8`n"
@@ -68,108 +66,180 @@ func :private ir_stringify [s]
     | '!'   format!: bang [dropLast: s]
     | :default s
 
-; Base types creation
+
+; Simple writer
+
+func :private simple_name_writer [ochan irtype]
+    write!: ochan
+        format!: get: irtype :declaration [get: irtype :name]
+
+; Base types
 
 func inttype [val]
     map_extend!:
         {
-            :type   :int
+            :type           :int
+            :name           val
+            :declaration    " i{} "
         }
-        :str  format!: "i{}" [val]
+        :writer simple_name_writer
 
-
-func ptrtype [val]
+func ptr_type [val]
     map_extend!:
         {
-            :type   :ptr
+            :type           :ptr
+            :name           val
+            :declaration    " {}* "
         }
-        :str  format!: "{}*" [get: val :str]
+        :writer simple_name_writer
+
+func const_type [val]
+    map_extend!:
+        {
+            :type           :constant
+            :name           val
+            :declaration    " {} "
+        }
+        :writer simple_name_writer
+
+func comment_type [val]
+    map_extend!:
+        {
+            :type           :constant
+            :name           val
+            :declaration    "`n; {} `n"
+        }
+        :writer simple_name_writer
+
+; Basic block - named container of instructions
+
+func :private bblock_writer [ochan bblock]
+    ochan
+
+func basic_block_type [val]
+    map_extend!:
+        {
+            :type           :basic_block
+            :name           val
+            :instructions   list_inst!:
+            :inst_pos       zero
+            :declaration    "{}:`n"
+        }
+        :writer bblock_writer
+
+; Generic named type
 
 func named_struct_type [val]
     map_extend!:
         {
-            :type   :structure
-        }
-        :str   format!: "%`d{}`d" [val]
+            :type           :structure
+            :name           val
+            :declaration    "%`d{}`d"
 
-func consttype [val]
-    map_extend!:
-        {
-            :type   :constant
         }
-        :str    val
-
-; Basic block - named container of instructions
-
-func basic_block [val]
-    map_extend!:
-        {
-            :type           :basic_block
-            :instructions   list_inst!:
-            :inst_pos       zero
-        }
-        :str    format!: "{}:" [val]
+        :writer simple_name_writer
 
 ; External declaration - Applies to extern vars and funcs
-; Local declarations - Applies to private literals and private/general vars
 
-; Function: global_function
-; Description: Instantiates a function
-;   1. Create "entry:" basic block
-;   2. If return is nil, set constant void
+func external_variable_type [val]
+    map_extend!:
+        {
+            :type           :external_var
+            :name           ir_stringify: get: val NAME
+            :declaration    "@`d{}`d = external global %`dAny`d* null, align 8`n"
+        }
+        :writer  simple_name_writer
 
-;func  global_function [val args rettype]
-;    let gf [] map_extend!:
-;                {
-;                    :type           :function
-;                    :basic_blocks   map_inst!:
-;                }
-
-
-; Function: external_function
-; Description: External function declaration
 func :private anyptr_for [aptrstr r]
     format!: aptrstr [r]
 
-func external_function [funcref]
-    format!:
-        extr_func
+func :private extern_func_writer [ochan efunc]
+    write!:
+        ochan
+        format!:
+        get: efunc :declaration
         [
-            ir_stringify: get: funcref NAME
-            ?: =: get: funcref ARGCNT zero
+            get: efunc :name
+            ?: =: get: efunc :argcnt zero
                 " "
                 fold:
                     ^[istr ndx]
                         ?: =: ndx zero
                             extend: istr anyptr_for: anyptr_name ndx
                             extend: istr anyptr_for: anyptr_tailname ndx
-                    "" series: zero get: funcref ARGCNT one]
+                    "" series: zero get: efunc :argcnt one]
 
-; Function: comment_type
-; Description: Formats a comment instruction
+    ochan
 
-func comment_type [s]
-    format!: comment [s]
+func external_function_type [funcref]
+    map_extend!:
+        {
+            :type           :external_func
+            :name           ir_stringify: get: funcref NAME
+            :argcnt         get: funcref ARGCNT
+            :declaration    "declare %`dAny`d* @`d{}`d({})`n"
+        }
+        :writer  extern_func_writer
 
-; Function: literal_type
-; Description: Local, private, literal declarations
+; Local declarations - Applies to private literals and private/general vars
 
-func literal_type [literal]
-    format!: global_null_decl [get: literal NAME "private global"]
+func literal_type  [litref]
+    map_extend!:
+        {
+            :type           :literal
+            :name           get: litref NAME
+            :declaration    "@`d{}`d = private global %`dAny`d* null, align 8`n"
+        }
+        :writer simple_name_writer
 
-; Function: external_variable
-; Description: External variable declaration
+; Function: global_function
+; Description: Instantiates a function
+;   1. Create "entry:" basic block
+;   2. If return is nil, set constant void
 
-func external_variable [varref]
-    format!: extr_var [ir_stringify: get: varref NAME "external global"]
+func :private function_writer [ochan gft]
 
-; Function: variable_type
-; Description: Local variable declarations
+func  global_function_type [val args exprs rettype]
+    let gf []
+            {
+                :type           :function
+                :name           ir_stringify: val
+                :bblocks_map    map_inst!:
+                :basic_blocks   list_inst!:
+                :arguments      list_inst!:
+                :expressions    exprs
+                :returns        rettype
+                :declaration    "define %`dAny`d* @`d{}`d({}) {`n"
+                :return         "`treturn {}`n}"
+                :writer         function_writer
+            }
 
-func variable_type [variable]
-    ?: get: variable IS_PRIVATE
-        format!: global_null_decl [ir_stringify: get: variable NAME "private global"]
-        format!: global_null_decl [ir_stringify: get: variable NAME "default global"]
+    list_extend!: get: gf :basic_blocks basic_block_type: "entry"
+    map_inst!: get: gf :bblocks_map "entry" zero
+    gf
+
+func :private variable_writer [ochan gvt]
+    write!:
+        ochan
+        format!:
+            get: gvt :declaration
+            [
+                get: gvt :name
+                ?: get: gvt :private
+                    "private global"
+                    "default global"
+                ]
+
+func global_variable_type [variable]
+    map_extend!:
+        {
+            :type           :variable
+            :name           ir_stringify: get: variable NAME
+            :expressions    get: variable EXPRS
+            :private        get: variable IS_PRIVATE
+            :declaration    "@`d{}`d = {} %`dAny`d* null, align 8`n"
+        }
+        :writer variable_writer
 
 func branch []
 func unconditional_branch []
