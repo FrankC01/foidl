@@ -40,6 +40,8 @@ var void_ptr_ptr    ptr_type: void_ptr      ; i8**
 var null const_type: "null"
 var void const_type: "void"
 
+var return_void return_type: void
+
 var :private label "label "
 
 ; Templatized
@@ -66,50 +68,128 @@ func :private ir_stringify [s]
     | '!'   format!: bang [dropLast: s]
     | :default s
 
+; Simple tostr
+
+func :private simple_name_tostring [irtype]
+    format!: get: irtype :declaration [get: irtype :name]
+
+func :private type_tostring [irtype]
+    let rts_fn  [] get: irtype :tostring
+    (rts_fn irtype)
 
 ; Simple writer
 
 func :private simple_name_writer [ochan irtype]
-    write!: ochan
-        format!: get: irtype :declaration [get: irtype :name]
+    let tstr_fn [] get: irtype :tostring
+    write!: ochan (tstr_fn irtype)
 
-; Base types
+; Simple integer type
 
 func inttype [val]
-    map_extend!:
-        {
-            :type           :int
-            :name           val
-            :declaration    " i{} "
-        }
-        :writer simple_name_writer
+    {
+        :type           :int
+        :name           val
+        :declaration    "i{}"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
 
-func ptr_type [val]
-    map_extend!:
-        {
-            :type           :ptr
-            :name           val
-            :declaration    " {}* "
-        }
-        :writer simple_name_writer
+; Pointer types
+
+func :private pointer_tostring [ptype]
+    type_tostring: ptype
+
+func :private pointer_writer [ochan ptype]
+    write!:
+        ochan
+        format!:
+            get: ptype :declaration
+            [pointer_tostring: get: ptype :valtype]
+
+func ptr_type [valtype]
+    {
+        :type           :ptr
+        :valtype        valtype
+        :declaration    "{}*"
+        :writer         pointer_writer
+        :tostring       pointer_tostring
+    }
+
+; Const types
 
 func const_type [val]
-    map_extend!:
-        {
-            :type           :constant
-            :name           val
-            :declaration    " {} "
-        }
-        :writer simple_name_writer
+    {
+        :type           :constant
+        :name           val
+        :declaration    "{}"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; Comment
 
 func comment_type [val]
-    map_extend!:
-        {
-            :type           :constant
-            :name           val
-            :declaration    "`n; {} `n"
-        }
-        :writer simple_name_writer
+    {
+        :type           :constant
+        :name           val
+        :declaration    "`n; {} `n"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; Literal declaration
+
+func literal_type  [litref]
+    {
+        :type           :literal
+        :name           get: litref NAME
+        :ltype          get: litref LITTYPE
+        :lval           get: get: litref TOKEN :token_str
+        :declaration    "@`d{}`d = private global %`dAny`d* null, align 8`n"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; Return type
+
+func :private return_writer [ochan rettype]
+    let rtype   [] get: rettype :returns
+    write!:
+        ochan
+        format!:
+            get: rettype :declaration
+            [type_tostring: rtype]
+
+func return_type [retref]
+    {
+        :type           :return_type
+        :returns        retref
+        :declaration    "`t return {}`n}`n"
+        :writer         return_writer
+    }
+
+; Array types
+
+func :private array_type_tostring [arrtype]
+    format!:
+        get: arrtype :declaration
+        [   get: arrtype :count
+            type_tostring: get: arrtype :eltype
+        ]
+
+func :private array_type_writer [ochan arrtype]
+    let astr_fn [] get: arrtype :tostring
+    write!: ochan (astr_fn arrtype)
+
+func array_type [eltype cnt]
+    {
+        :type           :array_type
+        :eltype         eltype
+        :count          cnt
+        :declaration    "[{} x {}]"
+        :writer         array_type_writer
+        :tostring       array_type_tostring
+    }
 
 ; Basic block - named container of instructions
 
@@ -130,25 +210,25 @@ func basic_block_type [val]
 ; Generic named type
 
 func named_struct_type [val]
-    map_extend!:
-        {
-            :type           :structure
-            :name           val
-            :declaration    "%`d{}`d"
+    {
+        :type           :structure
+        :name           val
+        :declaration    "%`d{}`d"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
 
-        }
-        :writer simple_name_writer
 
 ; External declaration - Applies to extern vars and funcs
 
 func external_variable_type [val]
-    map_extend!:
-        {
-            :type           :external_var
-            :name           ir_stringify: get: val NAME
-            :declaration    "@`d{}`d = external global %`dAny`d* null, align 8`n"
-        }
-        :writer  simple_name_writer
+    {
+        :type           :external_var
+        :name           ir_stringify: get: val NAME
+        :declaration    "@`d{}`d = external global %`dAny`d* null, align 8`n"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
 
 func :private anyptr_for [aptrstr r]
     format!: aptrstr [r]
@@ -183,15 +263,6 @@ func external_function_type [funcref]
 
 ; Local declarations - Applies to private literals and private/general vars
 
-func literal_type  [litref]
-    map_extend!:
-        {
-            :type           :literal
-            :name           get: litref NAME
-            :declaration    "@`d{}`d = private global %`dAny`d* null, align 8`n"
-        }
-        :writer simple_name_writer
-
 ; Function: global_function
 ; Description: Instantiates a function
 ;   1. Create "entry:" basic block
@@ -209,8 +280,7 @@ func  global_function_type [val args exprs rettype]
                 :arguments      list_inst!:
                 :expressions    exprs
                 :returns        rettype
-                :declaration    "define %`dAny`d* @`d{}`d({}) {`n"
-                :return         "`treturn {}`n}"
+                :declaration    "define %{} @`d{}`d({}) {`n"
                 :writer         function_writer
             }
 
@@ -243,7 +313,6 @@ func global_variable_type [variable]
 
 func branch []
 func unconditional_branch []
-func array_type []
 func label_type [astel suffix]
 func function_type [function]
 func lambda_type [lambda]

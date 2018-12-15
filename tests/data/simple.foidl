@@ -23,13 +23,19 @@ module simple
 
 var :private pfoo "pfoo"
 var foo "foo"
+var fkw :foo
+
+var ev <>
+var em {}
+var es #{}
+var el []
 
 func testmtch [a b c d]
     match a
-    | 1     true
-    | 2     false
+    | 1     ev
+    | 2     em
     | 3     printnl!: %0
     | 4     match b
-            | 1 true
-            | 2 false
+            | 1 es
+            | 2 el
             | 3 printnl!: %0
