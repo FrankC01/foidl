@@ -152,20 +152,23 @@ func literal_type  [litref]
 
 ; Return type
 
+func :private return_tostring [rettype]
+    type_tostring: get: rettype :returns
+
 func :private return_writer [ochan rettype]
-    let rtype   [] get: rettype :returns
     write!:
         ochan
         format!:
             get: rettype :declaration
-            [type_tostring: rtype]
+            [return_tostring: rettype]
 
 func return_type [retref]
     {
         :type           :return_type
         :returns        retref
-        :declaration    "`t return {}`n}`n"
+        :declaration    "  return {}`n}`n"
         :writer         return_writer
+        :tostring       return_tostring
     }
 
 ; Array types
@@ -269,18 +272,43 @@ func external_function_type [funcref]
 ;   2. If return is nil, set constant void
 
 func :private function_writer [ochan gft]
+    let rett [] get: gft :returns
+
+    ; Write definition
+    write!: ochan
+        format!:
+            get: gft :declaration
+            [   return_tostring: rett
+                get: gft :name
+                ?: =: get: gft :regcount zero
+                    ""
+                    fold:
+                        ^[istr ndx]
+                            ?: =: count: istr zero
+                                extend: istr anyptr_for: anyptr_name ndx
+                                extend: istr anyptr_for: anyptr_tailname ndx
+                        "" get: gft :arguments]
+
+    ; Process expressions
+    ; Write return
+    let ret_fn [] get: rett :writer
+    (ret_fn ochan rett)
 
 func  global_function_type [val args exprs rettype]
+
     let gf []
             {
                 :type           :function
                 :name           ir_stringify: val
                 :bblocks_map    map_inst!:
                 :basic_blocks   list_inst!:
-                :arguments      list_inst!:
+                :arguments      args
+                :regcount       count: args
                 :expressions    exprs
                 :returns        rettype
-                :declaration    "define %{} @`d{}`d({}) {`n"
+                :declaration    ?: =: rettype return_void
+                                    "`ndefine {} @`d{}`d({}) {`n"
+                                    "`ndefine %{} @`d{}`d({}) {`n"
                 :writer         function_writer
             }
 

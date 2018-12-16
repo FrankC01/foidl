@@ -84,6 +84,12 @@ PFRTAny foidl_equal_qmark(PFRTAny lhs, PFRTAny rhs) {
 				if( lhs == rhs )
 					res = true;
 				break;
+			case 	collection_class:
+				if( lhs == rhs )
+					res = true;
+				else
+					unknown_handler();
+				break;
 			default:
 				unknown_handler();
 				break;

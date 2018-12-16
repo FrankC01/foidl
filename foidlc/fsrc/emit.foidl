@@ -145,9 +145,8 @@ func :private emit_literals [acc el]
 ; and create a mname_linits() function
 
 func :private literals [state]
-    list_extend!: get: context :module_bb
-        comment_type: "Literal references`n"
     let mbb [] get: context :module_bb
+    list_extend!: mbb comment_type: "Literal references`n"
     let bsc [] count: mbb
     fold:
         emit_literals
@@ -157,6 +156,14 @@ func :private literals [state]
     ;printnl!: count: mbb
     let atype [] array_type: int_8 bsc
     let atptr [] ptr_type: atype
+    list_extend!: mbb comment_type: "Literal initializers`n"
+    list_extend!:
+        mbb
+        global_function_type:
+            format!: "{}_linits" [get: state :module_name]
+            []
+            []
+            return_void
 
     ;list_extend!: mbb atype
     ;list_extend!: mbb atptr
