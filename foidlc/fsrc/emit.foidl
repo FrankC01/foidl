@@ -140,6 +140,23 @@ func :private emit_literals [acc el]
                     literal_type: value: lit
             acc value: el
 
+; Function: literal_max_len
+; Description: Gets the maximum string/keyword len for
+; those types
+
+func :private literal_max_len [mbb acc ndx]
+    let el  [] get: mbb ndx
+    let elt [] get: el :ltype
+    let elc [] count: get: el :lval
+    ?: get: #{:keyword :string} elt
+        ?: >: elc acc
+            ?: =: elt :keyword
+                elc
+                -: elc two
+            acc
+        acc
+
+
 ; Function: literals
 ; Description: process any literals
 ; and create a mname_linits() function
@@ -152,18 +169,28 @@ func :private literals [state]
         emit_literals
         get: context :module_bb
         get: get: state :ast LITERALS
-    ;printnl!: bsc
-    ;printnl!: count: mbb
-    let atype [] array_type: int_8 bsc
-    let atptr [] ptr_type: atype
-    list_extend!: mbb comment_type: "Literal initializers`n"
-    list_extend!:
-        mbb
+
+    let lit_fn []
         global_function_type:
             format!: "{}_linits" [get: state :module_name]
             []
             []
             return_void
+
+    let litser [] series: bsc count: mbb one
+    let litlen [] fold: (literal_max_len mbb) zero litser
+
+    list_extend!: mbb comment_type: "Literal initializers"
+    list_extend!: mbb lit_fn
+
+    ; Fetch the entry basic block
+    let lit_bb [] get_basic_block: lit_fn "entry"
+
+    let sbuff [] ?: =: litlen zero
+                    nil
+                    array_type: int_8 inc: litlen
+
+    alloca: lit_fn lit_bb sbuff
 
     ;list_extend!: mbb atype
     ;list_extend!: mbb atptr
