@@ -34,8 +34,8 @@ var any         named_struct_type: "Any"
 var any_ptr     ptr_type: any
 var any_ptr_ptr ptr_type: any_ptr
 
-var void_ptr        ptr_type: int_8         ; i8*
-var void_ptr_ptr    ptr_type: void_ptr      ; i8**
+var void_ptr        ptr_type: int_8       ; i8*
+var void_ptr_ptr    ptr_type: void_ptr    ; i8**
 
 var null const_type: "null"
 var void const_type: "void"
@@ -110,14 +110,14 @@ func inttype [val]
 ; Pointer types
 
 func :private pointer_tostring [ptype]
-    type_tostring: ptype
+    let v       [] get: ptype :valtype
+    let vs_fn   [] get: v :tostring
+    format!:
+        get: ptype :declaration
+        [(vs_fn v)]
 
 func :private pointer_writer [ochan ptype]
-    write!:
-        ochan
-        format!:
-            get: ptype :declaration
-            [pointer_tostring: get: ptype :valtype]
+    write!: ochan pointer_tostring: ptype
 
 func ptr_type [valtype]
     {
@@ -126,6 +126,30 @@ func ptr_type [valtype]
         :declaration    "{}*"
         :writer         pointer_writer
         :tostring       pointer_tostring
+    }
+
+func :private referenc_pointer_tostring [ptype]
+    let type_wfn [] get: get: ptype :valtype :tostring
+    ?: nil?: type_wfn
+        failWith: "No :tostring"
+        format!:
+            get: ptype :declaration
+            [
+            (type_wfn get: ptype :valtype)
+            get: ptype :register]
+
+func :private reference_pointer_writer [ochan ptype]
+    write!: ochan
+        [referenc_pointer_tostring: ptype]
+
+func reference_ptr_type [valtype regref]
+    {
+        :type           :reference_ptr
+        :valtype        valtype
+        :declaration    "{}* %`d{}`d"
+        :register       regref
+        :writer         reference_pointer_writer
+        :tostring       referenc_pointer_tostring
     }
 
 ; Const types
@@ -179,7 +203,7 @@ func return_type [retref]
     {
         :type           :return_type
         :returns        retref
-        :declaration    "  return {}`n}`n"
+        :declaration    "  ret {}`n}`n"
         :writer         return_writer
         :tostring       return_tostring
     }
@@ -246,7 +270,7 @@ func external_variable_type [val]
     {
         :type           :external_var
         :name           ir_stringify: get: val NAME
-        :declaration    "@`d{}`d = external global %`dAny`d* null, align 8`n"
+        :declaration    "@`d{}`d = external global %`dAny`d*, align 8`n"
         :writer         simple_name_writer
         :tostring       simple_name_tostring
     }
@@ -432,13 +456,14 @@ func :private two_var_writer [fval sval ochan irtype]
         exception:
             format!:
                 "Type {} does not have :tostring function"
-                [get: get: irtype sval :type]
+                [get: sval_t :type]
     write!:
         ochan
         format!:
             get: irtype :declaration
             [get: irtype fval
             (svalts_fn sval_t)]
+    ochan
 
 ; Function: base_alloca
 ; Description: Base allocation instruction
@@ -447,10 +472,10 @@ func :private base_alloca [ilist res type]
     let ba []
         {
             :type           :alloca
-            :result         res
+            :register       res
             :atype          type
             :declaration    "  %`d{}`d = alloca {}`n"
-            :writer         (two_var_writer :result :atype)
+            :writer         (two_var_writer :register :atype)
         }
     list_extend!: ilist ba
     ba
@@ -474,6 +499,39 @@ func named_alloca [function bblock name type]
         get: bblock :instructions
         name
         type
+
+;%".3" = bitcast [54 x i8]* %".2" to i8*
+;%".4" = bitcast [54 x i8]* %".2" to [24 x i8]*
+
+; Function: bitcast
+; Description: bitcasts from_ptr to to_ptr
+
+func :private bitcast_writer [ochan bctype]
+    write!:
+        ochan
+        format!:
+            get: bctype :declaration
+            [
+            get: bctype :register
+            type_tostring: get: bctype :from
+            type_tostring: get: bctype :to ]
+    ochan
+
+
+func bitcast [function bblock from_ptr to_ptr]
+    let bc []
+        {
+            :type           :bitcast
+            :register       get_register: function
+            :from           from_ptr
+            :to             to_ptr
+            :declaration    "  %`d{}`d = bitcast {} to {}`n"
+            :writer         bitcast_writer
+        }
+    list_extend!:
+        get: bblock :instructions
+        bc
+    bc
 
 func branch []
 func unconditional_branch []

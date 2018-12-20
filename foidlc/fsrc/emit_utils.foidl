@@ -1,0 +1,61 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; emit_utils
+; LLVM Generation
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module emit_utils
+
+include langcorem
+include ir_types
+
+; Function: literal_max_len
+; Description: Gets the maximum string/keyword len for
+; those types
+
+func literal_max_len [bblock max_cnt ndx]
+
+    let element      [] get: bblock ndx
+    let element_type [] get: element :ltype
+    let element_cnt  [] count: get: element :lval
+
+    ?: get: #{:keyword :string} element_type
+        ?: >: element_cnt max_cnt
+            ?: =: element_type :keyword
+                element_cnt
+                -: element_cnt two
+            max_cnt
+        max_cnt
+
+; Function: literal_buffer_setup
+; Description: Prepares key information for handling
+; string and keyword runtime registrations
+
+func literal_buffer_setup [lit_fn lit_bb litlen litinfo_map]
+    let sbuff []
+        array_type: int_8 inc: litlen
+    let voidpref []
+        reference_ptr_type:
+        sbuff
+        get: alloca: lit_fn lit_bb sbuff :register
+
+    map_extend!:
+        map_extend!:
+            litinfo_map
+            :basecast  bitcast: lit_fn lit_bb voidpref void_ptr
+        :bufferptr_ref voidpref
+

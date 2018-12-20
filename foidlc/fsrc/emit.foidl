@@ -1,5 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; enit
+; emit
 ; LLVM Generation
 ;
 ; Copyright (c) Frank V. Castellucci
@@ -23,6 +23,8 @@ module emit
 include langcorem
 include ast_type
 include ir_types
+
+include emit_utils
 
 
 ; Emit supports most LLVM instructions
@@ -140,11 +142,8 @@ func :private emit_literals [acc el]
                     literal_type: value: lit
             acc value: el
 
-; Function: literal_max_len
-; Description: Gets the maximum string/keyword len for
-; those types
 
-func :private literal_max_len [mbb acc ndx]
+func :private literal_emitter [aptr mbb acc ndx]
     let el  [] get: mbb ndx
     let elt [] get: el :ltype
     let elc [] count: get: el :lval
@@ -156,20 +155,27 @@ func :private literal_max_len [mbb acc ndx]
             acc
         acc
 
-
 ; Function: literals
 ; Description: process any literals
 ; and create a mname_linits() function
 
+var :private litinfo_map {:basecast nil :bufferptr_ref nil}
+
 func :private literals [state]
     let mbb [] get: context :module_bb
     list_extend!: mbb comment_type: "Literal references`n"
+
+    ; Get the starting position to optimize literal
+    ; initializer scanning
     let bsc [] count: mbb
+
+    ; Emit the literal declarations
     fold:
         emit_literals
         get: context :module_bb
         get: get: state :ast LITERALS
 
+    ; Emit the "modulename_linits function"
     let lit_fn []
         global_function_type:
             format!: "{}_linits" [get: state :module_name]
@@ -177,20 +183,24 @@ func :private literals [state]
             []
             return_void
 
-    let litser [] series: bsc count: mbb one
-    let litlen [] fold: (literal_max_len mbb) zero litser
+    ; Get functions basic block
+    let lit_bb [] get_basic_block: lit_fn "entry"
 
     list_extend!: mbb comment_type: "Literal initializers"
     list_extend!: mbb lit_fn
 
-    ; Fetch the entry basic block
-    let lit_bb [] get_basic_block: lit_fn "entry"
+    ; Setup reusable serializer based on actual literal
+    ; declaration counts
+    let litser [] series: bsc count: mbb one
+    ; Check for max string/keyword length
+    let litlen [] fold: (literal_max_len mbb) zero litser
+    ; Prepare local buffer if there are strings
+    let litinfo []
+        ?: =: litlen zero
+            litinfo_map
+            literal_buffer_setup: lit_fn lit_bb litlen litinfo_map
 
-    let sbuff [] ?: =: litlen zero
-                    nil
-                    array_type: int_8 inc: litlen
-
-    alloca: lit_fn lit_bb sbuff
+    ; Emit the literal registrations
 
     ;list_extend!: mbb atype
     ;list_extend!: mbb atptr
@@ -215,13 +225,27 @@ func :private functions [state]
     state
 
 func :private vinits [state]
+    let mbb [] get: context :module_bb
+    ; Emit the "modulename_vinits function"
+    let vit_fn []
+        global_function_type:
+            format!: "{}_vinits" [get: state :module_name]
+            []
+            []
+            return_void
+
+    ; Get functions basic block
+    let vit_bb [] get_basic_block: vit_fn "entry"
+
+    list_extend!: mbb comment_type: "Variable initializers"
+    list_extend!: mbb vit_fn
     state
 
-func :private ctor [state]
+func :private user_main [state]
     state
 
 func emit [state]
-    ctor:
+    user_main:
     vinits:
     functions:
     lambdas:
