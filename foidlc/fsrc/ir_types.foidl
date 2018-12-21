@@ -128,7 +128,18 @@ func ptr_type [valtype]
         :tostring       pointer_tostring
     }
 
-func :private referenc_pointer_tostring [ptype]
+func global_var_reference [name]
+    {
+        :type           :global_var_reference
+        :name           name
+        :declaration    "@`d{}`d"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; Reference types
+
+func :private reference_register_type_tostring [ptype]
     let type_wfn [] get: get: ptype :valtype :tostring
     ?: nil?: type_wfn
         failWith: "No :tostring"
@@ -136,20 +147,45 @@ func :private referenc_pointer_tostring [ptype]
             get: ptype :declaration
             [
             (type_wfn get: ptype :valtype)
-            get: ptype :register]
+            type_tostring: get: ptype :register]
 
-func :private reference_pointer_writer [ochan ptype]
+func :private reference_register_type_writer [ochan ptype]
     write!: ochan
-        [referenc_pointer_tostring: ptype]
+        [reference_register_type_tostring: ptype]
 
-func reference_ptr_type [valtype regref]
+func reference_register_type [valtype regref]
     {
-        :type           :reference_ptr
+        :type           :reference_register_type
         :valtype        valtype
-        :declaration    "{}* %`d{}`d"
+        :declaration    "{}* {}"
         :register       regref
-        :writer         reference_pointer_writer
-        :tostring       referenc_pointer_tostring
+        :writer         reference_register_type_writer
+        :tostring       reference_register_type_tostring
+    }
+
+func :private reference_constant_type_tostring [ptype]
+    let type_wfn [] get: get: ptype :valtype :tostring
+    ?: nil?: type_wfn
+        failWith: "No :tostring"
+        format!:
+            get: ptype :declaration
+            [
+            (type_wfn get: ptype :valtype)
+            type_tostring: get: ptype :value]
+
+
+func :private reference_constant_type_writer [ochan ptype]
+    write!: ochan
+        [reference_register_type_tostring: ptype]
+
+func reference_constant_type [valtype val]
+    {
+        :type           :reference_constant_type
+        :valtype        valtype
+        :declaration    "{} {}"
+        :value          val
+        :writer         reference_constant_type_writer
+        :tostring       reference_constant_type_tostring
     }
 
 ; Const types
@@ -230,6 +266,28 @@ func array_type [eltype cnt]
         :writer         array_type_writer
         :tostring       array_type_tostring
     }
+
+func :private   register_type [val]
+    {
+        :type           :register_type
+        :name           val
+        :declaration    "%`d{}`d"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; Function: get_register
+; Description: returns the next virtual register identifier
+; from type that contains registers (i.e. functions, lambdas)
+
+func :private get_register [container]
+    let current [] register_type: get: container :regcount
+    map_extend!:
+        container
+        :regcount
+        inc: get: current :name
+    current
+
 
 ; Basic block - named container of instructions
 
@@ -377,18 +435,6 @@ func  global_function_type [val args exprs rettype]
     gf
 
 
-; Function: get_register
-; Description: returns the next virtual register identifier
-; from type that contains registers (i.e. functions, lambdas)
-
-func :private get_register [container]
-    let current [] get: container :regcount
-    map_extend!:
-        container
-        :regcount
-        inc: current
-    current
-
 ; Function: get_basic_block
 ; Description: Returns the named basic block after
 ; finding the index from the bblock map
@@ -461,7 +507,7 @@ func :private two_var_writer [fval sval ochan irtype]
         ochan
         format!:
             get: irtype :declaration
-            [get: irtype fval
+            [type_tostring: get: irtype fval
             (svalts_fn sval_t)]
     ochan
 
@@ -474,7 +520,7 @@ func :private base_alloca [ilist res type]
             :type           :alloca
             :register       res
             :atype          type
-            :declaration    "  %`d{}`d = alloca {}`n"
+            :declaration    "  {} = alloca {}`n"
             :writer         (two_var_writer :register :atype)
         }
     list_extend!: ilist ba
@@ -512,7 +558,7 @@ func :private bitcast_writer [ochan bctype]
         format!:
             get: bctype :declaration
             [
-            get: bctype :register
+            type_tostring: get: bctype :register
             type_tostring: get: bctype :from
             type_tostring: get: bctype :to ]
     ochan
@@ -525,7 +571,7 @@ func bitcast [function bblock from_ptr to_ptr]
             :register       get_register: function
             :from           from_ptr
             :to             to_ptr
-            :declaration    "  %`d{}`d = bitcast {} to {}`n"
+            :declaration    "  {} = bitcast {} to {}`n"
             :writer         bitcast_writer
         }
     list_extend!:
@@ -533,8 +579,68 @@ func bitcast [function bblock from_ptr to_ptr]
         bc
     bc
 
+; Function: store
+; Description: stores one type to another
+; store %"Any"* %".318", %"Any"** @"ir_types_KEYWORD_43"
+
+func :private store_writer [ochan strtype]
+    write!:
+        ochan
+        format!:
+            get: strtype :declaration
+            [
+                type_tostring: get: strtype :arg1
+                type_tostring: get: strtype :arg2
+            ]
+    ochan
+
+func store [bblock from_ref to_ref]
+    let sti []
+        {
+            :type           :store
+            :arg1           from_ref
+            :arg2           to_ref
+            :declaration    "  store {}, {} `n"
+            :writer         store_writer
+        }
+
+    list_extend!:
+        get: bblock :instructions
+        sti
+    sti
+
+; %".29" = load %"Any"*, %"Any"** @"ir_types_STRING_35"
+func :private load_writer [ochan strtype]
+    write!:
+        ochan
+        format!:
+            get: strtype :declaration
+            [
+                type_tostring: get: strtype :register
+                type_tostring: get: strtype :register_type
+                type_tostring: get: strtype :from
+            ]
+    ochan
+
+func load [function bblock regtype from_ref]
+    let sti []
+        {
+            :type           :load
+            :register       get_register: function
+            :register_type  regtype
+            :from           from_ref
+            :declaration    "  {} = load {}, {} `n"
+            :writer         load_writer
+        }
+
+    list_extend!:
+        get: bblock :instructions
+        sti
+    sti
+
 func branch []
 func unconditional_branch []
+func call []
 func label_type [astel suffix]
 func function_type [function]
 func lambda_type [lambda]

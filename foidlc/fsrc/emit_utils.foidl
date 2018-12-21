@@ -23,6 +23,19 @@ module emit_utils
 include langcorem
 include ir_types
 
+; Function: emit_literals
+; Description: Creates literal declaration instructions
+
+func emit_literal_declarations [acc el]
+    ?: empty?: value: el
+        acc
+        fold:
+            ^[instr lit]
+                list_extend!:
+                    instr
+                    literal_type: value: lit
+            acc value: el
+
 ; Function: literal_max_len
 ; Description: Gets the maximum string/keyword len for
 ; those types
@@ -45,17 +58,52 @@ func literal_max_len [bblock max_cnt ndx]
 ; Description: Prepares key information for handling
 ; string and keyword runtime registrations
 
-func literal_buffer_setup [lit_fn lit_bb litlen litinfo_map]
+func literal_buffer_setup [lit_fn lit_bb lit_maxlen litinfo_map]
+    ; Local (stack) array to fit max string and/or keyword
     let sbuff []
-        array_type: int_8 inc: litlen
+        array_type: int_8 inc: lit_maxlen
+    ; Reference pointer to array register
     let voidpref []
-        reference_ptr_type:
+        reference_register_type:
         sbuff
         get: alloca: lit_fn lit_bb sbuff :register
 
+    ; Bitcast to void pointer i8*
     map_extend!:
         map_extend!:
             litinfo_map
             :basecast  bitcast: lit_fn lit_bb voidpref void_ptr
         :bufferptr_ref voidpref
 
+func :private literal_string    [litinfo_map lit_bb lit_string]
+    lit_string
+
+func :private literal_keyword   [litinfo_map lit_bb lit_keyword]
+    lit_keyword
+
+func :private literal_integer   [lit_fn lit_bb lit_integer]
+    ; Call register_int
+    let lref []
+        load:
+            lit_fn
+            lit_bb
+            any_ptr
+            global_var_reference: get: lit_integer :name
+
+    ; Store result
+    store:
+        lit_bb
+        reference_register_type:
+            any
+            get: lref :register
+        reference_constant_type:
+            any_ptr_ptr
+            global_var_reference: get: lit_integer :name
+
+func literal_registration [litinfo_map lit_fn lit_bb literals ndx]
+    let lit [] get: literals ndx
+    match get: lit :ltype
+    | :string   printnl!: "Process string literal registrations"
+    | :keyword  printnl!: "Process keyword literal registrations"
+    | :integer  literal_integer: lit_fn lit_bb lit
+    literals

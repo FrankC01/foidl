@@ -129,32 +129,6 @@ func :private externs [state]
         get: get: state :ast EXTERNS
     state
 
-; Function: emit_literals
-; Description: Captures literal declaration instructions
-
-func :private emit_literals [acc el]
-    ?: empty?: value: el
-        acc
-        fold:
-            ^[instr lit]
-                list_extend!:
-                    instr
-                    literal_type: value: lit
-            acc value: el
-
-
-func :private literal_emitter [aptr mbb acc ndx]
-    let el  [] get: mbb ndx
-    let elt [] get: el :ltype
-    let elc [] count: get: el :lval
-    ?: get: #{:keyword :string} elt
-        ?: >: elc acc
-            ?: =: elt :keyword
-                elc
-                -: elc two
-            acc
-        acc
-
 ; Function: literals
 ; Description: process any literals
 ; and create a mname_linits() function
@@ -168,12 +142,12 @@ func :private literals [state]
     ; Get the starting position to optimize literal
     ; initializer scanning
     let bsc [] count: mbb
-
+    let lits [] get: get: state :ast LITERALS
     ; Emit the literal declarations
     fold:
-        emit_literals
+        emit_literal_declarations
         get: context :module_bb
-        get: get: state :ast LITERALS
+        lits
 
     ; Emit the "modulename_linits function"
     let lit_fn []
@@ -186,21 +160,31 @@ func :private literals [state]
     ; Get functions basic block
     let lit_bb [] get_basic_block: lit_fn "entry"
 
-    list_extend!: mbb comment_type: "Literal initializers"
-    list_extend!: mbb lit_fn
-
     ; Setup reusable serializer based on actual literal
     ; declaration counts
     let litser [] series: bsc count: mbb one
+
+    ; Insert comment and function definition
+    list_extend!: mbb comment_type: "Literal initializers"
+    list_extend!: mbb lit_fn
+
     ; Check for max string/keyword length
-    let litlen [] fold: (literal_max_len mbb) zero litser
+    let lit_maxlen [] fold: (literal_max_len mbb) zero litser
+
     ; Prepare local buffer if there are strings
     let litinfo []
-        ?: =: litlen zero
+        ?: =: lit_maxlen zero
             litinfo_map
-            literal_buffer_setup: lit_fn lit_bb litlen litinfo_map
+            literal_buffer_setup:
+                lit_fn
+                lit_bb
+                lit_maxlen
+                litinfo_map
 
     ; Emit the literal registrations
+    fold:
+        (literal_registration litinfo lit_fn lit_bb)
+        mbb litser
 
     ;list_extend!: mbb atype
     ;list_extend!: mbb atptr
