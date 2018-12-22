@@ -128,9 +128,9 @@ func ptr_type [valtype]
         :tostring       pointer_tostring
     }
 
-func global_var_reference [name]
+func global_reference [name]
     {
-        :type           :global_var_reference
+        :type           :global_reference
         :name           name
         :declaration    "@`d{}`d"
         :writer         simple_name_writer
@@ -175,8 +175,9 @@ func :private reference_constant_type_tostring [ptype]
 
 
 func :private reference_constant_type_writer [ochan ptype]
+    printnl!: "Writing reference constant"
     write!: ochan
-        [reference_register_type_tostring: ptype]
+        [reference_constant_type_tostring: ptype]
 
 func reference_constant_type [valtype val]
     {
@@ -199,6 +200,16 @@ func const_type [val]
         :tostring       simple_name_tostring
     }
 
+; c"\00"
+func const_string_type [val]
+    {
+        :type           :constant_string_type
+        :name           val
+        :declaration    "c`d{}\00`d"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+
+    }
 ; Comment
 
 func comment_type [val]
@@ -609,7 +620,10 @@ func store [bblock from_ref to_ref]
         sti
     sti
 
+; Function: load
+; Description: loads a register from location
 ; %".29" = load %"Any"*, %"Any"** @"ir_types_STRING_35"
+
 func :private load_writer [ochan strtype]
     write!:
         ochan
@@ -638,9 +652,51 @@ func load [function bblock regtype from_ref]
         sti
     sti
 
+func :private call_tostring []
+
+func :private call_writer [ochan irtype]
+    let args [] get: irtype :args
+    write!:
+        ochan
+        format!:
+        get: irtype :declaration
+        [
+            type_tostring: get: irtype :register
+            type_tostring: get: irtype :name
+            ?: =: count: args zero
+                " "
+                fold:
+                    ^[istr ndx]
+                        ?: =: ndx zero
+                            extend: istr type_tostring: get: args ndx
+                            extend: istr
+                                format!:
+                                    ", {}"
+                                    [type_tostring: get: args ndx]
+                    "" series: zero count: args one]
+
+    ochan
+
+; %".6" = call %"Any"* @"foidl_reg_string"(i8* %".3")
+func call [function bblock call_site args]
+    let cs []
+        {
+
+            :type           :call
+            :register       get_register: function
+            :name           call_site
+            :declaration    "  {} = call %`dAny`d* {}({})`n"
+            :args           args
+            :writer         call_writer
+        }
+
+    list_extend!:
+        get: bblock :instructions
+        cs
+    cs
+
 func branch []
 func unconditional_branch []
-func call []
 func label_type [astel suffix]
 func function_type [function]
 func lambda_type [lambda]

@@ -75,35 +75,118 @@ func literal_buffer_setup [lit_fn lit_bb lit_maxlen litinfo_map]
             :basecast  bitcast: lit_fn lit_bb voidpref void_ptr
         :bufferptr_ref voidpref
 
-func :private literal_string    [litinfo_map lit_bb lit_string]
-    lit_string
 
-func :private literal_keyword   [litinfo_map lit_bb lit_keyword]
-    lit_keyword
+;var :private
 
-func :private literal_integer   [lit_fn lit_bb lit_integer]
-    ; Call register_int
-    let lref []
-        load:
+func :private literal_string    [litinfo_map lit_fn lit_bb lit_string]
+    let bc [] get: litinfo_map :basecast
+    let str_reg [] global_reference: "foidl_reg_string"
+    ; Create the bitcast of i8* to the array of target string
+    let vl [] get: lit_string :lval
+    let va [] array_type: int_8 dec: count: vl
+    let vap [] ptr_type: va
+    let voidpref []
+        reference_register_type:
+        int_8
+        get: bc :register
+    let bic [] bitcast: lit_fn lit_bb voidpref vap
+    ; Create the store of the string to the stack
+    let toref []
+        reference_register_type:
+            va
+            get: bic :register
+    let strc [] const_string_type: rest: dropLast: vl
+    store:
+        lit_bb
+        reference_constant_type:
+            va
+            strc
+        toref
+    ; Call the keyword registration
+    let reg_call []
+        call:
             lit_fn
             lit_bb
-            any_ptr
-            global_var_reference: get: lit_integer :name
-
-    ; Store result
+            str_reg
+            [reference_register_type: int_8 get: bic :register]
+    ; Store the result to the const literal
     store:
         lit_bb
         reference_register_type:
             any
-            get: lref :register
+            get: reg_call :register
         reference_constant_type:
             any_ptr_ptr
-            global_var_reference: get: lit_integer :name
+            global_reference: get: lit_string :name
+    lit_string
+
+func :private literal_keyword   [litinfo_map lit_fn lit_bb lit_keyword]
+    let bc [] get: litinfo_map :basecast
+    let kwd_reg [] global_reference: "foidl_reg_keyword"
+    ; Create the bitcast of i8* to the array of target string
+    let vl [] get: lit_keyword :lval
+    let va [] array_type: int_8 inc: count: vl
+    let vap [] ptr_type: va
+    let voidpref []
+        reference_register_type:
+        int_8
+        get: bc :register
+    let bic [] bitcast: lit_fn lit_bb voidpref vap
+    ; Create the store of the string to the stack
+    let toref []
+        reference_register_type:
+            va
+            get: bic :register
+    let strc [] const_string_type: vl
+    store:
+        lit_bb
+        reference_constant_type:
+            va
+            strc
+        toref
+    ; Call the keyword registration
+    let reg_call []
+        call:
+            lit_fn
+            lit_bb
+            kwd_reg
+            [reference_register_type: int_8 get: bic :register]
+    ; Store the result to the const literal
+    store:
+        lit_bb
+        reference_register_type:
+            any
+            get: reg_call :register
+        reference_constant_type:
+            any_ptr_ptr
+            global_reference: get: lit_keyword :name
+    lit_keyword
+
+func :private literal_integer   [lit_fn lit_bb lit_integer]
+    ;let int_reg [] global_reference: "foidl_reg_integer"
+    let int_reg [] global_reference: "foidl_reg_integer"
+    ; Call register_int
+    let reg_call []
+        call:
+            lit_fn
+            lit_bb
+            int_reg
+            [reference_constant_type: int_64 const_type: get: lit_integer :lval]
+    ; Store the result to the const literal
+    store:
+        lit_bb
+        reference_register_type:
+            any
+            get: reg_call :register
+        reference_constant_type:
+            any_ptr_ptr
+            global_reference: get: lit_integer :name
+
 
 func literal_registration [litinfo_map lit_fn lit_bb literals ndx]
     let lit [] get: literals ndx
     match get: lit :ltype
-    | :string   printnl!: "Process string literal registrations"
-    | :keyword  printnl!: "Process keyword literal registrations"
+    | :string   literal_string: litinfo_map lit_fn lit_bb lit
+    | :keyword  literal_keyword: litinfo_map lit_fn lit_bb lit
     | :integer  literal_integer: lit_fn lit_bb lit
     literals
