@@ -30,12 +30,8 @@ var em {}
 var es #{}
 var el []
 
-func testmtch [a b c d]
-    match a
-    | 1     ev
-    | 2     em
-    | 3     printnl!: %0
-    | 4     match b
-            | 1 es
-            | 2 el
-            | 3 printnl!: %0
+var fake_add1 ^[a b] +: a b
+
+func faux_add [a b]
+    +: a b
+

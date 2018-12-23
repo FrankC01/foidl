@@ -130,10 +130,8 @@ func :private externs [state]
     state
 
 ; Function: literals
-; Description: process any literals
-; and create a mname_linits() function
-
-var :private litinfo_map {:basecast nil :bufferptr_ref nil}
+; Description: Builds the literal private declarations and
+; andy run-time initializers
 
 func :private literals [state]
     let mbb [] get: context :module_bb
@@ -153,8 +151,9 @@ func :private literals [state]
     let lit_fn []
         global_function_type:
             format!: "{}_linits" [get: state :module_name]
+            true
             []
-            []
+            "void"
             return_void
 
     ; Get functions basic block
@@ -172,23 +171,24 @@ func :private literals [state]
     let lit_maxlen [] fold: (literal_max_len mbb) zero litser
 
     ; Prepare local buffer if there are strings
-    let litinfo []
+    let basebufcast []
         ?: =: lit_maxlen zero
-            litinfo_map
+            nil
             literal_buffer_setup:
                 lit_fn
                 lit_bb
                 lit_maxlen
-                litinfo_map
+
 
     ; Emit the literal registrations
     fold:
-        (literal_registration litinfo lit_fn lit_bb)
+        (literal_registration basebufcast lit_fn get: lit_bb :instructions)
         mbb litser
-
-    ;list_extend!: mbb atype
-    ;list_extend!: mbb atptr
     state
+
+; Function: variables
+; Description: Create variable pointer declarations
+; Variable expression initialization is deferred to vinits
 
 func :private variables [state]
     list_extend!: get: context :module_bb
@@ -202,11 +202,76 @@ func :private variables [state]
         get: get: state :ast EXPRS
     state
 
+; Function: emit_function
+; Description: basic function evaluation for both lambdas and functions
+
+func :private emit_function [acc fn_el]
+    let nfunc [] new_function: fn_el
+    let nfunc_bb [] get_basic_block: nfunc "entry"
+    let frame [] list_inst!:
+
+    ; Emit instructions
+    expression_emitter:
+        nfunc
+        frame
+        get: nfunc_bb :instructions
+        get: fn_el EXPRS
+
+    ; Get last expression result register and reset return
+    ?: empty?: frame
+        nil     ;   Should be exception in the end
+        map_extend!:
+            nfunc
+            :returns
+            return_type: last: frame
+    list_extend!: acc nfunc
+
+; Function: lambdas
+; Description: Processes lambda definitions
+
 func :private lambdas [state]
+    list_extend!: get: context :module_bb
+        comment_type: "Local lambda definitions`n"
+    fold: emit_function get: context :module_bb get: get: state :ast LAMBDAS
     state
 
+; Function: functions
+; Description: Processes function definitions
+
 func :private functions [state]
+    list_extend!: get: context :module_bb
+        comment_type: "Local function definitions`n"
+    fold:
+        ^[acc decl]
+            ?: =: get: decl TYPE :function
+                emit_function: acc decl
+                acc
+        get: context :module_bb
+        get: get: state :ast EXPRS
     state
+
+; Function: emit_var_expression
+; Description: Emits a var expression with store back to
+; variable declaration in "modulename_vinits"
+
+var :private one_time_var list_inst!:
+
+func :private emit_var_expression [v_fn v_bb decl]
+    ?: =: get: decl TYPE :variable
+            @(
+                expression_emitter: v_fn one_time_var v_bb get: decl EXPRS
+                list_extend!:
+                    v_bb
+                        store:
+                        last: one_time_var
+                        reference_constant_type:
+                            any_ptr_ptr
+                            global_reference: get: decl NAME
+            )
+        v_bb
+
+; Function: vinits
+; Description: Builds the variable run-time initializers
 
 func :private vinits [state]
     let mbb [] get: context :module_bb
@@ -214,15 +279,19 @@ func :private vinits [state]
     let vit_fn []
         global_function_type:
             format!: "{}_vinits" [get: state :module_name]
+            true
             []
-            []
+            "void"
             return_void
 
     ; Get functions basic block
     let vit_bb [] get_basic_block: vit_fn "entry"
-
     list_extend!: mbb comment_type: "Variable initializers"
     list_extend!: mbb vit_fn
+    fold:
+        (emit_var_expression vit_fn)
+        get: vit_bb :instructions
+        get: get: state :ast EXPRS
     state
 
 func :private user_main [state]

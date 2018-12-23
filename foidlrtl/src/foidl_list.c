@@ -168,7 +168,6 @@ PFRTAny 	foidl_list_extend_bang(PFRTAny l, PFRTAny v) {
 	return (PFRTAny) list;
 }
 
-
 PFRTAny 	foidl_list_inst_bang() {
 	return (PFRTAny) allocList(0,empty_link);
 }
@@ -304,6 +303,17 @@ PFRTAny	list_second(PFRTAny l) {
 	else
 		return list->root->next->data;
 }
+
+PFRTAny 	list_last(PFRTAny l) {
+	PFRTList list = (PFRTList) l;
+	ft 		 lcnt = list->count;
+	if(lcnt == 0)
+		return nil;
+	--lcnt;
+	return getListLinkNode(list, lcnt)->data;
+}
+
+
 
 PFRTAny list_rest(PFRTAny src) {
 	PFRTAny result = (PFRTAny) empty_list;

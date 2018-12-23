@@ -297,7 +297,7 @@ PFRTAny 	foidl_last(PFRTAny a) {
 				unknown_handler();
 				break;
 			case 	list2_type:
-				unknown_handler();
+				result =  list_last(a);
 				break;
 			case 	string_type:
 				result =  string_last(a);

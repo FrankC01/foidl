@@ -920,6 +920,7 @@ extern 	PFRTAny  list_push_bang(PFRTAny,PFRTAny);
 extern 	PFRTAny  list_first(PFRTAny);
 extern 	PFRTAny  list_second(PFRTAny);
 extern 	PFRTAny  list_rest(PFRTAny);
+extern  PFRTAny  list_last(PFRTAny);
 extern 	PFRTAny  list_print(PFRTIOChannel,PFRTAny);
 extern  PFRTAny  release_list_bang(PFRTAny s);
 #endif

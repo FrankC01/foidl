@@ -130,7 +130,7 @@ func ptr_type [valtype]
 
 func global_reference [name]
     {
-        :type           :global_reference
+        :type           :reference_global
         :name           name
         :declaration    "@`d{}`d"
         :writer         simple_name_writer
@@ -196,6 +196,15 @@ func const_type [val]
         :type           :constant
         :name           val
         :declaration    "{}"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+func const_reference [val]
+    {
+        :type           :constant_reference
+        :name           val
+        :declaration    "%`d{}`d"
         :writer         simple_name_writer
         :tostring       simple_name_tostring
     }
@@ -366,15 +375,13 @@ func :private extern_func_writer [ochan efunc]
     ochan
 
 func external_function_type [funcref]
-    map_extend!:
-        {
-            :type           :external_func
-            :name           ir_stringify: get: funcref NAME
-            :argcnt         get: funcref ARGCNT
-            :declaration    "declare %`dAny`d* @`d{}`d({})`n"
-        }
-        :writer  extern_func_writer
-
+    {
+        :type           :external_func
+        :name           ir_stringify: get: funcref NAME
+        :argcnt         get: funcref ARGCNT
+        :declaration    "declare %`dAny`d* @`d{}`d({})`n"
+        :writer         extern_func_writer
+    }
 
 ; Function: function_definition
 ; Description: Writes the function definition string
@@ -384,7 +391,8 @@ func :private function_definition [ochan gft rett]
     write!: ochan
         format!:
             get: gft :declaration
-            [   return_tostring: rett
+            [   get: gft :scope
+                rett
                 get: gft :name
                 ?: =: get: gft :regcount zero
                     ""
@@ -399,19 +407,14 @@ func :private function_definition [ochan gft rett]
 ; Description: Standard function writer that
 ; processes expressions and writes out basic blocks
 
-func :private function_writer [evals ochan gft]
-    let rett [] get: gft :returns
-    function_definition: ochan gft rett
-
-    ; Process expressions
-    ?: evals
-        nil
-        nil
+func :private function_writer [ochan gft]
+    function_definition: ochan gft get: gft :return_type
 
     ; Write basic_blocks
     fold: bblock_writer ochan get: gft :basic_blocks
 
     ; Write return
+    let rett [] get: gft :returns
     let ret_fn [] get: rett :writer
     (ret_fn ochan rett)
 
@@ -419,7 +422,7 @@ func :private function_writer [evals ochan gft]
 ; Description: Standard function w/expressions
 ;   1. Create "entry:" basic block
 
-func  global_function_type [val args exprs rettype]
+func  global_function_type [val prv args rettype retexpr]
 
     let gf []
             {
@@ -428,17 +431,16 @@ func  global_function_type [val args exprs rettype]
                 :bblocks_map    map_inst!:
                 :basic_blocks   list_inst!:
                 :arguments      args
+                :scope          ?: prv "private" " "
                 :regcount       ?: empty?: args
                                     two
                                     count: args
-                :expressions    exprs
-                :returns        rettype
-                :declaration    ?: =: rettype return_void
-                                    "`ndefine {} @`d{}`d({}) {`n"
-                                    "`ndefine %{} @`d{}`d({}) {`n"
-                :writer         ?: empty?: exprs
-                                    (function_writer false)
-                                    (function_writer true)
+                :return_type    rettype
+                :returns        retexpr
+                :declaration    ?: =: retexpr return_void
+                                    "`ndefine {} {} @`d{}`d({}) {`n"
+                                    "`ndefine {} %{} @`d{}`d({}) {`n"
+                :writer         function_writer
             }
 
     list_extend!: get: gf :basic_blocks basic_block_type: "entry"
@@ -458,6 +460,17 @@ func get_basic_block [function block_name]
         get:
             get: function :bblocks_map
             block_name
+
+func get_last_block [function]
+    last: get: function :basic_blocks
+
+func get_last_instruction_oftype [bblock itype_set]
+    fold:
+        ^[acc el]
+            ?: get: itype_set get: el :type
+                el
+                acc
+        nil get: bblock :instructions
 
 ; Function: global_variable_type
 ; Description: Declares a module local variable, may be private or not
@@ -522,28 +535,29 @@ func :private two_var_writer [fval sval ochan irtype]
             (svalts_fn sval_t)]
     ochan
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Instructions
+; they return their type
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ; Function: base_alloca
 ; Description: Base allocation instruction
 
-func :private base_alloca [ilist res type]
-    let ba []
-        {
-            :type           :alloca
-            :register       res
-            :atype          type
-            :declaration    "  {} = alloca {}`n"
-            :writer         (two_var_writer :register :atype)
-        }
-    list_extend!: ilist ba
-    ba
+func :private base_alloca [res type]
+    {
+        :type           :alloca
+        :register       res
+        :atype          type
+        :declaration    "  {} = alloca {}`n"
+        :writer         (two_var_writer :register :atype)
+    }
 
 ; Function: alloca
 ; Description: allocates a local stack area using
 ; a virtual register which progresses the function
 
-func alloca [function bblock type]
+func alloca [function type]
     base_alloca:
-        get: bblock :instructions
         get_register: function
         type
 
@@ -551,9 +565,8 @@ func alloca [function bblock type]
 ; Description: allocates a local stack area using
 ; a named register
 
-func named_alloca [function bblock name type]
+func named_alloca [name type]
     base_alloca:
-        get: bblock :instructions
         name
         type
 
@@ -575,20 +588,15 @@ func :private bitcast_writer [ochan bctype]
     ochan
 
 
-func bitcast [function bblock from_ptr to_ptr]
-    let bc []
-        {
-            :type           :bitcast
-            :register       get_register: function
-            :from           from_ptr
-            :to             to_ptr
-            :declaration    "  {} = bitcast {} to {}`n"
-            :writer         bitcast_writer
-        }
-    list_extend!:
-        get: bblock :instructions
-        bc
-    bc
+func bitcast [function from_ptr to_ptr]
+    {
+        :type           :bitcast
+        :register       get_register: function
+        :from           from_ptr
+        :to             to_ptr
+        :declaration    "  {} = bitcast {} to {}`n"
+        :writer         bitcast_writer
+    }
 
 ; Function: store
 ; Description: stores one type to another
@@ -605,20 +613,14 @@ func :private store_writer [ochan strtype]
             ]
     ochan
 
-func store [bblock from_ref to_ref]
-    let sti []
-        {
-            :type           :store
-            :arg1           from_ref
-            :arg2           to_ref
-            :declaration    "  store {}, {} `n"
-            :writer         store_writer
-        }
-
-    list_extend!:
-        get: bblock :instructions
-        sti
-    sti
+func store [from_ref to_ref]
+    {
+        :type           :store
+        :arg1           from_ref
+        :arg2           to_ref
+        :declaration    "  store {}, {} `n"
+        :writer         store_writer
+    }
 
 ; Function: load
 ; Description: loads a register from location
@@ -636,21 +638,15 @@ func :private load_writer [ochan strtype]
             ]
     ochan
 
-func load [function bblock regtype from_ref]
-    let sti []
-        {
-            :type           :load
-            :register       get_register: function
-            :register_type  regtype
-            :from           from_ref
-            :declaration    "  {} = load {}, {} `n"
-            :writer         load_writer
-        }
-
-    list_extend!:
-        get: bblock :instructions
-        sti
-    sti
+func load [function regtype from_ref]
+    {
+        :type           :load
+        :register       get_register: function
+        :register_type  regtype
+        :from           from_ref
+        :declaration    "  {} = load {}, {} `n"
+        :writer         load_writer
+    }
 
 func :private call_tostring []
 
@@ -678,22 +674,17 @@ func :private call_writer [ochan irtype]
     ochan
 
 ; %".6" = call %"Any"* @"foidl_reg_string"(i8* %".3")
-func call [function bblock call_site args]
-    let cs []
-        {
+func call [function call_site args]
+    {
 
-            :type           :call
-            :register       get_register: function
-            :name           call_site
-            :declaration    "  {} = call %`dAny`d* {}({})`n"
-            :args           args
-            :writer         call_writer
-        }
+        :type           :call
+        :register       get_register: function
+        :name           call_site
+        :declaration    "  {} = call %`dAny`d* {}({})`n"
+        :args           args
+        :writer         call_writer
+    }
 
-    list_extend!:
-        get: bblock :instructions
-        cs
-    cs
 
 func branch []
 func unconditional_branch []

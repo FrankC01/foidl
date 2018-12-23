@@ -22,6 +22,12 @@ module emit_utils
 
 include langcorem
 include ir_types
+include ast_type
+include errors
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Literal support
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Function: emit_literals
 ; Description: Creates literal declaration instructions
@@ -55,112 +61,97 @@ func literal_max_len [bblock max_cnt ndx]
         max_cnt
 
 ; Function: literal_buffer_setup
-; Description: Prepares key information for handling
+; Description: Prepares buffer and basecast information for handling
 ; string and keyword runtime registrations
 
-func literal_buffer_setup [lit_fn lit_bb lit_maxlen litinfo_map]
+func literal_buffer_setup [lit_fn lit_bb lit_maxlen]
     ; Local (stack) array to fit max string and/or keyword
     let sbuff []
         array_type: int_8 inc: lit_maxlen
+    ; Prep instruction push
+    let inst [] get: lit_bb :instructions
+    ; Allocate the buffer
+    let abuf [] alloca: lit_fn sbuff
+    list_extend!: inst abuf
     ; Reference pointer to array register
     let voidpref []
         reference_register_type:
-        sbuff
-        get: alloca: lit_fn lit_bb sbuff :register
+            sbuff
+            get: abuf :register
 
-    ; Bitcast to void pointer i8*
-    map_extend!:
-        map_extend!:
-            litinfo_map
-            :basecast  bitcast: lit_fn lit_bb voidpref void_ptr
-        :bufferptr_ref voidpref
+    let bc [] bitcast: lit_fn voidpref void_ptr
+    list_extend!: inst bc
+    bc
 
+; Function: literal_chartype_registration
+; Description: Registers a type of char string (string, keyword)
 
-;var :private
+func :private literal_chartype_registration [
+    basecast lit_fn lit_bb regc sval sname scnt]
+    ; Create an array signature based on size of input
+    let va  [] array_type: int_8 scnt
+    let brt [] reference_register_type: int_8 get: basecast :register
+    ; Bitcast the base to the array pointer and preserve
+    ; the register
+    let bc []
+        bitcast:
+            lit_fn
+            brt
+            ptr_type: va
+    list_extend!: lit_bb bc
+    let bic [] get: bc :register
 
-func :private literal_string    [litinfo_map lit_fn lit_bb lit_string]
-    let bc [] get: litinfo_map :basecast
-    let str_reg [] global_reference: "foidl_reg_string"
-    ; Create the bitcast of i8* to the array of target string
-    let vl [] get: lit_string :lval
-    let va [] array_type: int_8 dec: count: vl
-    let vap [] ptr_type: va
-    let voidpref []
-        reference_register_type:
-        int_8
-        get: bc :register
-    let bic [] bitcast: lit_fn lit_bb voidpref vap
-    ; Create the store of the string to the stack
-    let toref []
-        reference_register_type:
-            va
-            get: bic :register
-    let strc [] const_string_type: rest: dropLast: vl
-    store:
-        lit_bb
-        reference_constant_type:
-            va
-            strc
-        toref
-    ; Call the keyword registration
+    ; Create the store of the target to the stack
+    list_extend!: lit_bb
+        store:
+            reference_constant_type: va const_string_type: sval
+            reference_register_type: va bic
+
+    ; Call the registration function using the base bitcast register
     let reg_call []
         call:
             lit_fn
-            lit_bb
-            str_reg
-            [reference_register_type: int_8 get: bic :register]
-    ; Store the result to the const literal
-    store:
-        lit_bb
-        reference_register_type:
-            any
-            get: reg_call :register
-        reference_constant_type:
-            any_ptr_ptr
-            global_reference: get: lit_string :name
-    lit_string
+            regc
+            [brt]
+    list_extend!: lit_bb reg_call
 
-func :private literal_keyword   [litinfo_map lit_fn lit_bb lit_keyword]
-    let bc [] get: litinfo_map :basecast
-    let kwd_reg [] global_reference: "foidl_reg_keyword"
-    ; Create the bitcast of i8* to the array of target string
-    let vl [] get: lit_keyword :lval
-    let va [] array_type: int_8 inc: count: vl
-    let vap [] ptr_type: va
-    let voidpref []
-        reference_register_type:
-        int_8
-        get: bc :register
-    let bic [] bitcast: lit_fn lit_bb voidpref vap
-    ; Create the store of the string to the stack
-    let toref []
-        reference_register_type:
-            va
-            get: bic :register
-    let strc [] const_string_type: vl
-    store:
+    ; Store the result
+    list_extend!:
         lit_bb
-        reference_constant_type:
-            va
-            strc
-        toref
-    ; Call the keyword registration
-    let reg_call []
-        call:
-            lit_fn
-            lit_bb
-            kwd_reg
-            [reference_register_type: int_8 get: bic :register]
-    ; Store the result to the const literal
-    store:
+        store:
+            reference_register_type: any get: reg_call :register
+            reference_constant_type: any_ptr_ptr global_reference: sname
+
+; Function: literal_string
+; Description: Prepare a string registration at initialization
+
+func :private literal_string    [basecast lit_fn lit_bb lit_string]
+    let lstr [] rest: dropLast: get: lit_string :lval
+    literal_chartype_registration:
+        basecast
+        lit_fn
         lit_bb
-        reference_register_type:
-            any
-            get: reg_call :register
-        reference_constant_type:
-            any_ptr_ptr
-            global_reference: get: lit_keyword :name
-    lit_keyword
+        global_reference: "foidl_reg_string"
+        lstr
+        get: lit_string :name
+        count: lstr
+
+; Function: literal_keyword
+; Description: Prepare a keyword registration at initialization
+
+func :private literal_keyword   [basecast lit_fn lit_bb lit_keyword]
+    let lstr [] get: lit_keyword :lval
+    literal_chartype_registration:
+        basecast
+        lit_fn
+        lit_bb
+        global_reference: "foidl_reg_keyword"
+        lstr
+        get: lit_keyword :name
+        inc: count: lstr
+
+; Function: literal_integer
+; Description: Prepare an integer registration at initialization
 
 func :private literal_integer   [lit_fn lit_bb lit_integer]
     ;let int_reg [] global_reference: "foidl_reg_integer"
@@ -169,24 +160,130 @@ func :private literal_integer   [lit_fn lit_bb lit_integer]
     let reg_call []
         call:
             lit_fn
-            lit_bb
             int_reg
             [reference_constant_type: int_64 const_type: get: lit_integer :lval]
+    list_extend!: lit_bb reg_call
     ; Store the result to the const literal
-    store:
+    list_extend!:
         lit_bb
-        reference_register_type:
-            any
-            get: reg_call :register
-        reference_constant_type:
-            any_ptr_ptr
-            global_reference: get: lit_integer :name
+        store:
+            reference_register_type:
+                any
+                get: reg_call :register
+            reference_constant_type:
+                any_ptr_ptr
+                global_reference: get: lit_integer :name
 
 
-func literal_registration [litinfo_map lit_fn lit_bb literals ndx]
+; Function: literal_registration
+; Description: For each literal, add to the "modulename_linits" function
+
+func literal_registration [basecast lit_fn lit_bb literals ndx]
     let lit [] get: literals ndx
     match get: lit :ltype
-    | :string   literal_string: litinfo_map lit_fn lit_bb lit
-    | :keyword  literal_keyword: litinfo_map lit_fn lit_bb lit
+    | :string   literal_string: basecast lit_fn lit_bb lit
+    | :keyword  literal_keyword: basecast lit_fn lit_bb lit
     | :integer  literal_integer: lit_fn lit_bb lit
     literals
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Generic function support
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func new_function [asttype]
+    ; Arguments are reduced to names only
+    let args []
+        fold:
+            ^[acc el]
+                list_extend!: acc get: el NAME
+            list_inst!: get: get: asttype ARGLIST EXPRS
+    global_function_type:
+        get: asttype NAME
+        get: asttype IS_PRIVATE
+        args
+        "%`dAny`d*"
+        return_void
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Generic expression support
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func :private default_expression_handler [scope_fn frame scope_bb etype]
+    warning:
+        format!:
+            "No emit expressions handler for {}" [get: etype TYPE]
+    scope_bb
+
+func :private nohit_expression_handler [acc k]
+    default_expression_handler
+
+; Function: emit_call
+; Description: Emit each expression and
+; capture references to eval result as arguments to call
+
+func :private emit_call [scope_fn frame scope_bb etype]
+    let args [] list_inst!:
+    expression_emitter: scope_fn args scope_bb get: etype EXPRS
+    let call_instr []
+        call:
+            scope_fn
+            global_reference: get: etype NAME
+            args
+    list_extend!:
+        frame
+        reference_register_type:
+            any
+            get: call_instr :register
+
+    list_extend!: scope_bb call_instr
+    ;scope_bb
+
+; Function: global load types (varref, literalref)
+func :private emit_global_ref [scope_fn frame scope_bb etype]
+    let load_inst []
+        load:
+            scope_fn
+            any_ptr
+            reference_constant_type:
+                any_ptr_ptr
+                global_reference: get: etype NAME
+
+    list_extend!:
+        frame
+        reference_register_type:
+            any
+            get: load_inst :register
+
+    list_extend!: scope_bb load_inst
+
+; Function: global load types (:lambda_argref, ????)
+func :private emit_local_argref [scope_fn frame scope_bb etype]
+    list_extend!:
+        frame
+        reference_constant_type:
+            any_ptr
+            const_reference: get: etype NAME
+    scope_bb
+
+var :private emit_handlers
+    {
+        :call           emit_call
+        :lambda_argref  emit_local_argref
+        :funcargref     emit_local_argref
+        :literalref     emit_global_ref
+        :varref         emit_global_ref
+    }
+
+func dispatch_expression [scope_fn frame scope_bb expr_el]
+    let e_fn []
+        getd:
+            emit_handlers
+            get: expr_el TYPE
+            nohit_expression_handler
+    (e_fn scope_fn frame scope_bb expr_el)
+
+func expression_emitter [scope_fn frame scope_bb exprs]
+    fold: (dispatch_expression scope_fn frame) scope_bb exprs
+    scope_bb
+
+

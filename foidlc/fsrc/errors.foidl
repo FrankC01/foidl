@@ -19,13 +19,24 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 module errors
+include langcorem
+
+; Function: warning
+; Description: Writes warning message
+
+func warning [warn_str]
+    write!:
+        cerr
+        format!:
+            "Warning: {}`n"
+            [warn_str]
 
 ; Function: exception
 ; Description: Writes exception with except_str and exits
 
 func exception [except_str]
     failWith:
-        format:
+        format!:
             "Exception: {}. exiting...`n"
             [except_str]
 
@@ -35,7 +46,7 @@ func exception [except_str]
 
 func token_exception [token except_str]
     failWith:
-        format:
+        format!:
             "Exception: {}:{} {}. exiting...`n"
             [get: token :lineno get: token :colno except_str]
 
