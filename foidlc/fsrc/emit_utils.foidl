@@ -154,7 +154,7 @@ func :private literal_keyword   [basecast lit_fn lit_bb lit_keyword]
 ; Description: Prepare an integer registration at initialization
 
 func :private literal_integer   [lit_fn lit_bb lit_integer]
-    ;let int_reg [] global_reference: "foidl_reg_integer"
+
     let int_reg [] global_reference: "foidl_reg_integer"
     ; Call register_int
     let reg_call []
@@ -190,6 +190,8 @@ func literal_registration [basecast lit_fn lit_bb literals ndx]
 ; Generic function support
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+var :private globals_map map_inst!:
+
 func new_function [asttype]
     ; Arguments are reduced to names only
     let args []
@@ -197,25 +199,85 @@ func new_function [asttype]
             ^[acc el]
                 list_extend!: acc get: el NAME
             list_inst!: get: get: asttype ARGLIST EXPRS
-    global_function_type:
+    let gf []
+        global_function_type:
+            get: asttype NAME
+            get: asttype IS_PRIVATE
+            args
+            "%`dAny`d*"
+            return_void
+    map_extend!:
+        globals_map
         get: asttype NAME
-        get: asttype IS_PRIVATE
-        args
-        "%`dAny`d*"
-        return_void
+        gf
+    gf
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Generic expression support
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Not implemented expression support
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 func :private default_expression_handler [scope_fn frame scope_bb etype]
     warning:
         format!:
-            "No emit expressions handler for {}" [get: etype TYPE]
+            "No emit implementation for {}" [get: etype TYPE]
     scope_bb
 
 func :private nohit_expression_handler [acc k]
     default_expression_handler
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Utilities
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Function: lastcall_to_regref
+; Description: Create a register reference from instruction
+
+func :private lastcall_to_regref [ instruction ]
+    reference_register_type:
+        any
+        get: instruction :register
+
+; Function: load_funcreference
+; Description: Instantiate a function instance reference from a function
+; signature, performing bitcasts and registrations as needed. Returns
+; a register reference
+
+func :private load_funcreference [scope_fn scope_bb gfref]
+    let argcnt [] count: get: gfref :arguments
+    ; Call register_int for number of argumnets to funcref
+    let reg_call []
+        call:
+            scope_fn
+            global_reference: "foidl_reg_integer"
+            [reference_constant_type: int_64 const_type: argcnt]
+    list_extend!: scope_bb reg_call
+    ; Bitcast to a void*
+    let bc []
+        bitcast:
+            scope_fn
+            funcref_type:
+                get: gfref :name
+                any_ptr
+                argcnt
+            void_ptr
+    list_extend!: scope_bb bc
+    ; Call the function instance creator
+    let fref_call []
+        call:
+            scope_fn
+            global_reference: "foidl_tofuncref"
+            [
+                reference_constant_type: void_ptr get: bc :register
+                reference_constant_type: any_ptr get: reg_call :register
+            ]
+    list_extend!: scope_bb fref_call
+    ; Return a register reference type for last call
+    lastcall_to_regref: fref_call
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Heavy lifting emit support
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Function: emit_call
 ; Description: Emit each expression and
@@ -229,16 +291,52 @@ func :private emit_call [scope_fn frame scope_bb etype]
             scope_fn
             global_reference: get: etype NAME
             args
+
+    list_extend!: frame lastcall_to_regref: call_instr
+    list_extend!: scope_bb call_instr
+
+
+; Function: emit_lambda_call
+; Description: Instructions to load a lambda reference
+; to register. Basic block instructions created in
+; load_funcreference:
+
+func :private emit_lambda_call [scope_fn frame scope_bb etype]
     list_extend!:
         frame
-        reference_register_type:
-            any
-            get: call_instr :register
+        load_funcreference:
+            scope_fn
+            scope_bb
+            get: globals_map get: etype NAME
+    scope_bb
 
-    list_extend!: scope_bb call_instr
-    ;scope_bb
+; Function: emit_collection
+; Description: Emits a stream of collection expressions
 
-; Function: global load types (varref, literalref)
+func :private single_element_coll [scope_fn scope_bb instname setname etype]
+    ;   Instance creator
+    let inst_call []
+        call:
+            scope_fn
+            global_reference: instname
+            []
+    list_extend!: scope_bb inst_call
+    lastcall_to_regref: inst_call
+
+
+func :private emit_collection [scope_fn frame scope_bb etype]
+    match res get: etype COLLTYPE
+    | :list     single_element_coll: scope_fn scope_bb "list_inst!" "list_extend!" etype
+    | :vector   printnl!: "Emit Vector"
+    | :map      printnl!: "Emit Map"
+    | :set      printnl!: "Emit Set"
+    | :default  exception: etype
+    list_extend!: frame res
+    scope_bb
+
+; Function: emit_global_ref
+; Description: Instruction to loads reference of type global
+; into register
 func :private emit_global_ref [scope_fn frame scope_bb etype]
     let load_inst []
         load:
@@ -248,15 +346,13 @@ func :private emit_global_ref [scope_fn frame scope_bb etype]
                 any_ptr_ptr
                 global_reference: get: etype NAME
 
-    list_extend!:
-        frame
-        reference_register_type:
-            any
-            get: load_inst :register
-
+    list_extend!: frame lastcall_to_regref: load_inst
     list_extend!: scope_bb load_inst
 
-; Function: global load types (:lambda_argref, ????)
+; Function: emit_local_argref
+; Description: Collects constant local reference for
+; use, this is not an instruction emit
+
 func :private emit_local_argref [scope_fn frame scope_bb etype]
     list_extend!:
         frame
@@ -268,6 +364,8 @@ func :private emit_local_argref [scope_fn frame scope_bb etype]
 var :private emit_handlers
     {
         :call           emit_call
+        :lambda_call    emit_lambda_call
+        :collection     emit_collection
         :lambda_argref  emit_local_argref
         :funcargref     emit_local_argref
         :literalref     emit_global_ref

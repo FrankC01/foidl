@@ -81,6 +81,7 @@ func :private simple_name_tostring [irtype]
     format!: get: irtype :declaration [get: irtype :name]
 
 func :private type_tostring [irtype]
+
     let rts_fn  [] get: irtype :tostring
     (rts_fn irtype)
 
@@ -131,7 +132,7 @@ func ptr_type [valtype]
 func global_reference [name]
     {
         :type           :reference_global
-        :name           name
+        :name           ir_stringify: name
         :declaration    "@`d{}`d"
         :writer         simple_name_writer
         :tostring       simple_name_tostring
@@ -448,6 +449,38 @@ func  global_function_type [val prv args rettype retexpr]
     gf
 
 
+func :private funcref_tostring [irtype]
+    let acnt [] get: irtype :argcnt
+    format!:
+        get: irtype :declaration
+        [
+            type_tostring: get: irtype :return_type
+            ?: =: acnt zero
+                ""
+                fold:
+                    ^[istr ndx]
+                        ?: =: count: istr zero
+                            extend: istr "%`dAny`d*"
+                            extend: istr ", %`dAny`d*"
+                    "" series: zero acnt one
+            type_tostring: get: irtype :name
+        ]
+
+func :private funcref_writer [ochan irtype]
+    write!: ochan funcref_tostring: irtype
+    ochan
+
+func funcref_type [name rettype argcnt]
+    {
+        :type           :function_ref
+        :name           global_reference: ir_stringify: name
+        :argcnt         argcnt
+        :declaration    "{} ({})* {}"
+        :return_type    rettype
+        :writer         funcref_writer
+        :tostring       funcref_tostring
+    }
+
 ; Function: get_basic_block
 ; Description: Returns the named basic block after
 ; finding the index from the bblock map
@@ -577,14 +610,13 @@ func named_alloca [name type]
 ; Description: bitcasts from_ptr to to_ptr
 
 func :private bitcast_writer [ochan bctype]
+
+    let reg [] type_tostring: get: bctype :register
+    let to  [] type_tostring: get: bctype :to
+    let from  [] type_tostring: get: bctype :from
     write!:
         ochan
-        format!:
-            get: bctype :declaration
-            [
-            type_tostring: get: bctype :register
-            type_tostring: get: bctype :from
-            type_tostring: get: bctype :to ]
+        format!: get: bctype :declaration [reg from to]
     ochan
 
 

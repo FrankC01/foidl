@@ -28,10 +28,13 @@ var fkw :foo
 var ev <>
 var em {}
 var es #{}
-var el []
+var el [1]
 
 var fake_add1 ^[a b] +: a b
 
+func :private other_ref? [a! b]
+    +: a! b
+
 func faux_add [a b]
-    +: a b
+    +: a other_ref?: 1 foo
 
