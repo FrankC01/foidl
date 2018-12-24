@@ -25,10 +25,10 @@ var :private pfoo "pfoo"
 var foo "foo"
 var fkw :foo
 
-var ev <>
-var em {}
-var es #{}
-var el [1]
+var ev <+: 1 1>
+var em {:foo "bar"}
+var es #{"foo" "bar" "funk"}
+var el [1 2 3]
 
 var fake_add1 ^[a b] +: a b
 

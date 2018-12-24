@@ -310,8 +310,22 @@ func :private emit_lambda_call [scope_fn frame scope_bb etype]
             get: globals_map get: etype NAME
     scope_bb
 
-; Function: emit_collection
-; Description: Emits a stream of collection expressions
+; Function: single_element_register
+; Description: Populates a single element collection one expression
+; at a time
+
+func :private single_element_register [scope_fn setname basereg scope_bb regel]
+    ;   Instance creator
+    let inst_call []
+        call:
+            scope_fn
+            global_reference: setname
+            [basereg regel]
+    list_extend!: scope_bb inst_call
+
+; Function: single_element_coll
+; Description: Handles creation and inserts of single element collection
+; types (list, vector, set)
 
 func :private single_element_coll [scope_fn scope_bb instname setname etype]
     ;   Instance creator
@@ -321,15 +335,68 @@ func :private single_element_coll [scope_fn scope_bb instname setname etype]
             global_reference: instname
             []
     list_extend!: scope_bb inst_call
+
+    let expres [] list_inst!:
+    fold:
+        (dispatch_expression scope_fn expres)
+        scope_bb
+        get: etype EXPRS
+
+    fold:
+        (single_element_register scope_fn setname lastcall_to_regref: inst_call)
+        scope_bb
+        expres
     lastcall_to_regref: inst_call
 
+func :private multi_element_register [scope_fn setname basereg scope_bb regel ndx]
+    ;   Instance creator
+    let arg1 [] get: regel ndx
+    let arg2 [] get: regel inc: ndx
+    printnl!: arg1
+    printnl!: arg2
+    let inst_call []
+        call:
+            scope_fn
+            global_reference: setname
+            [basereg arg1 arg2]
+    list_extend!: scope_bb inst_call
+    regel
+
+; Function: multi_element_coll
+; Description: Handles creation and inserts of pair element collection
+; types (map)
+
+func :private multi_element_coll [scope_fn scope_bb instname setname etype]
+    let inst_call []
+        call:
+            scope_fn
+            global_reference: instname
+            []
+    list_extend!: scope_bb inst_call
+
+    let expres [] list_inst!:
+    fold:
+        (dispatch_expression scope_fn expres)
+        scope_bb
+        get: etype EXPRS
+
+    fold:
+        (multi_element_register scope_fn setname lastcall_to_regref: inst_call scope_bb)
+        expres
+        series: zero count: expres two
+
+    lastcall_to_regref: inst_call
+
+
+; Function: emit_collection
+; Description: Emits a stream of collection expressions
 
 func :private emit_collection [scope_fn frame scope_bb etype]
     match res get: etype COLLTYPE
     | :list     single_element_coll: scope_fn scope_bb "list_inst!" "list_extend!" etype
-    | :vector   printnl!: "Emit Vector"
-    | :map      printnl!: "Emit Map"
-    | :set      printnl!: "Emit Set"
+    | :vector   single_element_coll: scope_fn scope_bb "vector_inst!" "vector_extend!" etype
+    | :map      multi_element_coll: scope_fn scope_bb "map_inst!" "map_extend!" etype
+    | :set      single_element_coll: scope_fn scope_bb "set_inst!" "set_extend!" etype
     | :default  exception: etype
     list_extend!: frame res
     scope_bb
