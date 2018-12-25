@@ -238,6 +238,14 @@ func :private lastcall_to_regref [ instruction ]
         any
         get: instruction :register
 
+; Function: lastcall_to_regref_ptr
+; Description: Create a register reference to instruction
+
+func :private lastcall_to_regref_ptr [ instruction ]
+    reference_register_type:
+        any_ptr
+        get: instruction :register
+
 ; Function: load_funcreference
 ; Description: Instantiate a function instance reference from a function
 ; signature, performing bitcasts and registrations as needed. Returns
@@ -278,6 +286,141 @@ func :private load_funcreference [scope_fn scope_bb gfref]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Heavy lifting emit support
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Function: emit_let
+func :private emit_let [scope_fn frame scope_bb etype]
+    ;print!: "Process let => " printnl!: etype
+    scope_bb
+
+func :private add_to_bblock [bblock inst]
+    list_extend!: get: bblock :instructions inst
+
+func :private emit_if [scope_fn frame scope_bb etype]
+    print!: "`nIf => " printnl!: etype
+    ; Allocate the if result using register without name
+    let if_pred_res     [] alloca: scope_fn any_ptr
+    let pred_res_ptr    [] lastcall_to_regref_ptr: if_pred_res
+    list_extend!: scope_bb if_pred_res
+    ; Local true reference
+    let true_load []
+        load:
+            scope_fn
+            any_ptr
+            reference_constant_type:
+                any_ptr_ptr
+                global_reference: "true"
+    list_extend!: scope_bb true_load
+    let true_regref [] lastcall_to_regref: true_load
+
+    ; Dynamic base name creation
+    let bname []
+        format!:
+            "if_{}_{}"
+            [get: get: etype TOKEN :lineno get: get: etype TOKEN :colno]
+    ; Create 4 basic blocks for flow control
+    let if_pred_bb []
+        basic_block_type: bname
+    let if_then_bb []
+        basic_block_type: format!: "{}_then" [bname]
+    let if_else_bb []
+        basic_block_type: format!: "{}_else" [bname]
+    let if_exit_bb []
+        basic_block_type: format!: "{}_exit" [bname]
+    ; Common branch to exit
+    let uc_branch_exit []
+        uc_branch_to_label: get: if_exit_bb :name
+
+    ; Reusable local frame
+    let lframe [] list_inst!:
+
+    ; Jump to predicate processor
+    list_extend!: scope_bb uc_branch_to_label: get: if_pred_bb :name
+    list_extend!: scope_bb if_pred_bb
+    dispatch_expression:
+        scope_fn
+        lframe
+        scope_bb
+        get: get: etype EXPRS zero
+    ; Truthy on result
+    let call_instr []
+        call:
+            scope_fn
+            global_reference: "foidl_truthy_qmark"
+            [last: lframe]
+    list_extend!: scope_bb call_instr
+    empty!: lframe
+    ; integer compare with true
+    let cmp []
+        pointer_cmp:
+            scope_fn
+            any_ptr
+            get: true_load :register
+            get: call_instr :register
+    list_extend!: scope_bb cmp
+    ; Branch true/false
+    let pbr []
+        branch:
+            get: cmp :register
+            get: if_then_bb :name
+            get: if_else_bb :name
+    list_extend!: scope_bb pbr
+    ; Process then
+    list_extend!: scope_bb if_then_bb
+    dispatch_expression:
+        scope_fn
+        lframe
+        get: if_then_bb :instructions
+        get: get: etype EXPRS one
+    add_to_bblock:
+        if_then_bb
+        store:
+            last: lframe
+            pred_res_ptr
+    empty!: lframe
+    add_to_bblock: if_then_bb uc_branch_exit
+    ; Process else
+    list_extend!: scope_bb if_else_bb
+    dispatch_expression:
+        scope_fn
+        lframe
+        get: if_else_bb :instructions
+        get: get: etype EXPRS two
+    add_to_bblock:
+        if_else_bb
+        store:
+            last: lframe
+            pred_res_ptr
+    empty!: lframe
+    add_to_bblock: if_else_bb uc_branch_exit
+    list_extend!: frame lastcall_to_regref: if_pred_res
+    list_extend!: scope_bb if_exit_bb
+
+; Function: emit_group
+
+func :private emit_group [scope_fn frame scope_bb etype]
+    ; Allocate a group result using register without name
+    let gres [] alloca: scope_fn any_ptr
+    list_extend!: scope_bb gres
+    ; Emit expressions to local frame
+    let expr [] list_inst!:
+    expression_emitter: scope_fn expr scope_bb get: etype EXPRS
+    ; Get the last and store to our group result
+    list_extend!:
+        scope_bb
+        store:
+            last: expr
+            lastcall_to_regref_ptr: gres
+    ; Add our result to invoking frame
+    list_extend!: frame lastcall_to_regref: gres
+    scope_bb
+
+func :private emit_partial [scope_fn frame scope_bb etype]
+    print!: "`nPartial => " printnl!: etype
+    scope_bb
+
+func :private emit_match [scope_fn frame scope_bb etype]
+    print!: "Process match => " printnl!: get: etype NAME
+    scope_bb
 
 ; Function: emit_call
 ; Description: Emit each expression and
@@ -348,17 +491,16 @@ func :private single_element_coll [scope_fn scope_bb instname setname etype]
         expres
     lastcall_to_regref: inst_call
 
+; Function: multi_element_register
+; Description: Populates a multi-element collection a pair at a time
+
 func :private multi_element_register [scope_fn setname basereg scope_bb regel ndx]
     ;   Instance creator
-    let arg1 [] get: regel ndx
-    let arg2 [] get: regel inc: ndx
-    printnl!: arg1
-    printnl!: arg2
     let inst_call []
         call:
             scope_fn
             global_reference: setname
-            [basereg arg1 arg2]
+            [basereg get: regel ndx get: regel inc: ndx]
     list_extend!: scope_bb inst_call
     regel
 
@@ -430,6 +572,11 @@ func :private emit_local_argref [scope_fn frame scope_bb etype]
 
 var :private emit_handlers
     {
+        :let            emit_let
+        :if             emit_if
+        :partial        emit_partial
+        :group          emit_group
+        :match          emit_match
         :call           emit_call
         :lambda_call    emit_lambda_call
         :collection     emit_collection

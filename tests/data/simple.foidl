@@ -27,14 +27,17 @@ var fkw :foo
 
 var ev <+: 1 1>
 var em {:foo "bar"}
-var es #{"foo" "bar" "funk"}
+var es #{"foo" "bar"}
 var el [1 2 3]
 
 var fake_add1 ^[a b] +: a b
 
 func :private other_ref? [a! b]
-    +: a! b
+    let x [] +: a! b
 
 func faux_add [a b]
-    +: a other_ref?: 1 foo
+    ?: =: +: a b one
+        b
+        a
+
 

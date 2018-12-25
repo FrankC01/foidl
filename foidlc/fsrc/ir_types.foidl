@@ -74,6 +74,7 @@ func :private dummy_writer [ochan irtype]
         format!:
             "Writer for {} not implemented yet!"
             [get: irtype :type]
+    ochan
 
 ; Simple tostr
 
@@ -90,6 +91,7 @@ func :private type_tostring [irtype]
 func :private simple_name_writer [ochan irtype]
     let tstr_fn [] get: irtype :tostring
     write!: ochan (tstr_fn irtype)
+    ochan
 
 ; Invoke writer on arbitrary type
 
@@ -211,6 +213,7 @@ func const_reference [val]
     }
 
 ; c"\00"
+
 func const_string_type [val]
     {
         :type           :constant_string_type
@@ -220,6 +223,7 @@ func const_string_type [val]
         :tostring       simple_name_tostring
 
     }
+
 ; Comment
 
 func comment_type [val]
@@ -312,11 +316,16 @@ func :private get_register [container]
 
 ; Basic block - named container of instructions
 
+func :private bblock_proxy_writer [ochan inst]
+    ?: =: get: inst :type :basic_block
+        bblock_writer: ochan inst
+        invoke_writer: ochan inst
+
 func :private bblock_writer [ochan bblock]
     ; Write block label
     simple_name_writer: ochan bblock
     ; Write instructions
-    fold: invoke_writer ochan get: bblock :instructions
+    fold: bblock_proxy_writer ochan get: bblock :instructions
     ; return channel
     ochan
 
@@ -429,7 +438,7 @@ func  global_function_type [val prv args rettype retexpr]
             {
                 :type           :function
                 :name           ir_stringify: val
-                :bblocks_map    map_inst!:
+                ;:bblocks_map    map_inst!:
                 :basic_blocks   list_inst!:
                 :arguments      args
                 :scope          ?: prv "private" " "
@@ -445,7 +454,7 @@ func  global_function_type [val prv args rettype retexpr]
             }
 
     list_extend!: get: gf :basic_blocks basic_block_type: "entry"
-    map_extend!: get: gf :bblocks_map "entry" zero
+    ;map_extend!: get: gf :bblocks_map "entry" zero
     gf
 
 
@@ -482,28 +491,11 @@ func funcref_type [name rettype argcnt]
     }
 
 ; Function: get_basic_block
-; Description: Returns the named basic block after
-; finding the index from the bblock map
+; Description: Returns the entry basic block
+; from function
 
-func get_basic_block [function block_name]
-    get:
-        get:
-            function
-            :basic_blocks
-        get:
-            get: function :bblocks_map
-            block_name
-
-func get_last_block [function]
-    last: get: function :basic_blocks
-
-func get_last_instruction_oftype [bblock itype_set]
-    fold:
-        ^[acc el]
-            ?: get: itype_set get: el :type
-                el
-                acc
-        nil get: bblock :instructions
+func get_basic_block [function]
+    first: get: function :basic_blocks
 
 ; Function: global_variable_type
 ; Description: Declares a module local variable, may be private or not
@@ -717,9 +709,64 @@ func call [function call_site args]
         :writer         call_writer
     }
 
+; br i1 %".17", label %"match_515_5.if", label %"match_515_5.endif"
 
-func branch []
-func unconditional_branch []
+func :private branch_writer [ochan irtype]
+    write!:
+        ochan
+        format!:
+            get: irtype :declaration
+            [
+                type_tostring: get: irtype :register
+                get: irtype :true_label
+                get: irtype :false_label
+            ]
+    ochan
+
+func branch [testreg iflab elselab]
+    {
+        :type           :branch
+        :register       testreg
+        :true_label     iflab
+        :false_label    elselab
+        :declaration    "  br i1 {}, label %`d{}`d, label %`d{}`d`n"
+        :writer         branch_writer
+    }
+
+func uc_branch_to_label [val]
+    {
+        :type           :unconditional_label_branch
+        :name           val
+        :declaration    "  br label %`d{}`d`n"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; %".17" = icmp eq %"Any"* %".16", %".6"
+func :private pointer_cmp_writer [ochan irtype]
+    write!:
+        ochan
+        format!:
+            get: irtype :declaration
+            [
+                type_tostring: get: irtype :register
+                type_tostring: get: irtype :cmp_type
+                type_tostring: get: irtype :lhs
+                type_tostring: get: irtype :rhs
+            ]
+    ochan
+
+func pointer_cmp [function ctype lhs rhs]
+    {
+        :type           :pointer_compare
+        :register       get_register: function
+        :cmp_type       ctype
+        :lhs            lhs
+        :rhs            rhs
+        :declaration    "  {} = icmp eq {} {}, {}`n"
+        :writer         pointer_cmp_writer
+    }
+
 func label_type [astel suffix]
 func function_type [function]
 func lambda_type [lambda]

@@ -922,7 +922,8 @@ extern 	PFRTAny  list_second(PFRTAny);
 extern 	PFRTAny  list_rest(PFRTAny);
 extern  PFRTAny  list_last(PFRTAny);
 extern 	PFRTAny  list_print(PFRTIOChannel,PFRTAny);
-extern  PFRTAny  release_list_bang(PFRTAny s);
+extern  PFRTAny  empty_list_bang(PFRTAny);
+extern  PFRTAny  release_list_bang(PFRTAny);
 #endif
 
 // IO

@@ -43,6 +43,9 @@ func 	drop! [coll arg]
 func 	droplast! [coll]
 	foidl_droplast!: coll
 
+func empty! [coll]
+	foidl_empty!: coll
+
 func vector_inst! []
 	foidl_vector_inst!:
 

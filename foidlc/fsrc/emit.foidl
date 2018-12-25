@@ -157,7 +157,7 @@ func :private literals [state]
             return_void
 
     ; Get functions basic block
-    let lit_bb [] get_basic_block: lit_fn "entry"
+    let lit_bb [] get_basic_block: lit_fn
 
     ; Setup reusable serializer based on actual literal
     ; declaration counts
@@ -207,7 +207,7 @@ func :private variables [state]
 
 func :private emit_function [acc fn_el]
     let nfunc [] new_function: fn_el
-    let nfunc_bb [] get_basic_block: nfunc "entry"
+    let nfunc_bb [] get_basic_block: nfunc
     let frame [] list_inst!:
 
     ; Emit instructions
@@ -285,7 +285,7 @@ func :private vinits [state]
             return_void
 
     ; Get functions basic block
-    let vit_bb [] get_basic_block: vit_fn "entry"
+    let vit_bb [] get_basic_block: vit_fn
     list_extend!: mbb comment_type: "Variable initializers"
     list_extend!: mbb vit_fn
     fold:

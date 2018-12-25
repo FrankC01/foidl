@@ -355,16 +355,19 @@ PFRTAny coerce_to_list(PFRTAny stemplate, PFRTAny src) {
 	return src;
 }
 
-PFRTAny release_list_bang(PFRTAny s) {
+PFRTAny empty_list_bang(PFRTAny s) {
 	PFRTList list;
-	if (s->ftype == list2_type)
-		list = (PFRTList) s;
-	else
+	if (s->ftype != list2_type)
 		unknown_handler();
+	else
+		list = (PFRTList) s;
 
 	while(list->count > 0)
 		list_pop_bang(s);
+	return s;
+}
 
-	foidl_xdel(s);
+PFRTAny release_list_bang(PFRTAny s) {
+	foidl_xdel(empty_list_bang(s));
 	return nil;
 }

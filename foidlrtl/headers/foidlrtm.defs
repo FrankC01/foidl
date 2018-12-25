@@ -54,6 +54,8 @@ func 	foidl_drop! [coll arg]
 
 func 	foidl_droplast! [coll]
 
+func    foidl_empty! [coll]
+
 func  	foidl_release_type [x]
 
 func 	foidl_vector_inst! []

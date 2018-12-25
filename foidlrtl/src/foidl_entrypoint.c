@@ -562,6 +562,17 @@ PFRTAny 	foidl_removes(PFRTAny coll, PFRTAny key) {
 	return coll;
 }
 
+PFRTAny 	foidl_empty_bang(PFRTAny coll) {
+	switch(coll->ftype) {
+		case 	list2_type:
+			return empty_list_bang(coll);
+			break;
+		default:
+			unknown_handler();
+	}
+	return coll;
+}
+
 //	Pop is only valid for:
 //		lists, removes head
 //		vector, removes tail
