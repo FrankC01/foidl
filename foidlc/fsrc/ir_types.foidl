@@ -99,6 +99,17 @@ func invoke_writer [ochan irtype]
     let wrt_fn [] get: irtype :writer dummy_writer
     (wrt_fn ochan irtype)
 
+; Simple label type
+
+func label_type [name]
+    {
+        :type           :label
+        :name           name
+        :declaration    "label %`d{}`d"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
 ; Simple integer type
 
 func inttype [val]
@@ -178,7 +189,6 @@ func :private reference_constant_type_tostring [ptype]
 
 
 func :private reference_constant_type_writer [ochan ptype]
-    printnl!: "Writing reference constant"
     write!: ochan
         [reference_constant_type_tostring: ptype]
 
@@ -203,7 +213,7 @@ func const_type [val]
         :tostring       simple_name_tostring
     }
 
-func const_reference [val]
+func const_reference_type [val]
     {
         :type           :constant_reference
         :name           val
@@ -718,8 +728,8 @@ func :private branch_writer [ochan irtype]
             get: irtype :declaration
             [
                 type_tostring: get: irtype :register
-                get: irtype :true_label
-                get: irtype :false_label
+                type_tostring: get: irtype :true_label
+                type_tostring: get: irtype :false_label
             ]
     ochan
 
@@ -729,17 +739,24 @@ func branch [testreg iflab elselab]
         :register       testreg
         :true_label     iflab
         :false_label    elselab
-        :declaration    "  br i1 {}, label %`d{}`d, label %`d{}`d`n"
+        :declaration    "  br i1 {}, {}, {}`n"
         :writer         branch_writer
     }
+
+func :private uc_branch_writer [ochan irtype]
+    write!:
+        ochan
+        format!:
+            get: irtype :declaration
+            [type_tostring: get: irtype :name]
+    ochan
 
 func uc_branch_to_label [val]
     {
         :type           :unconditional_label_branch
         :name           val
-        :declaration    "  br label %`d{}`d`n"
-        :writer         simple_name_writer
-        :tostring       simple_name_tostring
+        :declaration    "  br {}`n"
+        :writer         uc_branch_writer
     }
 
 ; %".17" = icmp eq %"Any"* %".16", %".6"
@@ -767,6 +784,5 @@ func pointer_cmp [function ctype lhs rhs]
         :writer         pointer_cmp_writer
     }
 
-func label_type [astel suffix]
 func function_type [function]
 func lambda_type [lambda]

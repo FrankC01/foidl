@@ -25,19 +25,8 @@ var :private pfoo "pfoo"
 var foo "foo"
 var fkw :foo
 
-var ev <+: 1 1>
-var em {:foo "bar"}
-var es #{"foo" "bar"}
-var el [1 2 3]
-
 var fake_add1 ^[a b] +: a b
 
-func :private other_ref? [a! b]
-    let x [] +: a! b
-
 func faux_add [a b]
-    ?: =: +: a b one
-        b
-        a
-
+    let nyres [c 1 d 2] +: a c
 

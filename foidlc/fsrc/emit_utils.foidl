@@ -287,16 +287,81 @@ func :private load_funcreference [scope_fn scope_bb gfref]
 ; Heavy lifting emit support
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; Function: emit_letargs
+
+var :private let_arg_template "let_{}_{}_{}"
+
+func :private emit_letargs [scope_fn frame scope_bb lpairs ndx]
+    let arg1        [] get: lpairs ndx
+    let arg2        [] get: lpairs inc: ndx
+    let arg1name    []
+        format!:
+        let_arg_template
+        [
+            get: get: arg1 TOKEN :lineno
+            get: get: arg1 TOKEN :colno
+            get: arg1 NAME
+        ]
+    ; Allocate a var on stack
+    let let_res     [] named_alloca: const_reference_type: arg1name any_ptr
+    let arg1_ptr    []
+        reference_constant_type:
+        any_ptr_ptr
+        get: let_res :register
+    list_extend!: scope_bb let_res
+    ; Process expression
+    dispatch_expression:
+        scope_fn
+        frame
+        scope_bb
+        arg2
+    ; Store result to local var on stack
+    let strla []
+        store:
+            last: frame
+            arg1_ptr
+    list_extend!: scope_bb strla
+    lpairs
+
 ; Function: emit_let
+
 func :private emit_let [scope_fn frame scope_bb etype]
-    ;print!: "Process let => " printnl!: etype
-    scope_bb
+    ; Allocate result
+    let let_res    [] named_alloca: const_reference_type: get: etype NAME any_ptr
+    let letres_ptr [] reference_constant_type: any_ptr_ptr get: let_res :register
+    list_extend!: scope_bb let_res
+    ; Reusable local frame
+    let lframe  [] list_inst!:
+    let argpair [] get: get: etype ARGLIST EXPRS
+    ?: empty?: argpair
+        nil
+        fold:
+            (emit_letargs scope_fn lframe scope_bb)
+            argpair
+            series: zero count: argpair two
+    empty!: lframe
+    ; Process expressions
+    expression_emitter: scope_fn lframe scope_bb get: etype EXPRS
+    ; Store result to local var on stack
+    let strla []
+        store:
+            last: lframe
+            letres_ptr
+    list_extend!: scope_bb strla
+    empty!: lframe
+    ; Load result
+    let loadv []
+        load:
+            scope_fn
+            any_ptr
+            letres_ptr
+    list_extend!: frame lastcall_to_regref: loadv
+    list_extend!: scope_bb loadv
 
 func :private add_to_bblock [bblock inst]
     list_extend!: get: bblock :instructions inst
 
 func :private emit_if [scope_fn frame scope_bb etype]
-    print!: "`nIf => " printnl!: etype
     ; Allocate the if result using register without name
     let if_pred_res     [] alloca: scope_fn any_ptr
     let pred_res_ptr    [] lastcall_to_regref_ptr: if_pred_res
@@ -310,7 +375,6 @@ func :private emit_if [scope_fn frame scope_bb etype]
                 any_ptr_ptr
                 global_reference: "true"
     list_extend!: scope_bb true_load
-    let true_regref [] lastcall_to_regref: true_load
 
     ; Dynamic base name creation
     let bname []
@@ -328,13 +392,13 @@ func :private emit_if [scope_fn frame scope_bb etype]
         basic_block_type: format!: "{}_exit" [bname]
     ; Common branch to exit
     let uc_branch_exit []
-        uc_branch_to_label: get: if_exit_bb :name
+        uc_branch_to_label: label_type: get: if_exit_bb :name
 
     ; Reusable local frame
     let lframe [] list_inst!:
 
     ; Jump to predicate processor
-    list_extend!: scope_bb uc_branch_to_label: get: if_pred_bb :name
+    list_extend!: scope_bb uc_branch_to_label: label_type: get: if_pred_bb :name
     list_extend!: scope_bb if_pred_bb
     dispatch_expression:
         scope_fn
@@ -361,8 +425,8 @@ func :private emit_if [scope_fn frame scope_bb etype]
     let pbr []
         branch:
             get: cmp :register
-            get: if_then_bb :name
-            get: if_else_bb :name
+            label_type: get: if_then_bb :name
+            label_type: get: if_else_bb :name
     list_extend!: scope_bb pbr
     ; Process then
     list_extend!: scope_bb if_then_bb
@@ -567,8 +631,22 @@ func :private emit_local_argref [scope_fn frame scope_bb etype]
         frame
         reference_constant_type:
             any_ptr
-            const_reference: get: etype NAME
+            const_reference_type: get: etype NAME
     scope_bb
+
+; Function: emit_let_argref
+; Description: Loads a let local arg ref to register
+func :private emit_let_argref [scope_fn frame scope_bb etype]
+    let load_inst []
+        load:
+            scope_fn
+            any_ptr
+            reference_constant_type:
+                any_ptr_ptr
+                const_reference_type: get: etype NAME
+
+    list_extend!: frame lastcall_to_regref: load_inst
+    list_extend!: scope_bb load_inst
 
 var :private emit_handlers
     {
@@ -582,6 +660,7 @@ var :private emit_handlers
         :collection     emit_collection
         :lambda_argref  emit_local_argref
         :funcargref     emit_local_argref
+        :let_argref     emit_let_argref
         :literalref     emit_global_ref
         :varref         emit_global_ref
     }
