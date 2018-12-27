@@ -258,8 +258,8 @@ func :private lastcall_to_regref_ptr [ instruction ]
 ; signature, performing bitcasts and registrations as needed. Returns
 ; a register reference
 
-func :private load_funcreference [scope_fn scope_bb gfref]
-    let argcnt [] count: get: gfref :arguments
+func :private load_funcreference [scope_fn scope_bb gfref argcnt]
+    ;let argcnt [] count: get: gfref :arguments
     ; Call register_int for number of argumnets to funcref
     let reg_call []
         call:
@@ -498,8 +498,41 @@ func :private emit_group [scope_fn frame scope_bb etype]
     list_extend!: frame lastcall_to_regref: load_inst
     list_extend!: scope_bb load_inst
 
+; Function: emit_partial
+; Description: If there is two or more expressions
+; the first is converted to fref_instance and
+; the remaining arguments embued to it
+; capture references to eval result as arguments to call
+
+; %".16" = call %"Any"* @"foidl_fref_instance"(%"Any"* %".15")
+
+func :private emit_imbues [scope_fn scope_bb inref igref regref]
+    let call_instr []
+        call:
+            scope_fn
+            global_reference: "foidl_imbue"
+            [inref regref]
+    list_extend!: scope_bb call_instr
+    lastcall_to_regref: call_instr
+
 func :private emit_partial [scope_fn frame scope_bb etype]
-    print!: "`nPartial => " printnl!: etype
+    let lframe [] list_inst!:
+    expression_emitter: scope_fn lframe scope_bb get: etype EXPRS
+    ; Get and remove the first member for the instance
+    let tfref [] first: lframe
+    pop!: lframe
+    ; Call the instance creator
+    let call_instr []
+        call:
+            scope_fn
+            global_reference: "foidl_fref_instance"
+            [tfref]
+    list_extend!: scope_bb call_instr
+    ; Use the instance ref
+    let fref_reg [] lastcall_to_regref: call_instr
+    let last_reg []
+        fold: (emit_imbues scope_fn scope_bb fref_reg) nil lframe
+    list_extend!: frame last_reg
     scope_bb
 
 func :private emit_match [scope_fn frame scope_bb etype]
@@ -529,12 +562,14 @@ func :private emit_call [scope_fn frame scope_bb etype]
 ; load_funcreference:
 
 func :private emit_lambda_call [scope_fn frame scope_bb etype]
+    let gf [] get: globals_map get: etype NAME
     list_extend!:
         frame
         load_funcreference:
             scope_fn
             scope_bb
-            get: globals_map get: etype NAME
+            gf
+            count: get: gf :arguments
     scope_bb
 
 ; Function: single_element_register
@@ -654,6 +689,16 @@ func :private emit_local_argref [scope_fn frame scope_bb etype]
             const_reference_type: get: etype NAME
     scope_bb
 
+func :private emit_func_ref [scope_fn frame scope_bb etype]
+    list_extend!:
+        frame
+        load_funcreference:
+            scope_fn
+            scope_bb
+            etype
+            get: etype ARGCNT
+    scope_bb
+
 ; Function: emit_expression_result
 ; Description: Loads a local arg or result ref to register
 func :private emit_expression_result [scope_fn frame scope_bb etype]
@@ -685,6 +730,7 @@ var :private emit_handlers
         :let_argref     emit_expression_result
         :let_resref     emit_expression_result
         :literalref     emit_global_ref
+        :funcref        emit_func_ref
         :varref         emit_global_ref
     }
 
