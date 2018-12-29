@@ -27,7 +27,13 @@ var fkw :foo
 
 var fake_add1 ^[a b] +: a b
 
-func dummy_func [a b c d e]
+func dotest [a b]
+    ?: =: a b
+        true
+        false
 
-func faux_add [a b]
-    ((dummy_func a + - 1) 2)
+func dummy_func [a b c d e]
+    match =: a b
+    | true  printnl!: "Tis true"
+    | false printnl!: "Tis false"
+

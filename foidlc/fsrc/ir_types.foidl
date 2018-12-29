@@ -25,26 +25,48 @@ include ast_type
 include errors
 
 ; Integer types
-var int_64  inttype: 64
-var int_32  inttype: 32
-var int_8   inttype: 8
-
-; Well knowns
-var any         named_struct_type: "Any"
-var any_ptr     ptr_type: any
-var any_ptr_ptr ptr_type: any_ptr
-
+var int_64          inttype: 64
+var int_64_ptr      ptr_type int_64
+var int_32          inttype: 32
+var int_8           inttype: 8
 var void_ptr        ptr_type: int_8       ; i8*
 var void_ptr_ptr    ptr_type: void_ptr    ; i8**
 
-var null const_type: "null"
-var void const_type: "void"
+; Well knowns
+var any             named_struct_type: "Any"
+var any_ptr         ptr_type: any
+var any_ptr_ptr     ptr_type: any_ptr
 
-var return_void return_type: void
+var null            const_type: "null"
+var void            const_type: "void"
+var return_void     return_type: void
 
-var :private label "label "
+; Global var const references
 
-; Templatized
+var true_const_ref  reference_constant_type:
+                        any_ptr_ptr
+                        global_reference: "true"
+
+; Global func references
+var intreg_ref          global_reference: "foidl_reg_integer"
+var kwreg_ref           global_reference: "foidl_reg_keyword"
+var strreg_ref          global_reference: "foidl_reg_string"
+var truthy_func_ref     global_reference: "foidl_truthy_qmark"
+var fref_instance_ref   global_reference: "foidl_fref_instance"
+var tofuncref_ref       global_reference: "foidl_tofuncref"
+var imbue_ref           global_reference: "foidl_imbue"
+
+var list_inst_ref       global_reference: "list_inst_bang"
+var vector_inst_ref     global_reference: "vector_inst_bang"
+var map_inst_ref        global_reference: "map_inst_bang"
+var set_inst_ref        global_reference: "set_inst_bang"
+
+var list_extd_ref       global_reference: "list_extend_bang"
+var vector_extd_ref     global_reference: "vector_extend_bang"
+var map_extd_ref        global_reference: "map_extend_bang"
+var set_extd_ref        global_reference: "set_extend_bang"
+
+; Templatized strings
 
 ; For var and literal local declarations
 var :private global_null_decl "@`d{}`d = {} %`dAny`d* null, align 8`n"
@@ -682,7 +704,16 @@ func load [function regtype from_ref]
         :writer         load_writer
     }
 
-func :private call_tostring []
+; Function: load_and_extend
+; Description: Creates a load instruction, adds to
+; scope list and returns load reference
+
+func load_and_extend [function scope ref]
+    let l [] load: function any_ptr ref
+    list_extend!: scope l
+    l
+
+; Function: call
 
 func :private call_writer [ochan irtype]
     let args [] get: irtype :args
@@ -707,7 +738,6 @@ func :private call_writer [ochan irtype]
 
     ochan
 
-; %".6" = call %"Any"* @"foidl_reg_string"(i8* %".3")
 func call [function call_site args]
     {
 
@@ -719,7 +749,9 @@ func call [function call_site args]
         :writer         call_writer
     }
 
-; br i1 %".17", label %"match_515_5.if", label %"match_515_5.endif"
+; Function:
+
+; Function: branch
 
 func :private branch_writer [ochan irtype]
     write!:
@@ -743,6 +775,8 @@ func branch [testreg iflab elselab]
         :writer         branch_writer
     }
 
+; Function: uc_branch_to_label
+
 func :private uc_branch_writer [ochan irtype]
     write!:
         ochan
@@ -759,7 +793,8 @@ func uc_branch_to_label [val]
         :writer         uc_branch_writer
     }
 
-; %".17" = icmp eq %"Any"* %".16", %".6"
+; Function: pointer_cmp
+
 func :private pointer_cmp_writer [ochan irtype]
     write!:
         ochan
@@ -784,5 +819,74 @@ func pointer_cmp [function ctype lhs rhs]
         :writer         pointer_cmp_writer
     }
 
-func function_type [function]
-func lambda_type [lambda]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Compound instructions
+; they return scope list
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Function: add_to_bblock
+; Description: Add an instruction to the instructions list
+; of a basic block.
+
+func add_to_bblock [bblock inst]
+    list_extend!: get: bblock :instructions inst
+
+
+; Function: truth_compare_and_branch
+; Description: Then/Else compare and branch logic
+
+func truth_compare_and_branch [
+        function
+        scope
+        true_ref
+        larg
+        then
+        else]
+    ; Test if argument is truthy
+    let call_instr []
+        call:
+            function
+            truthy_func_ref
+            [larg]
+    list_extend!: scope call_instr
+    ; compare with true reference
+    let cmp []
+        pointer_cmp:
+            function
+            any_ptr
+            get: true_ref :register
+            get: call_instr :register
+    list_extend!: scope cmp
+    ; Branch to true/false labels
+    let pbr []
+        branch:
+            get: cmp :register
+            label_type: get: then :name
+            label_type: get: else :name
+    list_extend!: scope pbr
+
+; Function: expression_dispatch_store_branch
+; Description: Evaluate an expression and
+; branch to exit references
+
+func expression_dispatch_store_branch [
+        disp_fn
+        function
+        frame
+        scope
+        expr
+        store_ref
+        exit_ref]
+    (disp_fn
+        function
+        frame
+        get: scope :instructions
+        expr)
+    add_to_bblock:
+        scope
+        store:
+            last: frame
+            store_ref
+    add_to_bblock:
+        scope
+        exit_ref
