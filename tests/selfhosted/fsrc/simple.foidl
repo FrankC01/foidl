@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; badly_formed
-; badly formed source - module must be first
+; simple
+; simple file
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
@@ -18,5 +18,15 @@
 ; limitations under the License.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-include foo
-module  badly_formed
+
+module simple
+
+func isone? [a b]
+    match +: a b
+    | one   true
+    | two   false
+    | :default  %0
+
+func main []
+    printnl!: isone?: 1 2
+

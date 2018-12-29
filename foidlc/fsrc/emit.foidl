@@ -77,6 +77,23 @@ declare %`dAny`d* @`dfoidl_tofuncref`d(i8* %`d.1`d, %`dAny`d* %`d.2`d)
 declare %`dAny`d* @`dfoidl_imbue`d(%`dAny`d* %`d.1`d, %`dAny`d* %`d.2`d)
 declare %`dAny`d* @`dfoidl_fref_instance`d(%`dAny`d* %`d.1`d)`n"
 
+var :private main_string "
+define void @`dmain`d(i32 %`dargc`d, i8** %`dargv`d, i8** %`denvp`d)
+{
+entry:
+  %`d.5`d = call %`dAny`d* @`dfoidl_convert_mainargs`d(i32 %`dargc`d, i8** %`dargv`d, i8** %`denvp`d)
+  %`d.6`d = call %`dAny`d* @`duser_main`d(%`dAny`d* %`d.5`d)
+  ret void
+}`n"
+
+var :private main_noarg_string "
+define void @`dmain`d(i32 %`dargc`d, i8** %`dargv`d, i8** %`denvp`d)
+{
+entry:
+  %`d.5`d = call %`dAny`d* @`dfoidl_convert_mainargs`d(i32 %`dargc`d, i8** %`dargv`d, i8** %`denvp`d)
+  %`d.6`d = call %`dAny`d* @`duser_main`d()
+  ret void
+}`n"
 
 ; Function: initialize
 ; Description: sets up additional context information
@@ -235,6 +252,16 @@ func :private lambdas [state]
     fold: emit_function get: context :module_bb get: get: state :ast LAMBDAS
     state
 
+; Function: main_test
+; Description: Checks if the function is main
+
+func :private main_test [state decl]
+    ?: =: get: decl NAME "main"
+        @(
+            map_extend!: decl NAME "user_main"
+            map_extend!: state :main_hit decl
+        )
+        state
 ; Function: functions
 ; Description: Processes function definitions
 
@@ -244,7 +271,10 @@ func :private functions [state]
     fold:
         ^[acc decl]
             ?: =: get: decl TYPE :function
-                emit_function: acc decl
+                @(
+                    main_test: state decl
+                    emit_function: acc decl
+                )
                 acc
         get: context :module_bb
         get: get: state :ast EXPRS
@@ -295,6 +325,16 @@ func :private vinits [state]
     state
 
 func :private user_main [state]
+    let oc      [] get: state :outchannel
+    let decl    [] getd: state :main_hit false
+
+    ?: decl
+        write!:
+            oc
+            match get: get: decl ARGLIST ARGCNT
+                | 0         main_noarg_string
+                | :default  main_string
+        nil
     state
 
 func emit [state]

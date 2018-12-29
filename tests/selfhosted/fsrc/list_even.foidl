@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; simple
-; simple file
+; list_even
+; list_even
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
@@ -18,22 +18,19 @@
 ; limitations under the License.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+module list_even
 
-module simple
+var :private a_list [1 2 3]
+var :private b_list [0 8 7 9]
+var :private c_list [15 25 391]
 
-var :private pfoo "pfoo"
-var foo "foo"
-var fkw :foo
-
-var fake_add1 ^[a b] +: a b
-
-func dotest [a b]
-    ?: =: a b
-        true
-        false
-
-func dummy_func [a b c d e]
-    match =: a b
-    | true  printnl!: "Tis true"
-    | false printnl!: "Tis false"
-
+func main [argv]
+    let even_list [] fold:
+        ^[result element]
+            match count: result
+            | three reduced: result
+            | :default match mod: element two
+                        | zero extend: result element
+                        | :default result
+        [] flatten: [a_list b_list c_list]
+    printnl!: even_list
