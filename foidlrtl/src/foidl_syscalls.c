@@ -50,7 +50,7 @@ ft foidl_fopen_create_truncate(char *fname) {
     #endif
 }
 
-void *foidl_open_ro_mmap_file(char * fname) {
+void *foidl_open_ro_mmap_file(char * fname, size_t sz) {
 
     // Open the file for reading
     #ifdef _MSC_VER
@@ -59,27 +59,21 @@ void *foidl_open_ro_mmap_file(char * fname) {
     int fd = open(fname, O_RDONLY);
     #endif
 
-    // Get the size of the file.
-    struct stat s;
-    int size;
-
-    int status = fstat (fd, & s);
-    size = s.st_size;
-
     // Get the memory mapped file for reading
     #ifdef _MSC_VER
-    char *mscbuffer = (char *) malloc(size);
-    _read(fd, mscbuffer, size);
+    char *mscbuffer = (char *) foidl_xall(sz);
+    size_t br = _read(fd, mscbuffer, sz);
+    mscbuffer[br] = 0;
     return mscbuffer;
     // return malloc(size);
     #else
-    return mmap(0, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    return mmap(0, sz, PROT_READ, MAP_PRIVATE, fd, 0);
     #endif
 }
 
 void foidl_deallocate_mmap(char *fbuffer, ft fsize) {
     #ifdef _MSC_VER
-    free(fbuffer);
+    foidl_xdel(fbuffer);
     #else
     int res = munmap(fbuffer, fsize);
     #endif
