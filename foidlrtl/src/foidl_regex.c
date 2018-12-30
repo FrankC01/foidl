@@ -177,6 +177,30 @@ static void gen_block(PFRTAny patterns,PFRTAny ignores, token_block *block) {
 	return;
 }
 
+char *drop_lfs(char *p) {
+	uint32_t plen = strlen(p);
+	char 	*newp = foidl_xall(plen+1);
+	char 	*str = strcpy(newp,p);
+	int32_t	instr=0;
+	char 	c;
+	while((c = *str++) != '\0') {
+		if(c == '"') {
+			instr = instr == 0 ? 1 : 0;
+		}
+		if (instr == 1) {
+			// ignore while in string
+		}
+		else {
+			if( c == 0x0d ) {
+				*str-- = 0x20;
+				str++;
+			}
+		}
+	}
+	printf("%s\n", p);
+	printf("%s\n", newp);
+	return newp;
+}
 PFRTAny foidl_tokenize(PFRTAny s, PFRTAny patterns, PFRTAny ignores) {
 	// 1. Get size of list and create array(s) of pointers for
 	//	the patterns and ignores
@@ -191,7 +215,10 @@ PFRTAny foidl_tokenize(PFRTAny s, PFRTAny patterns, PFRTAny ignores) {
 	block.token_cnt = 0;
 	block.tokens = 0;
 	gen_block(patterns, ignores, &block);
-	_reduce_tokens(s->value,  &block);
+	char *newp = drop_lfs(s->value);
+	_reduce_tokens(newp,  &block);
+	foidl_xdel(newp);
+	//_reduce_tokens(s->value,  &block);
 	// Drop the ignores array
 	if(block.ignore_cnt > 0) {
 		foidl_xdel(block.ig_regex_array);

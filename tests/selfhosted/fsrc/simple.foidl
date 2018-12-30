@@ -21,6 +21,11 @@
 
 module simple
 
+var lngstr "I am
+a very long string with all kinds
+of characters
+"
+
 func isone? [a b]
     match +: a b
     | one   true
