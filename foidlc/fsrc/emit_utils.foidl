@@ -50,8 +50,13 @@ func literal_max_len [bblock max_cnt ndx]
 
     let element      [] get: bblock ndx
     let element_type [] get: element :ltype
+    ?: =: element_type :string
+        map_extend!:
+            element
+            :lval
+            foidl_descan_string: get: element :lval
+        nil
     let element_cnt  [] count: get: element :lval
-
     ?: get: #{:keyword :string} element_type
         ?: >: element_cnt max_cnt
             ?: =: element_type :keyword
@@ -100,7 +105,6 @@ func :private literal_chartype_registration [
             ptr_type: va
     list_extend!: lit_bb bc
     let bic [] get: bc :register
-
     ; Create the store of the target to the stack
     list_extend!: lit_bb
         store:
