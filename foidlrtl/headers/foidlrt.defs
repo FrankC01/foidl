@@ -211,6 +211,7 @@ func  foidl_io? 		[x]
 func 	foidl_type 			[arg]
 func 	foidl_isType? 		[arg with]
 func 	foidl_c2i 			[arg]
+func    foidl_s2i           [arg]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Fundemental String Functions

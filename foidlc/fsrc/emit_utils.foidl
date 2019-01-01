@@ -176,16 +176,39 @@ func :private literal_integer   [lit_fn lit_bb lit_integer]
                 any_ptr_ptr
                 global_reference: get: lit_integer :name
 
+; Function: literal_hex
+func :private   literal_hex [lit_fn lit_bb lit_hex]
+    literal_integer:
+        lit_fn
+        lit_bb
+        map_extend!:
+            lit_hex
+            :lval
+            foidl_s2i: get: lit_hex :lval
+
+; Function: literal_binary
+func :private   literal_binary [lit_fn lit_bb lit_bit]
+    literal_integer:
+        lit_fn
+        lit_bb
+        map_extend!:
+            lit_bit
+            :lval
+            foidl_s2i: get: lit_bit :lval
 
 ; Function: literal_registration
 ; Description: For each literal, add to the "modulename_linits" function
 
 func literal_registration [basecast lit_fn lit_bb literals ndx]
     let lit [] get: literals ndx
+
     match get: lit :ltype
-    | :string   literal_string: basecast lit_fn lit_bb lit
-    | :keyword  literal_keyword: basecast lit_fn lit_bb lit
-    | :integer  literal_integer: lit_fn lit_bb lit
+        | :string   literal_string: basecast lit_fn lit_bb lit
+        | :keyword  literal_keyword: basecast lit_fn lit_bb lit
+        | :integer  literal_integer: lit_fn lit_bb lit
+        | :hex      literal_hex: lit_fn lit_bb lit
+        | :bit      literal_binary: lit_fn lit_bb lit
+        | :default  exception: format!: "Unhandled literal type {}" [%0]
     literals
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
