@@ -1,0 +1,123 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; reductions
+; reductions file
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+module reductions
+
+; `infinite` is an out of box series that is setup to
+; go from 0 to infinity in increments of 1. Use with
+; care
+
+
+; Function: capture_10
+; Description: Given an accumulator and a val, if
+; we have less than 10 vals in the accumulator, add the
+; next val
+
+func capture_10 [accumulator val]
+    ?: =: count: accumulator 10
+        ; 'reduced' will stop the iteration of the reduction
+        ; function
+        reduced: accumulator
+        extend: accumulator val
+
+; Function: add_until_10
+; Description: total the val with the sum until the val
+; is equal to 10
+
+func add_until_10 [sum val]
+    ?: =: val 10
+        ; 'reduced' will stop the iteration of the reduction
+        ; function
+        reduced: sum
+        +: sum val
+
+; Function: add_1_until_10
+; Description: Adds 1 to value and returns result
+; until the input value equals 10
+
+func add_1_until_10 [val]
+    let res [] +: val 1
+    ?: =: val 10
+        ; 'reduced' will stop the iteration of the reduction
+        ; function
+        reduced: res
+        res
+
+func main [argv]
+
+    ; Using 'fold', capture 10 elements to list
+    ; 'fold: two_arg_func_ref initial_value collection' :
+    ;   takes a 2 argument function reference as the 1st argument
+    ;   takes an initial value as the 2nd argument
+    ;   takes a collection as the 3rd argument
+    ; 'fold' iterates over each element of the collection and invokes
+    ;   the function reference with the initial value and the element.
+    ;   The result of the function becomes the 'initial value' of the
+    ;   next interation
+    ; 'fold' will continue to iterate until the collection is exhausted
+    ;   or the function invoked calls 'reduced' which will end the iterations
+
+    let capture [] fold: capture_10 [] infinite
+    print!: "fold result = "
+    printnl!: capture
+
+    ; Using 'reduce', total values until value == 10
+    ; 'reduce: two_arg_func_ref collection' :
+    ;   takes a 2 argument function reference as the 1st argument
+    ;   takes a collection as the 2nd argument
+    ; 'reduce' takes the first element of the collection and invokes
+    ;   the function reference with the first value and the next element.
+    ;   The result of the function becomes the 'initial value' of the
+    ;   next interation
+    ; 'reduce' will continue to iterate until the collection is exhausted
+    ;   or the function invoked calls 'reduced' which will end the iterations
+
+    let totals [] reduce: add_until_10 infinite
+    print!: "reduce with local function result = "
+    printnl!: totals
+
+    ; Using 'map', increment value by 1 until value == 10
+    ; 'map: one_arg_func_ref collection' :
+    ;   takes a 1 argument function reference as the 1st argument
+    ;   takes a collection as the 2nd argument
+    ; 'map' iterates over each element of the collection and invokes
+    ;   the function reference with the element.
+    ;   The result of the function is added to a list
+    ; 'map' will continue to iterate until the collection is exhausted
+    ;   or the function invoked calls 'reduced' which will end the iterations
+
+    let add_1 [] map: add_1_until_10 infinite
+    print!: "map result adding 1 = "
+    printnl!: add_1
+
+    ; Using partials (+ 1) is a handy way to use a multi-argument
+    ; function with 'map'
+
+    let add_1_also [] map: (+ 1) add_1
+    print!: "map result adding 1 to already added = "
+    printnl!: add_1_also
+
+    ; Because '+' takes two arguments, we can use it without partial
+    ; for 'fold' or 'reduce'
+
+    let sum_em [] reduce: + add_1_also
+    print!: "reduce using `q+`q function = "
+    printnl!: sum_em

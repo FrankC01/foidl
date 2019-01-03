@@ -638,13 +638,6 @@ PFRTAny 	foidl_apply(PFRTAny fn, PFRTAny coll) {
 	return coll;
 }
 
-//	Map fn to each element of coll. Fn must take 1 argument
-//	result of Fn are stored in vector
-
-PFRTAny 	foidl_map(PFRTAny fn, PFRTAny coll) {
-	return coll;
-}
-
 //
 //	Reducers and folders
 //
@@ -715,6 +708,42 @@ PFRTAny 	foidl_fold_bang(PFRTAny fn, PFRTAny accum, PFRTAny coll) {
 	return reduction_bang(fn,accum,iteratorFor(coll));
 }
 
+PFRTAny 	foidl_reduce(PFRTAny fn, PFRTAny coll) {
+	verifyFold(fn,reduce_requires_function, coll, reduce_requires_collection);
+	PFRTIterator  cI = iteratorFor(coll);
+	return reduction(fn,iteratorNext(cI),cI);
+}
+
+//	Map fn to each element of coll. Fn must take 1 argument
+//	result of Fn are stored in vector
+
+static PFRTAny 	map_fn_bang(PFRTAny fn, PFRTIterator rI) {
+	PFRTAny result = foidl_list_inst_bang();
+	PFRTAny iNext;
+	while((iNext = iteratorNext(rI)) != end) {
+		PFRTFuncRef2 fref = (PFRTFuncRef2) foidl_fref_instance(fn);
+		PFRTAny result2 = foidl_imbue((PFRTAny) fref, iNext);
+		deallocFuncRef2(fref);
+		if(result2->ftype == reduced_type) {
+			PFRTAny redVal = (PFRTAny) result2->value;
+			foidl_list_extend_bang(result, redVal);
+			foidl_xdel(result2);
+			break;
+		}
+		else {
+			foidl_list_extend_bang(result, result2);
+		}
+	}
+	foidl_xdel(rI);
+	return result;
+}
+
+
+PFRTAny 	foidl_map(PFRTAny fn, PFRTAny coll) {
+	verifyFold(fn,fold_requires_function, coll, fold_requires_collection);
+	return map_fn_bang(fn, iteratorFor(coll));
+}
+
 globalFuncConst(str_builder,2,string_extend);
 
 PFRTAny 	foidl_strb (PFRTAny a) {
@@ -736,11 +765,6 @@ PFRTAny 	foidl_strb (PFRTAny a) {
 			unknown_handler();
 	}
 	return res;
-}
-PFRTAny 	foidl_reduce(PFRTAny fn, PFRTAny coll) {
-	verifyFold(fn,reduce_requires_function, coll, reduce_requires_collection);
-	PFRTIterator  cI = iteratorFor(coll);
-	return reduction(fn,iteratorNext(cI),cI);
 }
 
 //	Flatten takes any nested combinations of collections and
