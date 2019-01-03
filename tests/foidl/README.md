@@ -15,3 +15,4 @@ For the consumer it is suggested that the following order provides a gradual int
 | [cmdline.foidl](fsrc/cmdline.foidl) | Demonstrates setup and execution of run-time commandline argument parser |
 | [minilex.foidl](fsrc/minilex.foidl) | Demonstrates tokenizing (lexing/scanning) using contrived regexs |
 | [zipcodefmt.foidl](fsrc/zipcodefmt.foidl) | Zip code formatter (Bucci's exploration) |
+| [runtimetests.foidl](fsrc/runtimetests.foidl) | Tests of foidl runtime functions (Bucci's exploration) |

@@ -42,7 +42,7 @@ var :private test_content [
     }
 ]
 
-; Test 'empty?' and comapre with expected result
+; Test 'empty?' and compare with expected result
 
 func :private empty_test [arg expected]
     =: empty?: arg expected
@@ -72,9 +72,11 @@ func :private run_test [accum indx]
 
 
 func main [argv]
+
+    var m1_type {"key" 1, "key2" 2, "key1" 5 }
+    printnl!: [get: m1_type "key"]
+
     printnl!: "Welcome to runtime tests"
     printnl!: fold: run_test []  series: zero count: test_content one
 
-
     printnl!: ""
-
