@@ -19,22 +19,65 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 module ir_types
-include ast_type
+include langcorem
 
-; Well knowns
-var any_ptr "%`dAny`d*"
-var any_ptr_ptr "%`dAny`d**"
-var void "void"
-var void_ptr "i8*"
-var void_ptr_ptr "i8**"
+include ast_type
+include errors
 
 ; Integer types
-var int_64 "i64"
-var int_32 "i32"
-var int_8 "i8"
+var int_64          inttype: 64
+var int_64_ptr      ptr_type int_64
+var int_32          inttype: 32
+var int_8           inttype: 8
+var void_ptr        ptr_type: int_8       ; i8*
+var void_ptr_ptr    ptr_type: void_ptr    ; i8**
 
-var null "null"
-var :private label "label "
+; Well knowns
+var any             named_struct_type: "Any"
+var any_ptr         ptr_type: any
+var any_ptr_ptr     ptr_type: any_ptr
+
+var null            const_type: "null"
+var void            const_type: "void"
+var return_void     return_type: void
+
+; Global var const references
+
+var true_const_ref  reference_constant_type:
+                        any_ptr_ptr
+                        global_reference: "true"
+
+; Global func references
+var intreg_ref          global_reference: "foidl_reg_integer"
+var kwreg_ref           global_reference: "foidl_reg_keyword"
+var strreg_ref          global_reference: "foidl_reg_string"
+var truthy_func_ref     global_reference: "foidl_truthy_qmark"
+var fref_instance_ref   global_reference: "foidl_fref_instance"
+var tofuncref_ref       global_reference: "foidl_tofuncref"
+var imbue_ref           global_reference: "foidl_imbue"
+
+var list_inst_ref       global_reference: "list_inst_bang"
+var vector_inst_ref     global_reference: "vector_inst_bang"
+var map_inst_ref        global_reference: "map_inst_bang"
+var set_inst_ref        global_reference: "set_inst_bang"
+
+var list_extd_ref       global_reference: "list_extend_bang"
+var vector_extd_ref     global_reference: "vector_extend_bang"
+var map_extd_ref        global_reference: "map_extend_bang"
+var set_extd_ref        global_reference: "set_extend_bang"
+
+; Templatized strings
+
+; For var and literal local declarations
+var :private global_null_decl "@`d{}`d = {} %`dAny`d* null, align 8`n"
+
+; For external function declarations
+var :private anyptr_name "%`dAny`d* %`d{}`d"
+var :private anyptr_tailname ", %`dAny`d* %`d{}`d"
+var :private extr_func "declare %`dAny`d* @`d{}`d({})`n"
+
+; For external var declarations
+var :private extr_var "@`d{}`d = {} %`dAny`d*, align 8`n"
 
 ; Function: ir_stringify
 ; Description: expand string if ? and *
@@ -43,60 +86,807 @@ var :private pred "{}_qmark"
 
 func :private ir_stringify [s]
     match last: s
-    | '?'   format: pred [dropLast: s]
-    | '!'   format: bang [dropLast: s]
+    | '?'   format!: pred [dropLast: s]
+    | '!'   format!: bang [dropLast: s]
     | :default s
 
+; Dummy writter
+func :private dummy_writer [ochan irtype]
+    printnl!:
+        format!:
+            "Writer for {} not implemented yet!"
+            [get: irtype :type]
+    ochan
 
-; Function: external_function
-; Description: External function declaration
-var :private anyptr_name "%`dAny`d* %`d{}`d"
-var :private anyptr_tailname ", %`dAny`d* %`d{}`d"
-var :private extr_func "declare %`dAny`d* @`d{}`d({})`n"
+; Simple tostr
 
+func :private simple_name_tostring [irtype]
+    format!: get: irtype :declaration [get: irtype :name]
+
+func :private type_tostring [irtype]
+
+    let rts_fn  [] get: irtype :tostring
+    (rts_fn irtype)
+
+; Simple writer
+
+func :private simple_name_writer [ochan irtype]
+    let tstr_fn [] get: irtype :tostring
+    write!: ochan (tstr_fn irtype)
+    ochan
+
+; Invoke writer on arbitrary type
+
+func invoke_writer [ochan irtype]
+    let wrt_fn [] get: irtype :writer dummy_writer
+    (wrt_fn ochan irtype)
+
+; Simple label type
+
+func label_type [name]
+    {
+        :type           :label
+        :name           name
+        :declaration    "label %`d{}`d"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; Simple integer type
+
+func inttype [val]
+    {
+        :type           :int
+        :name           val
+        :declaration    "i{}"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; Pointer types
+
+func :private pointer_tostring [ptype]
+    let v       [] get: ptype :valtype
+    let vs_fn   [] get: v :tostring
+    format!:
+        get: ptype :declaration
+        [(vs_fn v)]
+
+func :private pointer_writer [ochan ptype]
+    write!: ochan pointer_tostring: ptype
+
+func ptr_type [valtype]
+    {
+        :type           :ptr
+        :valtype        valtype
+        :declaration    "{}*"
+        :writer         pointer_writer
+        :tostring       pointer_tostring
+    }
+
+func global_reference [name]
+    {
+        :type           :reference_global
+        :name           ir_stringify: name
+        :declaration    "@`d{}`d"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; Reference types
+
+func :private reference_register_type_tostring [ptype]
+    let type_wfn [] get: get: ptype :valtype :tostring
+    ?: nil?: type_wfn
+        failWith: "No :tostring"
+        format!:
+            get: ptype :declaration
+            [
+            (type_wfn get: ptype :valtype)
+            type_tostring: get: ptype :register]
+
+func :private reference_register_type_writer [ochan ptype]
+    write!: ochan
+        [reference_register_type_tostring: ptype]
+
+func reference_register_type [valtype regref]
+    {
+        :type           :reference_register_type
+        :valtype        valtype
+        :declaration    "{}* {}"
+        :register       regref
+        :writer         reference_register_type_writer
+        :tostring       reference_register_type_tostring
+    }
+
+func :private reference_constant_type_tostring [ptype]
+    let type_wfn [] get: get: ptype :valtype :tostring
+    ?: nil?: type_wfn
+        failWith: "No :tostring"
+        format!:
+            get: ptype :declaration
+            [
+            (type_wfn get: ptype :valtype)
+            type_tostring: get: ptype :value]
+
+
+func :private reference_constant_type_writer [ochan ptype]
+    write!: ochan
+        [reference_constant_type_tostring: ptype]
+
+func reference_constant_type [valtype val]
+    {
+        :type           :reference_constant_type
+        :valtype        valtype
+        :declaration    "{} {}"
+        :value          val
+        :writer         reference_constant_type_writer
+        :tostring       reference_constant_type_tostring
+    }
+
+; Const types
+
+func const_type [val]
+    {
+        :type           :constant
+        :name           val
+        :declaration    "{}"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+func const_reference_type [val]
+    {
+        :type           :constant_reference
+        :name           val
+        :declaration    "%`d{}`d"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; c"\00"
+
+func const_string_type [val]
+    {
+        :type           :constant_string_type
+        :name           val
+        :declaration    "c`d{}\00`d"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+
+    }
+
+; Comment
+
+func comment_type [val]
+    {
+        :type           :constant
+        :name           val
+        :declaration    "`n; {} `n"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; Literal declaration
+
+func literal_type  [litref]
+    {
+        :type           :literal
+        :name           get: litref NAME
+        :ltype          get: litref LITTYPE
+        :lval           get: get: litref TOKEN :token_str
+        :declaration    "@`d{}`d = private global %`dAny`d* null, align 8`n"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; Return type
+
+func :private return_tostring [rettype]
+    type_tostring: get: rettype :returns
+
+func :private return_writer [ochan rettype]
+    write!:
+        ochan
+        format!:
+            get: rettype :declaration
+            [return_tostring: rettype]
+
+func return_type [retref]
+    {
+        :type           :return_type
+        :returns        retref
+        :declaration    "  ret {}`n}`n"
+        :writer         return_writer
+        :tostring       return_tostring
+    }
+
+; Array types
+
+func :private array_type_tostring [arrtype]
+    format!:
+        get: arrtype :declaration
+        [   get: arrtype :count
+            type_tostring: get: arrtype :eltype
+        ]
+
+func :private array_type_writer [ochan arrtype]
+    let astr_fn [] get: arrtype :tostring
+    write!: ochan (astr_fn arrtype)
+
+func array_type [eltype cnt]
+    {
+        :type           :array_type
+        :eltype         eltype
+        :count          cnt
+        :declaration    "[{} x {}]"
+        :writer         array_type_writer
+        :tostring       array_type_tostring
+    }
+
+func :private   register_type [val]
+    {
+        :type           :register_type
+        :name           val
+        :declaration    "%`d{}`d"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+; Function: get_register
+; Description: returns the next virtual register identifier
+; from type that contains registers (i.e. functions, lambdas)
+
+func :private get_register [container]
+    let current [] register_type: get: container :regcount
+    map_extend!:
+        container
+        :regcount
+        inc: get: current :name
+    current
+
+
+; Basic block - named container of instructions
+
+func :private bblock_proxy_writer [ochan inst]
+    ?: =: get: inst :type :basic_block
+        bblock_writer: ochan inst
+        invoke_writer: ochan inst
+
+func :private bblock_writer [ochan bblock]
+    ; Write block label
+    simple_name_writer: ochan bblock
+    ; Write instructions
+    fold: bblock_proxy_writer ochan get: bblock :instructions
+    ; return channel
+    ochan
+
+func basic_block_type [val]
+    {
+        :type           :basic_block
+        :name           val
+        :instructions   list_inst!:
+        :inst_pos       zero
+        :declaration    "{}:`n"
+        :writer         bblock_writer
+        :tostring       simple_name_tostring
+    }
+
+; Generic named type
+
+func named_struct_type [val]
+    {
+        :type           :structure
+        :name           val
+        :declaration    "%`d{}`d"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
+
+
+; External declaration - Applies to extern vars and funcs
+
+func external_variable_type [val]
+    {
+        :type           :external_var
+        :name           ir_stringify: get: val NAME
+        :declaration    "@`d{}`d = external global %`dAny`d*, align 8`n"
+        :writer         simple_name_writer
+        :tostring       simple_name_tostring
+    }
 
 func :private anyptr_for [aptrstr r]
-    format: aptrstr [r]
+    format!: aptrstr [r]
 
-func external_function [funcref]
-    format:
-        extr_func
+func :private extern_func_writer [ochan efunc]
+    write!:
+        ochan
+        format!:
+        get: efunc :declaration
         [
-            ir_stringify: get: funcref NAME
-            ?: =: get: funcref ARGCNT zero
+            get: efunc :name
+            ?: =: get: efunc :argcnt zero
                 " "
                 fold:
                     ^[istr ndx]
                         ?: =: ndx zero
                             extend: istr anyptr_for: anyptr_name ndx
                             extend: istr anyptr_for: anyptr_tailname ndx
-                    "" series: zero get: funcref ARGCNT one]
+                    "" series: zero get: efunc :argcnt one]
 
-; Function: literal
-; Description: Local, private, literal declarations
-var :private local_lit "@`d{}{}`d = private global %`dAny`d* null, align 8`n"
+    ochan
 
-func literal_type [mname lit]
-    format: local_lit [mname get: lit NAME]
+func external_function_type [funcref]
+    {
+        :type           :external_func
+        :name           ir_stringify: get: funcref NAME
+        :argcnt         get: funcref ARGCNT
+        :declaration    "declare %`dAny`d* @`d{}`d({})`n"
+        :writer         extern_func_writer
+    }
 
-; Function: external_variable
-; Description: External variable declaration
-var :private decl_var "@`d{}`d = {} %`dAny`d*, align 8`n"
+; Function: function_definition
+; Description: Writes the function definition string
 
-func external_variable [varref]
-    format: decl_var [ir_stringify: get: varref NAME "external global"]
+func :private function_definition [ochan gft rett]
+    ; Write definition
+    write!: ochan
+        format!:
+            get: gft :declaration
+            [   get: gft :scope
+                rett
+                get: gft :name
+                ?: =: get: gft :regcount zero
+                    ""
+                    fold:
+                        ^[istr ndx]
+                            ?: =: count: istr zero
+                                extend: istr anyptr_for: anyptr_name ndx
+                                extend: istr anyptr_for: anyptr_tailname ndx
+                        "" get: gft :arguments]
 
-; Function: variable_type
-; Description: Local variable declarations
+; Function: function_writer
+; Description: Standard function writer that
+; processes expressions and writes out basic blocks
 
-func variable_type [variable]
-    ?: get: variable IS_PRIVATE
-        format: decl_var [ir_stringify: get: variable NAME "private global"]
-        format: decl_var [ir_stringify: get: variable NAME "default global"]
+func :private function_writer [ochan gft]
+    function_definition: ochan gft get: gft :return_type
 
-func branch []
-func unconditional_branch []
-func array_type []
-func label_type [astel suffix]
-func function_type [function]
-func lambda_type [lambda]
+    ; Write basic_blocks
+    fold: bblock_writer ochan get: gft :basic_blocks
+
+    ; Write return
+    let rett [] get: gft :returns
+    let ret_fn [] get: rett :writer
+    (ret_fn ochan rett)
+
+; Function: global_function
+; Description: Standard function w/expressions
+;   1. Create "entry:" basic block
+
+func  global_function_type [val prv args rettype retexpr]
+
+    let gf []
+            {
+                :type           :function
+                :name           ir_stringify: val
+                ;:bblocks_map    map_inst!:
+                :basic_blocks   list_inst!:
+                :arguments      args
+                :scope          ?: prv "private" " "
+                :regcount       ?: empty?: args
+                                    two
+                                    count: args
+                :return_type    rettype
+                :returns        retexpr
+                :declaration    ?: =: retexpr return_void
+                                    "`ndefine {} {} @`d{}`d({}) {`n"
+                                    "`ndefine {} %{} @`d{}`d({}) {`n"
+                :writer         function_writer
+            }
+
+    list_extend!: get: gf :basic_blocks basic_block_type: "entry"
+    ;map_extend!: get: gf :bblocks_map "entry" zero
+    gf
+
+
+func :private funcref_tostring [irtype]
+    let acnt [] get: irtype :argcnt
+    format!:
+        get: irtype :declaration
+        [
+            type_tostring: get: irtype :return_type
+            ?: =: acnt zero
+                ""
+                fold:
+                    ^[istr ndx]
+                        ?: =: count: istr zero
+                            extend: istr "%`dAny`d*"
+                            extend: istr ", %`dAny`d*"
+                    "" series: zero acnt one
+            type_tostring: get: irtype :name
+        ]
+
+func :private funcref_writer [ochan irtype]
+    write!: ochan funcref_tostring: irtype
+    ochan
+
+func funcref_type [name rettype argcnt]
+    {
+        :type           :function_ref
+        :name           global_reference: ir_stringify: name
+        :argcnt         argcnt
+        :declaration    "{} ({})* {}"
+        :return_type    rettype
+        :writer         funcref_writer
+        :tostring       funcref_tostring
+    }
+
+; Function: get_basic_block
+; Description: Returns the entry basic block
+; from function
+
+func get_basic_block [function]
+    first: get: function :basic_blocks
+
+; Function: global_variable_type
+; Description: Declares a module local variable, may be private or not
+; The body of the variable is set in the 'modulename_vinits' function
+
+func :private variable_writer [ochan gvt]
+    write!:
+        ochan
+        format!:
+            get: gvt :declaration
+            [
+                get: gvt :name
+                ?: get: gvt :private
+                    "private global"
+                    "default global"
+                ]
+
+func global_variable_type [variable]
+    map_extend!:
+        {
+            :type           :variable
+            :name           ir_stringify: get: variable NAME
+            :expressions    get: variable EXPRS
+            :private        get: variable IS_PRIVATE
+            :declaration    "@`d{}`d = {} %`dAny`d* null, align 8`n"
+        }
+        :writer variable_writer
+
+; Instructions
+; Most cases increment the function (context) :regcount
+func :private instr []
+    {
+        :type           :instruction
+        :ident          nil
+        :declaration    nil
+        :writer         dummy_writer
+    }
+
+func :private instr_result []
+    map_extend!:
+        instr:
+        :description  "%{} = {}"
+
+
+; Function: two_var_writer
+; Description: writer that formats for two values
+
+func :private two_var_writer [fval sval ochan irtype]
+    let sval_t [] get: irtype sval
+    let svalts_fn [] get: sval_t :tostring false
+    ?: svalts_fn
+        nil
+        exception:
+            format!:
+                "Type {} does not have :tostring function"
+                [get: sval_t :type]
+    write!:
+        ochan
+        format!:
+            get: irtype :declaration
+            [type_tostring: get: irtype fval
+            (svalts_fn sval_t)]
+    ochan
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Instructions
+; they return their type
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Function: base_alloca
+; Description: Base allocation instruction
+
+func :private base_alloca [res type]
+    {
+        :type           :alloca
+        :register       res
+        :atype          type
+        :declaration    "  {} = alloca {}`n"
+        :writer         (two_var_writer :register :atype)
+    }
+
+; Function: alloca
+; Description: allocates a local stack area using
+; a virtual register which progresses the function
+
+func alloca [function type]
+    base_alloca:
+        get_register: function
+        type
+
+; Function: named_alloca
+; Description: allocates a local stack area using
+; a named register
+
+func named_alloca [name type]
+    base_alloca:
+        name
+        type
+
+;%".3" = bitcast [54 x i8]* %".2" to i8*
+;%".4" = bitcast [54 x i8]* %".2" to [24 x i8]*
+
+; Function: bitcast
+; Description: bitcasts from_ptr to to_ptr
+
+func :private bitcast_writer [ochan bctype]
+
+    let reg [] type_tostring: get: bctype :register
+    let to  [] type_tostring: get: bctype :to
+    let from  [] type_tostring: get: bctype :from
+    write!:
+        ochan
+        format!: get: bctype :declaration [reg from to]
+    ochan
+
+
+func bitcast [function from_ptr to_ptr]
+    {
+        :type           :bitcast
+        :register       get_register: function
+        :from           from_ptr
+        :to             to_ptr
+        :declaration    "  {} = bitcast {} to {}`n"
+        :writer         bitcast_writer
+    }
+
+; Function: store
+; Description: stores one type to another
+; store %"Any"* %".318", %"Any"** @"ir_types_KEYWORD_43"
+
+func :private store_writer [ochan strtype]
+    write!:
+        ochan
+        format!:
+            get: strtype :declaration
+            [
+                type_tostring: get: strtype :arg1
+                type_tostring: get: strtype :arg2
+            ]
+    ochan
+
+func store [from_ref to_ref]
+    {
+        :type           :store
+        :arg1           from_ref
+        :arg2           to_ref
+        :declaration    "  store {}, {} `n"
+        :writer         store_writer
+    }
+
+; Function: load
+; Description: loads a register from location
+; %".29" = load %"Any"*, %"Any"** @"ir_types_STRING_35"
+
+func :private load_writer [ochan strtype]
+    write!:
+        ochan
+        format!:
+            get: strtype :declaration
+            [
+                type_tostring: get: strtype :register
+                type_tostring: get: strtype :register_type
+                type_tostring: get: strtype :from
+            ]
+    ochan
+
+func load [function regtype from_ref]
+    {
+        :type           :load
+        :register       get_register: function
+        :register_type  regtype
+        :from           from_ref
+        :declaration    "  {} = load {}, {} `n"
+        :writer         load_writer
+    }
+
+; Function: load_and_extend
+; Description: Creates a load instruction, adds to
+; scope list and returns load reference
+
+func load_and_extend [function scope ref]
+    let l [] load: function any_ptr ref
+    list_extend!: scope l
+    l
+
+; Function: call
+
+func :private call_writer [ochan irtype]
+    let args [] get: irtype :args
+    write!:
+        ochan
+        format!:
+        get: irtype :declaration
+        [
+            type_tostring: get: irtype :register
+            type_tostring: get: irtype :name
+            ?: =: count: args zero
+                " "
+                fold:
+                    ^[istr ndx]
+                        ?: =: ndx zero
+                            extend: istr type_tostring: get: args ndx
+                            extend: istr
+                                format!:
+                                    ", {}"
+                                    [type_tostring: get: args ndx]
+                    "" series: zero count: args one]
+
+    ochan
+
+func call [function call_site args]
+    {
+
+        :type           :call
+        :register       get_register: function
+        :name           call_site
+        :declaration    "  {} = call %`dAny`d* {}({})`n"
+        :args           args
+        :writer         call_writer
+    }
+
+; Function:
+
+; Function: branch
+
+func :private branch_writer [ochan irtype]
+    write!:
+        ochan
+        format!:
+            get: irtype :declaration
+            [
+                type_tostring: get: irtype :register
+                type_tostring: get: irtype :true_label
+                type_tostring: get: irtype :false_label
+            ]
+    ochan
+
+func branch [testreg iflab elselab]
+    {
+        :type           :branch
+        :register       testreg
+        :true_label     iflab
+        :false_label    elselab
+        :declaration    "  br i1 {}, {}, {}`n"
+        :writer         branch_writer
+    }
+
+; Function: uc_branch_to_label
+
+func :private uc_branch_writer [ochan irtype]
+    write!:
+        ochan
+        format!:
+            get: irtype :declaration
+            [type_tostring: get: irtype :name]
+    ochan
+
+func uc_branch_to_label [val]
+    {
+        :type           :unconditional_label_branch
+        :name           val
+        :declaration    "  br {}`n"
+        :writer         uc_branch_writer
+    }
+
+; Function: pointer_cmp
+
+func :private pointer_cmp_writer [ochan irtype]
+    write!:
+        ochan
+        format!:
+            get: irtype :declaration
+            [
+                type_tostring: get: irtype :register
+                type_tostring: get: irtype :cmp_type
+                type_tostring: get: irtype :lhs
+                type_tostring: get: irtype :rhs
+            ]
+    ochan
+
+func pointer_cmp [function ctype lhs rhs]
+    {
+        :type           :pointer_compare
+        :register       get_register: function
+        :cmp_type       ctype
+        :lhs            lhs
+        :rhs            rhs
+        :declaration    "  {} = icmp eq {} {}, {}`n"
+        :writer         pointer_cmp_writer
+    }
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Compound instructions
+; they return scope list
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Function: add_to_bblock
+; Description: Add an instruction to the instructions list
+; of a basic block.
+
+func add_to_bblock [bblock inst]
+    list_extend!: get: bblock :instructions inst
+
+
+; Function: truth_compare_and_branch
+; Description: Then/Else compare and branch logic
+
+func truth_compare_and_branch [
+        function
+        scope
+        true_ref
+        larg
+        then
+        else]
+    ; Test if argument is truthy
+    let call_instr []
+        call:
+            function
+            truthy_func_ref
+            [larg]
+    list_extend!: scope call_instr
+    ; compare with true reference
+    let cmp []
+        pointer_cmp:
+            function
+            any_ptr
+            get: true_ref :register
+            get: call_instr :register
+    list_extend!: scope cmp
+    ; Branch to true/false labels
+    let pbr []
+        branch:
+            get: cmp :register
+            label_type: get: then :name
+            label_type: get: else :name
+    list_extend!: scope pbr
+
+; Function: expression_dispatch_store_branch
+; Description: Evaluate an expression and
+; branch to exit references
+
+func expression_dispatch_store_branch [
+        disp_fn
+        function
+        frame
+        scope
+        expr
+        store_ref
+        exit_ref]
+    (disp_fn
+        function
+        frame
+        get: scope :instructions
+        expr)
+    add_to_bblock:
+        scope
+        store:
+            last: frame
+            store_ref
+    add_to_bblock:
+        scope
+        exit_ref

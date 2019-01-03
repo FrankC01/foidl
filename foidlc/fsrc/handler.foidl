@@ -350,20 +350,9 @@ func :private validate_ast   [state]
     let ast [] get: state :ast
     let mvfn [] get: ast EVAL
     map_extend!: state :ast (mvfn state list_inst!: ast)
-    ;print_ast: get: state :ast
     state
 
-
-;func :private produce_ir   [state]
-;    printnl!: "Creating 3AC"
-;    state
-
-;func :private ir_print   [state]
-;    printnl!: "Print 3AC"
-;    state
-
 func :private emit_llvm   [state]
-    printnl!: "Emit LLVM"
     emit: state
     state
 
@@ -520,10 +509,6 @@ func build_handler_and_run [cmap]
                         ast_print
                         skip_step
                     validate_ast
-                    ;(faux_step "produce_ir")
-                    ;?: get: cmap :printir
-                    ;    (faux_step "ir_print")
-                    ;    skip_step
                     emit_llvm
                     close_output
                     ]

@@ -25,6 +25,7 @@ static regex *frmtstr = _new_regex("\\{.*?\\}");
 EXTERNC void * foidl_xall(uint32_t sz);
 EXTERNC void foidl_xdel(void *v);
 EXTERNC void * foidl_reg_string(const char *i);
+EXTERNC void * allocStringWithCopy(const char *);
 
 const char *astring = ":string";
 
@@ -92,7 +93,7 @@ EXTERNC void* _format_string(const char *strng, char **rep, int rcnt) {
         cerr << "Count found does not match inbound match set" << endl;
     }
     result += base;
-    return foidl_reg_string(result.c_str());
+    return allocStringWithCopy(result.c_str());
 }
 
 

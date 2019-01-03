@@ -1,0 +1,926 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; emit_utils
+; LLVM Generation
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+module emit_utils
+
+include langcorem
+include ir_types
+include ast_type
+include errors
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Literal support
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Function: emit_literals
+; Description: Creates literal declaration instructions
+
+func emit_literal_declarations [acc el]
+    ?: empty?: value: el
+        acc
+        fold:
+            ^[instr lit]
+                list_extend!:
+                    instr
+                    literal_type: value: lit
+            acc value: el
+
+; Function: literal_max_len
+; Description: Gets the maximum string/keyword len for
+; those types
+
+func literal_max_len [bblock max_cnt ndx]
+
+    let element      [] get: bblock ndx
+    let element_type [] get: element :ltype
+    ?: =: element_type :string
+        map_extend!:
+            element
+            :lval
+            foidl_descan_string: get: element :lval
+        nil
+    let element_cnt  [] count: get: element :lval
+    ?: get: #{:keyword :string} element_type
+        ?: >: element_cnt max_cnt
+            ?: =: element_type :keyword
+                element_cnt
+                -: element_cnt two
+            max_cnt
+        max_cnt
+
+; Function: literal_buffer_setup
+; Description: Prepares buffer and basecast information for handling
+; string and keyword runtime registrations
+
+func literal_buffer_setup [lit_fn lit_bb lit_maxlen]
+    ; Local (stack) array to fit max string and/or keyword
+    let sbuff []
+        array_type: int_8 inc: lit_maxlen
+    ; Prep instruction push
+    let inst [] get: lit_bb :instructions
+    ; Allocate the buffer
+    let abuf [] alloca: lit_fn sbuff
+    list_extend!: inst abuf
+    ; Reference pointer to array register
+    let voidpref []
+        reference_register_type:
+            sbuff
+            get: abuf :register
+
+    let bc [] bitcast: lit_fn voidpref void_ptr
+    list_extend!: inst bc
+    bc
+
+; Function: literal_chartype_registration
+; Description: Registers a type of char string (string, keyword)
+
+func :private literal_chartype_registration [
+    basecast lit_fn lit_bb regc sval sname scnt]
+    ; Create an array signature based on size of input
+    let va  [] array_type: int_8 scnt
+    let brt [] reference_register_type: int_8 get: basecast :register
+    ; Bitcast the base to the array pointer and preserve
+    ; the register
+    let bc []
+        bitcast:
+            lit_fn
+            brt
+            ptr_type: va
+    list_extend!: lit_bb bc
+    let bic [] get: bc :register
+    ; Create the store of the target to the stack
+    list_extend!: lit_bb
+        store:
+            reference_constant_type: va const_string_type: sval
+            reference_register_type: va bic
+
+    ; Call the registration function using the base bitcast register
+    let reg_call []
+        call:
+            lit_fn
+            regc
+            [brt]
+    list_extend!: lit_bb reg_call
+
+    ; Store the result
+    list_extend!:
+        lit_bb
+        store:
+            reference_register_type: any get: reg_call :register
+            reference_constant_type: any_ptr_ptr global_reference: sname
+
+; Function: literal_string
+; Description: Prepare a string registration at initialization
+
+func :private literal_string    [basecast lit_fn lit_bb lit_string]
+    let lstr [] rest: dropLast: get: lit_string :lval
+    literal_chartype_registration:
+        basecast
+        lit_fn
+        lit_bb
+        strreg_ref
+        lstr
+        get: lit_string :name
+        count: lstr
+
+; Function: literal_keyword
+; Description: Prepare a keyword registration at initialization
+
+func :private literal_keyword   [basecast lit_fn lit_bb lit_keyword]
+    let lstr [] get: lit_keyword :lval
+    literal_chartype_registration:
+        basecast
+        lit_fn
+        lit_bb
+        kwreg_ref
+        lstr
+        get: lit_keyword :name
+        inc: count: lstr
+
+; Function: literal_integer
+; Description: Prepare an integer registration at initialization
+
+func :private literal_integer   [lit_fn lit_bb lit_integer]
+    ; Call register_int
+    let reg_call []
+        call:
+            lit_fn
+            intreg_ref
+            [reference_constant_type: int_64 const_type: get: lit_integer :lval]
+    list_extend!: lit_bb reg_call
+    ; Store the result to the const literal
+    list_extend!:
+        lit_bb
+        store:
+            reference_register_type:
+                any
+                get: reg_call :register
+            reference_constant_type:
+                any_ptr_ptr
+                global_reference: get: lit_integer :name
+
+; Function: literal_hex
+func :private   literal_hex [lit_fn lit_bb lit_hex]
+    literal_integer:
+        lit_fn
+        lit_bb
+        map_extend!:
+            lit_hex
+            :lval
+            foidl_s2i: get: lit_hex :lval
+
+; Function: literal_binary
+func :private   literal_binary [lit_fn lit_bb lit_bit]
+    literal_integer:
+        lit_fn
+        lit_bb
+        map_extend!:
+            lit_bit
+            :lval
+            foidl_s2i: get: lit_bit :lval
+
+; Function: literal_registration
+; Description: For each literal, add to the "modulename_linits" function
+
+func literal_registration [basecast lit_fn lit_bb literals ndx]
+    let lit [] get: literals ndx
+
+    match get: lit :ltype
+        | :string   literal_string: basecast lit_fn lit_bb lit
+        | :keyword  literal_keyword: basecast lit_fn lit_bb lit
+        | :integer  literal_integer: lit_fn lit_bb lit
+        | :hex      literal_hex: lit_fn lit_bb lit
+        | :bit      literal_binary: lit_fn lit_bb lit
+        | :default  exception: format!: "Unhandled literal type {}" [%0]
+    literals
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Generic function support
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+var :private globals_map map_inst!:
+
+func new_function [asttype]
+    ; Arguments are reduced to names only
+    let args []
+        fold:
+            ^[acc el]
+                list_extend!: acc get: el NAME
+            list_inst!: get: get: asttype ARGLIST EXPRS
+    let gf []
+        global_function_type:
+            get: asttype NAME
+            get: asttype IS_PRIVATE
+            args
+            "%`dAny`d*"
+            return_void
+    map_extend!:
+        globals_map
+        get: asttype NAME
+        gf
+    gf
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Not implemented expression support
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func :private default_expression_handler [scope_fn frame scope_bb etype]
+    warning:
+        format!:
+            "No emit implementation for {}" [get: etype TYPE]
+    scope_bb
+
+func :private nohit_expression_handler [acc k]
+    default_expression_handler
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Utilities
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Function: lastcall_to_regref
+; Description: Create a register reference from instruction
+
+func :private lastcall_to_regref [ instruction ]
+    reference_register_type:
+        any
+        get: instruction :register
+
+; Function: lastcall_to_regref_ptr
+; Description: Create a register reference pointer to instruction
+
+func :private lastcall_to_regref_ptr [ instruction ]
+    reference_register_type:
+        any_ptr
+        get: instruction :register
+
+; Function: load_funcreference
+; Description: Instantiate a function instance reference from a function
+; signature, performing bitcasts and registrations as needed. Returns
+; a register reference
+
+func :private load_funcreference [scope_fn scope_bb gfref argcnt]
+    ;let argcnt [] count: get: gfref :arguments
+    ; Call register_int for number of argumnets to funcref
+    let reg_call []
+        call:
+            scope_fn
+            intreg_ref
+            [reference_constant_type: int_64 const_type: argcnt]
+    list_extend!: scope_bb reg_call
+    ; Bitcast to a void*
+    let bc []
+        bitcast:
+            scope_fn
+            funcref_type:
+                get: gfref :name
+                any_ptr
+                argcnt
+            void_ptr
+    list_extend!: scope_bb bc
+    ; Call the function instance creator
+    let fref_call []
+        call:
+            scope_fn
+            tofuncref_ref
+            [
+                reference_constant_type: void_ptr get: bc :register
+                reference_constant_type: any_ptr get: reg_call :register
+            ]
+    list_extend!: scope_bb fref_call
+    ; Return a register reference type for last call
+    lastcall_to_regref: fref_call
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Heavy lifting emit support
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Function: emit_letargs
+
+var :private let_arg_template "let_{}_{}_{}"
+
+func :private emit_letargs [scope_fn frame scope_bb lpairs ndx]
+    let arg1        [] get: lpairs ndx
+    let arg2        [] get: lpairs inc: ndx
+    let arg1name    []
+        format!:
+        let_arg_template
+        [
+            get: get: arg1 TOKEN :lineno
+            get: get: arg1 TOKEN :colno
+            get: arg1 NAME
+        ]
+    ; Allocate a var on stack
+    let let_res     [] named_alloca: const_reference_type: arg1name any_ptr
+    let arg1_ptr    []
+        reference_constant_type:
+        any_ptr_ptr
+        get: let_res :register
+    list_extend!: scope_bb let_res
+    ; Process expression
+    dispatch_expression:
+        scope_fn
+        frame
+        scope_bb
+        arg2
+    ; Store result to local var on stack
+    let strla []
+        store:
+            last: frame
+            arg1_ptr
+    list_extend!: scope_bb strla
+    lpairs
+
+; Function: emit_let
+
+func :private emit_let [scope_fn frame scope_bb etype]
+    ; Allocate result
+    let let_res    [] named_alloca: const_reference_type: get: etype NAME any_ptr
+    let letres_ptr [] reference_constant_type: any_ptr_ptr get: let_res :register
+    list_extend!: scope_bb let_res
+    ; Reusable local frame
+    let lframe  [] list_inst!:
+    let argpair [] get: get: etype ARGLIST EXPRS
+    ?: empty?: argpair
+        nil
+        fold:
+            (emit_letargs scope_fn lframe scope_bb)
+            argpair
+            series: zero count: argpair two
+    empty!: lframe
+    ; Process expressions
+    expression_emitter: scope_fn lframe scope_bb get: etype EXPRS
+    ; Store result to local var on stack
+    let strla []
+        store:
+            last: lframe
+            letres_ptr
+    list_extend!: scope_bb strla
+    empty!: lframe
+    ; Load result
+    let loadv []
+        load:
+            scope_fn
+            any_ptr
+            letres_ptr
+    list_extend!: frame lastcall_to_regref: loadv
+    list_extend!: scope_bb loadv
+
+
+; Function: match_guard_entry
+; Description: Returns the guard entry point basic_block. If default, it is the 'then'
+; processing basic_block
+
+func :private match_guard_entry [gblock]
+    ?: get: gblock IS_DEFAULT
+        get: gblock :then
+        get: gblock :pred
+
+; Function: emit_default_guard
+; Description: Process the then condition basic block and branch to exit
+
+func :private emit_default_guard [
+        function
+        frame
+        scope
+        matchres_ptr
+        true_ref
+        exit_bb
+        gblock]
+    expression_dispatch_store_branch:
+        dispatch_expression
+        function
+        frame
+        get: gblock :then
+        get: gblock :then_expr
+        matchres_ptr
+        exit_bb
+    list_extend!: scope get: gblock :then
+
+; Function: emit_regular_guard
+; Description: Process predicate instructions and then instructions
+
+func :private emit_regular_guard [
+        function
+        frame
+        scope
+        matchres_ptr
+        true_ref
+        exit_bb
+        gblock
+        gnext]
+    let pred_bb [] get: gblock :pred
+    let pred_ex [] get: gblock :pred_expr
+    let then_bb [] get: gblock :then
+    let then_ex [] get: gblock :then_expr
+
+    list_extend!: scope pred_bb
+    dispatch_expression:
+        function
+        frame
+        get: pred_bb :instructions
+        pred_ex
+
+    ; Evaluate expression for truthiness and branch on outcome
+    truth_compare_and_branch:
+        function
+        get: pred_bb :instructions
+        true_ref
+        last: frame        ; Argument for truthy test
+        then_bb
+        match_guard_entry: gnext
+
+    expression_dispatch_store_branch:
+        dispatch_expression
+        function
+        frame
+        then_bb
+        then_ex
+        matchres_ptr
+        exit_bb
+    list_extend!: scope then_bb
+
+; Function: emit_guard
+
+func :private emit_guard [
+        function
+        frame
+        scope
+        matchres_ptr
+        true_ref
+        exit_bb
+        gblocks
+        ndx]
+    let gblock [] get: gblocks ndx
+    ?: get: gblock IS_DEFAULT
+        emit_default_guard:
+            function frame scope matchres_ptr true_ref exit_bb gblock
+        emit_regular_guard:
+            function frame scope matchres_ptr true_ref exit_bb gblock get: gblocks inc: ndx
+    gblocks
+
+; Function: match_guard_prep
+; Description: Prepares a guard expression basic blocks
+
+var :private match_guard_pred_template "match_guard_{}_{}_pred"
+var :private match_guard_then_template "match_guard_{}_{}_then"
+
+func :private match_guard_prep [acc etype]
+    let lineno  [] get: get: etype TOKEN :lineno
+    let colno   [] get: get: etype TOKEN :colno
+    list_extend!:
+        acc
+        {
+            :pred
+                basic_block_type:
+                    format!: match_guard_pred_template [ lineno colno ]
+            :pred_expr  first: get: etype EXPRS
+            :then
+                basic_block_type:
+                    format!: match_guard_then_template [ lineno colno ]
+            :then_expr  second: get: etype EXPRS
+            IS_DEFAULT  get: etype IS_DEFAULT
+        }
+
+; Function: emit_match
+
+func :private emit_match [scope_fn frame scope_bb etype]
+    ; Allocate a result var
+    let match_res    []
+        named_alloca: const_reference_type: get: etype NAME any_ptr
+    let matchres_ptr []
+        reference_constant_type: any_ptr_ptr get: match_res :register
+    list_extend!: scope_bb match_res
+    ; Allocate an expression var
+    let match_pred_ref    []
+        named_alloca:
+            const_reference_type: get: get: etype PRED_REFERENCE NAME any_ptr
+    let matchpred_ptr []
+        reference_constant_type: any_ptr_ptr get: match_pred_ref :register
+    list_extend!: scope_bb match_pred_ref
+
+    ; Local true reference
+    let true_load [] load_and_extend: scope_fn scope_bb true_const_ref
+
+    ; Eval/emit the predicate expression
+    let lframe [] list_inst!:
+    dispatch_expression:
+        scope_fn
+        lframe
+        scope_bb
+        get: etype PREDICATE
+    let strla []
+        store:
+            last: lframe
+            matchpred_ptr
+    list_extend!: scope_bb strla
+    empty!: lframe
+    ; Prepare the match guard processors
+    let mguards [] fold: match_guard_prep list_inst!: get: etype EXPRS
+
+    ; Branch to guard pair entry
+
+    list_extend!: scope_bb
+        uc_branch_to_label:
+            label_type:
+                get:
+                    match_guard_entry: first: mguards
+                    :name
+
+    ; Prepare the exit point
+
+    let match_exit_bb []
+        basic_block_type: format!: "{}_exit" [get: etype NAME]
+
+    ; Process guard pairs
+
+    let uc_branch_exit []
+        uc_branch_to_label: label_type: get: match_exit_bb :name
+
+    fold:
+        (emit_guard scope_fn lframe scope_bb matchres_ptr true_load uc_branch_exit)
+        mguards
+        series: zero count: mguards one
+
+    ; Load the result
+
+    let load_inst []
+        load:
+            scope_fn
+            any_ptr
+            matchres_ptr
+
+    add_to_bblock: match_exit_bb load_inst
+    list_extend!: frame lastcall_to_regref: load_inst
+    list_extend!: scope_bb match_exit_bb
+
+; Function: emit_if
+
+func :private emit_if [scope_fn frame scope_bb etype]
+    ; Allocate the if result using register without name
+    let if_pred_res     [] alloca: scope_fn any_ptr
+    let pred_res_ptr    [] lastcall_to_regref_ptr: if_pred_res
+    list_extend!: scope_bb if_pred_res
+    ; Local true reference
+    let true_load [] load_and_extend: scope_fn scope_bb true_const_ref
+    ; Dynamic base name creation
+    let bname []
+        format!:
+            "if_{}_{}"
+            [get: get: etype TOKEN :lineno get: get: etype TOKEN :colno]
+    ; Create 4 basic blocks for flow control
+    let if_pred_bb []
+        basic_block_type: bname
+    let if_then_bb []
+        basic_block_type: format!: "{}_then" [bname]
+    let if_else_bb []
+        basic_block_type: format!: "{}_else" [bname]
+    let if_exit_bb []
+        basic_block_type: format!: "{}_exit" [bname]
+    ; Common branch to exit
+    let uc_branch_exit []
+        uc_branch_to_label: label_type: get: if_exit_bb :name
+
+    ; Reusable local frame
+    let lframe [] list_inst!:
+
+    ; Jump to predicate processor
+    list_extend!: scope_bb uc_branch_to_label: label_type: get: if_pred_bb :name
+
+    list_extend!: scope_bb if_pred_bb
+    dispatch_expression:
+        scope_fn
+        lframe
+        scope_bb
+        get: get: etype EXPRS zero
+
+    ; Evaluate expression for truthiness and branch on outcome
+    truth_compare_and_branch:
+        scope_fn
+        scope_bb
+        true_load
+        last: lframe        ; Argument for truthy test
+        if_then_bb
+        if_else_bb
+
+    empty!: lframe          ; Clear the local expression frame
+    ; Evaluate then
+    list_extend!: scope_bb if_then_bb
+    expression_dispatch_store_branch:
+        dispatch_expression
+        scope_fn
+        lframe
+        if_then_bb
+        get: get: etype EXPRS one
+        pred_res_ptr
+        uc_branch_exit
+    empty!: lframe          ; Clear the local expression frame
+    ; Evaluate else
+    list_extend!: scope_bb if_else_bb
+    expression_dispatch_store_branch:
+        dispatch_expression
+        scope_fn
+        lframe
+        if_else_bb
+        get: get: etype EXPRS two
+        pred_res_ptr
+        uc_branch_exit
+    empty!: lframe
+    ; Finalize by loading result of then/else
+    let load_inst []
+        load:
+            scope_fn
+            any_ptr
+            pred_res_ptr
+    add_to_bblock: if_exit_bb load_inst
+    list_extend!: frame lastcall_to_regref: load_inst
+    list_extend!: scope_bb if_exit_bb
+
+; Function: emit_group
+
+func :private emit_group [scope_fn frame scope_bb etype]
+    ; Allocate a group result using register without name
+    let gres [] alloca: scope_fn any_ptr
+    list_extend!: scope_bb gres
+    ; Emit expressions to local frame
+    let expr [] list_inst!:
+    expression_emitter: scope_fn expr scope_bb get: etype EXPRS
+    ; Get the last and store to our group result
+    list_extend!:
+        scope_bb
+        store:
+            last: expr
+            lastcall_to_regref_ptr: gres
+    let load_inst []
+        load:
+            scope_fn
+            any_ptr
+            reference_constant_type:
+                any_ptr_ptr
+                get: gres :register
+
+    list_extend!: frame lastcall_to_regref: load_inst
+    list_extend!: scope_bb load_inst
+
+; Function: emit_imbue
+
+func :private emit_imbues [scope_fn scope_bb inref igref regref]
+    let call_instr []
+        call:
+            scope_fn
+            imbue_ref
+            [inref regref]
+    list_extend!: scope_bb call_instr
+    lastcall_to_regref: call_instr
+
+; Function: emit_partial
+; Description: If there is two or more expressions
+; the first is converted to fref_instance and
+; the remaining arguments embued to it
+; capture references to eval result as arguments to call
+
+func :private emit_partial [scope_fn frame scope_bb etype]
+    let lframe [] list_inst!:
+    expression_emitter: scope_fn lframe scope_bb get: etype EXPRS
+    ; Get and remove the first member for the instance
+    let tfref [] first: lframe
+    pop!: lframe
+    ; Call the instance creator
+    let call_instr []
+        call:
+            scope_fn
+            fref_instance_ref
+            [tfref]
+    list_extend!: scope_bb call_instr
+    ; Use the instance ref
+    let fref_reg [] lastcall_to_regref: call_instr
+    let last_reg []
+        fold: (emit_imbues scope_fn scope_bb fref_reg) nil lframe
+    list_extend!: frame last_reg
+    scope_bb
+
+; Function: emit_call
+; Description: Emit each expression and
+; capture references to eval result as arguments to call
+
+func :private emit_call [scope_fn frame scope_bb etype]
+    let args [] list_inst!:
+    expression_emitter: scope_fn args scope_bb get: etype EXPRS
+    let call_instr []
+        call:
+            scope_fn
+            global_reference: get: etype NAME
+            args
+    list_extend!: frame lastcall_to_regref: call_instr
+    list_extend!: scope_bb call_instr
+
+
+; Function: emit_lambda_call
+; Description: Instructions to load a lambda reference
+; to register. Basic block instructions created in
+; load_funcreference:
+
+func :private emit_lambda_call [scope_fn frame scope_bb etype]
+    let gf [] get: globals_map get: etype NAME
+    list_extend!:
+        frame
+        load_funcreference:
+            scope_fn
+            scope_bb
+            gf
+            count: get: gf :arguments
+    scope_bb
+
+; Function: single_element_register
+; Description: Populates a single element collection one expression
+; at a time
+
+func :private single_element_register [scope_fn setname basereg scope_bb regel]
+    ;   Instance creator
+    let inst_call []
+        call:
+            scope_fn
+            setname
+            [basereg regel]
+    list_extend!: scope_bb inst_call
+
+; Function: single_element_coll
+; Description: Handles creation and inserts of single element collection
+; types (list, vector, set)
+
+func :private single_element_coll [scope_fn scope_bb instname setname etype]
+    ;   Instance creator
+    let inst_call []
+        call:
+            scope_fn
+            instname
+            []
+    list_extend!: scope_bb inst_call
+
+    let expres [] list_inst!:
+    fold:
+        (dispatch_expression scope_fn expres)
+        scope_bb
+        get: etype EXPRS
+
+    fold:
+        (single_element_register scope_fn setname lastcall_to_regref: inst_call)
+        scope_bb
+        expres
+    lastcall_to_regref: inst_call
+
+; Function: multi_element_register
+; Description: Populates a multi-element collection a pair at a time
+
+func :private multi_element_register [scope_fn setname basereg scope_bb regel ndx]
+    ;   Instance creator
+    let inst_call []
+        call:
+            scope_fn
+            setname
+            [basereg get: regel ndx get: regel inc: ndx]
+    list_extend!: scope_bb inst_call
+    regel
+
+; Function: multi_element_coll
+; Description: Handles creation and inserts of pair element collection
+; types (map)
+
+func :private multi_element_coll [scope_fn scope_bb instname setname etype]
+    let inst_call []
+        call:
+            scope_fn
+            instname
+            []
+    list_extend!: scope_bb inst_call
+
+    let expres [] list_inst!:
+    fold:
+        (dispatch_expression scope_fn expres)
+        scope_bb
+        get: etype EXPRS
+
+    fold:
+        (multi_element_register scope_fn setname lastcall_to_regref: inst_call scope_bb)
+        expres
+        series: zero count: expres two
+
+    lastcall_to_regref: inst_call
+
+
+; Function: emit_collection
+; Description: Emits a stream of collection expressions
+
+func :private emit_collection [scope_fn frame scope_bb etype]
+    match res get: etype COLLTYPE
+    | :list     single_element_coll: scope_fn scope_bb list_inst_ref list_extd_ref etype
+    | :vector   single_element_coll: scope_fn scope_bb vector_inst_ref vector_extd_ref etype
+    | :map      multi_element_coll: scope_fn scope_bb map_inst_ref map_extd_ref etype
+    | :set      single_element_coll: scope_fn scope_bb set_inst_ref set_extd_ref etype
+    | :default  exception: etype
+    list_extend!: frame res
+    scope_bb
+
+; Function: emit_global_ref
+; Description: Instruction to loads reference of type global
+; into register
+func :private emit_global_ref [scope_fn frame scope_bb etype]
+    let load_inst []
+        load:
+            scope_fn
+            any_ptr
+            reference_constant_type:
+                any_ptr_ptr
+                global_reference: get: etype NAME
+
+    list_extend!: frame lastcall_to_regref: load_inst
+    list_extend!: scope_bb load_inst
+
+; Function: emit_local_argref
+; Description: Collects constant local reference for
+; use, this is not an instruction emit
+
+func :private emit_local_argref [scope_fn frame scope_bb etype]
+    list_extend!:
+        frame
+        reference_constant_type:
+            any_ptr
+            const_reference_type: get: etype NAME
+    scope_bb
+
+func :private emit_func_ref [scope_fn frame scope_bb etype]
+    list_extend!:
+        frame
+        load_funcreference:
+            scope_fn
+            scope_bb
+            etype
+            get: etype ARGCNT
+    scope_bb
+
+; Function: emit_expression_result
+; Description: Loads a local arg or result ref to register
+func :private emit_expression_result [scope_fn frame scope_bb etype]
+    let load_inst []
+        load:
+            scope_fn
+            any_ptr
+            reference_constant_type:
+                any_ptr_ptr
+                const_reference_type: get: etype NAME
+
+    list_extend!: frame lastcall_to_regref: load_inst
+    list_extend!: scope_bb load_inst
+
+; Handler function lookup map
+
+var :private emit_handlers
+    {
+        :let            emit_let
+        :if             emit_if
+        :partial        emit_partial
+        :group          emit_group
+        :match          emit_match
+        :call           emit_call
+        :lambda_call    emit_lambda_call
+        :collection     emit_collection
+        :lambda_argref  emit_local_argref
+        :funcargref     emit_local_argref
+        :let_argref     emit_expression_result
+        :let_resref     emit_expression_result
+        :match_predref  emit_expression_result
+        :literalref     emit_global_ref
+        :funcref        emit_func_ref
+        :varref         emit_global_ref
+    }
+
+func dispatch_expression [scope_fn frame scope_bb expr_el]
+    let e_fn []
+        getd:
+            emit_handlers
+            get: expr_el TYPE
+            nohit_expression_handler
+    (e_fn scope_fn frame scope_bb expr_el)
+
+func expression_emitter [scope_fn frame scope_bb exprs]
+    fold: (dispatch_expression scope_fn frame) scope_bb exprs
+    scope_bb
+
+

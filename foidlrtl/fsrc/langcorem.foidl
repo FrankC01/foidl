@@ -22,6 +22,9 @@ module langcorem
 
 include foidlrtm
 
+func format! [s coll]
+	foidl_format!: s coll
+
 func  	extend!  	[coll arg]
 	foidl_extend!: coll arg
 
@@ -39,6 +42,9 @@ func 	drop! [coll arg]
 
 func 	droplast! [coll]
 	foidl_droplast!: coll
+
+func empty! [coll]
+	foidl_empty!: coll
 
 func vector_inst! []
 	foidl_vector_inst!:

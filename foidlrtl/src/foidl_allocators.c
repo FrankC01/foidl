@@ -189,11 +189,12 @@ PFRTIOBuffer 	allocIONoBuffer() {
 	return b;
 }
 
-PFRTIOBuffer 	allocIOMMapBuffer(void *mmap,ft sz) {
+PFRTIOBuffer 	allocIOMMapBuffer(void *mmap, size_t sz) {
 	PFRTIOBuffer b = allocIONoBuffer();
 	b->current_line = 1;
 	b->ftype  = mem_map_buffer;
-	b->buffersize = b->max_read_position = sz;
+	b->buffersize = (ft) sz;
+	b->max_read_position = (ft) sz;
 	b->bufferPtr = (char *) mmap;
 	return b;
 }

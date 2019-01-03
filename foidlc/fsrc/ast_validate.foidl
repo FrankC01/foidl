@@ -511,10 +511,11 @@ var :private empty_lookup {
 ; langcore 'empty_x' reference
 
 func emptycollection_validate [state result self]
-    printnl!: self
+    ;printnl!: self
+    let sref [] st_lookup: get: empty_lookup get: self COLLTYPE
     list_extend!:
         result
-        st_lookup: get: empty_lookup get: self COLLTYPE
+        register_extern: state sref
 
 ; Function: collection_validate
 ; Description: Evaluate members of collection we

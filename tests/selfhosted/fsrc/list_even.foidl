@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; badly_formed
-; badly formed source - module must be first
+; list_even
+; list_even
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
@@ -18,5 +18,19 @@
 ; limitations under the License.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-include foo
-module  badly_formed
+module list_even
+
+var :private a_list [1 2 3]
+var :private b_list [0 8 7 9]
+var :private c_list [15 25 391]
+
+func main [argv]
+    let even_list [] fold:
+        ^[result element]
+            match count: result
+            | three reduced: result
+            | :default match mod: element two
+                        | zero extend: result element
+                        | :default result
+        [] flatten: [a_list b_list c_list]
+    printnl!: even_list

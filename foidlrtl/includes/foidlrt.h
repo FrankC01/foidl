@@ -587,7 +587,7 @@ void foidl_heap_setup();
 ft 	foidl_fopen_read_only(char *);
 ft  foidl_fopen_create_truncate(char *);
 void foidl_deallocate_mmap(char*, ft);
-void *foidl_open_ro_mmap_file(char *);
+void *foidl_open_ro_mmap_file(char *, size_t);
 ft 	foidl_fclose(ft);
 void foidl_exit();
 
@@ -707,7 +707,7 @@ extern PFRTAny          allocRegex(PFRTAny sbase, void* regex);
 
 // IO Types
 extern PFRTIOChannel 	allocIOChannel(ft,PFRTAny);
-extern PFRTIOBuffer 	allocIOMMapBuffer(void *);
+extern PFRTIOBuffer 	allocIOMMapBuffer(void *, size_t);
 extern PFRTIOBuffer 	allocIOBlockBuffer(ft);
 extern PFRTIOBuffer 	allocIONoBuffer();
 extern void 			deallocChannelBuffer(PFRTIOChannel);
@@ -920,7 +920,10 @@ extern 	PFRTAny  list_push_bang(PFRTAny,PFRTAny);
 extern 	PFRTAny  list_first(PFRTAny);
 extern 	PFRTAny  list_second(PFRTAny);
 extern 	PFRTAny  list_rest(PFRTAny);
+extern  PFRTAny  list_last(PFRTAny);
 extern 	PFRTAny  list_print(PFRTIOChannel,PFRTAny);
+extern  PFRTAny  empty_list_bang(PFRTAny);
+extern  PFRTAny  release_list_bang(PFRTAny);
 #endif
 
 // IO

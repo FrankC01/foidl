@@ -230,8 +230,10 @@ static PFRTIOChannel openFileRead(PFRTIOChannel chn) {
 	size_t sz = fileSizeInfo(chn->name);
 	switch(chn->buffertype) {
 		case mem_map_buffer:
-			chn->bufferptr =
-				allocIOMMapBuffer(foidl_open_ro_mmap_file(chn->name->value));
+			{
+				void *mm = foidl_open_ro_mmap_file(chn->name->value, sz);
+				chn->bufferptr = allocIOMMapBuffer(mm, sz);
+			}
 			break;
 		case mem_block_buffer:
 			{
@@ -529,8 +531,9 @@ PFRTAny foidl_io_quaf_bang(PFRTIOChannel chan) {
 		PFRTIOBuffer b = chan->bufferptr;
 		if(b->buffersize == 0)
 			return empty_string;
-		else
+		else {
 			return allocStringWithCopyCnt(b->buffersize, b->bufferPtr);
+		}
 	}
 	else {
 		return nil;

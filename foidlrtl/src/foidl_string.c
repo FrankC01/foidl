@@ -26,6 +26,10 @@ void foildl_rtl_init_strings() {
 	kwMap = foidl_map_inst_bang();
 }
 
+/*
+	Utility to replace format characters with actual types
+*/
+
 static PFRTAny replace_with(char el) {
 	switch(el) {
 		case 't':
@@ -70,6 +74,62 @@ static char* escape_scan(char *i) {
 	else {
 		return (char *) NULL;
 	}
+}
+
+char* escape_descan(char *i) {
+	int32_t len = strlen(i);
+	char 	*scratch = foidl_xall(len*2);
+	char 	*result = i;
+	int32_t pos=0;
+	int32_t opos=0;
+	int32_t hit=0;
+	while(i[pos] != 0) {
+		if(i[pos] == 0x0d) {
+			++hit;
+			scratch[opos++] = '`';
+			scratch[opos] = 'n';
+			if(i[pos+1] == 0x0a) {
+				printf("	and then 0x0a\n");
+				pos += 1;
+			}
+		}
+		else if(i[pos] == 0x0a) {
+			++hit;
+			scratch[opos++] = '`';
+			scratch[opos] = 'n';
+			if(i[pos+1] == 0x0d) {
+				printf("	and then 0x0d\n");
+				pos += 1;
+			}
+		}
+		else
+			scratch[opos] = i[pos];
+		pos += 1;
+		++opos;
+	}
+	if(hit != 0) {
+		scratch[opos] = 0;
+		result = foidl_xall(strlen(scratch)+1);
+		strcpy(result, scratch);
+	}
+	foidl_xdel(scratch);
+
+	return result;
+}
+
+/*
+	Takes a string and descans embedded
+	nl/cr characters
+*/
+
+PFRTAny	foidl_descan_string(PFRTAny s) {
+	PFRTAny news = s;
+	char *result = escape_descan(s->value);
+	if(result != s->value) {
+		news = allocAny(scalar_class, string_type, result);
+		news->count = strlen(result);
+	}
+	return news;
 }
 
 /*

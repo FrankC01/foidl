@@ -168,7 +168,6 @@ PFRTAny 	foidl_list_extend_bang(PFRTAny l, PFRTAny v) {
 	return (PFRTAny) list;
 }
 
-
 PFRTAny 	foidl_list_inst_bang() {
 	return (PFRTAny) allocList(0,empty_link);
 }
@@ -305,6 +304,17 @@ PFRTAny	list_second(PFRTAny l) {
 		return list->root->next->data;
 }
 
+PFRTAny 	list_last(PFRTAny l) {
+	PFRTList list = (PFRTList) l;
+	ft 		 lcnt = list->count;
+	if(lcnt == 0)
+		return nil;
+	--lcnt;
+	return getListLinkNode(list, lcnt)->data;
+}
+
+
+
 PFRTAny list_rest(PFRTAny src) {
 	PFRTAny result = (PFRTAny) empty_list;
 	if(src->count > 1) {
@@ -345,6 +355,19 @@ PFRTAny coerce_to_list(PFRTAny stemplate, PFRTAny src) {
 	return src;
 }
 
-void  release_list(PFRTAny s) {
-	unknown_handler();
+PFRTAny empty_list_bang(PFRTAny s) {
+	PFRTList list;
+	if (s->ftype != list2_type)
+		unknown_handler();
+	else
+		list = (PFRTList) s;
+
+	while(list->count > 0)
+		list_pop_bang(s);
+	return s;
+}
+
+PFRTAny release_list_bang(PFRTAny s) {
+	foidl_xdel(empty_list_bang(s));
+	return nil;
 }
