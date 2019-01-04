@@ -324,21 +324,26 @@ func :private vinits [state]
         get: get: state :ast EXPRS
     state
 
-func :private user_main [state]
-    let oc      [] get: state :outchannel
-    let decl    [] getd: state :main_hit false
+; Function: user_defined_main
+; Description: Processes a user defined 'main' function
+; for the module
 
-    ?: decl
+func :private user_defined_main [state]
+    ?: let decl [] getd: state :main_hit false
         write!:
-            oc
+            get: state :outchannel
             match get: get: decl ARGLIST ARGCNT
                 | 0         main_noarg_string
                 | :default  main_string
         nil
     state
 
+; Function: emit
+; Description: Walks the ast, emitting LLVM in it's
+; walking wakedness
+
 func emit [state]
-    user_main:
+    user_defined_main:
     vinits:
     functions:
     lambdas:
