@@ -73,7 +73,10 @@ func :private run_test [accum indx]
 
 func main [argv]
 
-    var m1_type {"key" 1, "key2" 2, "key1" 5 }
+    ; Sir YONNY... a var in a func body is not valid. You should use
+    ; a 'let' in a function body to create a local scope variable
+    ;var m1_type {"key" 1, "key2" 2, "key1" 5 }
+    let m1_type [] {"key" 1, "key2" 2, "key1" 5 }
     printnl!: [get: m1_type "key"]
 
     printnl!: "Welcome to runtime tests"
