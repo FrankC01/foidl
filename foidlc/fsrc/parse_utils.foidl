@@ -276,13 +276,14 @@ func :private for_each_expr [node ast_tree res ndx]
 
     ?: is_next_nil_or_decl?: ast_tree
         ?: =: count: get: node EXPRS zero
-            reduced: add_nil_expr: node
+            token_exception: get: node :token " expects expression"
             reduced: node
         @(
             list_extend!: get: node EXPRS first: ast_tree
             pop!: ast_tree
             node
         )
+
 
 ; Function: get_func_exprs
 ; Description: Get all expressions until next declaration or
@@ -300,11 +301,13 @@ func get_func_exprs [node ast_tree]
 
 func get_var_expr [node ast_tree]
     ?: is_next_nil_or_decl?: ast_tree
-        add_nil_expr: node
+        token_exception: get: node :token " expects expression" ;add_nil_expr: node
         @(
             list_extend!: get: node EXPRS first: ast_tree
             pop!: ast_tree
-            node
+            ?: is_next_nil_or_decl?: ast_tree
+                node
+                token_exception: get: node :token " unexpected expression"
         )
 
 ; Function: get_single_expr
