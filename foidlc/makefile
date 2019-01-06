@@ -14,21 +14,26 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-BSTRP 	= python ../bin/fbstrp
-
 # Get OS information
 
 UNAME := $(shell uname)
 
 ifeq ($(UNAME), Linux)
 	OS_NAME := $(UNAME)
+	PYTHON := python3
 else ifeq ($(UNAME), Solaris)
 	OS_NAME := $(UNAME)
 else ifeq ($(UNAME), Darwin)
 	OS_NAME := $(UNAME)
+	PYTHON := python3
 else
 	OS_NAME := Windows
+	PYTHON := python
 endif
+
+# Bootstrap
+
+BSTRP 	:= $(PYTHON) ../bin/fbstrp
 
 # llvm toolchain executables
 
@@ -116,7 +121,7 @@ ifeq ($(OS_NAME), Windows)
 else
 	C64=$(CLC) -c -isystem $(RTHDRS) -march=x86-64 -fPIC -O3
 	CL64=$(CLC) -c -march=x86-64 -fPIC -O3
-	LINK64 := $(CPPLC) -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++ -lfoidlrt -L $(RTLIB)
+	LINK64 := $(CPPLC) -lc++ -lfoidlrt -L $(RTLIB)
 endif
 
 BHDRFLAGS := -I $(HDRS) $(RTHDRS) -a hdr

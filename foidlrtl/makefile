@@ -14,7 +14,6 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-BSTRP 	= python ../bin/fbstrp
 
 # Get OS information
 
@@ -22,13 +21,20 @@ UNAME := $(shell uname)
 
 ifeq ($(UNAME), Linux)
 	OS_NAME := $(UNAME)
+	PYTHON := python3
 else ifeq ($(UNAME), Solaris)
 	OS_NAME := $(UNAME)
 else ifeq ($(UNAME), Darwin)
 	OS_NAME := $(UNAME)
+	PYTHON := python3
 else
 	OS_NAME := Windows
+	PYTHON := python
 endif
+
+# Bootstrap
+
+BSTRP 	:= $(PYTHON) ../bin/fbstrp
 
 # llvm toolchain executables
 
