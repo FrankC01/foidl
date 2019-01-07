@@ -14,6 +14,8 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
+# Get OS information
+
 UNAME := $(shell uname)
 
 ifeq ($(UNAME), Linux)
@@ -29,8 +31,8 @@ else
 	PYTHON := python
 endif
 
-# Bootstrap
 $(info Building for $(UNAME) and $(PYTHON))
+
 BSTRP 	:= $(PYTHON) ../../bin/fbstrp
 
 # llvm toolchain executables
@@ -115,7 +117,11 @@ else
 	C64=$(CLC) -c -march=x86-64 -fPIC -O3
 	foidlrt_LIB  := libfoidlrt.a
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
+<<<<<<< HEAD
 	LINK64 := $(CPPLC) -lc++ 
+=======
+	LINK64 := $(CLC) -lc++ -lfoidlrt -L $(RTLIB)
+>>>>>>> master
 endif
 
 # Flags for compilation of all types
