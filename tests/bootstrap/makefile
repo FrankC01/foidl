@@ -117,11 +117,7 @@ else
 	C64=$(CLC) -c -march=x86-64 -fPIC -O3
 	foidlrt_LIB  := libfoidlrt.a
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
-<<<<<<< HEAD
-	LINK64 := $(CPPLC) -lc++ 
-=======
-	LINK64 := $(CLC) -lc++ -lfoidlrt -L $(RTLIB)
->>>>>>> master
+	LINK64 := $(CPPLC) -lc++
 endif
 
 # Flags for compilation of all types
