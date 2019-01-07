@@ -37,6 +37,13 @@ func nil_expression [a]
         true
         false
 
+; Another example, given 2 numbers, is the first less than the second
+; - uses ?: (i.e. if) and <: (less than operator)
+func lt_compare [a b]
+	?: <: a b
+		printnl!: "'a' is less than 'b'"
+		printnl!: "'a' is NOT less than 'b'"
+
 ; Match
 ; Syntax 'match' [symbol] match_expression
 ;           '|' expression_pattern then_expression
@@ -110,3 +117,4 @@ func main [argv]
         printnl!: match_expression1: 90
     print!: "Match_1 to test if 100 + 10 is : "
         printnl!: match_expression1: 100
+    print!: "Is 'a' less than 'b'? Answer : " lt_compare: 1 2

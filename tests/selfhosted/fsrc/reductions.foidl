@@ -29,7 +29,7 @@ module reductions
 ; Function: capture_10
 ; Description: Given an accumulator and a val, if
 ; we have less than 10 vals in the accumulator, add the
-; next val
+; next val. Called from within 'fold'
 
 func capture_10 [accumulator val]
     ?: =: count: accumulator 10
@@ -61,6 +61,14 @@ func add_1_until_10 [val]
         reduced: res
         res
 
+; Function: sum_list
+; Description: Adds number to accumulator and returns accumulator 
+; as result. Does not stop iteration. Performed on each value passed.
+; Called from a fold and a reduce
+
+func sum_list [acc val]
+    +: acc val
+
 func main [argv]
 
     ; Using 'fold', capture 10 elements to list
@@ -71,7 +79,7 @@ func main [argv]
     ; 'fold' iterates over each element of the collection and invokes
     ;   the function reference with the initial value and the element.
     ;   The result of the function becomes the 'initial value' of the
-    ;   next interation
+    ;   next interaction
     ; 'fold' will continue to iterate until the collection is exhausted
     ;   or the function invoked calls 'reduced' which will end the iterations
 
@@ -121,3 +129,26 @@ func main [argv]
     let sum_em [] reduce: + add_1_also
     print!: "reduce using `q+`q function = "
     printnl!: sum_em
+
+    ; Simple fold that sums the values in a list of numbers. 
+    ; Sends in an initial value of 0
+
+    let fold_nums [] [1 2 3 4]
+    let num_sum_with_fold [] fold: sum_list 0 fold_nums
+    print!: "fold sum with 0 init value result (should be 10) = "
+    printnl!: num_sum_with_fold
+
+    ; Simple fold that sums the values in a list of numbers. 
+    ; Sends in an initial value of 5
+
+    let num_sum_with_fold [] fold: sum_list 5 fold_nums
+    print!: "fold sum with 5 init value result (should be 15) = "
+    printnl!: num_sum_with_fold
+
+    ; Simple reduce that sums the values in a list of numbers. 
+    ; Remember: Initial value is the first element in list
+
+    let reduce_nums [] [5,4,3,2]
+    let num_sum_with_reduce [] reduce: sum_list reduce_nums
+    print!: "reduce sum result (should be 14) = "
+    printnl!: num_sum_with_reduce
