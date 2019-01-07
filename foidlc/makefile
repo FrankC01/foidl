@@ -38,7 +38,7 @@ BSTRP 	:= $(PYTHON) ../bin/fbstrp
 # llvm toolchain executables
 
 CLC 	:= clang
-CPPLC   = clang++
+CPPLC   := clang++
 CLINK   := lld-link
 
 FSRC  	:= fsrc/
@@ -121,7 +121,7 @@ ifeq ($(OS_NAME), Windows)
 else
 	C64=$(CLC) -c -isystem $(RTHDRS) -march=x86-64 -fPIC -O3
 	CL64=$(CLC) -c -march=x86-64 -fPIC -O3
-	LINK64 := $(CPPLC) -lc++ -lfoidlrt -L $(RTLIB)
+	LINK64 := $(CPPLC) -lc++ 
 endif
 
 BHDRFLAGS := -I $(HDRS) $(RTHDRS) -a hdr
@@ -137,7 +137,7 @@ $(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) | $(BIN)
 	$(LINK64) $(LIBS) /subsystem:console /out:$@ $(FOBJS)
 else
 $(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) | $(BIN)
-	$(LINK64) $(FOBJS) -o $@
+	$(LINK64) $(FOBJS) -lfoidlrt -L $(RTLIB) -o $@
 endif
 
 $(BIN):

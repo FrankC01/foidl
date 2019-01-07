@@ -38,6 +38,7 @@ endif
 # llvm toolchain executables
 
 CLC 	:= clang
+CPPLC   := clang++
 CLINK   := lld-link
 
 
@@ -116,7 +117,7 @@ else
 	C64=$(CLC) -c -march=x86-64 -fPIC -O3
 	foidlrt_LIB  := libfoidlrt.a
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
-	LINK64 := $(CLC) -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++ -lfoidlrt -L $(RTLIB)
+	LINK64 := $(CPPLC)  -lc++ 
 endif
 
 # Flags for compilation of all types
@@ -132,7 +133,7 @@ bin/%.exe: objs/%.o
 	$(LINK64) $(LIBS) /subsystem:console /out:$@ $<
 else
 bin/%: objs/%.o
-	$(LINK64) $< -o $@
+	$(LINK64) $< -lfoidlrt -L $(RTLIB) -o $@
 endif
 
 $(FEXES): | $(BIN)
