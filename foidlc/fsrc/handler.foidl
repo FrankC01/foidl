@@ -458,9 +458,7 @@ func :private faux_step [s state]
 ;   parse_tokens        - parse the tokens to abstract syntax tree (AST)
 ;   [ast_print]         - optionally prints AST
 ;   validate_ast        - walk AST, refactor, optimize and more semantic checks
-;   produce_ir          - walks PAST, creates three address code list (3AC)
-;   [ir_print]          - optionally print 3AC
-;   emit_llvm           - Emits LLVM-IR from 3AC
+;   emit_llvm           - Emits LLVM-IR from AST
 ;   close_output        - Closes output channel
 ;
 ; If :genhdr command

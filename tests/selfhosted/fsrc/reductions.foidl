@@ -62,7 +62,7 @@ func add_1_until_10 [val]
         res
 
 ; Function: sum_list
-; Description: Adds number to accumulator and returns accumulator 
+; Description: Adds number to accumulator and returns accumulator
 ; as result. Does not stop iteration. Performed on each value passed.
 ; Called from a fold and a reduce
 
@@ -130,7 +130,7 @@ func main [argv]
     print!: "reduce using `q+`q function = "
     printnl!: sum_em
 
-    ; Simple fold that sums the values in a list of numbers. 
+    ; Simple fold that sums the values in a list of numbers.
     ; Sends in an initial value of 0
 
     let fold_nums [] [1 2 3 4]
@@ -138,17 +138,29 @@ func main [argv]
     print!: "fold sum with 0 init value result (should be 10) = "
     printnl!: num_sum_with_fold
 
-    ; Simple fold that sums the values in a list of numbers. 
+    ; Simple fold that sums the values in a list of numbers.
     ; Sends in an initial value of 5
 
     let num_sum_with_fold [] fold: sum_list 5 fold_nums
     print!: "fold sum with 5 init value result (should be 15) = "
     printnl!: num_sum_with_fold
 
-    ; Simple reduce that sums the values in a list of numbers. 
+    ; Simple reduce that sums the values in a list of numbers.
     ; Remember: Initial value is the first element in list
 
     let reduce_nums [] [5,4,3,2]
     let num_sum_with_reduce [] reduce: sum_list reduce_nums
     print!: "reduce sum result (should be 14) = "
     printnl!: num_sum_with_reduce
+
+    ; map is convenient if you want to create a simple list
+    ; of results. Here's one that creates a 'map' data type
+    ; with predetermined keys to populate a name from input
+    ; strings
+
+    print!: "A list of maps with key `q:name`q populated values => "
+    printnl!:
+        map:
+            ^[element]      ; OH LOOK... A lambda!
+                update: {:name nil} :name element
+            ["Abel" "Baker" "Charlie" "Django"]
