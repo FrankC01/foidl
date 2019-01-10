@@ -141,9 +141,9 @@ func main [argv]
     ; Simple fold that sums the values in a list of numbers.
     ; Sends in an initial value of 5
 
-    let num_sum_with_fold [] fold: sum_list 5 fold_nums
+    let num_sum_with_fold2 [] fold: sum_list 5 fold_nums
     print!: "fold sum with 5 init value result (should be 15) = "
-    printnl!: num_sum_with_fold
+    printnl!: num_sum_with_fold2
 
     ; Simple reduce that sums the values in a list of numbers.
     ; Remember: Initial value is the first element in list
@@ -158,7 +158,7 @@ func main [argv]
     ; with predetermined keys to populate a name from input
     ; strings
 
-    print!: "A list of maps with key `q:name`q populated values => "
+    print!: "A list of maps with key :name populated values => "
     printnl!:
         map:
             ^[element]      ; OH LOOK... A lambda!
