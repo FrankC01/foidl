@@ -659,7 +659,6 @@ extern PFRTAny  foidl_split(PFRTAny,PFRTAny); 	//	May move to string
 #endif
 
 #ifndef F_ASPRINTF
-
 #ifdef _MSC_VER
 #include <stdarg.h>
 extern int vasprintf(char **strp, const char *format, va_list ap);
