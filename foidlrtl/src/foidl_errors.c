@@ -1,7 +1,7 @@
 /*
 	foidl_errors.c
 	Library main entry
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -22,11 +22,11 @@ constString(rteprefix,"RTE: ");
 constString(unsupported,":function not supporting yet");
 constString(index_out_of_bounds,"index out of bounds");
 constString(update_not_integral, "update: expects a positive number as second argument");
-constString(extend_map_two_arg,"extend: extending a map needs argument of two element collection");
+constString(extend_map_two_arg,"extend: extending a map needs argument of two element iterable");
 constString(fold_requires_function,"fold: call expects a function reference as 1st argument");
-constString(fold_requires_collection,"fold: call expects a collection reference as 3rd argument");
+constString(fold_requires_collection,"fold: call expects a iterable reference as 3rd argument");
 constString(reduce_requires_function,"reduce: call expects a function reference as 1st argument");
-constString(reduce_requires_collection,"reduce: call expects a collection reference as 2rd argument");
+constString(reduce_requires_collection,"reduce: call expects a iterable reference as 2rd argument");
 
 // IO Module errors
 
@@ -48,12 +48,12 @@ PFRTAny 	foidl_fail() {
 }
 
 PFRTAny 	writeCerr(PFRTAny el) {
-	return foidl_write_bang(cerr,el);	
+	return foidl_write_bang(cerr,el);
 }
 
 PFRTAny 	writeCerrNl(PFRTAny el) {
 	foidl_write_bang(cerr,el);
-	return foidl_write_bang(cerr,nlchr);		
+	return foidl_write_bang(cerr,nlchr);
 }
 
 void 	foidl_ep_excp(PFRTAny estring) {
@@ -70,5 +70,5 @@ void 	foidl_ep_excp2(PFRTAny hdr,PFRTAny estring) {
 }
 
 void unknown_handler() {
-	foidl_ep_excp(unknown_error);	
+	foidl_ep_excp(unknown_error);
 }
