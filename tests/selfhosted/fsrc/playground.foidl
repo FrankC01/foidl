@@ -124,13 +124,12 @@ func main []
     printnl!: list_for_coll_funcs
 
     ; Test Fifteen
-    print!: "Test Fifteen - The 'drop' function will ...(do something)... of an existing list in "
+    print!: "Test Fifteen - The 'drop' function will return a new list with count remove from existing list in "
     printnl!: list_for_coll_funcs
     print!: " which is "
     print!: drop: 5 list_for_coll_funcs
     print!: " The old list is still the same "
     printnl!: list_for_coll_funcs
-    printnl!: "NOT WORKING!!!"
 
     ; Test Sixteen
     print!: "Test Sixteen - The 'dropFor' function will ...(do something)... of an existing list in "

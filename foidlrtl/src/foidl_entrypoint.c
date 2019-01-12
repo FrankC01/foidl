@@ -401,11 +401,47 @@ PFRTAny 	foidl_extend_bang(PFRTAny coll, PFRTAny element) {
 	return result;
 }
 
+// take: cnt coll
+
 PFRTAny 	foidl_take(PFRTAny arg, PFRTAny coll) {
 	return coll;
 }
 
+// drop: cnt coll
+// drops the count (cnt) of elements from collection
+
+PFRTAny 	drop_fn(ft cnt, PFRTAny lbang, PFRTIterator rI) {
+	PFRTAny result = lbang;
+	ft 		counter = 0;
+	PFRTAny iNext;
+	// Skip the count at the beginning
+	while( counter < cnt) {
+		iNext = iteratorNext(rI);
+		++counter;
+	}
+
+	while((iNext = iteratorNext(rI)) != end) {
+		foidl_list_extend_bang(lbang, iNext);
+	}
+	foidl_xdel(rI);
+	return result;
+
+}
+
 PFRTAny 	foidl_drop(PFRTAny arg, PFRTAny coll) {
+	if( foidl_integer_qmark(arg) == true &&
+		foidl_collection_qmark(coll) &&
+			((ft)arg->value <= (ft)coll->count)) {
+		PFRTAny lbang = foidl_list_inst_bang();
+		if((ft)arg->value == (ft)coll->count)
+			return lbang;
+		else {
+			return drop_fn((ft) arg->value, lbang, iteratorFor(coll));
+		}
+	}
+	else {
+		unknown_handler();
+	}
 	return coll;
 }
 
@@ -703,7 +739,7 @@ PFRTAny 	foidl_reduce(PFRTAny fn, PFRTAny coll) {
 //	Map fn to each element of coll. Fn must take 1 argument
 //	result of Fn are stored in vector
 
-static PFRTAny 	map_fn_bang(PFRTAny fn, PFRTIterator rI) {
+static PFRTAny 	map_fn(PFRTAny fn, PFRTIterator rI) {
 	PFRTAny result = foidl_list_inst_bang();
 	PFRTAny iNext;
 	while((iNext = iteratorNext(rI)) != end) {
@@ -727,7 +763,7 @@ static PFRTAny 	map_fn_bang(PFRTAny fn, PFRTIterator rI) {
 
 PFRTAny 	foidl_map(PFRTAny fn, PFRTAny coll) {
 	verifyFold(fn,fold_requires_function, coll, fold_requires_collection);
-	return map_fn_bang(fn, iteratorFor(coll));
+	return map_fn(fn, iteratorFor(coll));
 }
 
 //	remove takes predicate and collection
@@ -738,7 +774,7 @@ PFRTAny 	foidl_map(PFRTAny fn, PFRTAny coll) {
 //  pred: set (passed value tested for 'in' set)
 //  pred: map (keys are compared to passed value)
 
-static PFRTAny remove_fn_bang(PFRTAny fn, PFRTIterator rI) {
+static PFRTAny remove_fn(PFRTAny fn, PFRTIterator rI) {
 	PFRTAny result = foidl_list_inst_bang();
 	PFRTAny iNext;
 	while((iNext = iteratorNext(rI)) != end) {
@@ -767,7 +803,7 @@ PFRTAny 	foidl_remove(PFRTAny pred, PFRTAny coll) {
 		return result;
 	// Test for predicate wrapping
 
-	return remove_fn_bang(pred, iteratorFor(coll));
+	return remove_fn(pred, iteratorFor(coll));
 }
 
 
