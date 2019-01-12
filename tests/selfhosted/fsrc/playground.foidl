@@ -151,12 +151,11 @@ func main []
     printnl!: list_for_coll_funcs
 
     ; Test Nineteen
-    let name [] "JohnnyB"
-    print!: "Test Nineteen - The 'split' function will ...(do something)... of an existing string in "
+    let name [] "Johnny Bucci"
+    print!: "Test Nineteen - The 'split' function will split a string into a list based on regular expression "
     printnl!: name
-    print!: " which is "split: name "n"
+    print!: " which is " printnl!: split: name regex: " "
     print!: " The old string is still the same "
     printnl!: name
-    printnl!: "NOT WORKING!!!"
 
     printnl!: ""

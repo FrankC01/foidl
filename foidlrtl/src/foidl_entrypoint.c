@@ -892,10 +892,6 @@ PFRTAny 	foidl_failWith(PFRTAny str) {
 	return nil;
 }
 
-PFRTAny 	foidl_split(PFRTAny s, PFRTAny d) {
-	return s;
-}
-
 //	Math routines
 
 PFRTAny foidl_add(PFRTAny arg1, PFRTAny arg2) {

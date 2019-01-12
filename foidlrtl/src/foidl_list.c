@@ -313,6 +313,9 @@ PFRTAny 	list_last(PFRTAny l) {
 	return getListLinkNode(list, lcnt)->data;
 }
 
+// Takes all but the last element in the
+// list
+
 PFRTAny list_droplast(PFRTAny src) {
 	if( src == (PFRTAny) empty_list)
 		return src;

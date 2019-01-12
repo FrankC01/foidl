@@ -26,6 +26,7 @@ EXTERNC void * foidl_xall(uint32_t sz);
 EXTERNC void foidl_xdel(void *v);
 EXTERNC void * foidl_reg_string(const char *i);
 EXTERNC void * allocStringWithCopy(const char *);
+EXTERNC void * list_extend_bang(void *, void *);
 
 const char *astring = ":string";
 
@@ -96,6 +97,17 @@ EXTERNC void* _format_string(const char *strng, char **rep, int rcnt) {
     return allocStringWithCopy(result.c_str());
 }
 
+// Split a string
+EXTERNC void _string_split(void *rlist, const char *strng, void* pattern) {
+    string base(strng);
+    regex* rpattern = static_cast<regex*>(pattern);
+    sregex_token_iterator it(base.begin(), base.end(), *rpattern, -1);
+    sregex_token_iterator reg_end;
+    for (; it != reg_end; ++it) {
+        string hs = it->str();
+        list_extend_bang(rlist, allocStringWithCopy(hs.c_str()));
+    }
+}
 
 EXTERNC void _reduce_tokens(const char*s, ptoken_block block) {
     list<ptoken> hitlist;

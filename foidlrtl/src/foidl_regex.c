@@ -37,6 +37,17 @@ PFRTAny	foidl_regex(PFRTAny s) {
 }
 
 
+PFRTAny 	foidl_split(PFRTAny s, PFRTAny pattern) {
+	if(s->ftype != string_type || pattern->ftype != regex_type)
+		unknown_handler();
+
+	PFRTAny rlist = foidl_list_inst_bang();
+	PFRTRegEx rex = (PFRTRegEx) pattern;
+	_string_split(rlist, s->value, rex->regex);
+	return rlist;
+}
+
+
 PFRTAny foidl_regex_match_qmark(PFRTAny s, PFRTAny pattern) {
 	// If s is, indeed, a string
 	if(s->fclass == scalar_class && s->ftype == string_type) {
