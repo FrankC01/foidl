@@ -867,6 +867,7 @@ extern 	PFRTAny vector_get(PFRTAny,PFRTAny);
 extern 	PFRTAny vector_get_default(PFRTAny, PFRTAny,PFRTAny);
 extern  PFRTAny	vector_drop_bang(PFRTAny,PFRTAny);
 extern  PFRTAny	vector_dropLast_bang(PFRTAny);
+extern  PFRTAny vector_droplast(PFRTAny);
 extern 	PFRTAny vectorGetDefault(PFRTAny v, uint32_t index);
 extern 	PFRTAny vector_print(PFRTIOChannel,PFRTAny);
 #endif
@@ -922,6 +923,7 @@ extern 	PFRTAny  list_update_bang(PFRTAny,PFRTAny,PFRTAny);
 extern 	PFRTAny  list_pop(PFRTAny);
 extern 	PFRTAny  list_pop_bang(PFRTAny);
 extern  PFRTAny  list_drop_bang(PFRTAny,PFRTAny);
+extern  PFRTAny  list_droplast(PFRTAny);
 extern 	PFRTAny  list_push(PFRTAny,PFRTAny);
 extern 	PFRTAny  list_push_bang(PFRTAny,PFRTAny);
 extern 	PFRTAny  list_first(PFRTAny);

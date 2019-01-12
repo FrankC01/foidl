@@ -86,8 +86,8 @@ var :private pred "{}_qmark"
 
 func :private ir_stringify [s]
     match last: s
-    | '?'   format!: pred [dropLast: s]
-    | '!'   format!: bang [dropLast: s]
+    | '?'   format!: pred [drop_last: s]
+    | '!'   format!: bang [drop_last: s]
     | :default s
 
 ; Dummy writter

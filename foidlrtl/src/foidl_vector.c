@@ -2,7 +2,7 @@
 /*
 	foidl_vector.c
 	Library support for HAMT vector
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -12,7 +12,7 @@
 
 // Externs (may move to headers)
 
-struct FRTVectorG _empty_vector = 
+struct FRTVectorG _empty_vector =
 	{	global_signature,
 		collection_class,
 		vector2_type,
@@ -34,13 +34,13 @@ PFRTHamtNode const	empty_node = &_empty_node;
 static PFRTHamtNode cloneNode(PFRTHamtNode src) {
 	PFRTHamtNode 	dest = allocHamtNode();
 	for(ft i=0; i < 32; i++)
-		dest->slots[i] = src->slots[i];	
+		dest->slots[i] = src->slots[i];
 	return dest;
 }
 
 //	Tail offset calculation
 static ft tailOffset(PFRTVector pv) {
-	if ( pv->count < 32) 
+	if ( pv->count < 32)
 		return 0;
 	else
 		return ((( pv->count - 1 ) >> SHIFT) << SHIFT);
@@ -51,17 +51,17 @@ static PFRTHamtNode nodeFor(PFRTVector v, ft index){
 	PFRTHamtNode res;
 	long long i = (long long) index;
 	if(i >= 0 && i < v->count) {
-		if(i >= tailOffset(v)) 
-			res = v->tail;		
+		if(i >= tailOffset(v))
+			res = v->tail;
 		else {
 			PFRTHamtNode node = v->root;
-			for(ft level = v->shift; level > 0; level -= 5) 				
-				node = (PFRTHamtNode) node->slots[(i >> level) & MASK];				
+			for(ft level = v->shift; level > 0; level -= 5)
+				node = (PFRTHamtNode) node->slots[(i >> level) & MASK];
 			res = node;
 			}
 	}
 	else {
-		//	Should be run-time exception?		
+		//	Should be run-time exception?
 		res = empty_node;
 	}
 	return res;
@@ -72,12 +72,12 @@ PFRTAny vectorGetDefault(PFRTAny v, uint32_t index) {
 }
 
 //	Retrieves value at index i
-PFRTAny 	vector_nth(PFRTVector v, ft i) {	
+PFRTAny 	vector_nth(PFRTVector v, ft i) {
 	PFRTHamtNode p = nodeFor(v,i);
 	if( p == empty_node) {
 		return  nil;
 	}
-	return p->slots[i&MASK];	
+	return p->slots[i&MASK];
 }
 
 
@@ -122,12 +122,12 @@ PFRTAny vector_get(PFRTVector src, PFRTAny index) {
 	if (index->ftype == integer_type) {
 		if(src->count > (ft) index->value)
 			res = vector_nth(src,(ft) index->value);
-		else 
+		else
 			;
 	}
 	else {
 		unknown_handler();
-		// Out of bounds exception 
+		// Out of bounds exception
 	}
 
 	return res;
@@ -141,12 +141,12 @@ PFRTAny vector_get_default(PFRTVector src,PFRTAny index, PFRTAny def) {
 		else {
 			if(foidl_function_qmark(def) == true)
 				res = dispatch2(def,(PFRTAny) src,index);
-			else 
-				res = def;			
+			else
+				res = def;
 		}
 	}
 	else {
-		unknown_handler();		
+		unknown_handler();
 	}
 
 	return res;
@@ -174,30 +174,30 @@ static PFRTAny vector_extend_i(PFRTVector src, PFRTAny value) {
 	ft 				tailcnt = src->count - tailOffset(src);
 
 	//	Append to the tail if room
-	if( tailcnt < 32 ) {				
-		newTail = cloneNode(src->tail);		
+	if( tailcnt < 32 ) {
+		newTail = cloneNode(src->tail);
 		newTail->slots[tailcnt] = value;
 		return (PFRTAny) allocVector(src->count + 1, src->shift, src->root, newTail);
 	}
-	
+
 	// Tail full, push into tree and do path work
 	PFRTHamtNode 	newRoot;
 	PFRTHamtNode 	tailnode = src->tail;
 	ft 				newshift = src->shift;
 
-	//	Root overflow, make root child of new root, 
-	if (( src->count >> SHIFT) > (1 << src->shift) ) {	
+	//	Root overflow, make root child of new root,
+	if (( src->count >> SHIFT) > (1 << src->shift) ) {
 		newRoot = allocHamtNode();
-		newRoot->slots[0] = (PFRTAny) src->root;		
+		newRoot->slots[0] = (PFRTAny) src->root;
 		newRoot->slots[1] = (PFRTAny) newPath(src->shift, tailnode);
 		newshift += SHIFT;
 	}
 	//	Otherwise just push the tail
-	else 
+	else
 		newRoot = pushTail(src->count,src->shift,src->root,tailnode);
 
 	newTail = allocHamtNode();
-	newTail->slots[0] = value;		
+	newTail->slots[0] = value;
 
 	return (PFRTAny) allocVector(src->count + 1, newshift, newRoot, newTail);
 }
@@ -216,13 +216,13 @@ static PFRTHamtNode vector_doupdate(ft level, PFRTHamtNode node, ft index, PFRTA
 	}
 	else {
 		ft 	subidx = (index >> level) & MASK;
-		ret->slots[subidx] = (PFRTAny) 
+		ret->slots[subidx] = (PFRTAny)
 			vector_doupdate(level - SHIFT,(PFRTHamtNode) ret->slots[subidx],index, item);
 	}
 	return ret;
 }
 
-PFRTAny vector_update(PFRTVector src, PFRTAny index, PFRTAny item) {	
+PFRTAny vector_update(PFRTVector src, PFRTAny index, PFRTAny item) {
 	if( index->fclass == scalar_class && index->ftype == integer_type) {
 		ft 	i = (ft) index->value;
 		ft  cnt = src->count;
@@ -230,14 +230,14 @@ PFRTAny vector_update(PFRTVector src, PFRTAny index, PFRTAny item) {
 			if(i >= tailOffset(src)) {
 				PFRTHamtNode newTail = cloneNode(src->tail);
 				newTail->slots[i & MASK] = item;
-				return (PFRTAny) 
+				return (PFRTAny)
 					allocVector(src->count, src->shift, src->root, newTail);
 			}
-			return (PFRTAny) 
+			return (PFRTAny)
 				allocVector(cnt,src->shift,
 					vector_doupdate(src->shift, src->root, i, item), src->tail);
 		}
-		if(i == cnt) 
+		if(i == cnt)
 			return vector_extend(src,item);
 
 	}
@@ -256,15 +256,15 @@ static PFRTHamtNode popTail(ft cnt,ft level, PFRTHamtNode node) {
 			ret = (PFRTHamtNode) &_nil;
 		else {
 			ret = cloneNode(node); // new Node(root.edit, node.array.clone());
-			ret->slots[subidx] = (PFRTAny) newchild;			
+			ret->slots[subidx] = (PFRTAny) newchild;
 			}
 		}
 	else if(subidx == 0)
-		ret = (PFRTHamtNode) &_nil;				
+		ret = (PFRTHamtNode) &_nil;
 	else {
-		ret = cloneNode(node); // new Node(root.edit, node.array.clone());		
+		ret = cloneNode(node); // new Node(root.edit, node.array.clone());
 		ret->slots[subidx] = end;
-		}	
+		}
 	return ret;
 }
 
@@ -297,11 +297,11 @@ PFRTAny vector_pop(PFRTVector src) {
 	return ret;
 }
 
-PFRTAny	vector_dropLast(PFRTAny src) {
+PFRTAny	vector_droplast(PFRTAny src) {
 	return vector_pop((PFRTVector) src);
 }
 
-//	Get the last element of the vector 
+//	Get the last element of the vector
 
 PFRTAny vector_peek(PFRTVector src) {
 	if(src->count > 0)
@@ -339,16 +339,16 @@ static PFRTHamtNode tailToTree(ft cnt, ft level, PFRTHamtNode parent, PFRTHamtNo
 	ret->slots[subidx] = (PFRTAny) nodeToInsert;
 	return ret;
 }
-		
+
 //	Transient vector population of value, used during creation
 //	Count is the key to the HAMT tree and/or tail calculations
 
 PFRTAny vector_extend_bang_i(PFRTAny v,PFRTAny e) {
 	PFRTVector 	vi = (PFRTVector) v;
-	ft 			cnt = vi->count;	
-	
+	ft 			cnt = vi->count;
+
 	if ( (cnt - tailOffset(vi)) < 32 ) {
-		vi->tail->slots[cnt & MASK] = e;		
+		vi->tail->slots[cnt & MASK] = e;
 		++vi->count;
 		return v;
 	}
@@ -360,13 +360,13 @@ PFRTAny vector_extend_bang_i(PFRTAny v,PFRTAny e) {
 	vi->tail = allocHamtNode();
 	vi->tail->slots[0] = e;
 
-	if (( cnt >> 5) > (1 << vi->shift) ) {		
+	if (( cnt >> 5) > (1 << vi->shift) ) {
 		newRoot = allocHamtNode();
 		newRoot->slots[0] = (PFRTAny) vi->root;
 		newRoot->slots[1] = (PFRTAny) newPath(vi->shift, tailnode);
 		newshift += SHIFT;
 	}
-	else {		
+	else {
 		newRoot = tailToTree(vi->count,vi->shift, vi->root,tailnode);
 	}
 
@@ -381,11 +381,11 @@ PFRTAny foidl_vector_extend_bang(PFRTAny v,PFRTAny e) {
 		return vector_extend_bang_i(
 			(PFRTAny) allocVector(0,SHIFT,allocHamtNode(), allocHamtNode()),
 			e);
-	else 
+	else
 		return vector_extend_bang_i(v,e);
 }
 
-PFRTAny vector_update_bang(PFRTVector src, PFRTAny index, PFRTAny item) {		
+PFRTAny vector_update_bang(PFRTVector src, PFRTAny index, PFRTAny item) {
 	ft 	i = (ft) index->value;
 	nodeFor(src,i)->slots[i&MASK] = item;
 	return (PFRTAny) src;
@@ -403,22 +403,22 @@ static PFRTHamtNode popTail_bang(ft cnt,ft level, PFRTHamtNode node) {
 		if((PFRTAny) newchild == end && subidx == 0)
 			ret = (PFRTHamtNode) &_nil;
 		else {
-			ret = node; 
-			ret->slots[subidx] = (PFRTAny) newchild;			
+			ret = node;
+			ret->slots[subidx] = (PFRTAny) newchild;
 			}
 		}
 	else if(subidx == 0)
-		ret = (PFRTHamtNode) &_nil;				
+		ret = (PFRTHamtNode) &_nil;
 	else {
-		ret = node; 
+		ret = node;
 		ret->slots[subidx] = end;
-		}	
+		}
 	return ret;
 }
 
 PFRTAny vector_pop_bang(PFRTVector src) {
 
-	//	Only one element is in the tail	
+	//	Only one element is in the tail
 	if (src->count == 1) {
 		src->tail->slots[0] = end;
 		--src->count;
@@ -430,7 +430,7 @@ PFRTAny vector_pop_bang(PFRTVector src) {
 	if ( intail > 0) {
 		src->tail->slots[intail] = end;
 		--src->count;
-		return (PFRTAny) src;		
+		return (PFRTAny) src;
 	}
 
 	//	Heavier lifting
@@ -463,16 +463,16 @@ PFRTAny	vector_drop_bang(PFRTAny src, PFRTAny cnt) {
 		for(ft x = 0; x < (ft) cnt->value; ++x)
 			vector_pop_bang(pv);
 	}
-	return src;	
+	return src;
 }
 
 //	Creates a new instance (assume during building of declared datatypes)
-PFRTAny foidl_vector_inst_bang() {	
-	return (PFRTAny) allocVector(0,SHIFT,allocHamtNode(), allocHamtNode());	
+PFRTAny foidl_vector_inst_bang() {
+	return (PFRTAny) allocVector(0,SHIFT,allocHamtNode(), allocHamtNode());
 }
 
 
-PFRTAny vector_rest(PFRTAny src) {	
+PFRTAny vector_rest(PFRTAny src) {
 	PFRTAny result = (PFRTAny) empty_vector;
 	if(src->count > 1) {
 		PFRTAny 		itm = nil;
@@ -486,7 +486,7 @@ PFRTAny vector_rest(PFRTAny src) {
 		uint32_t s1hsh = hash(vector_first(src));
 		v1->hash = src->hash - s1hsh;
 		v1->count = src->count - 1;
-		
+
 	}
 	return result;
 }
@@ -495,7 +495,7 @@ PFRTAny vector_rest(PFRTAny src) {
 PFRTAny vector_from_argv(int cnt, char** argv) {
 	PFRTVector res = (PFRTVector) foidl_vector_inst_bang();
 	for(int i = 0; i < cnt;)
-		vector_extend_bang_i((PFRTAny) res,allocGlobalString(argv[i++]));	
+		vector_extend_bang_i((PFRTAny) res,allocGlobalString(argv[i++]));
 	return (PFRTAny) res;
 }
 
@@ -510,12 +510,12 @@ PFRTAny vector_print(PFRTIOChannel chn,PFRTAny v) {
 	ft 			max = ((PFRTVector) v)->count;
 	if(max > 0) {
 		PFRTAny 		res = nil;
-		PFRTIterator	vi = iteratorFor(v);		
-		ft 				i = 0;	
+		PFRTIterator	vi = iteratorFor(v);
+		ft 				i = 0;
 		--max;
 		while((res = iteratorNext(vi)) != end) {
 			cfn(chn,res);
-			if(max > i++) cfn(chn,comma);			
+			if(max > i++) cfn(chn,comma);
 		}
 		foidl_xdel(vi);
 	}

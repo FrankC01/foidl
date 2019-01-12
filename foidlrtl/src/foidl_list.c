@@ -313,7 +313,22 @@ PFRTAny 	list_last(PFRTAny l) {
 	return getListLinkNode(list, lcnt)->data;
 }
 
-
+PFRTAny list_droplast(PFRTAny src) {
+	if( src == (PFRTAny) empty_list)
+		return src;
+	else {
+		PFRTList l1 = (PFRTList) foidl_list_inst_bang();
+		PFRTList list = (PFRTList) src;
+		ft 		 lcnt = list->count - 1;
+		ft 		 count = 0;
+		while(count < lcnt) {
+			foidl_list_extend_bang((PFRTAny) l1,
+				getListLinkNode(list, count)->data);
+			++count;
+		}
+		return (PFRTAny) l1;
+	}
+}
 
 PFRTAny list_rest(PFRTAny src) {
 	PFRTAny result = (PFRTAny) empty_list;

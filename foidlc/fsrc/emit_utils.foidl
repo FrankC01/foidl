@@ -130,7 +130,7 @@ func :private literal_chartype_registration [
 ; Description: Prepare a string registration at initialization
 
 func :private literal_string    [basecast lit_fn lit_bb lit_string]
-    let lstr [] rest: dropLast: get: lit_string :lval
+    let lstr [] rest: drop_last: get: lit_string :lval
     literal_chartype_registration:
         basecast
         lit_fn

@@ -288,11 +288,8 @@ func remove [pred coll]
 func drop  [arg coll]
 	foidl_drop: arg coll
 
-func dropFor [fn coll]
-	foidl_dropFor: fn coll
-
-func dropLast [coll]
-	foidl_dropLast: coll
+func drop_last [coll]
+	foidl_drop_last: coll
 
 func take [arg coll]
 	foidl_take: arg coll

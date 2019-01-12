@@ -449,15 +449,16 @@ PFRTAny 	foidl_drop_bang(PFRTAny coll, PFRTAny arg) {
 	return coll;
 }
 
-PFRTAny 	foidl_dropFor(PFRTAny coll, PFRTAny cnt) {
-	return coll;
-}
-
-PFRTAny 	foidl_dropLast(PFRTAny coll) {
+PFRTAny 	foidl_drop_last(PFRTAny coll) {
 	if(coll->ftype == string_type)
 		return string_droplast(coll);
-	else
+	else if(coll->ftype == vector2_type)
+		return vector_droplast(coll);
+	else if(coll->ftype == list2_type)
+		return list_droplast(coll);
+	else {
 		unknown_handler();
+	}
 	return coll;
 }
 

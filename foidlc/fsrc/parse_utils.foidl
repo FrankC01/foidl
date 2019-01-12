@@ -377,7 +377,7 @@ func :private process_call [cref externs node ast_tree]
 func parse_functioncall [node ast_tree externs]
     let cref []
         st_lookup:
-            dropLast:
+            drop_last:
                 get: get: node :token :token_str
     ?: cref
         process_call: cref externs node ast_tree
