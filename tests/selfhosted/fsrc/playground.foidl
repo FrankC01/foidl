@@ -149,12 +149,12 @@ func main []
     printnl!: "NOT WORKING!!! - Encounters RTE"
 
     ; Test Eighteen
-    print!: "Test Eighteen - The 'take' function will ...(do something)... of an existing list in "
+    print!: "Test Eighteen - The 'take' function will return a new list with count elements from existing list in "
     printnl!: list_for_coll_funcs
-    print!: " which is "take: 5 list_for_coll_funcs
+    print!: " which is "
+    printnl!: take: 5 list_for_coll_funcs
     print!: " The old list is still the same "
     printnl!: list_for_coll_funcs
-    printnl!: "NOT WORKING!!!"
 
     ; Test Nineteen
     let name [] "JohnnyB"

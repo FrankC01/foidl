@@ -401,12 +401,6 @@ PFRTAny 	foidl_extend_bang(PFRTAny coll, PFRTAny element) {
 	return result;
 }
 
-// take: cnt coll
-
-PFRTAny 	foidl_take(PFRTAny arg, PFRTAny coll) {
-	return coll;
-}
-
 // drop: cnt coll
 // drops the count (cnt) of elements from collection
 
@@ -476,6 +470,39 @@ PFRTAny 	foidl_droplast_bang(PFRTAny coll) {
 		unknown_handler();
 	return coll;
 }
+
+// take: cnt coll
+// takes the count (cnt) of elements from collection
+
+PFRTAny  take_fn(ft cnt, PFRTAny lbang, PFRTIterator rI) {
+	PFRTAny result = lbang;
+	ft 		counter = 0;
+	PFRTAny iNext;
+	// Skip the count at the beginning
+	while( counter < cnt) {
+		foidl_list_extend_bang(lbang, iteratorNext(rI));
+		++counter;
+	}
+	return result;
+}
+
+PFRTAny 	foidl_take(PFRTAny arg, PFRTAny coll) {
+	if( foidl_integer_qmark(arg) == true &&
+		foidl_collection_qmark(coll) &&
+			((ft)arg->value < (ft)coll->count)) {
+		PFRTAny lbang = foidl_list_inst_bang();
+		if((ft)arg->value == 0)
+			return lbang;
+		else {
+			return take_fn((ft) arg->value, lbang, iteratorFor(coll));
+		}
+	}
+	else {
+		unknown_handler();
+	}
+	return coll;
+}
+
 
 //	Update takes three args: Collection location and value
 //	For all, value may be a function otherwise a new value
