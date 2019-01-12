@@ -282,8 +282,8 @@ func 	push [coll arg]
 func update [coll k arg]
 	foidl_update: coll k arg
 
-func remove [coll arg]
-	foidl_remove: coll arg
+func remove [pred coll]
+	foidl_remove: pred coll
 
 func drop  [arg coll]
 	foidl_drop: arg coll
@@ -367,6 +367,12 @@ func  tokenize [s patterns ignores]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Predicate functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func  even?	[arg]
+	foidl_even?: arg
+
+func  odd?  [arg]
+	foidl_odd?: arg
 
 func ws? [val]
 	get: whitespace val

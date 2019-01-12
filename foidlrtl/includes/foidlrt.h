@@ -673,6 +673,8 @@ extern int asprintf(char **strp, const char *format, ...);
 #ifndef PREDICATE_IMPL
 extern PFRTAny scalar_equality(PFRTAny,PFRTAny);
 extern PFRTAny foidl_equal_qmark(PFRTAny,PFRTAny);
+extern PFRTAny foidl_falsey_qmark(PFRTAny);
+extern PFRTAny foidl_truthy_qmark(PFRTAny);
 extern PFRTAny foidl_not_equal_qmark(PFRTAny,PFRTAny);
 extern PFRTAny foidl_function_qmark(PFRTAny);
 extern PFRTAny foidl_collection_qmark(PFRTAny);

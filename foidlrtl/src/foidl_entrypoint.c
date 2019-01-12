@@ -535,20 +535,6 @@ PFRTAny 	foidl_update_bang(PFRTAny coll, PFRTAny k, PFRTAny v) {
 	return result;
 }
 
-//	remove takes collection and key to remove
-//	map: key
-//	set: key
-//	list: index
-//	vector: index
-
-PFRTAny 	foidl_remove(PFRTAny coll, PFRTAny key) {
-	PFRTAny 	result = nil;
-	if(foidl_extendable_qmark(coll) == false)
-		return result;
-	validateIndexable(coll,key);
-	return coll;
-}
-
 //	removes may take a function as a key or collection of
 //	elements to remove commiserate of collection type
 //	map: Collection of keys
@@ -743,6 +729,47 @@ PFRTAny 	foidl_map(PFRTAny fn, PFRTAny coll) {
 	verifyFold(fn,fold_requires_function, coll, fold_requires_collection);
 	return map_fn_bang(fn, iteratorFor(coll));
 }
+
+//	remove takes predicate and collection
+//  if the predicate is falsey, the value from
+//  the collection is ignored
+//  pred: Fn reference
+//  pred: scalar (equality wrapped)
+//  pred: set (passed value tested for 'in' set)
+//  pred: map (keys are compared to passed value)
+
+static PFRTAny remove_fn_bang(PFRTAny fn, PFRTIterator rI) {
+	PFRTAny result = foidl_list_inst_bang();
+	PFRTAny iNext;
+	while((iNext = iteratorNext(rI)) != end) {
+		PFRTFuncRef2 fref = (PFRTFuncRef2) foidl_fref_instance(fn);
+		PFRTAny result2 = foidl_imbue((PFRTAny) fref, iNext);
+		deallocFuncRef2(fref);
+		if(result2->ftype == reduced_type) {
+			foidl_xdel(result2);
+			break;
+		}
+		else {
+			if( foidl_falsey_qmark(result2) == true) {
+				foidl_list_extend_bang(result, iNext);
+			}
+			else {
+			}
+		}
+	}
+	foidl_xdel(rI);
+	return result;
+}
+
+PFRTAny 	foidl_remove(PFRTAny pred, PFRTAny coll) {
+	PFRTAny 	result = empty_list;
+	if(foidl_collection_qmark(coll) == false)
+		return result;
+	// Test for predicate wrapping
+
+	return remove_fn_bang(pred, iteratorFor(coll));
+}
+
 
 globalFuncConst(str_builder,2,string_extend);
 

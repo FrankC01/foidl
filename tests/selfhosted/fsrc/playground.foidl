@@ -41,11 +41,11 @@ func main []
     printnl!: ""
     printnl!: "Welcome to the foidl playground!"
     printnl!: ""
-    
+
     ; Test One
     print!: "Test One - List declared as [1, 2 3 4, 5] compiles and works because a "
         print!: "parameter list can have mixed usage of the comma dilimiter => "
-        printnl!: list_with_mixed_delims 
+        printnl!: list_with_mixed_delims
 
     ; Test Two
     ; printnl!: "Test Two - List can contain callable functions"
@@ -53,54 +53,54 @@ func main []
     ; printnl!: list_func_1
 
     ; Test Three
-    print!: "Test Three - The 'first' function can get first value in " 
+    print!: "Test Three - The 'first' function can get first value in "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [first: list_for_coll_funcs]
 
     ; Test Four
-    print!: "Test Four - The 'second' function can get second value in " 
+    print!: "Test Four - The 'second' function can get second value in "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [second: list_for_coll_funcs]
 
     ; Test Five
-    print!: "Test Five - The 'rest' function can get every value but first value in " 
+    print!: "Test Five - The 'rest' function can get every value but first value in "
     print!: list_for_coll_funcs
     print!: " which is "
     printnl!: rest: list_for_coll_funcs
 
     ; Test Six
-    print!: "Test Six - The 'last' function can get last value in " 
+    print!: "Test Six - The 'last' function can get last value in "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [last: list_for_coll_funcs]
 
     ; Test Seven
-    print!: "Test Seven - The 'get' function can get the value associated with the given index 5 in " 
+    print!: "Test Seven - The 'get' function can get the value associated with the given index 5 in "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [get: list_for_coll_funcs 5]
 
     ; Test Eight
-    print!: "Test Eight - The 'get' function will return nil if the given index 20 is out-of-bounds in " 
+    print!: "Test Eight - The 'get' function will return nil if the given index 20 is out-of-bounds in "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [get: list_for_coll_funcs 20]
 
     ; Test Nine
-    print!: "Test Nine - The 'getd' function will return the given default (i.e. 9999) if the given index 20 is out-of-bounds in " 
+    print!: "Test Nine - The 'getd' function will return the given default (i.e. 9999) if the given index 20 is out-of-bounds in "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [getd: list_for_coll_funcs 20 9999]
 
     ; Test Ten
-    print!: "Test Ten - The 'index_of' function will return the index of the given value 8 is  " 
+    print!: "Test Ten - The 'index_of' function will return the index of the given value 8 is  "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [index_of: list_for_coll_funcs 8]
 
     ; Test Eleven
-    print!: "Test Eleven - The 'pop' function will return a new list with first value not included in " 
+    print!: "Test Eleven - The 'pop' function will return a new list with first value not included in "
     print!: list_for_coll_funcs
     print!: " which is "
     printnl!: pop: list_for_coll_funcs
 
     ; Test Twelve
-    print!: "Test Twelve - The 'push' function will return a new list with a new entry at the start of an existing list in " 
+    print!: "Test Twelve - The 'push' function will return a new list with a new entry at the start of an existing list in "
     printnl!: list_for_coll_funcs
     print!: " which is "
     print!: push: list_for_coll_funcs 999
@@ -108,7 +108,7 @@ func main []
     printnl!: list_for_coll_funcs
 
     ; Test Thirteen
-    print!: "Test Thirteen - The 'update' function will return a new list with a new entry replacing an existing at the given index of an existing list in " 
+    print!: "Test Thirteen - The 'update' function will return a new list with a new entry replacing an existing at the given index of an existing list in "
     printnl!: list_for_coll_funcs
     print!: " which is "
     print!: update: list_for_coll_funcs 5 999
@@ -116,16 +116,15 @@ func main []
     printnl!: list_for_coll_funcs
 
     ; Test Fourteen
-    print!: "Test Fourteen - The 'remove' function will return a new list without an entry existing at the given index of an existing list in " 
+    print!: "Test Fourteen - The 'remove' function will return a new list with entries for which pred: entry returns falsey "
     printnl!: list_for_coll_funcs
     print!: " which is "
-    print!: remove: list_for_coll_funcs 5
+    print!: remove: odd? list_for_coll_funcs
     print!: " The old list is still the same "
     printnl!: list_for_coll_funcs
-    printnl!: "NOT WORKING!!!"
-    
+
     ; Test Fifteen
-    print!: "Test Fifteen - The 'drop' function will ...(do something)... of an existing list in " 
+    print!: "Test Fifteen - The 'drop' function will ...(do something)... of an existing list in "
     printnl!: list_for_coll_funcs
     print!: " which is "
     print!: drop: 5 list_for_coll_funcs
@@ -134,7 +133,7 @@ func main []
     printnl!: "NOT WORKING!!!"
 
     ; Test Sixteen
-    print!: "Test Sixteen - The 'dropFor' function will ...(do something)... of an existing list in " 
+    print!: "Test Sixteen - The 'dropFor' function will ...(do something)... of an existing list in "
     printnl!: list_for_coll_funcs
     print!: " which is "
     ; print!: dropFor: list_for_coll_funcs
@@ -143,7 +142,7 @@ func main []
     printnl!: "NOT WORKING!!!"
 
     ; Test Seventeen
-    print!: "Test Seventeen - The 'dropLast' function will ...(do something)... of an existing list in " 
+    print!: "Test Seventeen - The 'dropLast' function will ...(do something)... of an existing list in "
     printnl!: list_for_coll_funcs
     ; print!: " which is "dropLast: list_for_coll_funcs
     print!: " The old list is still the same "
@@ -151,7 +150,7 @@ func main []
     printnl!: "NOT WORKING!!! - Encounters RTE"
 
     ; Test Eighteen
-    print!: "Test Eighteen - The 'take' function will ...(do something)... of an existing list in " 
+    print!: "Test Eighteen - The 'take' function will ...(do something)... of an existing list in "
     printnl!: list_for_coll_funcs
     print!: " which is "take: 5 list_for_coll_funcs
     print!: " The old list is still the same "
@@ -160,7 +159,7 @@ func main []
 
     ; Test Nineteen
     let name [] "JohnnyB"
-    print!: "Test Nineteen - The 'split' function will ...(do something)... of an existing string in " 
+    print!: "Test Nineteen - The 'split' function will ...(do something)... of an existing string in "
     printnl!: name
     print!: " which is "split: name "n"
     print!: " The old string is still the same "

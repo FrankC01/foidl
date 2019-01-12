@@ -216,6 +216,24 @@ PFRTAny foidl_integer_qmark(PFRTAny el) {
 	return (el->ftype == integer_type) ? true : false;
 }
 
+PFRTAny foidl_even_qmark(PFRTAny el) {
+	PFRTAny res = false;
+	if(foidl_integer_qmark(el) == true) {
+		ft v = (ft) el->value;
+		return (v & 1) ? false: true;
+	}
+	return res;
+}
+
+PFRTAny foidl_odd_qmark(PFRTAny el) {
+	PFRTAny res = false;
+	if(foidl_integer_qmark(el) == true) {
+		ft v = (ft) el->value;
+		return (v & 1) ? true: false;
+	}
+	return res;
+}
+
 PFRTAny foidl_string_qmark(PFRTAny el) {
 	return (el->ftype == string_type) ? true : false;
 }
