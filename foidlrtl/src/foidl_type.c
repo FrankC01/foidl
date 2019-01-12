@@ -1,7 +1,7 @@
 /*
 	foidl_type.c
-	Library support for types
-	
+	Library support for types and type conversions
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
