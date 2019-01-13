@@ -117,18 +117,15 @@ ifeq ($(OS_NAME), Windows)
 	SYSTEM_LIBGCC_INC_64=-L$(MSVC_LIB64) -L$(UniversalCRT_Lib64) -L$(WINSDK_LIB64)
 	SYSTEM_FLAGS=-fmsc-version=$(_MSC_VER) -fms-extensions -fms-compatibility -fdelayed-template-parsing
 	# The resulting commands
-	C64=$(CLC) -c -O3 -isystem $(RTHDRS) $(TARGET_64) $(SYSTEM_INC_64)  $(SYSTEM_FLAGS)
-	CL64=$(CLC) -c $(TARGET_64) -O3
+	CL64=$(CLC) -c $(TARGET_64) -O3 
 	LINK64=lld-link $(SYSTEM_LIB_INC_64) /libpath:$(RTLIB)
 else
-	C64=$(CLC) -c -isystem $(RTHDRS) -march=x86-64 -fPIC -O3
 	CL64=$(CLC) -c -march=x86-64 -fPIC -O3
 	LINK64 := $(CPPLC) -lc++
 endif
 
 BHDRFLAGS := -I $(HDRS) $(RTHDRS) -a hdr
 BCFLAGS := -I $(HDRS) $(RTHDRS)
-LLCFLAGS = -march=x86-64 -x86-asm-syntax=intel -relocation-model=pic -O3 -filetype=obj
 
 # Substitutions for recipe patterns
 
