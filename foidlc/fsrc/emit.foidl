@@ -68,6 +68,7 @@ var :private context_tail "
     ret void
 }
 
+declare i64 @`dfoidl_return_code`d(%`dAny`d* %`d.1`d)
 declare %`dAny`d* @`dfoidl_convert_mainargs`d(i32 %`d.1`d, i8** %`d.2`d, i8** %`d.3`d)
 declare %`dAny`d* @`dfoidl_reg_character`d(i64 %`d.1`d)
 declare %`dAny`d* @`dfoidl_reg_integer`d(i64 %`d.1`d)
@@ -78,21 +79,23 @@ declare %`dAny`d* @`dfoidl_imbue`d(%`dAny`d* %`d.1`d, %`dAny`d* %`d.2`d)
 declare %`dAny`d* @`dfoidl_fref_instance`d(%`dAny`d* %`d.1`d)`n"
 
 var :private main_string "
-define i32 @`dmain`d(i32 %`dargc`d, i8** %`dargv`d, i8** %`denvp`d)
+define i64 @`dmain`d(i32 %`dargc`d, i8** %`dargv`d, i8** %`denvp`d)
 {
 entry:
   %`d.5`d = call %`dAny`d* @`dfoidl_convert_mainargs`d(i32 %`dargc`d, i8** %`dargv`d, i8** %`denvp`d)
   %`d.6`d = call %`dAny`d* @`duser_main`d(%`dAny`d* %`d.5`d)
-  ret i32 0
+  %`d.7`d = call i64 @`dfoidl_return_code`d(%`dAny`d* %`d.6`d)
+  ret i64 %`d.7`d
 }`n"
 
 var :private main_noarg_string "
-define i32 @`dmain`d(i32 %`dargc`d, i8** %`dargv`d, i8** %`denvp`d)
+define i64 @`dmain`d(i32 %`dargc`d, i8** %`dargv`d, i8** %`denvp`d)
 {
 entry:
   %`d.5`d = call %`dAny`d* @`dfoidl_convert_mainargs`d(i32 %`dargc`d, i8** %`dargv`d, i8** %`denvp`d)
   %`d.6`d = call %`dAny`d* @`duser_main`d()
-  ret i32 0
+  %`d.7`d = call i64 @`dfoidl_return_code`d(%`dAny`d* %`d.6`d)
+  ret i64 %`d.7`d
 }`n"
 
 ; Function: initialize

@@ -164,3 +164,4 @@ func main [argv]
             ^[element]      ; OH LOOK... A lambda!
                 update: {:name nil} :name element
             ["Abel" "Baker" "Charlie" "Django"]
+    zero

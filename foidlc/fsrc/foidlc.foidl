@@ -43,3 +43,4 @@ func :private execute [argv cmap]
 
 func main [argv]
 	execute: argv cmdlineparse: argv
+	zero

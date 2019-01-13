@@ -193,6 +193,12 @@ class LlvmGen(object):
         [self._reg_global_func_wargs(nm, a) for nm, a in supps]
         if srcfile != 'langcorem':
             [self._reg_global_func_wargs(nm, a) for nm, a in coresupps]
+        ir.Function(
+            self.module,
+            ir.FunctionType(
+                int_64,
+                [any_ptr]),
+            "foidl_return_code")
 
     def _emit_literals(self, litmap):
         """Declare private literal pointers"""
@@ -753,7 +759,7 @@ class LlvmGen(object):
         fn = ir.Function(
             self.module,
             ir.FunctionType(
-                ir.VoidType(),
+                int_64,
                 [int_32, void_ptr_ptr, void_ptr_ptr]),
             "main")
         fn.args[0].name = 'argc'
@@ -763,10 +769,13 @@ class LlvmGen(object):
         last = builder.call(
             builder.module.get_global("foidl_convert_mainargs"),
             fn.args)
-        builder.call(
+        lc = builder.call(
             builder.module.get_global("user_main"),
             [last])
-        builder.ret_void()
+        rc = builder.call(
+            builder.module.get_global("foidl_return_code"),
+            [lc])
+        builder.ret(rc)
 
     def emit(self, ptree, wrtr):
         """Emit entry point"""

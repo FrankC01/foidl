@@ -159,3 +159,4 @@ func main []
     printnl!: name
 
     printnl!: ""
+    zero

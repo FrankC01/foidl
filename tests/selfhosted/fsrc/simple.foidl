@@ -35,3 +35,4 @@ func isone? [a b]
 
 func main []
     printnl!: isone?: 1 2
+    zero

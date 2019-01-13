@@ -34,3 +34,4 @@ func main [argv]
                         | :default result
         [] flatten: [a_list b_list c_list]
     printnl!: even_list
+    zero

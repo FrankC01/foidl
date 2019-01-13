@@ -33,6 +33,17 @@ PFRTAny  foidl_reg_integer(long long i) {
 	return res;
 }
 
+int foidl_return_code(PFRTAny rc) {
+	if(rc->ftype == integer_type) {
+		return (int) rc->value;
+	}
+	else {
+		printf("Attempting to return non integer from main\n");
+		unknown_handler();
+	}
+	return 0;
+}
+
 PFRTAny allocIntegerWithValue(long long v) {\
 	FRTAny 	anyInt = {scalar_class,integer_type,0,0,(void *) v};
 	PFRTAny res = map_get(intMap,&anyInt);
