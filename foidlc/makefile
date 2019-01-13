@@ -31,6 +31,8 @@ else
 	PYTHON := python
 endif
 
+$(info Building for $(OS_NAME))
+
 # Bootstrap
 
 BSTRP 	:= $(PYTHON) ../bin/fbstrp
@@ -121,7 +123,7 @@ ifeq ($(OS_NAME), Windows)
 else
 	C64=$(CLC) -c -isystem $(RTHDRS) -march=x86-64 -fPIC -O3
 	CL64=$(CLC) -c -march=x86-64 -fPIC -O3
-	LINK64 := $(CPPLC) -lc++ 
+	LINK64 := $(CPPLC) -lc++
 endif
 
 BHDRFLAGS := -I $(HDRS) $(RTHDRS) -a hdr
