@@ -42,121 +42,234 @@ func main []
     printnl!: "Welcome to the foidl playground!"
     printnl!: ""
 
-    ; Test One
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; Miscellaneous tests
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    printnl!: ""
+    printnl!: "Miscellaneous tests"
+    printnl!: ""
+
+    ; Test One: Comma delimiters
     print!: "Test One - List declared as [1, 2 3 4, 5] compiles and works because a "
         print!: "parameter list can have mixed usage of the comma dilimiter => "
         printnl!: list_with_mixed_delims
 
-    ; Test Two
+    ; Test Two: Callable functions
     ; printnl!: "Test Two - List can contain callable functions"
     ; printnl!: map: call_funcs list_with_functions
     ; printnl!: list_func_1
 
-    ; Test Three
-    print!: "Test Three - The 'first' function can get first value in "
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; Early use predicates
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    printnl!: ""
+    printnl!: "Early use predicates tests"
+    printnl!: ""
+
+    ; Test One: 'empty?' function
+    let pred_empty_string [] ""
+    print!: format: "Test One - The 'empty?' function will indicate if a string is empty in [{}] " [pred_empty_string]
+    printnl!: format: " The result is {} " [empty?: pred_empty_string]
+
+    ; Test Two: 'empty?' function
+    let pred_nil_string [] nil
+    print!: format: "Test Two - The 'empty?' function will indicate if a nil string is empty in [{}] " [pred_nil_string]
+    printnl!: format: " The result is {} " [empty?: pred_nil_string]
+
+    ; Test Three: 'empty?' function
+    let pred_nonEmptyString [] "I am not empty"
+    print!: format: "Test Three - The 'empty?' function will indicate if a non-empty string is empty in [{}] " [pred_nonEmptyString]
+    printnl!: format: " The result is {} " [empty?: pred_nonEmptyString]
+
+    ; Test Four: 'empty?' function
+    let pred_an_empty_list [] []
+    print!: "Test Four - The 'empty?' function will indicate if a collection is empty in " 
+    print!: pred_an_empty_list
+    printnl!: format: " The result is {} " [empty?: pred_an_empty_list]
+
+    ; Test Five: 'collection?' function
+    let pred_a_list [] [1 2 3 4 5]
+    print!: "Test Five - The 'collection?' function will indicate if a list is a collection in " 
+    print!: pred_a_list
+    printnl!: format: " The result is {} " [collection?: pred_a_list]
+
+    ; Test Six:'collection?' function
+    let pred_a_string [] "I'm a string"
+    print!: format: "Test Six - The 'collection?' function will indicate if a string is a collection in [{}]" [pred_a_string]
+    printnl!: format: " The result is {} " [collection?: pred_a_string]
+
+    ; Test Seven: 'extendable?' function
+    print!: format: "Test Seven - The 'extendable?' function will indicate if a string is extendable in [{}] " [pred_a_string] 
+    printnl!: format: "the result is {}" [extendable?: pred_a_string]
+
+    ; Test Eight: 'extendable?' function
+    print!: format: "Test Eight - The 'extendable?' function will indicate if a number is extendable in [{}] " [999] 
+    printnl!: format: "the result is {}" [extendable?: 999]
+
+    ; Test Nine: 'extendable?' function
+    print!: "Test Nine - The 'extendable?' function will indicate if a list "
+    print!: pred_a_list
+    print!: " is extendable "
+    printnl!: format: "the result is {}" [extendable?: pred_a_list]
+
+    ; Test Ten: 'eq' function
+    let pred_another_string [] "I'm another string"
+    print!: format: "Test Ten - The 'eq' function will indicate if one value [{}] is equal to another [{}] " [pred_a_string pred_another_string]
+    printnl!: format: "the result is {}" [eq: pred_a_string pred_another_string]
+
+    ; Test Eleven: 'eq' function
+    print!: format: "Test Eleven - The 'eq' function will indicate if one value [{}] is equal to another [{}] " [pred_a_string pred_a_string]
+    printnl!: format: "the result is {}" [eq: pred_a_string pred_a_string]
+
+    ; Test Twelve: 'nil?' function
+    print!: format: "Test Twelve - The 'nil?' function will indicate if a nil string is nil in [{}] " [pred_nil_string]
+    printnl!: format: " The result is {} " [nil?: pred_nil_string]
+
+    ; Test Thirteen: 'nil?' function
+    print!: format: "Test Thirteen - The 'nil?' function will indicate if an empty string is nil in [{}] " [pred_empty_string]
+    printnl!: format: " The result is {} " [nil?: pred_empty_string]
+
+    ; Test Fourteen: 'true?' function
+    let pred_true_flag [] true
+    print!: format: "Test Fourteen - The 'true?' function will indicate if a [{}] value is true " [pred_true_flag]
+    printnl!: format: " The result is {} " [true?: pred_true_flag]
+
+    ; Test Fifteen: 'true?' function
+    let pred_false_flag [] false
+    print!: format: "Test Fifteen - The 'true?' function will indicate if a [{}] value is true " [pred_false_flag]
+    printnl!: format: " The result is {} " [true?: pred_false_flag]
+
+    ; Test Sixteen: 'false?' function
+    print!: format: "Test Sixteen - The 'false?' function will indicate if a [{}] value is false " [pred_false_flag]
+    printnl!: format: " The result is {} " [false?: pred_false_flag]
+
+    ; Test Seventeen: 'false?' function
+    print!: format: "Test Seventeen - The 'false?' function will indicate if a [{}] value is false " [pred_true_flag]
+    printnl!: format: " The result is {} " [false?: pred_true_flag]
+
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; String functions
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    printnl!: ""
+    printnl!: "String function tests"
+    printnl!: ""
+
+    ; Test One: 'split' function
+    let name [] "Johnny Bucci"
+    print!: "Test One - The 'split' function will split a string into a list based on regular expression "
+    printnl!: name
+    print!: " which is " printnl!: split: name regex: " "
+    print!: " The old string is still the same "
+    printnl!: name
+
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; Collection functions
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    printnl!: ""
+    printnl!: "Collection function tests"
+    printnl!: ""
+
+    ; Test One: 'first' function
+    print!: "Test One - The 'first' function can get first value in "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [first: list_for_coll_funcs]
 
-    ; Test Four
-    print!: "Test Four - The 'second' function can get second value in "
+    ; Test Two: 'second' function
+    print!: "Test Two - The 'second' function can get second value in "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [second: list_for_coll_funcs]
 
-    ; Test Five
-    print!: "Test Five - The 'rest' function can get every value but first value in "
+    ; Test Three: 'rest' function
+    print!: "Test Three - The 'rest' function can get every value but first value in "
     print!: list_for_coll_funcs
     print!: " which is "
     printnl!: rest: list_for_coll_funcs
 
-    ; Test Six
-    print!: "Test Six - The 'last' function can get last value in "
+    ; Test Four: 'last' function
+    print!: "Test Four - The 'last' function can get last value in "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [last: list_for_coll_funcs]
 
-    ; Test Seven
-    print!: "Test Seven - The 'get' function can get the value associated with the given index 5 in "
+    ; Test Five: 'get' function (in-bounds)
+    print!: "Test Five - The 'get' function can get the value associated with the given index 5 in "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [get: list_for_coll_funcs 5]
 
-    ; Test Eight
-    print!: "Test Eight - The 'get' function will return nil if the given index 20 is out-of-bounds in "
+    ; Test Six: 'get' function (out-of-bounds)
+    print!: "Test Six - The 'get' function will return nil if the given index 20 is out-of-bounds in "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [get: list_for_coll_funcs 20]
 
-    ; Test Nine
-    print!: "Test Nine - The 'getd' function will return the given default (i.e. 9999) if the given index 20 is out-of-bounds in "
+    ; Test Seven: 'getd' function (out-of-bounds)
+    print!: "Test Seven - The 'getd' function will return the given default (i.e. 9999) if the given index 20 is out-of-bounds in "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [getd: list_for_coll_funcs 20 9999]
 
-    ; Test Ten
-    print!: "Test Ten - The 'index_of' function will return the index of the given value 8 is  "
+    ; Test Eight: 'index_of' function
+    print!: "Test Eight - The 'index_of' function will return the index of the given value 8 is  "
     print!: list_for_coll_funcs
     printnl!: format: " which is {}" [index_of: list_for_coll_funcs 8]
 
-    ; Test Eleven
-    print!: "Test Eleven - The 'pop' function will return a new list with first value not included in "
+    ; Test Nine: 'pop' function
+    print!: "Test Nine - The 'pop' function will return a new list with first value not included in "
     print!: list_for_coll_funcs
     print!: " which is "
     printnl!: pop: list_for_coll_funcs
 
-    ; Test Twelve
-    print!: "Test Twelve - The 'push' function will return a new list with a new entry at the start of an existing list in "
+    ; Test Ten: 'push' function
+    print!: "Test Ten - The 'push' function will return a new list with a new entry at the start of an existing list in "
     printnl!: list_for_coll_funcs
     print!: " which is "
     print!: push: list_for_coll_funcs 999
     print!: " The old list is still the same "
     printnl!: list_for_coll_funcs
 
-    ; Test Thirteen
-    print!: "Test Thirteen - The 'update' function will return a new list with a new entry replacing an existing at the given index of an existing list in "
+    ; Test Eleven: 'update' function
+    print!: "Test Eleven - The 'update' function will return a new list with a new entry replacing an existing at the given index of an existing list in "
     printnl!: list_for_coll_funcs
     print!: " which is "
     print!: update: list_for_coll_funcs 5 999
     print!: " The old list is still the same "
     printnl!: list_for_coll_funcs
 
-    ; Test Fourteen
-    print!: "Test Fourteen - The 'remove' function will return a new list with entries for which pred: entry returns falsey "
+    ; Test Twelve: 'remove' function
+    print!: "Test Twelve - The 'remove' function will return a new list with entries for which pred: entry returns falsey "
     printnl!: list_for_coll_funcs
     print!: " which is "
     print!: remove: odd? list_for_coll_funcs
     print!: " The old list is still the same "
     printnl!: list_for_coll_funcs
 
-    ; Test Fifteen
-    print!: "Test Fifteen - The 'drop' function will return a new list with count remove from existing list in "
+    ; Test Thirteen: 'drop' function
+    print!: "Test Thirteen - The 'drop' function will return a new list with count remove from existing list in "
     printnl!: list_for_coll_funcs
     print!: " which is "
     print!: drop: 5 list_for_coll_funcs
     print!: " The old list is still the same "
     printnl!: list_for_coll_funcs
 
-    ; Test Sixteen
-    printnl!: "Test Sixteen - The 'dropFor' function is deprecated "
+    ; Test Fourteen: 'dropFor' function (deprecated)
+    printnl!: "Test Fourteen - The 'dropFor' function is deprecated "
 
-    ; Test Seventeen
-    print!: "Test Seventeen - The 'drop_last' function will drop the last element of string, vector or list "
+    ; Test Fifteen: 'drop_last' function
+    print!: "Test Fifteen - The 'drop_last' function will drop the last element of string, vector or list "
     printnl!: list_for_coll_funcs
     print!: " which is "
     printnl!: drop_last: list_for_coll_funcs
     print!: " The old list is still the same "
     printnl!: list_for_coll_funcs
 
-    ; Test Eighteen
-    print!: "Test Eighteen - The 'take' function will return a new list with count elements from existing list in "
+    ; Test Sixteen: 'take' function
+    print!: "Test Sixteen - The 'take' function will return a new list with count elements from existing list in "
     printnl!: list_for_coll_funcs
     print!: " which is "
     printnl!: take: 5 list_for_coll_funcs
     print!: " The old list is still the same "
     printnl!: list_for_coll_funcs
 
-    ; Test Nineteen
-    let name [] "Johnny Bucci"
-    print!: "Test Nineteen - The 'split' function will split a string into a list based on regular expression "
-    printnl!: name
-    print!: " which is " printnl!: split: name regex: " "
-    print!: " The old string is still the same "
-    printnl!: name
-
-    printnl!: ""
+    printnl!: "Huh???"
     zero
