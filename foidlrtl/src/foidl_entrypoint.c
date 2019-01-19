@@ -308,13 +308,8 @@ PFRTAny 	foidl_last(PFRTAny a) {
 }
 
 
-//	Extend associates additional data into a collection
-//	For vectors: Adds value to rear
-//	For lists: Adds value to rear
-//	For sets: Adds in associative structure
+//	Extend associates additional data into a map collection
 //	For maps: element is a 2 value container (k,v) to add
-//  Note: For sets and maps if the element or key exist by
-//	hash, it reverts to an update type operation
 
 PFRTAny 	foidl_extendKV(PFRTAny coll, PFRTAny key, PFRTAny value) {
 	PFRTAny res = nil;
@@ -685,6 +680,7 @@ PFRTAny 	foidl_reduced(PFRTAny el) {
 //	Applies fn to each element of coll. Fn must take 2 argument
 
 PFRTAny 	foidl_apply(PFRTAny fn, PFRTAny coll) {
+	unknown_handler();
 	return coll;
 }
 
@@ -885,6 +881,7 @@ PFRTAny 	foidl_flatten(PFRTAny coll) {
 //	Coercion routine
 
 PFRTAny 	foidl_coerce(PFRTAny type, PFRTAny data) {
+	unknown_handler();
 	return data;
 }
 

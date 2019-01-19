@@ -5,7 +5,7 @@ Frank's Orthogonally Indepentent Domain Language (`foidl`) is a functional progr
 Inspirational:
 * Immutable data
 * First class functions
-* Lambda calculus (partial, currying lambdas)
+* Lambda calculus (partial, currying, lambdas)
 
 My own twists:
 * Typeless - Everything is Any thing for the most part
