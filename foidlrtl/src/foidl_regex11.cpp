@@ -8,6 +8,7 @@
 #include <foidl_regex11.hpp>
 #include <stdio.h>
 #include <iostream>
+#include <sstream>
 #include <regex>
 #include <list>
 
@@ -59,24 +60,6 @@ EXTERNC void* _string_to_regex(const char* s) {
     // cout << " compiling regex " << s << endl;
     regex* re = _new_regex(s);
     return static_cast<void *>(re);
-}
-
-EXTERNC PFRTAny  _format_string(const char *strng, char **rep, int rcnt) {
-    string base(strng);
-    string result;
-    smatch m;
-    int pos=0;
-
-    while (regex_search (base,m,*frmtstr)) {
-        result += m.prefix().str() + rep[pos];
-        base = m.suffix().str();
-        ++pos;
-    }
-    if( pos != rcnt ) {
-        cerr << "Count found does not match inbound match set" << endl;
-    }
-    result += base;
-    return allocStringWithCopy((char *) result.c_str());
 }
 
 // Split a string
@@ -192,4 +175,131 @@ EXTERNC void _reduce_tokens(const char*s, ptoken_block block) {
     }
 
     return;
+}
+
+static PFRTAny fend = (PFRTAny) &_end.fclass;
+static void _ttstr(ostringstream &ost, PFRTAny e);
+
+static void _single_coll(ostringstream &ost, PFRTAny coll) {
+    PFRTAny      entry;
+    PFRTIterator li = iteratorFor(coll);
+    int cnt = 0;
+    while((entry = iteratorNext(li)) != fend) {
+        if( cnt > 0 && cnt < coll->count) {
+            ost << ",";
+        }
+        ++cnt;
+        _ttstr(ost, entry);
+    }
+
+}
+static void _assoc_coll(ostringstream &ost, PFRTAny coll) {
+    PFRTAny      entry;
+    PFRTIterator li = iteratorFor(coll);
+    int cnt = 0;
+    while((entry = iteratorNext(li)) != fend) {
+        PFRTMapEntry e = (PFRTMapEntry) entry;
+        _ttstr(ost, e->key);
+        ost << "->";
+        _ttstr(ost, e->value);
+        ++cnt;
+        if( cnt > 0 && cnt < coll->count) {
+            ost << ",";
+        }
+    }
+
+}
+
+static void _ttstr(ostringstream &ost, PFRTAny e) {
+    int count = 0;
+    switch(e->ftype) {
+        case    string_type:
+        case    keyword_type:
+            ost << (char *)e->value;
+            break;
+        case    integer_type:
+            ost << (ft) e->value;
+            break;
+        case nil_type:
+            ost << (char *)nilstr->value;
+            break;
+        case boolean_type:
+            if(((ft) e->value) == 1)
+                ost << (char *) truestr->value;
+            else
+                ost << (char *) falsestr->value;
+            break;
+        case list2_type:
+            {
+                ost << "[";
+                _single_coll(ost, e);
+                ost << "]";
+            }
+            break;
+        case vector2_type:
+            {
+                ost << "#[";
+                _single_coll(ost, e);
+                ost << "]";
+            }
+            break;
+        case map2_type:
+            {
+                ost << "{";
+                _assoc_coll(ost, e);
+                ost << "}";
+            }
+            break;
+        case set2_type:
+            {
+                ost << "#{";
+                _single_coll(ost, e);
+                ost << "}";
+            }
+            break;
+        default:
+            unknown_handler();
+            break;
+
+    }
+    return;
+}
+
+EXTERNC PFRTAny foidl_format(PFRTAny s, PFRTAny coll) {
+    if(s->ftype == string_type &&
+        (coll->ftype == vector2_type || coll->ftype == list2_type)) {
+        if(coll->count == 0)
+            return s;
+        PFRTAny entry;
+        PFRTIterator li = iteratorFor(coll);
+        vector<string *> hitlist;
+
+        while((entry = iteratorNext(li)) != fend) {
+            ostringstream ost;
+            _ttstr(ost, entry);
+            hitlist.push_back(new string(ost.str()));
+        }
+        string base((char *) s->value);
+        string result;
+        smatch m;
+        int pos=0;
+
+        while (regex_search (base,m,*frmtstr)) {
+            result += m.prefix().str() + hitlist[pos]->c_str();
+            base = m.suffix().str();
+            ++pos;
+        }
+        for (auto&& i : hitlist) {
+            delete i;
+        }
+        result += base;
+        return allocStringWithCopy((char *) result.c_str());
+
+        // Get rid of surplus strings
+    }
+    else {
+        unknown_handler();
+    }
+
+    return s;
 }

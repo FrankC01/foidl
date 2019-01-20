@@ -623,6 +623,7 @@ EXTERNC PFRTIOChannel    cin,cout,cerr;
 EXTERNC struct FRTTypeG _end;
 EXTERNC struct FRTTypeG _nil;
 EXTERNC struct FRTTypeG _false;
+EXTERNC struct FRTTypeG _true;
 EXTERNC struct FRTTypeG _one;
 EXTERNC struct FRTTypeG _zero;
 EXTERNC PFRTAny 	langle,rangle;

@@ -32,7 +32,7 @@ typedef struct {
 EXTERNC void*   _string_to_regex(const char* s);
 EXTERNC int     _is_match(const char* s, const char* pattern);
 EXTERNC int     _is_matchp(const char* s, void* pattern);
-EXTERNC PFRTAny _format_string(const char *strng, char **rep, int rcnt);
 EXTERNC void    _reduce_tokens(const char*s, ptoken_block);
 EXTERNC void    _string_split(void *rlist, const char *strng, void* pattern);
+EXTERNC PFRTAny foidl_format(PFRTAny bstr, PFRTAny bcoll);
 #endif

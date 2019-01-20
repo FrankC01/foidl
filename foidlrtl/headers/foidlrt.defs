@@ -237,6 +237,7 @@ func    foidl_regex [s]
 func    foidl_regex_match? [s pattern]
 func    foidl_tokenize [s patterns ignores]
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Fundemental Collection Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

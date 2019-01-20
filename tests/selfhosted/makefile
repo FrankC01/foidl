@@ -111,12 +111,12 @@ ifeq ($(OS_NAME), Windows)
 	# The resulting commands
 	CL64=$(CLC) -c $(TARGET_64) -O3
 	foidlrt_LIB  := libfoidlrt.lib
-	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
+	STATIC_LIB  := $(RTLIB)/$(foidlrt_LIB)
 	LINK64=lld-link $(SYSTEM_LIB_INC_64) /libpath:$(RTLIB)
 else
 	CL64=$(CLC) -c -march=x86-64 -fPIC -O3
 	foidlrt_LIB  := libfoidlrt.a
-	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
+	STATIC_LIB  := $(RTLIB)/$(foidlrt_LIB)
 	LINK64 := $(CPPLC)  -lc++
 endif
 
@@ -136,7 +136,7 @@ bin/%: objs/%.o
 	$(LINK64) $< -lfoidlrt -L $(RTLIB) -o $@
 endif
 
-$(FEXES): | $(BIN)
+$(FEXES): $(STATIC_LIB) | $(BIN)
 
 $(BIN):
 	mkdir bin

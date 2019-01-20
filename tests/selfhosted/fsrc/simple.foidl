@@ -35,4 +35,8 @@ func isone? [a b]
 
 func main []
     printnl!: isone?: 1 2
+    ; Format with literals and objects
+    printnl!:
+        format: "{} this is {} and not {} and certainly not {}"
+            ["that" [1 2] <7 7> {:fin :fang :foo :bar}]
     zero
