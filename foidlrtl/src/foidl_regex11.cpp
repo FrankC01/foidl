@@ -21,11 +21,8 @@ static regex *NLCR = _new_regex("(\r\n|[\r\n])");
 static regex *simple_str = _new_regex("\"(.|\n)*?\"");
 static regex *frmtstr = _new_regex("\\{.*?\\}");
 
-// Core functions to avoid cleaning up foidlrt.h at the moment
-EXTERNC void * foidl_xall(uint32_t sz);
-EXTERNC void foidl_xdel(void *v);
+// Core functions not exposed in header
 EXTERNC void * foidl_reg_string(const char *i);
-EXTERNC void * allocStringWithCopy(const char *);
 EXTERNC void * list_extend_bang(void *, void *);
 
 const char *astring = ":string";
@@ -39,21 +36,6 @@ ptoken _build_token(string &word, int ti, int lc, int sp ) {
     return _tok;
 }
 
-// EXTERNC int _is_symbol(const char* s) {
-//     return regex_match(s, sympattern);
-// }
-
-// EXTERNC int _is_keyword(const char* s) {
-//     return regex_match(s, kwdpattern);
-// }
-
-// EXTERNC int _is_number(const char* s) {
-//      if( regex_match(s, intpattern)) return 1;
-//      if( regex_match(s, realpattern)) return 1;
-//      if( regex_match(s, hexpattern)) return 1;
-//      if( regex_match(s, bitpattern)) return 1;
-//      return 0;
-// }
 
 // Match with conversion of pattern string to regex
 // Expensive!
@@ -79,7 +61,7 @@ EXTERNC void* _string_to_regex(const char* s) {
     return static_cast<void *>(re);
 }
 
-EXTERNC void* _format_string(const char *strng, char **rep, int rcnt) {
+EXTERNC PFRTAny  _format_string(const char *strng, char **rep, int rcnt) {
     string base(strng);
     string result;
     smatch m;
@@ -94,7 +76,7 @@ EXTERNC void* _format_string(const char *strng, char **rep, int rcnt) {
         cerr << "Count found does not match inbound match set" << endl;
     }
     result += base;
-    return allocStringWithCopy(result.c_str());
+    return allocStringWithCopy((char *) result.c_str());
 }
 
 // Split a string
@@ -105,7 +87,7 @@ EXTERNC void _string_split(void *rlist, const char *strng, void* pattern) {
     sregex_token_iterator reg_end;
     for (; it != reg_end; ++it) {
         string hs = it->str();
-        list_extend_bang(rlist, allocStringWithCopy(hs.c_str()));
+        list_extend_bang(rlist, allocStringWithCopy((char *) hs.c_str()));
     }
 }
 

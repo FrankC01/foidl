@@ -73,7 +73,7 @@ else
 	foidlrt_LIB  := libfoidlrt.a
 	FOIDLC		 := $(BIN)$(foidlc_NAME)
 endif
-STATIC_LIB   := $(LIB)$(foidlrt_LIB)
+STATIC_LIB   := $(RTLIB)/$(foidlrt_LIB)
 
 # Flags for compilation of all types
 ifeq ($(OS_NAME), Windows)
@@ -117,7 +117,7 @@ ifeq ($(OS_NAME), Windows)
 	SYSTEM_LIBGCC_INC_64=-L$(MSVC_LIB64) -L$(UniversalCRT_Lib64) -L$(WINSDK_LIB64)
 	SYSTEM_FLAGS=-fmsc-version=$(_MSC_VER) -fms-extensions -fms-compatibility -fdelayed-template-parsing
 	# The resulting commands
-	CL64=$(CLC) -c $(TARGET_64) -O3 
+	CL64=$(CLC) -c $(TARGET_64) -O3
 	LINK64=lld-link $(SYSTEM_LIB_INC_64) /libpath:$(RTLIB)
 else
 	CL64=$(CLC) -c -march=x86-64 -fPIC -O3
@@ -132,10 +132,10 @@ BCFLAGS := -I $(HDRS) $(RTHDRS)
 all: $(FOIDLC) | $(HDRS) $(LLS) $(OBJS)
 
 ifeq ($(OS_NAME), Windows)
-$(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) | $(BIN)
+$(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) $(STATIC_LIB) | $(BIN)
 	$(LINK64) $(LIBS) /subsystem:console /out:$@ $(FOBJS)
 else
-$(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) | $(BIN)
+$(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) $(STATIC_LIB) | $(BIN)
 	$(LINK64) $(FOBJS) -lfoidlrt -L $(RTLIB) -o $@
 endif
 

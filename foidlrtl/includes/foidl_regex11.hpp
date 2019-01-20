@@ -9,11 +9,7 @@
 #ifndef REGEX11_IMPL
 #define REGEX11_IMPL
 
-#ifdef __cplusplus
-    #define EXTERNC extern "C"
-#else
-    #define EXTERNC
-#endif
+#include    <foidlrt.h>
 
 typedef struct {
     int     type_index;
@@ -36,7 +32,7 @@ typedef struct {
 EXTERNC void*   _string_to_regex(const char* s);
 EXTERNC int     _is_match(const char* s, const char* pattern);
 EXTERNC int     _is_matchp(const char* s, void* pattern);
-EXTERNC void*   _format_string(const char *strng, char **rep, int rcnt);
+EXTERNC PFRTAny _format_string(const char *strng, char **rep, int rcnt);
 EXTERNC void    _reduce_tokens(const char*s, ptoken_block);
 EXTERNC void    _string_split(void *rlist, const char *strng, void* pattern);
 #endif

@@ -15,6 +15,12 @@
 #include <string.h>
 
 
+#ifdef __cplusplus
+    #define EXTERNC extern "C"
+#else
+    #define EXTERNC extern
+#endif
+
 typedef unsigned long long ft;
 typedef long long lt;
 
@@ -592,400 +598,406 @@ ft 	foidl_fclose(ft);
 void foidl_exit();
 
 
-extern void *foidl_alloc(ft);
-extern void foidl_release(void *);
+EXTERNC void *foidl_alloc(ft);
+EXTERNC void foidl_release(void *);
 
 // RTL Asm Error functions
 
-extern void unknown_handler();
+EXTERNC void unknown_handler();
 
 //	RTL Asm Math functions
 
 #ifndef MATH_IMPL
-extern PFRTAny 	foidl_add(PFRTAny, PFRTAny);
+EXTERNC PFRTAny 	foidl_add(PFRTAny, PFRTAny);
 #endif
 
 #ifndef GLOBALS_IMPL
-extern void foidl_rtl_init_globals();
-extern PFRTAny  nil,end,true,false;
-extern struct FRTTypeG _end;
-extern struct FRTTypeG _nil;
-extern struct FRTTypeG _false;
-extern struct FRTTypeG _one;
-extern struct FRTTypeG _zero;
-extern PFRTAny 	langle,rangle;
-extern PFRTAny 	lbrace,rbrace;
-extern PFRTAny 	lbracket,rbracket;
-extern PFRTAny 	tbchr,nlchr,crchr,spchr,semichr;
-extern PFRTAny  semichr,colonchr,sqchr,dqchr,eschr;
-extern PFRTAny 	meta,comma;
-extern PFRTAny 	zero, one,two,three,four,five,six,seven,eight;
-extern PFRTAny 	nine,ten,eleven,twelve,thirteen,fourteen,fifteen,sixteen;
-extern PFRTAny 	empty_string, space_string;
-extern PFRTIOChannel 	cin,cout,cerr;
-extern PFRTAny 	nilstr, truestr, falsestr;
+EXTERNC void foidl_rtl_init_globals();
+EXTERNC PFRTAny end;
+
+#ifndef __cplusplus
+EXTERNC PFRTAny  nil,true,false;
+EXTERNC PFRTIOChannel    cin,cout,cerr;
+#endif
+
+EXTERNC struct FRTTypeG _end;
+EXTERNC struct FRTTypeG _nil;
+EXTERNC struct FRTTypeG _false;
+EXTERNC struct FRTTypeG _one;
+EXTERNC struct FRTTypeG _zero;
+EXTERNC PFRTAny 	langle,rangle;
+EXTERNC PFRTAny 	lbrace,rbrace;
+EXTERNC PFRTAny 	lbracket,rbracket;
+EXTERNC PFRTAny 	tbchr,nlchr,crchr,spchr,semichr;
+EXTERNC PFRTAny  semichr,colonchr,sqchr,dqchr,eschr;
+EXTERNC PFRTAny 	meta,comma;
+EXTERNC PFRTAny 	zero, one,two,three,four,five,six,seven,eight;
+EXTERNC PFRTAny 	nine,ten,eleven,twelve,thirteen,fourteen,fifteen,sixteen;
+EXTERNC PFRTAny 	empty_string, space_string;
+
+EXTERNC PFRTAny 	nilstr, truestr, falsestr;
 #endif
 
 #ifndef TYPE_IMPL
-extern void foidl_rtl_init_types();
+EXTERNC void foidl_rtl_init_types();
 #endif
 
 #ifndef ENTRYPOINT_IMPL
-extern PFRTAny 	foidl_count(PFRTAny);
-extern PFRTAny 	foidl_get(PFRTAny,PFRTAny);
-extern PFRTAny 	foidl_getd(PFRTAny,PFRTAny,PFRTAny);
-extern PFRTAny 	foidl_first(PFRTAny);
-extern PFRTAny 	foidl_second(PFRTAny);
-extern PFRTAny 	foidl_last(PFRTAny);
-extern PFRTAny 	foidl_rest(PFRTAny);
-extern PFRTAny 	foidl_remove(PFRTAny,PFRTAny);
-extern PFRTAny 	foidl_dropFor(PFRTAny,PFRTAny);
-extern PFRTAny 	foidl_dropLast(PFRTAny);
-extern PFRTAny 	foidl_extend(PFRTAny, PFRTAny);
-extern PFRTAny 	foidl_extendKV(PFRTAny, PFRTAny,PFRTAny);
-extern PFRTAny 	foidl_extend_bang(PFRTAny, PFRTAny);
-extern PFRTAny 	foidl_update(PFRTAny,PFRTAny,PFRTAny);
-extern PFRTAny 	foidl_update_bang(PFRTAny,PFRTAny,PFRTAny);
-extern PFRTAny 	foidl_pop(PFRTAny);
-extern PFRTAny 	foidl_pop_bang(PFRTAny);
-extern PFRTAny 	foidl_push(PFRTAny, PFRTAny);
-extern PFRTAny 	foidl_push_bang(PFRTAny, PFRTAny);
-extern PFRTAny  foidl_apply(PFRTAny, PFRTAny);
-extern PFRTAny  foidl_map(PFRTAny, PFRTAny);
-extern PFRTAny 	foidl_fold(PFRTAny, PFRTAny, PFRTAny);
-extern PFRTAny 	foidl_reduce(PFRTAny, PFRTAny, PFRTAny);
-extern PFRTAny  foidl_reduced(PFRTAny);
-extern PFRTAny  foidl_split(PFRTAny,PFRTAny); 	//	May move to string
+EXTERNC PFRTAny 	foidl_count(PFRTAny);
+EXTERNC PFRTAny 	foidl_get(PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	foidl_getd(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	foidl_first(PFRTAny);
+EXTERNC PFRTAny 	foidl_second(PFRTAny);
+EXTERNC PFRTAny 	foidl_last(PFRTAny);
+EXTERNC PFRTAny 	foidl_rest(PFRTAny);
+EXTERNC PFRTAny 	foidl_remove(PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	foidl_dropFor(PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	foidl_dropLast(PFRTAny);
+EXTERNC PFRTAny 	foidl_extend(PFRTAny, PFRTAny);
+EXTERNC PFRTAny 	foidl_extendKV(PFRTAny, PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	foidl_extend_bang(PFRTAny, PFRTAny);
+EXTERNC PFRTAny 	foidl_update(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	foidl_update_bang(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	foidl_pop(PFRTAny);
+EXTERNC PFRTAny 	foidl_pop_bang(PFRTAny);
+EXTERNC PFRTAny 	foidl_push(PFRTAny, PFRTAny);
+EXTERNC PFRTAny 	foidl_push_bang(PFRTAny, PFRTAny);
+EXTERNC PFRTAny  foidl_apply(PFRTAny, PFRTAny);
+EXTERNC PFRTAny  foidl_map(PFRTAny, PFRTAny);
+EXTERNC PFRTAny 	foidl_fold(PFRTAny, PFRTAny, PFRTAny);
+EXTERNC PFRTAny 	foidl_reduce(PFRTAny, PFRTAny, PFRTAny);
+EXTERNC PFRTAny  foidl_reduced(PFRTAny);
+EXTERNC PFRTAny  foidl_split(PFRTAny,PFRTAny); 	//	May move to string
 #endif
 
 #ifndef F_ASPRINTF
 #ifdef _MSC_VER
 #include <stdarg.h>
-extern int vasprintf(char **strp, const char *format, va_list ap);
-extern int asprintf(char **strp, const char *format, ...);
+EXTERNC int vasprintf(char **strp, const char *format, va_list ap);
+EXTERNC int asprintf(char **strp, const char *format, ...);
 #elif defined __linux__
 #include <stdio.h>
-extern int vasprintf(char **strp, const char *format, va_list ap);
-extern int asprintf(char **strp, const char *format, ...);
+EXTERNC int vasprintf(char **strp, const char *format, va_list ap);
+EXTERNC int asprintf(char **strp, const char *format, ...);
 #endif
 #endif
 
 #ifndef PREDICATE_IMPL
-extern PFRTAny scalar_equality(PFRTAny,PFRTAny);
-extern PFRTAny foidl_equal_qmark(PFRTAny,PFRTAny);
-extern PFRTAny foidl_falsey_qmark(PFRTAny);
-extern PFRTAny foidl_truthy_qmark(PFRTAny);
-extern PFRTAny foidl_not_equal_qmark(PFRTAny,PFRTAny);
-extern PFRTAny foidl_function_qmark(PFRTAny);
-extern PFRTAny foidl_integer_qmark(PFRTAny);
-extern PFRTAny foidl_collection_qmark(PFRTAny);
-extern PFRTAny foidl_extendable_qmark(PFRTAny);
-extern PFRTAny function_strict_arg(PFRTAny, PFRTAny);
-extern PFRTAny string_type_qmark(PFRTAny);
+EXTERNC PFRTAny scalar_equality(PFRTAny,PFRTAny);
+EXTERNC PFRTAny foidl_equal_qmark(PFRTAny,PFRTAny);
+EXTERNC PFRTAny foidl_falsey_qmark(PFRTAny);
+EXTERNC PFRTAny foidl_truthy_qmark(PFRTAny);
+EXTERNC PFRTAny foidl_not_equal_qmark(PFRTAny,PFRTAny);
+EXTERNC PFRTAny foidl_function_qmark(PFRTAny);
+EXTERNC PFRTAny foidl_integer_qmark(PFRTAny);
+EXTERNC PFRTAny foidl_collection_qmark(PFRTAny);
+EXTERNC PFRTAny foidl_extendable_qmark(PFRTAny);
+EXTERNC PFRTAny function_strict_arg(PFRTAny, PFRTAny);
+EXTERNC PFRTAny string_type_qmark(PFRTAny);
 #endif
 
 #ifndef HASH_IMPL
-extern  uint32_t murmur3_32(const uint8_t*, size_t, uint32_t);
-extern 	uint32_t hash(PFRTAny);
+EXTERNC  uint32_t murmur3_32(const uint8_t*, size_t, uint32_t);
+EXTERNC 	uint32_t hash(PFRTAny);
 #endif
 
 #ifndef	ALLOC_IMPL
 
-extern const PFRTAny emtndarray[];
-extern void 			foidl_gc_init();
-extern void *			foidl_xall(uint32_t sz);
-extern void 			foidl_xdel(void *);
+EXTERNC const PFRTAny emtndarray[];
+EXTERNC void 			foidl_gc_init();
+EXTERNC void *			foidl_xall(uint32_t sz);
+EXTERNC void 			foidl_xdel(void *);
 //	Scalar types
-extern PFRTAny 			*allocRawAnyArray(ft count);
-extern PFRTAny 			allocAny(ft fclass,ft ftype,void *value);
-extern PFRTAny 			allocGlobalString(char *);
-extern PFRTAny 			allocGlobalStringCopy(char *);
-extern PFRTAny 			allocGlobalKeywordCopy(char *);
+EXTERNC PFRTAny 			*allocRawAnyArray(ft count);
+EXTERNC PFRTAny 			allocAny(ft fclass,ft ftype,void *value);
+EXTERNC PFRTAny 			allocGlobalString(char *);
+EXTERNC PFRTAny 			allocGlobalStringCopy(char *);
+EXTERNC PFRTAny 			allocGlobalKeywordCopy(char *);
 
-extern PFRTAny 			allocStringWithBufferSize(uint32_t);
-extern PFRTAny 			allocStringWithCopy(char *);
-extern PFRTAny 			allocStringWithCopyCnt(uint32_t, char *);
-extern PFRTAny 			allocAndConcatString(uint32_t,char *, uint32_t, char *, uint32_t);
+EXTERNC PFRTAny 			allocStringWithBufferSize(uint32_t);
+EXTERNC PFRTAny 			allocStringWithCopy(char *);
+EXTERNC PFRTAny 			allocStringWithCopyCnt(uint32_t, char *);
+EXTERNC PFRTAny 			allocAndConcatString(uint32_t,char *, uint32_t, char *, uint32_t);
 
-extern PFRTAny 			allocGlobalCharType(int);
-extern PFRTAny 			allocGlobalIntegerType(long long v);
+EXTERNC PFRTAny 			allocGlobalCharType(int);
+EXTERNC PFRTAny 			allocGlobalIntegerType(long long v);
 
-extern PFRTAny          allocRegex(PFRTAny sbase, void* regex);
+EXTERNC PFRTAny          allocRegex(PFRTAny sbase, void* regex);
 
 // IO Types
-extern PFRTIOChannel 	allocIOChannel(ft,PFRTAny);
-extern PFRTIOBuffer 	allocIOMMapBuffer(void *, size_t);
-extern PFRTIOBuffer 	allocIOBlockBuffer(ft);
-extern PFRTIOBuffer 	allocIONoBuffer();
-extern void 			deallocChannelBuffer(PFRTIOChannel);
+EXTERNC PFRTIOChannel 	allocIOChannel(ft,PFRTAny);
+EXTERNC PFRTIOBuffer 	allocIOMMapBuffer(void *, size_t);
+EXTERNC PFRTIOBuffer 	allocIOBlockBuffer(ft);
+EXTERNC PFRTIOBuffer 	allocIONoBuffer();
+EXTERNC void 			deallocChannelBuffer(PFRTIOChannel);
 
 // Function types
-extern PFRTFuncRef2 	allocFuncRef2(void *fn, ft maxarg,invoke_funcptr ifn);
-extern void 			deallocFuncRef2(PFRTFuncRef2);
+EXTERNC PFRTFuncRef2 	allocFuncRef2(void *fn, ft maxarg,invoke_funcptr ifn);
+EXTERNC void 			deallocFuncRef2(PFRTFuncRef2);
 
 // Collection types
-extern PFRTList   		allocList(ft, PFRTLinkNode);
-extern PFRTLinkNode   	allocLinkNode();
-extern PFRTLinkNode     allocLinkNodeWith(PFRTAny data, PFRTLinkNode nextNode);
-extern PFRTSet 			allocSet(ft,ft,PFRTBitmapNode);
-extern PFRTMap 			allocMap(ft,ft,PFRTBitmapNode);
-extern PFRTVector 		allocVector(ft,ft,PFRTHamtNode,PFRTHamtNode);
-extern PFRTMapEntry 	allocMapEntryWith(PFRTAny, PFRTAny);
-extern PFRTSeries 		allocSeries();
-extern PFRTBitmapNode 	allocNode();
-extern PFRTHamtNode 	allocHamtNode();
-extern PFRTBitmapNode 	allocNodeWith(uint32_t, uint32_t, ft);
-extern PFRTBitmapNode 	allocNodeClone(PFRTBitmapNode, ft);
-extern PFRTBitmapNode 	allocNodeWithAll(uint32_t,uint32_t,PFRTAny *);
+EXTERNC PFRTList   		allocList(ft, PFRTLinkNode);
+EXTERNC PFRTLinkNode   	allocLinkNode();
+EXTERNC PFRTLinkNode     allocLinkNodeWith(PFRTAny data, PFRTLinkNode nextNode);
+EXTERNC PFRTSet 			allocSet(ft,ft,PFRTBitmapNode);
+EXTERNC PFRTMap 			allocMap(ft,ft,PFRTBitmapNode);
+EXTERNC PFRTVector 		allocVector(ft,ft,PFRTHamtNode,PFRTHamtNode);
+EXTERNC PFRTMapEntry 	allocMapEntryWith(PFRTAny, PFRTAny);
+EXTERNC PFRTSeries 		allocSeries();
+EXTERNC PFRTBitmapNode 	allocNode();
+EXTERNC PFRTHamtNode 	allocHamtNode();
+EXTERNC PFRTBitmapNode 	allocNodeWith(uint32_t, uint32_t, ft);
+EXTERNC PFRTBitmapNode 	allocNodeClone(PFRTBitmapNode, ft);
+EXTERNC PFRTBitmapNode 	allocNodeWithAll(uint32_t,uint32_t,PFRTAny *);
 
 // Iterator types
-extern PFRTIterator 	allocTrieIterator(PFRTAssocType,itrNext);
-extern PFRTIterator 	allocVectorIterator(PFRTVector,itrNext);
-extern PFRTIterator 	allocListIterator(PFRTList,itrNext);
-extern PFRTIterator 	allocSeriesIterator(PFRTSeries,itrNext);
-extern PFRTIterator 	allocChannelIterator(PFRTIOBuffer,itrNext);
+EXTERNC PFRTIterator 	allocTrieIterator(PFRTAssocType,itrNext);
+EXTERNC PFRTIterator 	allocVectorIterator(PFRTVector,itrNext);
+EXTERNC PFRTIterator 	allocListIterator(PFRTList,itrNext);
+EXTERNC PFRTIterator 	allocSeriesIterator(PFRTSeries,itrNext);
+EXTERNC PFRTIterator 	allocChannelIterator(PFRTIOBuffer,itrNext);
 
 #endif
 
 // Errors
 #ifndef ERRORS_IMPL
-extern PFRTAny foidl_fail();
-extern PFRTAny writeCerr(PFRTAny);
-extern PFRTAny writeCerrNl(PFRTAny);
-extern void    foidl_ep_excp(PFRTAny);
-extern void    foidl_ep_excp2(PFRTAny,PFRTAny);
-extern PFRTAny const unsupported;
-extern PFRTAny const index_out_of_bounds;
-extern PFRTAny const update_not_integral;
-extern PFRTAny const extend_map_two_arg;
-extern PFRTAny const fold_requires_function;
-extern PFRTAny const fold_requires_collection;
-extern PFRTAny const reduce_requires_function;
-extern PFRTAny const reduce_requires_collection;
-extern PFRTAny const not_read_channel;
-extern PFRTAny const not_write_channel;
-extern PFRTAny const already_closed_channel;
-extern PFRTAny const requires_map;
-extern PFRTAny const missing_channel;
-extern PFRTAny const missing_open;
-extern PFRTAny const unknown_open_flag;
-extern PFRTAny const unknown_buffer_flag;
-extern PFRTAny const unknown_reader_flag;
-extern PFRTAny const unknown_writer_flag;
-extern PFRTAny const file_is_directory;
+EXTERNC PFRTAny foidl_fail();
+EXTERNC PFRTAny writeCerr(PFRTAny);
+EXTERNC PFRTAny writeCerrNl(PFRTAny);
+EXTERNC void    foidl_ep_excp(PFRTAny);
+EXTERNC void    foidl_ep_excp2(PFRTAny,PFRTAny);
+EXTERNC PFRTAny const unsupported;
+EXTERNC PFRTAny const index_out_of_bounds;
+EXTERNC PFRTAny const update_not_integral;
+EXTERNC PFRTAny const extend_map_two_arg;
+EXTERNC PFRTAny const fold_requires_function;
+EXTERNC PFRTAny const fold_requires_collection;
+EXTERNC PFRTAny const reduce_requires_function;
+EXTERNC PFRTAny const reduce_requires_collection;
+EXTERNC PFRTAny const not_read_channel;
+EXTERNC PFRTAny const not_write_channel;
+EXTERNC PFRTAny const already_closed_channel;
+EXTERNC PFRTAny const requires_map;
+EXTERNC PFRTAny const missing_channel;
+EXTERNC PFRTAny const missing_open;
+EXTERNC PFRTAny const unknown_open_flag;
+EXTERNC PFRTAny const unknown_buffer_flag;
+EXTERNC PFRTAny const unknown_reader_flag;
+EXTERNC PFRTAny const unknown_writer_flag;
+EXTERNC PFRTAny const file_is_directory;
 #endif
 
 // Characters
 #ifndef CHARACTER_IMPL
-extern void foidl_rtl_init_chars();
-extern PFRTAny 	allocCharWithValue(ft);
-extern PFRTAny 	allocECharWithValue(ft, ft);
+EXTERNC void foidl_rtl_init_chars();
+EXTERNC PFRTAny 	allocCharWithValue(ft);
+EXTERNC PFRTAny 	allocECharWithValue(ft, ft);
 #endif
 
 // Integers
 #ifndef INTEGER_IMPL
-extern void 	foidl_rtl_init_ints();
-extern PFRTAny 	allocIntegerWithValue(long long val);
-extern PFRTAny 	foidl_add_ints(PFRTAny, PFRTAny);
-extern PFRTAny 	foidl_sub_ints(PFRTAny, PFRTAny);
-extern PFRTAny 	foidl_div_ints(PFRTAny, PFRTAny);
-extern PFRTAny 	foidl_mul_ints(PFRTAny, PFRTAny);
-extern PFRTAny 	foidl_mod_ints(PFRTAny, PFRTAny);
+EXTERNC void 	foidl_rtl_init_ints();
+EXTERNC PFRTAny 	allocIntegerWithValue(long long val);
+EXTERNC PFRTAny 	foidl_add_ints(PFRTAny, PFRTAny);
+EXTERNC PFRTAny 	foidl_sub_ints(PFRTAny, PFRTAny);
+EXTERNC PFRTAny 	foidl_div_ints(PFRTAny, PFRTAny);
+EXTERNC PFRTAny 	foidl_mul_ints(PFRTAny, PFRTAny);
+EXTERNC PFRTAny 	foidl_mod_ints(PFRTAny, PFRTAny);
 #endif
 
 // String
 #ifndef STRING_IMPL
-extern 	void foildl_rtl_init_strings();
-extern 	PFRTAny string_get(PFRTAny,PFRTAny);
-extern 	PFRTAny string_get_default(PFRTAny, PFRTAny,PFRTAny);
-extern  PFRTAny string_first(PFRTAny);
-extern  PFRTAny string_second(PFRTAny);
-extern  PFRTAny string_rest(PFRTAny);
-extern  PFRTAny string_last(PFRTAny);
-extern 	PFRTAny string_update(PFRTAny, PFRTAny, PFRTAny);
-extern 	PFRTAny string_update_bang(PFRTAny, PFRTAny, PFRTAny);
-extern  PFRTAny string_extend(PFRTAny, PFRTAny);
-extern  PFRTAny string_extend_bang(PFRTAny, PFRTAny);
-extern  PFRTAny string_droplast(PFRTAny);
-extern  PFRTAny string_droplast_bang(PFRTAny);
-extern  PFRTAny release_string(PFRTAny s);
-//extern 	PFRTAny charPtrToString(char *);
+EXTERNC 	void foildl_rtl_init_strings();
+EXTERNC 	PFRTAny string_get(PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny string_get_default(PFRTAny, PFRTAny,PFRTAny);
+EXTERNC  PFRTAny string_first(PFRTAny);
+EXTERNC  PFRTAny string_second(PFRTAny);
+EXTERNC  PFRTAny string_rest(PFRTAny);
+EXTERNC  PFRTAny string_last(PFRTAny);
+EXTERNC 	PFRTAny string_update(PFRTAny, PFRTAny, PFRTAny);
+EXTERNC 	PFRTAny string_update_bang(PFRTAny, PFRTAny, PFRTAny);
+EXTERNC  PFRTAny string_extend(PFRTAny, PFRTAny);
+EXTERNC  PFRTAny string_extend_bang(PFRTAny, PFRTAny);
+EXTERNC  PFRTAny string_droplast(PFRTAny);
+EXTERNC  PFRTAny string_droplast_bang(PFRTAny);
+EXTERNC  PFRTAny release_string(PFRTAny s);
+//EXTERNC 	PFRTAny charPtrToString(char *);
 #endif
 
 #ifndef INVOKE_IMPL
-extern PFRTAny 	foidl_fref_instance(PFRTAny);
-extern PFRTAny 	foidl_imbue(PFRTAny,PFRTAny);
-extern PFRTAny 	dispatch0(PFRTAny fn);
-extern PFRTAny 	dispatch1(PFRTAny fn, PFRTAny arg1);
-extern PFRTAny 	dispatch2(PFRTAny fn, PFRTAny arg1, PFRTAny arg2);
-extern PFRTAny 	dispatch0i(PFRTAny fn);
-extern PFRTAny 	dispatch1i(PFRTAny fn, PFRTAny arg1);
-extern PFRTAny 	dispatch2i(PFRTAny fn, PFRTAny arg1, PFRTAny arg2);
+EXTERNC PFRTAny 	foidl_fref_instance(PFRTAny);
+EXTERNC PFRTAny 	foidl_imbue(PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	dispatch0(PFRTAny fn);
+EXTERNC PFRTAny 	dispatch1(PFRTAny fn, PFRTAny arg1);
+EXTERNC PFRTAny 	dispatch2(PFRTAny fn, PFRTAny arg1, PFRTAny arg2);
+EXTERNC PFRTAny 	dispatch0i(PFRTAny fn);
+EXTERNC PFRTAny 	dispatch1i(PFRTAny fn, PFRTAny arg1);
+EXTERNC PFRTAny 	dispatch2i(PFRTAny fn, PFRTAny arg1, PFRTAny arg2);
 #endif
 
 #ifndef ITERATORS_IMPL
-extern PFRTIterator iteratorFor(PFRTAny);
-extern PFRTAny 		iteratorNext(PFRTIterator);
+EXTERNC PFRTIterator iteratorFor(PFRTAny);
+EXTERNC PFRTAny 		iteratorNext(PFRTIterator);
 #endif
 
 //	Node functions
 #ifndef NODE_IMPL
-extern const struct FRTBitmapNode _empty_champ_node;
-extern PFRTBitmapNode   const empty_champ_node;
-extern uint32_t 		bit_count(uint32_t);
-extern uint32_t 		bit_pos(uint32_t);
-extern uint32_t 		data_count(PFRTBitmapNode);
-extern uint32_t 		node_count(PFRTBitmapNode);
-extern uint32_t 		nodelength(PFRTBitmapNode);
-extern uint32_t 		dataIndex(uint32_t, uint32_t);
-extern uint32_t 		nodeIndex(uint32_t, uint32_t);
-extern uint32_t 		payloadArity(PFRTBitmapNode);
-extern uint32_t 		nodeArity(PFRTBitmapNode);
-extern uint32_t 		mask(uint32_t, ft);
-extern uint32_t 		sizePredicate(PFRTBitmapNode);
-extern PFRTBitmapNode 	getNode(PFRTBitmapNode, uint32_t);
-extern void 			arraycopy(PFRTAny *, PFRTAny *,uint32_t);
+EXTERNC const struct FRTBitmapNode _empty_champ_node;
+EXTERNC PFRTBitmapNode   const empty_champ_node;
+EXTERNC uint32_t 		bit_count(uint32_t);
+EXTERNC uint32_t 		bit_pos(uint32_t);
+EXTERNC uint32_t 		data_count(PFRTBitmapNode);
+EXTERNC uint32_t 		node_count(PFRTBitmapNode);
+EXTERNC uint32_t 		nodelength(PFRTBitmapNode);
+EXTERNC uint32_t 		dataIndex(uint32_t, uint32_t);
+EXTERNC uint32_t 		nodeIndex(uint32_t, uint32_t);
+EXTERNC uint32_t 		payloadArity(PFRTBitmapNode);
+EXTERNC uint32_t 		nodeArity(PFRTBitmapNode);
+EXTERNC uint32_t 		mask(uint32_t, ft);
+EXTERNC uint32_t 		sizePredicate(PFRTBitmapNode);
+EXTERNC PFRTBitmapNode 	getNode(PFRTBitmapNode, uint32_t);
+EXTERNC void 			arraycopy(PFRTAny *, PFRTAny *,uint32_t);
 #endif
 
 //  Vector functions
 #ifndef VECTOR_IMPL
-extern  PFRTHamtNode const empty_node;
-extern 	PFRTVector 	 const empty_vector;
-extern 	PFRTAny foidl_vector_inst_bang();
-extern  PFRTAny foidl_vector_extend_bang(PFRTAny,PFRTAny);
-extern  PFRTAny vector_from_argv(int, char**);
-extern  PFRTAny vector_nth(PFRTVector, ft);
-extern 	PFRTAny vector_first(PFRTAny);
-extern 	PFRTAny vector_second(PFRTAny);
-extern 	PFRTAny vector_rest(PFRTAny);
-extern 	PFRTAny vector_extend(PFRTAny,PFRTAny);
-extern 	PFRTAny vector_update(PFRTAny,PFRTAny,PFRTAny);
-extern 	PFRTAny vector_update_bang(PFRTAny,PFRTAny,PFRTAny);
-extern 	PFRTAny vector_pop(PFRTAny);
-extern 	PFRTAny vector_pop_bang(PFRTAny);
-extern 	PFRTAny vector_get(PFRTAny,PFRTAny);
-extern 	PFRTAny vector_get_default(PFRTAny, PFRTAny,PFRTAny);
-extern  PFRTAny	vector_drop_bang(PFRTAny,PFRTAny);
-extern  PFRTAny	vector_dropLast_bang(PFRTAny);
-extern  PFRTAny vector_droplast(PFRTAny);
-extern 	PFRTAny vectorGetDefault(PFRTAny v, uint32_t index);
-extern 	PFRTAny vector_print(PFRTIOChannel,PFRTAny);
+EXTERNC  PFRTHamtNode const empty_node;
+EXTERNC 	PFRTVector 	 const empty_vector;
+EXTERNC 	PFRTAny foidl_vector_inst_bang();
+EXTERNC  PFRTAny foidl_vector_extend_bang(PFRTAny,PFRTAny);
+EXTERNC  PFRTAny vector_from_argv(int, char**);
+EXTERNC  PFRTAny vector_nth(PFRTVector, ft);
+EXTERNC 	PFRTAny vector_first(PFRTAny);
+EXTERNC 	PFRTAny vector_second(PFRTAny);
+EXTERNC 	PFRTAny vector_rest(PFRTAny);
+EXTERNC 	PFRTAny vector_extend(PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny vector_update(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny vector_update_bang(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny vector_pop(PFRTAny);
+EXTERNC 	PFRTAny vector_pop_bang(PFRTAny);
+EXTERNC 	PFRTAny vector_get(PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny vector_get_default(PFRTAny, PFRTAny,PFRTAny);
+EXTERNC  PFRTAny	vector_drop_bang(PFRTAny,PFRTAny);
+EXTERNC  PFRTAny	vector_dropLast_bang(PFRTAny);
+EXTERNC  PFRTAny vector_droplast(PFRTAny);
+EXTERNC 	PFRTAny vectorGetDefault(PFRTAny v, uint32_t index);
+EXTERNC 	PFRTAny vector_print(PFRTIOChannel,PFRTAny);
 #endif
 
 //	Set function
 #ifndef SET_IMPL
-extern PFRTAny  const empty_set;
-extern PFRTAny 	foidl_set_inst_bang();
-extern PFRTAny 	foidl_set_extend_bang(PFRTAny s, PFRTAny k);
-extern PFRTAny 	set_extend(PFRTAny,PFRTAny);
-extern PFRTAny 	set_remove(PFRTAny,PFRTAny);
-extern PFRTAny 	set_first(PFRTAny);
-extern PFRTAny 	set_second(PFRTAny);
-extern PFRTAny 	set_rest(PFRTAny);
-extern PFRTAny 	set_get(PFRTAny,PFRTAny);
-extern PFRTBitmapNode set_getNode(PFRTBitmapNode, uint32_t);
-extern PFRTAny 	set_get_default(PFRTAny, PFRTAny,PFRTAny);
-extern PFRTAny 	setGetDefault(PFRTAny node, uint32_t index);
-extern PFRTAny 	set_print(PFRTIOChannel,PFRTAny);
+EXTERNC PFRTAny  const empty_set;
+EXTERNC PFRTAny 	foidl_set_inst_bang();
+EXTERNC PFRTAny 	foidl_set_extend_bang(PFRTAny s, PFRTAny k);
+EXTERNC PFRTAny 	set_extend(PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	set_remove(PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	set_first(PFRTAny);
+EXTERNC PFRTAny 	set_second(PFRTAny);
+EXTERNC PFRTAny 	set_rest(PFRTAny);
+EXTERNC PFRTAny 	set_get(PFRTAny,PFRTAny);
+EXTERNC PFRTBitmapNode set_getNode(PFRTBitmapNode, uint32_t);
+EXTERNC PFRTAny 	set_get_default(PFRTAny, PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	setGetDefault(PFRTAny node, uint32_t index);
+EXTERNC PFRTAny 	set_print(PFRTIOChannel,PFRTAny);
 #endif
 
 //	Map functions
 #ifndef MAP_IMPL
-extern PFRTAny const empty_map;
-extern PFRTAny 	foidl_map_inst_bang();
-extern PFRTAny 	foidl_map_extend_bang(PFRTAny,PFRTAny,PFRTAny);
-extern PFRTAny 	map_first(PFRTAny);
-extern PFRTAny 	map_second(PFRTAny);
-extern PFRTAny 	map_rest(PFRTAny);
-extern PFRTAny  map_get(PFRTAny, PFRTAny);
-extern PFRTAny  map_get_default(PFRTAny, PFRTAny,PFRTAny);
-extern PFRTAny 	map_extend(PFRTAny,PFRTAny,PFRTAny);
-extern PFRTAny 	map_update(PFRTAny,PFRTAny,PFRTAny);
-extern PFRTAny  map_remove(PFRTAny, PFRTAny);
-extern PFRTAny  map_contains_qmark(PFRTAny, PFRTAny);
-extern PFRTAny 	mapGetDefault(PFRTAny node, uint32_t index);
-extern PFRTAny 	map_print(PFRTIOChannel,PFRTAny);
+EXTERNC PFRTAny const empty_map;
+EXTERNC PFRTAny 	foidl_map_inst_bang();
+EXTERNC PFRTAny 	foidl_map_extend_bang(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	map_first(PFRTAny);
+EXTERNC PFRTAny 	map_second(PFRTAny);
+EXTERNC PFRTAny 	map_rest(PFRTAny);
+EXTERNC PFRTAny  map_get(PFRTAny, PFRTAny);
+EXTERNC PFRTAny  map_get_default(PFRTAny, PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	map_extend(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC PFRTAny 	map_update(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC PFRTAny  map_remove(PFRTAny, PFRTAny);
+EXTERNC PFRTAny  map_contains_qmark(PFRTAny, PFRTAny);
+EXTERNC PFRTAny 	mapGetDefault(PFRTAny node, uint32_t index);
+EXTERNC PFRTAny 	map_print(PFRTIOChannel,PFRTAny);
 #endif
 
 // List
 #ifndef LIST_IMPL
-extern  PFRTAny  const empty_list;
-extern  PFRTLinkNode empty_link;
-extern 	PFRTAny  foidl_list_inst_bang();
-extern 	PFRTAny  foidl_list_extend_bang(PFRTAny,PFRTAny);
-extern 	PFRTAny  list_extend(PFRTAny,PFRTAny);
-extern  PFRTAny  list_prepend_bang(PFRTAny,PFRTAny);
-extern 	PFRTAny  list_get(PFRTAny,PFRTAny);
-extern  PFRTAny  list_get_default(PFRTAny, PFRTAny, PFRTAny);
-extern  PFRTAny  list_index_of(PFRTAny,PFRTAny);
-extern 	PFRTAny  list_update(PFRTAny,PFRTAny,PFRTAny);
-extern 	PFRTAny  list_update_bang(PFRTAny,PFRTAny,PFRTAny);
-extern 	PFRTAny  list_pop(PFRTAny);
-extern 	PFRTAny  list_pop_bang(PFRTAny);
-extern  PFRTAny  list_drop_bang(PFRTAny,PFRTAny);
-extern  PFRTAny  list_droplast(PFRTAny);
-extern 	PFRTAny  list_push(PFRTAny,PFRTAny);
-extern 	PFRTAny  list_push_bang(PFRTAny,PFRTAny);
-extern 	PFRTAny  list_first(PFRTAny);
-extern 	PFRTAny  list_second(PFRTAny);
-extern 	PFRTAny  list_rest(PFRTAny);
-extern  PFRTAny  list_last(PFRTAny);
-extern 	PFRTAny  list_print(PFRTIOChannel,PFRTAny);
-extern  PFRTAny  empty_list_bang(PFRTAny);
-extern  PFRTAny  release_list_bang(PFRTAny);
+EXTERNC  PFRTAny  const empty_list;
+EXTERNC  PFRTLinkNode empty_link;
+EXTERNC 	PFRTAny  foidl_list_inst_bang();
+EXTERNC 	PFRTAny  foidl_list_extend_bang(PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny  list_extend(PFRTAny,PFRTAny);
+EXTERNC  PFRTAny  list_prepend_bang(PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny  list_get(PFRTAny,PFRTAny);
+EXTERNC  PFRTAny  list_get_default(PFRTAny, PFRTAny, PFRTAny);
+EXTERNC  PFRTAny  list_index_of(PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny  list_update(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny  list_update_bang(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny  list_pop(PFRTAny);
+EXTERNC 	PFRTAny  list_pop_bang(PFRTAny);
+EXTERNC  PFRTAny  list_drop_bang(PFRTAny,PFRTAny);
+EXTERNC  PFRTAny  list_droplast(PFRTAny);
+EXTERNC 	PFRTAny  list_push(PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny  list_push_bang(PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny  list_first(PFRTAny);
+EXTERNC 	PFRTAny  list_second(PFRTAny);
+EXTERNC 	PFRTAny  list_rest(PFRTAny);
+EXTERNC  PFRTAny  list_last(PFRTAny);
+EXTERNC 	PFRTAny  list_print(PFRTIOChannel,PFRTAny);
+EXTERNC  PFRTAny  empty_list_bang(PFRTAny);
+EXTERNC  PFRTAny  release_list_bang(PFRTAny);
 #endif
 
 // IO
 #ifndef IO_IMPL
-extern 	PFRTAny  writeCout(PFRTAny);
-extern 	PFRTAny  writeCoutNl(PFRTAny);
-extern 	PFRTAny  foidl_open_bang(PFRTAny);
-extern 	PFRTAny  foidl_write_bang(PFRTIOChannel,PFRTAny);
-extern 	PFRTAny  io_get(PFRTAny,PFRTAny);
-extern 	PFRTAny  foidl_io_count(PFRTAny);
-extern  PFRTAny  foidl_io_first(PFRTAny);
-extern  PFRTAny  foidl_io_second(PFRTAny);
-extern  PFRTAny  foidl_io_countto(PFRTAny,PFRTAny);
-extern  PFRTAny  foidl_io_countnotto(PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny  writeCout(PFRTAny);
+EXTERNC 	PFRTAny  writeCoutNl(PFRTAny);
+EXTERNC 	PFRTAny  foidl_open_bang(PFRTAny);
+EXTERNC 	PFRTAny  foidl_write_bang(PFRTIOChannel,PFRTAny);
+EXTERNC 	PFRTAny  io_get(PFRTAny,PFRTAny);
+EXTERNC 	PFRTAny  foidl_io_count(PFRTAny);
+EXTERNC  PFRTAny  foidl_io_first(PFRTAny);
+EXTERNC  PFRTAny  foidl_io_second(PFRTAny);
+EXTERNC  PFRTAny  foidl_io_countto(PFRTAny,PFRTAny);
+EXTERNC  PFRTAny  foidl_io_countnotto(PFRTAny,PFRTAny);
 #endif
 
 // IO Handlers
 #ifndef IOHANDLERS_IMPL
-extern PFRTAny 	io_nextByteReader(PFRTIterator);
-extern PFRTAny 	io_nextCharReader(PFRTIterator);
-extern PFRTAny 	io_nextStringReader(PFRTIterator);
-extern PFRTFuncRef const byte_reader;
-extern PFRTFuncRef const char_reader;
-extern PFRTFuncRef const string_reader;
-extern PFRTFuncRef const char_writer;
-extern PFRTAny 	io_skipto(PFRTIOChannel, PFRTAny);
-extern PFRTAny 	io_skipwhile(PFRTIOChannel, PFRTAny);
-extern PFRTAny 	io_countto(PFRTIOChannel, PFRTAny);
-extern PFRTAny 	io_take_until(PFRTIOChannel, PFRTAny);
-extern PFRTAny 	io_take_string(PFRTIOChannel);
-extern PFRTAny 	io_take_qchar(PFRTIOChannel);
-extern PFRTAny 	io_unread(PFRTIOChannel);
-extern PFRTAny 	io_count(PFRTIOChannel);
-extern PFRTAny 	io_first(PFRTIOChannel);
-extern PFRTAny 	io_second(PFRTIOChannel);
-extern PFRTAny 	io_peek_match(PFRTIOChannel,PFRTAny);
-extern void 	io_blockBufferClose(PFRTIOChannel);
+EXTERNC PFRTAny 	io_nextByteReader(PFRTIterator);
+EXTERNC PFRTAny 	io_nextCharReader(PFRTIterator);
+EXTERNC PFRTAny 	io_nextStringReader(PFRTIterator);
+EXTERNC PFRTFuncRef const byte_reader;
+EXTERNC PFRTFuncRef const char_reader;
+EXTERNC PFRTFuncRef const string_reader;
+EXTERNC PFRTFuncRef const char_writer;
+EXTERNC PFRTAny 	io_skipto(PFRTIOChannel, PFRTAny);
+EXTERNC PFRTAny 	io_skipwhile(PFRTIOChannel, PFRTAny);
+EXTERNC PFRTAny 	io_countto(PFRTIOChannel, PFRTAny);
+EXTERNC PFRTAny 	io_take_until(PFRTIOChannel, PFRTAny);
+EXTERNC PFRTAny 	io_take_string(PFRTIOChannel);
+EXTERNC PFRTAny 	io_take_qchar(PFRTIOChannel);
+EXTERNC PFRTAny 	io_unread(PFRTIOChannel);
+EXTERNC PFRTAny 	io_count(PFRTIOChannel);
+EXTERNC PFRTAny 	io_first(PFRTIOChannel);
+EXTERNC PFRTAny 	io_second(PFRTIOChannel);
+EXTERNC PFRTAny 	io_peek_match(PFRTIOChannel,PFRTAny);
+EXTERNC void 	io_blockBufferClose(PFRTIOChannel);
 #endif
 
 // Series
 
 #ifndef SERIES_IMPL
-extern  const PFRTSeries infinite;
-extern 	void foidl_rtl_init_series();
-extern 	PFRTAny foidl_series(PFRTAny,PFRTAny,PFRTAny);
-extern  PFRTAny ss_defstep;
-extern 	PFRTAny ss_defend;
+EXTERNC  const PFRTSeries infinite;
+EXTERNC 	void foidl_rtl_init_series();
+EXTERNC 	PFRTAny foidl_series(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC  PFRTAny ss_defstep;
+EXTERNC 	PFRTAny ss_defend;
 #endif
 
 //	Regex
 #ifndef REGEX_IMPL
-extern void foidl_rt_init_regex();
-extern PFRTAny foidl_regex_cmp_qmark(PFRTAny, PFRTAny);
+EXTERNC void foidl_rt_init_regex();
+EXTERNC PFRTAny foidl_regex_cmp_qmark(PFRTAny, PFRTAny);
 #endif
 
 #endif
