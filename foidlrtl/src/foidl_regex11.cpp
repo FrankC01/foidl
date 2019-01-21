@@ -6,8 +6,8 @@
     All Rights Reserved
 */
 #include <foidl_regex11.hpp>
-#include <stdio.h>
-#include <iostream>
+//#include <stdio.h>
+//#include <iostream>
 #include <sstream>
 #include <regex>
 #include <list>
@@ -20,13 +20,21 @@ regex* _new_regex(const char*);
 
 static regex *NLCR = _new_regex("(\r\n|[\r\n])");
 static regex *simple_str = _new_regex("\"(.|\n)*?\"");
+
+// Format regex
+
 static regex *frmtstr = _new_regex("\\{.*?\\}");
 
 // Core functions not exposed in header
+
 EXTERNC void * foidl_reg_string(const char *i);
 EXTERNC void * list_extend_bang(void *, void *);
 
+// Token constant string identifier
+
 const char *astring = ":string";
+
+// Build a token object for later processing
 
 ptoken _build_token(string &word, int ti, int lc, int sp ) {
     ptoken _tok = (ptoken) foidl_xall(sizeof(token));
@@ -51,13 +59,13 @@ EXTERNC int _is_matchp(const char* s, void* pattern) {
     return regex_match(s,*rpattern);
 }
 
+// Internal regex instance generation
 regex* _new_regex(const char* s) {
     return new regex(s);
 }
 
 // Compile a regex from string
 EXTERNC void* _string_to_regex(const char* s) {
-    // cout << " compiling regex " << s << endl;
     regex* re = _new_regex(s);
     return static_cast<void *>(re);
 }
@@ -73,6 +81,8 @@ EXTERNC void _string_split(void *rlist, const char *strng, void* pattern) {
         list_extend_bang(rlist, allocStringWithCopy((char *) hs.c_str()));
     }
 }
+
+// String stream reduction to tokens
 
 EXTERNC void _reduce_tokens(const char*s, ptoken_block block) {
     list<ptoken> hitlist;
@@ -114,18 +124,9 @@ EXTERNC void _reduce_tokens(const char*s, ptoken_block block) {
                 regexp = static_cast<regex*>(block->regex_array[i]);
                 res = regex_search(content, sm,
                     *regexp, regex_constants::match_continuous);
-                // cout << "Testing "
-                // << content.substr(0,1)
-                // << " with type ["
-                // << block->type_array[i] << "]" << endl;
                 if(res) {
                     string word = content.substr(
                         sm.position(), sm.length());
-                    // cout << "Found type ["
-                    // << block->type_array[i]
-                    // << "] at {"
-                    // << lc << "}:{" << sp
-                    // << "} = " << word << endl;
                     hitlist.push_back(_build_token(word, i, lc, sp));
                     sp += sm.length();
                     content.erase(sm.position(), sm.length());
@@ -141,9 +142,6 @@ EXTERNC void _reduce_tokens(const char*s, ptoken_block block) {
             if (res) {
                 string word = content.substr(
                     sm.position(), sm.length());
-                // cout << "Found type [:string] at {"
-                // << lc << "}:{" << sp
-                // << "} " << word << endl;
                 hitlist.push_back(_build_token(word, -1, lc, sp));
                 sp += sm.length();
                 lc += count(word.begin(),word.end(),'\n');;
@@ -177,8 +175,15 @@ EXTERNC void _reduce_tokens(const char*s, ptoken_block block) {
     return;
 }
 
+// Local instance variable for use in format
+
 static PFRTAny fend = (PFRTAny) &_end.fclass;
+
+// Forward declaration
+
 static void _ttstr(ostringstream &ost, PFRTAny e);
+
+// For lists, vectors and sets
 
 static void _single_coll(ostringstream &ost, PFRTAny coll) {
     PFRTAny      entry;
@@ -193,6 +198,9 @@ static void _single_coll(ostringstream &ost, PFRTAny coll) {
     }
 
 }
+
+// For maps
+
 static void _assoc_coll(ostringstream &ost, PFRTAny coll) {
     PFRTAny      entry;
     PFRTIterator li = iteratorFor(coll);
@@ -209,6 +217,8 @@ static void _assoc_coll(ostringstream &ost, PFRTAny coll) {
     }
 
 }
+
+// Main type format conversion switch
 
 static void _ttstr(ostringstream &ost, PFRTAny e) {
     int count = 0;
@@ -265,6 +275,8 @@ static void _ttstr(ostringstream &ost, PFRTAny e) {
     return;
 }
 
+// Format: foid_format: "string" [a b ...]
+
 EXTERNC PFRTAny foidl_format(PFRTAny s, PFRTAny coll) {
     if(s->ftype == string_type &&
         (coll->ftype == vector2_type || coll->ftype == list2_type)) {
@@ -274,11 +286,17 @@ EXTERNC PFRTAny foidl_format(PFRTAny s, PFRTAny coll) {
         PFRTIterator li = iteratorFor(coll);
         vector<string *> hitlist;
 
+        // Convert all to strings
+
         while((entry = iteratorNext(li)) != fend) {
             ostringstream ost;
             _ttstr(ost, entry);
             hitlist.push_back(new string(ost.str()));
         }
+
+        // Imbue base string 's' with converted
+        // objects
+
         string base((char *) s->value);
         string result;
         smatch m;
@@ -289,13 +307,13 @@ EXTERNC PFRTAny foidl_format(PFRTAny s, PFRTAny coll) {
             base = m.suffix().str();
             ++pos;
         }
+        // Get rid of surplus strings
         for (auto&& i : hitlist) {
             delete i;
         }
         result += base;
         return allocStringWithCopy((char *) result.c_str());
 
-        // Get rid of surplus strings
     }
     else {
         unknown_handler();

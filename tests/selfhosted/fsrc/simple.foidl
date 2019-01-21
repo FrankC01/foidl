@@ -1,4 +1,4 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; simple
 ; simple file
 ;
@@ -16,7 +16,7 @@
 ; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ; See the License for the specific language governing permissions and
 ; limitations under the License.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 module simple
@@ -26,6 +26,7 @@ module simple
 var nt1 123456
 var nt2 0X00ff
 var nt3 0B01010101
+var nt4 255
 
 func isone? [a b]
     match +: a b
@@ -37,6 +38,5 @@ func main []
     printnl!: isone?: 1 2
     ; Format with literals and objects
     printnl!:
-        format: "{} this is {} and not {} and certainly not {}"
-            ["that" [1 2] <7 7> {:fin :fang :foo :bar}]
+        format: "{} is {} and not {} and certainly not {}" [nt2 nt4 nt1 nt3]
     zero
