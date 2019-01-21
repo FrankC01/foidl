@@ -239,6 +239,13 @@ static void _ttstr(ostringstream &ost, PFRTAny e) {
             else
                 ost << (char *) falsestr->value;
             break;
+        case number_type:
+            {
+                char *tmp = number_tostring(e);
+                ost << tmp;
+                foidl_xdel(tmp);
+            }
+            break;
         case list2_type:
             {
                 ost << "[";

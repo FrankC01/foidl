@@ -76,7 +76,7 @@ class Lexer():
         self.lexer.add('BIT', r"0b[0-1]+")
         self.lexer.add('HEX', r"0x[0-9a-fA-F]+")
         # self.lexer.add('REAL', r"([0-9]+(?:\.[0-9]+)?)")
-        self.lexer.add('REAL', r"[0-9]+\.[0-9]+")
+        self.lexer.add('REAL', r"[-+]?[0-9]+\.[0-9]+([eE][-+]?[0-9]+)?")
         self.lexer.add('INTEGER', r"[0-9]+")
         # self.lexer.add('RANGE', r"[0-9]+[\.]{3}[0-9]+")
         # Symbol Identifiers
@@ -84,7 +84,7 @@ class Lexer():
         self.lexer.add('FUNC_BANG', r"[a-zA-Z]([a-zA-Z0-9_]*)?!:")
         self.lexer.add('FUNC_PRED', r"[a-zA-Z]([a-zA-Z0-9_]*)?\?:")
         self.lexer.add('MATH_CALL', r"[+/*-]{1}:")
-        self.lexer.add('MATH_REF', r"[+/*-]{1}")
+        self.lexer.add('MATH_REF', r"[+/*-]{1} ")
         # self.lexer.add('LOGICOP_CALL', r'(= | < | <= | > | >= | not=):')
         self.lexer.add('SYMBOL_BANG', r"\b[a-zA-Z]([a-zA-Z0-9_]*)?!")
         self.lexer.add('SYMBOL_PRED', r"\b[a-zA-Z]([a-zA-Z0-9_]*)?\?")

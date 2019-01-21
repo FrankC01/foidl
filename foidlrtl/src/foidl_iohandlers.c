@@ -748,6 +748,13 @@ static void io_scalarRawWriter(PFRTIOChannel chn, PFRTAny el) {
 			else
 				_write(chn->handle,trueStr,4);
 			break;
+		case 	number_type:
+			{
+				char *tmp = number_tostring(el);
+				_write(chn->handle,tmp,strlen(tmp));
+				foidl_xdel(tmp);
+			}
+			break;
 		default:
 			unknown_handler();
 			break;

@@ -50,6 +50,7 @@ CPPLC   = clang++
 FSRC  	:= fsrc/
 FLIB 	:= flib/
 SRC  	:= src/
+NSRC 	:= numsrc/
 INC 	:= includes/
 LLS 	:= ll/
 OBJS 	:= objs/
@@ -143,6 +144,9 @@ FLIBOBJS	:= $(subst $(FLIB), $(OBJS), $(FLIBSS:$(FOIDL)=$(OBJ)))
 SRCS	:= $(wildcard $(SRC)*$(CSRC))
 SOBJS	:= $(subst $(SRC),$(OBJS), $(SRCS:$(CSRC)=$(OBJ)))
 
+NSRCS	:= $(wildcard $(NSRC)*$(CSRC))
+NSOBJS	:= $(subst $(NSRC),$(OBJS), $(NSRCS:$(CSRC)=$(OBJ)))
+
 SRCPPS  := $(wildcard $(SRC)*$(CPPSRC))
 SPPOBJS := $(subst $(SRC),$(OBJS),$(SRCPPS:$(CPPSRC)=$(OBJ)))
 
@@ -150,8 +154,8 @@ all: $(STATIC_LIB) | $(FLLS) $(FLIBLLS) $(OBJS)
 
 # all: $(SOBJS)
 
-$(STATIC_LIB): $(SOBJS) $(SPPOBJS) $(FOBJS) $(FLIBOBJS) | $(LIB)
-	$(LIB64) $(SOBJS) $(SPPOBJS) $(FOBJS) $(FLIBOBJS)
+$(STATIC_LIB): $(SOBJS) $(NSOBJS) $(SPPOBJS) $(FOBJS) $(FLIBOBJS) | $(LIB)
+	$(LIB64) $(SOBJS) $(NSOBJS) $(SPPOBJS) $(FOBJS) $(FLIBOBJS)
 
 $(LIB):
 	mkdir lib
@@ -205,7 +209,12 @@ $(SPPOBJS): | $(OBJS)
 $(OBJS)%.o: $(SRC)%.c
 	$(C64) $< -o $@
 
+$(OBJS)%.o: $(NSRC)%.c
+	$(C64) $< -o $@
+
 $(SOBJS): | $(OBJS)
+
+$(NSOBJS): | $(OBJS)
 
 $(OBJS):
 	mkdir objs

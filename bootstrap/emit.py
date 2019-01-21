@@ -79,6 +79,7 @@ supps = [
     ("foidl_reg_integer", [int_64]),
     ("foidl_reg_keyword", [void_ptr]),
     ("foidl_reg_string", [void_ptr]),
+    ("foidl_reg_number", [void_ptr]),
     ("foidl_tofuncref", [void_ptr, any_ptr]),
     ("foidl_imbue", [any_ptr, any_ptr]),
     ("foidl_fref_instance", [any_ptr]),
@@ -227,15 +228,15 @@ class LlvmGen(object):
         fn = self._reg_global_voidfunc(linitname, 0)
         fn.linkage = "private"
         builder = ir.IRBuilder(fn.append_basic_block('entry'))
-
         clook = {
             "STRING": builder.module.get_global("foidl_reg_string"),
             "KEYWORD": builder.module.get_global("foidl_reg_keyword"),
+            "REAL": builder.module.get_global("foidl_reg_number"),
             "INTEGER": builder.module.get_global("foidl_reg_integer"),
             "CHAR": builder.module.get_global("foidl_reg_character")}
 
         # Strings and Keywords
-        strdict = {**litmap['STRING'], **litmap['KEYWORD']}
+        strdict = {**litmap['STRING'], **litmap['KEYWORD'], **litmap['REAL']}
         if strdict:
             # Largest buffer
             strptr = builder.alloca(
@@ -254,7 +255,7 @@ class LlvmGen(object):
                 for k, outer_v in {
                     x: y
                     for x, y in litmap.items()
-                    if x in ['KEYWORD', 'STRING']}.items()]
+                    if x in ['KEYWORD', 'STRING', 'REAL']}.items()]
 
         # Integers, Bin, and Hex
         intdict = {**litmap['INTEGER'], **litmap['HEX'], **litmap['BIT']}

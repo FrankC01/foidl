@@ -56,6 +56,7 @@ static const ft 	character_type  = 0xffffffff100000a8;
 static const ft     regex_type      = 0xffffffff100000a7;
 
 static const ft 	integer_type 	= 0xffffffff1000a8a9;
+static const ft     number_type     = 0xffffffff1000a8a8;
 
 //	Collection types
 
@@ -805,6 +806,12 @@ EXTERNC PFRTAny 	foidl_sub_ints(PFRTAny, PFRTAny);
 EXTERNC PFRTAny 	foidl_div_ints(PFRTAny, PFRTAny);
 EXTERNC PFRTAny 	foidl_mul_ints(PFRTAny, PFRTAny);
 EXTERNC PFRTAny 	foidl_mod_ints(PFRTAny, PFRTAny);
+#endif
+
+#ifndef NUMBER_IMPL
+EXTERNC PFRTAny     foidl_reg_number(char *);
+EXTERNC ft          number_tostring_buffersize(PFRTAny);
+EXTERNC char*       number_tostring(PFRTAny);
 #endif
 
 // String
