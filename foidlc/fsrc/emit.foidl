@@ -45,7 +45,8 @@ var selfhost_llvm ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 target triple = `dunknown-unknown-unknown`d
-target datalayout = `d`d`n
+target datalayout = `d`d
+source_filename = `d{}`d`n
 "
 
 var :private module_id "; Module ID = `d{}`d`n"
@@ -113,7 +114,7 @@ func :private initialize [state]
 func :private spit_header [state]
     let oc      [] get: state :outchannel
     let mname   [] get: context :module_name
-    write!: oc format!: selfhost_llvm [mname]
+    write!: oc format!: selfhost_llvm [mname get: state :source]
     write!: oc format!: module_id [mname]
     write!: oc context_str
     write!: oc format!: context_tail [mname mname]
