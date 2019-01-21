@@ -43,7 +43,7 @@ constString(unknown_writer_flag,"io open: unrecognized :write_handler flag = ");
 constString(file_is_directory,"io open: directory operations not supported ");
 
 PFRTAny 	foidl_fail() {
-	foidl_exit();
+	foidl_error_exit(-1);
 	return nil;
 }
 

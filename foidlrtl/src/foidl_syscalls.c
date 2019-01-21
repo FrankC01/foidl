@@ -26,6 +26,10 @@ void foidl_exit() {
     exit(0);
 }
 
+void foidl_error_exit(int x) {
+    exit(x);
+}
+
 ft foidl_fclose(ft file) {
     #ifdef _MSC_VER
     return _close(file);

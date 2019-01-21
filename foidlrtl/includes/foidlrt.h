@@ -596,6 +596,7 @@ void foidl_deallocate_mmap(char*, ft);
 void *foidl_open_ro_mmap_file(char *, size_t);
 ft 	foidl_fclose(ft);
 void foidl_exit();
+void foidl_error_exit(int);
 
 
 EXTERNC void *foidl_alloc(ft);
