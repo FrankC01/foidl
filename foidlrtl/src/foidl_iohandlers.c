@@ -728,7 +728,7 @@ static void io_scalarRawWriter(PFRTIOChannel chn, PFRTAny el) {
 		case 	integer_type:
 			{
 				char *tmp;
-				asprintf(&tmp,"%lld",(ft) el->value);
+				asprintf(&tmp,"%lld",(long long) el->value);
 				_write(chn->handle,tmp,strlen(tmp));
 				free(tmp);
 			}

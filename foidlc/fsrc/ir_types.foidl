@@ -51,6 +51,7 @@ var true_const_ref  reference_constant_type:
 var intreg_ref          global_reference: "foidl_reg_integer"
 var kwreg_ref           global_reference: "foidl_reg_keyword"
 var strreg_ref          global_reference: "foidl_reg_string"
+var numreg_ref          global_reference: "foidl_reg_number"
 var truthy_func_ref     global_reference: "foidl_truthy_qmark"
 var fref_instance_ref   global_reference: "foidl_fref_instance"
 var tofuncref_ref       global_reference: "foidl_tofuncref"

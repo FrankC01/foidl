@@ -44,7 +44,7 @@ int foidl_return_code(PFRTAny rc) {
 	return 0;
 }
 
-PFRTAny allocIntegerWithValue(long long v) {\
+PFRTAny allocIntegerWithValue(long long v) {
 	FRTAny 	anyInt = {scalar_class,integer_type,0,0,(void *) v};
 	PFRTAny res = map_get(intMap,&anyInt);
 	if(res == nil) {
@@ -84,6 +84,9 @@ PFRTAny foidl_c2i(PFRTAny el) {
 		res = allocIntegerWithValue((long long) el->value);
 	return res;
 }
+
+// Call to extract numeric part of binary or hex declaration
+// to intenger (number)
 
 PFRTAny foidl_s2i(PFRTAny el) {
 	ft 		result=0;

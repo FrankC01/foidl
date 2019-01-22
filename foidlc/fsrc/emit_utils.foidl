@@ -43,7 +43,7 @@ func emit_literal_declarations [acc el]
             acc value: el
 
 ; Function: literal_max_len
-; Description: Gets the maximum string/keyword len for
+; Description: Gets the maximum string/keyword/real number len for
 ; those types
 
 func literal_max_len [bblock max_cnt ndx]
@@ -57,7 +57,7 @@ func literal_max_len [bblock max_cnt ndx]
             foidl_descan_string: get: element :lval
         nil
     let element_cnt  [] count: get: element :lval
-    ?: get: #{:keyword :string} element_type
+    ?: get: #{:keyword :string :real_number} element_type
         ?: >: element_cnt max_cnt
             ?: =: element_type :keyword
                 element_cnt
@@ -67,7 +67,7 @@ func literal_max_len [bblock max_cnt ndx]
 
 ; Function: literal_buffer_setup
 ; Description: Prepares buffer and basecast information for handling
-; string and keyword runtime registrations
+; string, keyword and number runtime registrations
 
 func literal_buffer_setup [lit_fn lit_bb lit_maxlen]
     ; Local (stack) array to fit max string and/or keyword
@@ -154,6 +154,20 @@ func :private literal_keyword   [basecast lit_fn lit_bb lit_keyword]
         get: lit_keyword :name
         inc: count: lstr
 
+; Function: literal_number
+; Description: Prepare a number registration at initialization
+
+func :private literal_number   [basecast lit_fn lit_bb lit_number]
+    let lstr [] get: lit_number :lval
+    literal_chartype_registration:
+        basecast
+        lit_fn
+        lit_bb
+        numreg_ref
+        lstr
+        get: lit_number :name
+        inc: count: lstr
+
 ; Function: literal_integer
 ; Description: Prepare an integer registration at initialization
 
@@ -203,12 +217,16 @@ func literal_registration [basecast lit_fn lit_bb literals ndx]
     let lit [] get: literals ndx
 
     match get: lit :ltype
-        | :string   literal_string: basecast lit_fn lit_bb lit
-        | :keyword  literal_keyword: basecast lit_fn lit_bb lit
-        | :integer  literal_integer: lit_fn lit_bb lit
-        | :hex      literal_hex: lit_fn lit_bb lit
-        | :bit      literal_binary: lit_fn lit_bb lit
-        | :default  exception: format!: "Unhandled literal type {}" [%0]
+        | :string       literal_string: basecast lit_fn lit_bb lit
+        | :keyword      literal_keyword: basecast lit_fn lit_bb lit
+        | :real_number  literal_number: basecast lit_fn lit_bb lit
+        | :integer      literal_integer: lit_fn lit_bb lit
+        | :hex          literal_hex: lit_fn lit_bb lit
+        | :bit          literal_binary: lit_fn lit_bb lit
+        | :default      @(
+                            printnl!: lit
+                            exception: format!: "Unhandled literal type {}" [%0]
+                        )
     literals
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

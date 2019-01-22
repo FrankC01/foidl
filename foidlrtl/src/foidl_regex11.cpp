@@ -228,7 +228,7 @@ static void _ttstr(ostringstream &ost, PFRTAny e) {
             ost << (char *)e->value;
             break;
         case    integer_type:
-            ost << (ft) e->value;
+            ost << (long long) e->value;
             break;
         case nil_type:
             ost << (char *)nilstr->value;
