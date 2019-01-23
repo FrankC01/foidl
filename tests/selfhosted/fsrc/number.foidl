@@ -20,14 +20,35 @@ var n1  5.095
 var n2  7.0
 var n3  0.0008
 var n4  -3.9e+1
-var n5  -7
+var n5  5
 var n6  0xdead
-var n7  0b0101
+var n7  0b00000001
+var n8  10
+
+var s1  "foo"
 
 func main [argv]
-    printnl!:
-        format:
-            "List of numbers {}"
-            [[n1 n2 n3 n4 n5 n6 n7]]
-    printnl!: n5
+
+    printnl!: format: "This is {}" [[n1 n2 n3 n4 s1]]
+
+    ; Equality
+    printnl!: =: n5 five    ; true
+    printnl!: <: five n1    ; true
+    printnl!: <: n1 five    ; false
+    printnl!: >: n1 five    ; true
+    printnl!: >: five n1    ; false
+    printnl!: <=: five n1   ; true
+    printnl!: >=: n1 five   ; true
+    printnl!: =: n5 s1      ; false
+    ; Odd/Even
+    printnl!: even?: n8     ; true
+    printnl!: odd?: n8      ; false
+    printnl!: odd?: n4      ; true
+    ; Basic Math
+    printnl!: +: one two    ; 3
+    printnl!: -: one two    ; -1
+    printnl!: *: one two    ; 2
+    printnl!: /: n1 n4      ; -0.13064102564
+    printnl!: /: 5 0        ; 0 with error to stderr
+
     zero

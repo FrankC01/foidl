@@ -41,8 +41,8 @@ PFRTAny 	foidl_rtl_init() {
 		//foidl_heap_setup();
 		foidl_gc_init();
 		foidl_rtl_init_chars();
-		foidl_rtl_init_ints();
 		foidl_rtl_init_globals();
+		foidl_rtl_init_numbers(); //foidl_rtl_init_ints();
 		foildl_rtl_init_strings();
 		foidl_rtl_init_types();
 		foidl_rtl_init_series();
@@ -892,32 +892,32 @@ PFRTAny 	foidl_failWith(PFRTAny str) {
 //	Math routines
 
 PFRTAny foidl_add(PFRTAny arg1, PFRTAny arg2) {
-	if(arg1->ftype == integer_type && arg2->ftype == integer_type)
-		return foidl_add_ints(arg1,arg2);
+	if(arg1->ftype == number_type && arg2->ftype == number_type)
+		return foidl_num_add(arg1,arg2);
 	else
 		unknown_handler();
 	return nil;
 }
 
 PFRTAny foidl_sub(PFRTAny arg1, PFRTAny arg2) {
-	if(arg1->ftype == integer_type && arg2->ftype == integer_type)
-		return foidl_sub_ints(arg1,arg2);
+	if(arg1->ftype == number_type && arg2->ftype == number_type)
+		return foidl_num_sub(arg1,arg2);
 	else
 		unknown_handler();
 	return nil;
 }
 
 PFRTAny foidl_div(PFRTAny arg1, PFRTAny arg2) {
-	if(arg1->ftype == integer_type && arg2->ftype == integer_type)
-		return foidl_div_ints(arg1,arg2);
+	if(arg1->ftype == number_type && arg2->ftype == number_type)
+		return foidl_num_div(arg1,arg2);
 	else
 		unknown_handler();
 	return nil;
 }
 
 PFRTAny foidl_mul(PFRTAny arg1, PFRTAny arg2) {
-	if(arg1->ftype == integer_type && arg2->ftype == integer_type)
-		return foidl_mul_ints(arg1,arg2);
+	if(arg1->ftype == number_type && arg2->ftype == number_type)
+		return foidl_num_mul(arg1,arg2);
 	else
 		unknown_handler();
 	return nil;

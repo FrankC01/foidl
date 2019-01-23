@@ -35,15 +35,15 @@ PFRTAny tbchr,nlchr,crchr,spchr;
 PFRTAny semichr,colonchr,sqchr,dqchr,eschr,exchr, carchr,qmchr,orchr;
 PFRTAny eqchr, tmchr, addchr, subchr, divchr;
 PFRTAny chr0, chr1, chr2, chr3, chr4, chr5, chr6, chr7, chr8, chr9;
-PFRTAny zero,one,two,three,four,five,six,seven,eight;
-PFRTAny nine,ten,eleven,twelve,thirteen,fourteen,fifteen,sixteen;
 PFRTAny boundarySet;
 PFRTAny boundarySetLite;
 PFRTAny digits;
 PFRTAny whitespace;
 
+PFRTAny zero,one,two,three,four,five,six,seven,eight;
+PFRTAny nine,ten,eleven,twelve,thirteen,fourteen,fifteen,sixteen;
+
 #define genchar(lsym,v) lsym = allocCharWithValue((ft) v)
-#define genint(lsym,v)  lsym = allocIntegerWithValue((long long) v)
 
 #define gencharToSet(lset,lsym,v) \
 	genchar(lsym,v); \
@@ -53,25 +53,6 @@ PFRTAny whitespace;
 
 void foidl_rtl_init_globals() {
 
-	//	Utilitity counters
-
-	genint(zero,0x00);
-	genint(one,0x01);
-	genint(two,0x02);
-	genint(three,0x03);
-	genint(four,0x04);
-	genint(five,0x05);
-	genint(six,0x06);
-	genint(seven,0x07);
-	genint(eight,0x08);
-	genint(nine,0x09);
-	genint(ten,0x0A);
-	genint(eleven,0x0B);
-	genint(twelve,0x0C);
-	genint(thirteen,0x0D);
-	genint(fourteen,0x0E);
-	genint(fifteen,0x0F);
-	genint(sixteen,0x10);
 
 	//	Setup some character sets
 

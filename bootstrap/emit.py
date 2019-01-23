@@ -76,7 +76,7 @@ supps = [
     ("foidl_rtl_init", []),
     ("foidl_convert_mainargs", [int_32, void_ptr_ptr, void_ptr_ptr]),
     ("foidl_reg_character", [int_64]),
-    ("foidl_reg_integer", [int_64]),
+    ("foidl_reg_intnum", [int_64]),
     ("foidl_reg_keyword", [void_ptr]),
     ("foidl_reg_string", [void_ptr]),
     ("foidl_reg_number", [void_ptr]),
@@ -232,11 +232,20 @@ class LlvmGen(object):
             "STRING": builder.module.get_global("foidl_reg_string"),
             "KEYWORD": builder.module.get_global("foidl_reg_keyword"),
             "REAL": builder.module.get_global("foidl_reg_number"),
-            "INTEGER": builder.module.get_global("foidl_reg_integer"),
+            "INTEGER": builder.module.get_global("foidl_reg_number"),
+            "HEX": builder.module.get_global("foidl_reg_number"),
+            "BIT": builder.module.get_global("foidl_reg_number"),
+            # "INTEGER": builder.module.get_global("foidl_reg_integer"),
             "CHAR": builder.module.get_global("foidl_reg_character")}
 
         # Strings and Keywords
-        strdict = {**litmap['STRING'], **litmap['KEYWORD'], **litmap['REAL']}
+        strdict = {
+            **litmap['STRING'],
+            **litmap['KEYWORD'],
+            **litmap['REAL'],
+            **litmap['INTEGER'],
+            **litmap['HEX'],
+            **litmap['BIT']}
         if strdict:
             # Largest buffer
             strptr = builder.alloca(
@@ -255,15 +264,15 @@ class LlvmGen(object):
                 for k, outer_v in {
                     x: y
                     for x, y in litmap.items()
-                    if x in ['KEYWORD', 'STRING', 'REAL']}.items()]
+                    if x in ['KEYWORD', 'STRING', 'REAL', 'INTEGER', 'HEX', 'BIT']}.items()]
 
         # Integers, Bin, and Hex
-        intdict = {**litmap['INTEGER'], **litmap['HEX'], **litmap['BIT']}
+        """intdict = {**litmap['INTEGER'], **litmap['HEX'], **litmap['BIT']}
         for k, v in intdict.items():
             rcall = builder.call(
                 clook["INTEGER"],
                 [ir.Constant(int_64, int(k, 0))])
-            builder.store(rcall, builder.module.get_global(v.name))
+            builder.store(rcall, builder.module.get_global(v.name))"""
 
         # Chars
         for k, v in litmap["CHAR"].items():
@@ -305,7 +314,7 @@ class LlvmGen(object):
         """Emit Lambda Reference as FunctionRef"""
         fn = builder.module.get_global(el.name)
         mcnt = builder.call(
-            builder.module.get_global("foidl_reg_integer"),
+            builder.module.get_global("foidl_reg_intnum"),
             [ir.Constant(int_64, len(el.exprs))])
         fref = builder.call(
             builder.module.get_global("foidl_tofuncref"),
@@ -317,7 +326,7 @@ class LlvmGen(object):
         """Emit a Closure reference"""
         fn = builder.module.get_global(el.name)
         mcnt = builder.call(
-            builder.module.get_global("foidl_reg_integer"),
+            builder.module.get_global("foidl_reg_intnum"),
             [ir.Constant(int_64, len(el.pre))])
         fref = builder.call(
             builder.module.get_global("foidl_tofuncref"),
@@ -529,7 +538,7 @@ class LlvmGen(object):
         fn = builder.module.get_global(el.pre.name)
         # Get the full argument count from function
         mcnt = builder.call(
-            builder.module.get_global("foidl_reg_integer"),
+            builder.module.get_global("foidl_reg_intnum"),
             [ir.Constant(int_64, len(fn.args))])
         fref = builder.call(
             builder.module.get_global("foidl_tofuncref"),
@@ -619,7 +628,7 @@ class LlvmGen(object):
         """Emit Function reference"""
         fn = builder.module.get_global(el.name)
         mcnt = builder.call(
-            builder.module.get_global("foidl_reg_integer"),
+            builder.module.get_global("foidl_reg_intnum"),
             [ir.Constant(int_64, el.argcnt)])
         fref = builder.call(
             builder.module.get_global("foidl_tofuncref"),

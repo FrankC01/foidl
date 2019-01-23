@@ -10,6 +10,7 @@
 #include <foidlrt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <m_apm.h>
 
 static PFRTAny intMap;
 
@@ -24,13 +25,9 @@ void 	foidl_rtl_init_ints() {
 }
 
 PFRTAny  foidl_reg_integer(long long i) {
-	FRTAny 	anyInt = {scalar_class,integer_type,0,0,(void *) i};
-	PFRTAny res = map_get(intMap,&anyInt);
-	if(res == nil) {
-		res = allocGlobalIntegerType(i);
-		foidl_map_extend_bang(intMap,res,res);
-	}
-	return res;
+	printf("Exception foidl_reg_integer is deprecated...\n");
+	unknown_handler();
+	return nil; //res;
 }
 
 int foidl_return_code(PFRTAny rc) {
@@ -83,33 +80,5 @@ PFRTAny foidl_c2i(PFRTAny el) {
 	if(el->ftype == character_type)
 		res = allocIntegerWithValue((long long) el->value);
 	return res;
-}
-
-// Call to extract numeric part of binary or hex declaration
-// to intenger (number)
-
-PFRTAny foidl_s2i(PFRTAny el) {
-	ft 		result=0;
-	if(el->ftype == string_type) {
-		switch (((char *)el->value)[1]) {
-			case 	'x':
-			case 	'X':
-				result = strtol(&el->value[2], NULL, 16);
-				break;
-			case 	'b':
-			case 	'B':
-				result = strtol(&el->value[2], NULL, 2);
-				break;
-			default:
-				printf("Found UNKNOWN %s\n",(char *)el->value);
-				unknown_handler();
-				break;
-		}
-	}
-	else {
-		unknown_handler();
-	}
-
-	return foidl_reg_integer(result);
 }
 

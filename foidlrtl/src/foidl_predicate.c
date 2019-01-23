@@ -8,6 +8,7 @@
 
 #define PREDICATE_IMPL
 #include <foidlrt.h>
+#include <stdio.h>
 
 //	Simple equality
 
@@ -44,8 +45,12 @@ PFRTAny foidl_not(PFRTAny el) {
 PFRTAny scalar_equality(PFRTAny lhs, PFRTAny rhs) {
 	PFRTAny 	res = true;
 
-	// If mem ptr not equal else true
-	if(lhs != rhs) {
+	// If used with two numbers
+	if(lhs->ftype == number_type && rhs->ftype == number_type)
+		res = foidl_num_equal(lhs, rhs);
+
+	// If different objects dig deeper
+	else if(lhs != rhs) {
 		if(lhs->ftype == rhs->ftype) {
 			if(lhs->ftype != string_type && lhs->ftype != keyword_type) {
 				if(lhs->value != rhs->value)
@@ -108,8 +113,10 @@ PFRTAny foidl_lt_qmark(PFRTAny lhs, PFRTAny rhs) {
 	if(lhs->fclass == rhs->fclass && lhs->ftype == rhs->ftype) {
 		switch(lhs->ftype) {
 			case 	character_type:
-			case 	integer_type:
 				res = lhs->value < rhs->value ? true : false;
+				break;
+			case 	number_type:
+				res = foidl_num_lt(lhs, rhs);
 				break;
 			default:
 				unknown_handler();
@@ -129,8 +136,10 @@ PFRTAny foidl_gt_qmark(PFRTAny lhs, PFRTAny rhs) {
 	if(lhs->fclass == rhs->fclass && lhs->ftype == rhs->ftype) {
 		switch(lhs->ftype) {
 			case 	character_type:
-			case 	integer_type:
 				res = lhs->value > rhs->value ? true : false;
+				break;
+			case 	number_type:
+				res = foidl_num_gt(lhs, rhs);
 				break;
 			default:
 				unknown_handler();
@@ -161,6 +170,7 @@ PFRTAny foidl_io_qmark(PFRTAny el) {
 
 
 PFRTAny function_strict_arg(PFRTAny fn, PFRTAny cnt) {
+	printf("Warning:  function_strict_arg needs update to number\n");
 	if(fn->ftype == funcref_type && ((PFRTFuncRef) fn)->argcount == (ft) cnt->value)
 		return true;
 	else if(fn->ftype == lambref_type &&
@@ -198,8 +208,6 @@ PFRTAny foidl_empty_qmark(PFRTAny el) {
 		return el->count == 0 ? true : false;
 	else
 		return true;
-	// return ((foidl_collection_qmark(el) == true ||
-	// 	el->ftype == string_type) && el->count == 0) ? true : false;
 }
 
 //	Type equalities
@@ -213,23 +221,27 @@ PFRTAny foidl_char_qmark(PFRTAny el) {
 }
 
 PFRTAny foidl_integer_qmark(PFRTAny el) {
+	printf("foidl_integer_qmark deprecated\n");
+	unknown_handler();
 	return (el->ftype == integer_type) ? true : false;
+}
+
+PFRTAny foidl_number_qmark(PFRTAny el) {
+	return (el->ftype == number_type) ? true : false;
 }
 
 PFRTAny foidl_even_qmark(PFRTAny el) {
 	PFRTAny res = false;
-	if(foidl_integer_qmark(el) == true) {
-		ft v = (ft) el->value;
-		return (v & 1) ? false: true;
+	if(foidl_number_qmark(el) == true) {
+		return foidl_num_even(el);
 	}
 	return res;
 }
 
 PFRTAny foidl_odd_qmark(PFRTAny el) {
 	PFRTAny res = false;
-	if(foidl_integer_qmark(el) == true) {
-		ft v = (ft) el->value;
-		return (v & 1) ? true: false;
+	if(foidl_number_qmark(el) == true) {
+		return foidl_num_odd(el);
 	}
 	return res;
 }

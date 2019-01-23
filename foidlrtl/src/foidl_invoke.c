@@ -1,14 +1,14 @@
 /*
 	foidl_invoke.c
 	Library support for partials, lambdas and evaluation
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
 
 #define 	INVOKE_IMPL
 #include 	<foidlrt.h>
-
+#include 	<stdio.h>
 
 PFRTAny 	invoke0 (PFRTFuncRef2 a) {
 	return ((PFRTAny (*) ()) a->fnptr) ();
@@ -145,7 +145,7 @@ PFRTAny 	invoke8 (PFRTFuncRef2 a) {
 			foidl_get(a->args, four),
 			foidl_get(a->args, five),
 			foidl_get(a->args, six),
-			foidl_get(a->args, seven)			
+			foidl_get(a->args, seven)
 		);
 }
 
@@ -388,7 +388,7 @@ PFRTAny 	invoke16 (PFRTFuncRef2 a) {
 				PFRTAny, 	// 14
 				PFRTAny, 	// 15
 				PFRTAny 	// 16
-				) 
+				)
 			) a->fnptr)
 		(	foidl_get(a->args, zero),
 			foidl_get(a->args, one),
@@ -406,7 +406,7 @@ PFRTAny 	invoke16 (PFRTFuncRef2 a) {
 			foidl_get(a->args, thirteen),
 			foidl_get(a->args, fourteen),
 			foidl_get(a->args, fifteen)
-						
+
 		);
 }
 
@@ -421,17 +421,19 @@ PFRTAny 	foidl_tofuncref(void *fref, PFRTAny acnt) {
 	ft 	cnt = 0;
 	if(acnt->ftype == string_type )
 		cnt = atoi(acnt->value);
-	else if (acnt->ftype == integer_type)
-		cnt = (ft) acnt->value;
-	else 
+	else if (acnt->ftype == number_type)
+		cnt = number_toft(acnt);
+	else {
+		printf("%llx\n", acnt->ftype);
 		unknown_handler();
+	}
 	return (PFRTAny) allocFuncRef2(fref,(ft) cnt,iptrs[cnt]);
 }
 //	Instantiate a new or unique function reference instance
 
 PFRTAny foidl_fref_instance(PFRTAny fsrc) {
-	PFRTAny res = nil;	
-	
+	PFRTAny res = nil;
+
 	if(fsrc->ftype == funcref_type) {
 		PFRTFuncRef fref = (PFRTFuncRef) fsrc;
 		res = (PFRTAny) allocFuncRef2(fref->fnptr,fref->argcount,
@@ -439,7 +441,7 @@ PFRTAny foidl_fref_instance(PFRTAny fsrc) {
 	}
 	else if(fsrc->ftype == lambref_type) {
 		PFRTLambdaRef lref = (PFRTLambdaRef) fsrc;
-		res = (PFRTAny) 
+		res = (PFRTAny)
 			allocFuncRef2(lref->ffuncref->fnptr,lref->ffuncref->argcount,
 				iptrs[lref->ffuncref->argcount]);
 	}
@@ -452,10 +454,10 @@ PFRTAny foidl_fref_instance(PFRTAny fsrc) {
 		if(ivec->count > 0)
 			for(ft i = 0; i < ivec->count;i++)
 				foidl_vector_extend_bang((PFRTAny) ivec2,
-					vector_nth(ivec,i));			
+					vector_nth(ivec,i));
 		res = (PFRTAny) iref2;
 	}
-	else 
+	else
 		unknown_handler();
 
 	return (PFRTAny) res;
@@ -515,7 +517,7 @@ PFRTAny dispatch1(PFRTAny fn, PFRTAny arg1) {
 	PFRTAny 	res = nil;
 	PFRTFuncRef2 fref =(PFRTFuncRef2) foidl_fref_instance(fn);
 
-	if(fref->mcount >= 1) {		
+	if(fref->mcount >= 1) {
 		res = foidl_imbue((PFRTAny) fref,arg1);
 		deallocFuncRef2(fref);
 	}

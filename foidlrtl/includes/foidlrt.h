@@ -55,7 +55,7 @@ static const ft 	boolean_type    = 0xffffffff100000a9;
 static const ft 	character_type  = 0xffffffff100000a8;
 static const ft     regex_type      = 0xffffffff100000a7;
 
-static const ft 	integer_type 	= 0xffffffff1000a8a9;
+static const ft 	integer_type 	= 0xffffffff1000a8a9; // Deprecated for number_type
 static const ft     number_type     = 0xffffffff1000a8a8;
 
 //	Collection types
@@ -632,7 +632,7 @@ EXTERNC PFRTAny 	langle,rangle;
 EXTERNC PFRTAny 	lbrace,rbrace;
 EXTERNC PFRTAny 	lbracket,rbracket;
 EXTERNC PFRTAny 	tbchr,nlchr,crchr,spchr,semichr;
-EXTERNC PFRTAny  semichr,colonchr,sqchr,dqchr,eschr;
+EXTERNC PFRTAny     semichr,colonchr,sqchr,dqchr,eschr;
 EXTERNC PFRTAny 	meta,comma;
 EXTERNC PFRTAny 	zero, one,two,three,four,five,six,seven,eight;
 EXTERNC PFRTAny 	nine,ten,eleven,twelve,thirteen,fourteen,fifteen,sixteen;
@@ -799,7 +799,6 @@ EXTERNC PFRTAny 	allocECharWithValue(ft, ft);
 
 // Integers
 #ifndef INTEGER_IMPL
-EXTERNC void 	foidl_rtl_init_ints();
 EXTERNC PFRTAny 	allocIntegerWithValue(long long val);
 EXTERNC PFRTAny 	foidl_add_ints(PFRTAny, PFRTAny);
 EXTERNC PFRTAny 	foidl_sub_ints(PFRTAny, PFRTAny);
@@ -809,9 +808,25 @@ EXTERNC PFRTAny 	foidl_mod_ints(PFRTAny, PFRTAny);
 #endif
 
 #ifndef NUMBER_IMPL
+EXTERNC void        foidl_rtl_init_numbers();
 EXTERNC PFRTAny     foidl_reg_number(char *);
 EXTERNC ft          number_tostring_buffersize(PFRTAny);
 EXTERNC char*       number_tostring(PFRTAny);
+EXTERNC long long   number_tolong(PFRTAny);
+EXTERNC ft          number_toft(PFRTAny);
+EXTERNC PFRTAny     foidl_num_equal(PFRTAny flhs, PFRTAny frhs);
+EXTERNC PFRTAny     foidl_num_nequal(PFRTAny flhs, PFRTAny frhs);
+EXTERNC PFRTAny     foidl_num_lt(PFRTAny flhs, PFRTAny frhs);
+EXTERNC PFRTAny     foidl_num_gt(PFRTAny flhs, PFRTAny frhs);
+EXTERNC PFRTAny     foidl_num_lteq(PFRTAny flhs, PFRTAny frhs);
+EXTERNC PFRTAny     foidl_num_gteq(PFRTAny flhs, PFRTAny frhs);
+EXTERNC PFRTAny     foidl_num_odd(PFRTAny flhs);
+EXTERNC PFRTAny     foidl_num_even(PFRTAny flhs);
+EXTERNC PFRTAny     foidl_num_add(PFRTAny flhs, PFRTAny frhs);
+EXTERNC PFRTAny     foidl_num_sub(PFRTAny flhs, PFRTAny frhs);
+EXTERNC PFRTAny     foidl_num_mul(PFRTAny flhs, PFRTAny frhs);
+EXTERNC PFRTAny     foidl_num_div(PFRTAny flhs, PFRTAny frhs);
+
 #endif
 
 // String
