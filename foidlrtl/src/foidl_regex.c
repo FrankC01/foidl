@@ -154,11 +154,11 @@ PFRTAny foidl_tokenize(PFRTAny s, PFRTAny patterns, PFRTAny ignores) {
 			foidl_map_extend_bang(
 				mymap,
 				linenoKW,
-				allocIntegerWithValue((long long) res->lineno));
+				foidl_reg_intnum((long long) res->lineno));
 			foidl_map_extend_bang(
 				mymap,
 				colnoKW,
-				allocIntegerWithValue((long long) res->colno));
+				foidl_reg_intnum((long long) res->colno));
 			if(res->type_index == -1) {
 				foidl_map_extend_bang(
 					mymap,
@@ -172,7 +172,7 @@ PFRTAny foidl_tokenize(PFRTAny s, PFRTAny patterns, PFRTAny ignores) {
 					errorKW);
 			}
 			else {
-				PFRTAny index = allocIntegerWithValue((long long) res->type_index);
+				PFRTAny index = foidl_reg_intnum((long long) res->type_index);
 				PFRTAny lmap = foidl_get(patterns, index);
 				PFRTAny tkw = foidl_get(lmap, typeKW);
 				foidl_map_extend_bang(mymap,token_typeKW,tkw);

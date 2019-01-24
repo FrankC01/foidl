@@ -50,5 +50,7 @@ func main [argv]
     printnl!: *: one two    ; 2
     printnl!: /: n1 n4      ; -0.13064102564
     printnl!: /: 5 0        ; 0 with error to stderr
+    printnl!: =: mod: 3 2 1 ; true
+    ; Things that involve numbers
+    printnl!: count: l1
 
-    zero

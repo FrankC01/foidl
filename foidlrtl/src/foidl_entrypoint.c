@@ -65,6 +65,17 @@ PFRTAny 	foidl_system_getenv(PFRTAny el) {
 	return map_get(foidl_env,el);
 }
 
+//	Application exit point
+
+int foidl_return_code(PFRTAny rc) {
+	int res=0;
+	if(rc->ftype == number_type) {
+		res = (int) number_tolong(rc);
+	}
+	return res;
+}
+
+
 //
 //	Interface Entry points
 //
@@ -75,7 +86,7 @@ PFRTAny 	foidl_count(PFRTAny el) {
 
 	PFRTAny 	res=zero;
 	if(el->fclass == collection_class || el->ftype == string_type || el->ftype == keyword_type)
-		res = allocIntegerWithValue(el->count);
+		res = foidl_reg_intnum(el->count);
 	else if(el->fclass == io_class)
 		res = foidl_io_count(el);
 	return res;
@@ -517,7 +528,7 @@ PFRTAny 	foidl_take(PFRTAny arg, PFRTAny coll) {
 //	For all, v can be a value or an expression (Fn, Ln)
 
 static PFRTAny validateIndexable(PFRTAny coll,PFRTAny indx) {
-	PFRTAny 	isIndex = indx->ftype == integer_type ? true : false;
+	PFRTAny 	isIndex = indx->ftype == number_type ? true : false;
 	if(coll->ftype == list2_type || coll->ftype == vector2_type
 		|| coll->ftype == string_type || coll->ftype == keyword_type) {
 		if(isIndex == false)
@@ -932,14 +943,14 @@ PFRTAny foidl_mul(PFRTAny arg1, PFRTAny arg2) {
 }
 
 PFRTAny foidl_mod(PFRTAny arg1, PFRTAny arg2) {
-	if(arg1->ftype == integer_type && arg2->ftype == integer_type)
-		return foidl_mod_ints(arg1,arg2);
+	if(arg1->ftype == number_type && arg2->ftype == number_type)
+		return foidl_num_mod(arg1,arg2);
 	else
 		unknown_handler();
 	return nil;
 }
 PFRTAny foidl_inc(PFRTAny el) {
-	if(el->ftype == integer_type)
+	if(el->ftype == number_type)
 		return foidl_add(el,one);
 	else
 		unknown_handler();
@@ -947,7 +958,7 @@ PFRTAny foidl_inc(PFRTAny el) {
 }
 
 PFRTAny foidl_dec(PFRTAny el) {
-	if(el->ftype == integer_type)
+	if(el->ftype == number_type)
 		return foidl_sub(el,one);
 	else
 		unknown_handler();

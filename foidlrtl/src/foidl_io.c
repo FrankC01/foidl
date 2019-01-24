@@ -466,14 +466,14 @@ PFRTAny foidl_io_second(PFRTIOChannel chan) {
 
 PFRTAny foidl_io_line(PFRTIOChannel chan) {
 	if(canRead(chan) == true)
-		return allocIntegerWithValue(chan->bufferptr->current_line);
+		return foidl_reg_intnum(chan->bufferptr->current_line);
 	else
 		return nil;
 }
 
 PFRTAny foidl_io_pos(PFRTIOChannel chan) {
 	if(canRead(chan) == true)
-		return allocIntegerWithValue(chan->bufferptr->current_pos);
+		return foidl_reg_intnum(chan->bufferptr->current_pos);
 	else
 		return nil;
 }

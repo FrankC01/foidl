@@ -227,7 +227,13 @@ static PFRTLinkNode getListLinkNode(PFRTList list, ft indx) {
 }
 
 PFRTAny list_get(PFRTAny l, PFRTAny index) {
-	return getListLinkNode((PFRTList) l, (ft) index->value)->data;
+	if(index->ftype == number_type) {
+		return getListLinkNode((PFRTList) l, number_toft(index))->data;
+	}
+	else {
+		unknown_handler();
+	}
+	return nil;
 }
 
 PFRTAny list_index_of(PFRTAny list, PFRTAny el) {
@@ -239,8 +245,8 @@ PFRTAny list_index_of(PFRTAny list, PFRTAny el) {
 		uint64_t count=0;
 		--mcount;
 		while((entry = iteratorNext(li)) != end) {
-			if(entry == el) {
-				result = allocIntegerWithValue(count);
+			if(foidl_equal_qmark(entry,el) == true) {
+				result = foidl_reg_intnum(count);
 				break;
 			}
 			++count;
@@ -253,14 +259,15 @@ PFRTAny list_index_of(PFRTAny list, PFRTAny el) {
 PFRTAny list_get_default(PFRTAny l, PFRTAny index, PFRTAny def) {
 	PFRTAny  result = nil;
 	PFRTList list = (PFRTList) l;
-	if(index->ftype == integer_type) {
-		if(list->count > (ft) index->value) {
-			if((ft)index->value == 0)
+	if(index->ftype == number_type) {
+		ft val = number_toft(index);
+		if(list->count > val) {
+			if(val == 0)
 				result = list->root->data;
 			else {
 				PFRTLinkNode p = list->root->next;
 				ft i=1;
-				while(i<(ft)index->value) {
+				while(i<val) {
 					p = p->next;
 					i++;
 				}

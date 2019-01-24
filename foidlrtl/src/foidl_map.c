@@ -2,7 +2,7 @@
 /*
 	foidl_map.c
 	Library support for CHAMP map
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -32,7 +32,7 @@ static PFRTAny getValue(PFRTBitmapNode node, uint32_t index) {
 }
 
 static PFRTMapEntry getEntry(PFRTBitmapNode node, uint32_t index) {
-	return allocMapEntryWith(node->slots[TUPLELEN * index], 
+	return allocMapEntryWith(node->slots[TUPLELEN * index],
 		node->slots[TUPLELEN * index + 1]);
 }
 
@@ -48,15 +48,15 @@ static void debugMap(char *title,PFRTBitmapNode node,PFRTAny el,uint32_t bpos) {
 	return;
 	char *pv = (char *) el->value;
 
-	if(el->ftype == keyword_type && 
+	if(el->ftype == keyword_type &&
 		(!strcmp(lineno, pv)
 		|| !strcmp(colnum, pv)
 		|| !strcmp(tokens,pv))) {
-		printf("%s key %s ", title,(char *) pv);	
-		printf("bpos = 0x%04X dmap = 0x%04X nmap = 0x%04X \n", 
-			bpos,node->datamap,node->nodemap);	
+		printf("%s key %s ", title,(char *) pv);
+		printf("bpos = 0x%04X dmap = 0x%04X nmap = 0x%04X \n",
+			bpos,node->datamap,node->nodemap);
 	}
-	
+
 }
 
 //
@@ -65,62 +65,62 @@ static void debugMap(char *title,PFRTBitmapNode node,PFRTAny el,uint32_t bpos) {
 
 //	Insert a new KV pair to slot array
 
-static PFRTAny *insertKV(PFRTAny *src,uint32_t olen,uint32_t idx, uint32_t pos, 
-	PFRTAny k, PFRTAny v) {	
+static PFRTAny *insertKV(PFRTAny *src,uint32_t olen,uint32_t idx, uint32_t pos,
+	PFRTAny k, PFRTAny v) {
 	PFRTAny * dst  = allocRawAnyArray(olen+TUPLELEN);
 	if(src != emtndarray) {
-		arraycopy(src,dst,idx);	
+		arraycopy(src,dst,idx);
 		arraycopy(&src[idx],&dst[idx+TUPLELEN],olen-idx);
 	}
 	dst[idx+KEYPOS] = k;
-	dst[idx+VALPOS] = v;		
+	dst[idx+VALPOS] = v;
 	return dst;
 }
 
 //	Convert location at idx to a node (shrink the array)
 
-static PFRTAny *entryToNode(PFRTAny *src,uint32_t olen,uint32_t idx, uint32_t idxNew, 
+static PFRTAny *entryToNode(PFRTAny *src,uint32_t olen,uint32_t idx, uint32_t idxNew,
 	PFRTAny node) {
 	uint32_t newlen = (olen - TUPLELEN) + TUPLELENSFT;
-	PFRTAny *dst  = allocRawAnyArray(newlen);	
+	PFRTAny *dst  = allocRawAnyArray(newlen);
 
 	//printf("Copying from 0 for %u\n",idxOld);
 	arraycopy(src,dst,idx);
 	//debugArray("New array 1",dst,newlen);
 	arraycopy(&src[idx + TUPLELEN],&dst[idx],idxNew - idx);
-	dst[idxNew] = node;	
+	dst[idxNew] = node;
 	//debugArray("New array 2",dst,newlen);
 	arraycopy(&src[idxNew+TUPLELEN],&dst[idxNew+TUPLELENSFT],olen - idxNew - 2);
-	
+
 	return dst;
 }
 
 // Convert location from node to Key/Value entry (expand the array)
 
-static PFRTAny  *nodeToEntry(PFRTAny *src,uint32_t oldlen,uint32_t idxOld,uint32_t idxNew, 
+static PFRTAny  *nodeToEntry(PFRTAny *src,uint32_t oldlen,uint32_t idxOld,uint32_t idxNew,
 	PFRTAny k, PFRTAny v) {
 
- 	PFRTAny  *dst = allocRawAnyArray(oldlen - TUPLELENSFT + TUPLELEN); 	
+ 	PFRTAny  *dst = allocRawAnyArray(oldlen - TUPLELENSFT + TUPLELEN);
  	arraycopy(src,dst,idxNew);
  	dst[idxNew+KEYPOS] = k;
  	dst[idxNew+VALPOS] = v;
-    arraycopy(&src[idxNew],&dst[idxNew+2],idxOld - idxNew);  
-	arraycopy(&src[idxOld+1],&dst[idxOld+2],oldlen - idxOld - 1);    
+    arraycopy(&src[idxNew],&dst[idxNew+2],idxOld - idxNew);
+	arraycopy(&src[idxOld+1],&dst[idxOld+2],oldlen - idxOld - 1);
 	return dst;
 }
 
 //	Called on persist object to update a slot 'key's value
 
 static PFRTBitmapNode copyAndSetValue (PFRTBitmapNode src,uint32_t pos, PFRTAny value) {
-	PFRTBitmapNode dst = (PFRTBitmapNode) nil;	
+	PFRTBitmapNode dst = (PFRTBitmapNode) nil;
 	if(src->slots == emtndarray) {
 		//printf("MAJOR CONDITION FAULT src->slots == emtndarray copyAndSetValue\n");
 		//exit(-1);
 		unknown_handler();
 	}
-	else {		
+	else {
 		ft idx = TUPLELEN * dataIndex(src->datamap,pos) + 1;
-		dst = allocNodeClone(src,nodelength(src));		
+		dst = allocNodeClone(src,nodelength(src));
 		dst->slots[idx+0] = value;
 	}
 	return dst;
@@ -148,7 +148,7 @@ static PFRTBitmapNode copyAndRemoveValue(PFRTBitmapNode node, uint32_t bitpos,
 	PMapNodeResult details) {
 
 	uint32_t idx = TUPLELEN * dataIndex(node->datamap,bitpos);
-	uint32_t oldlen = nodelength(node);	
+	uint32_t oldlen = nodelength(node);
 	uint32_t newlen = oldlen - 2;
 	PFRTAny  *dst = allocRawAnyArray(newlen);
 	arraycopy(node->slots,dst,idx);
@@ -162,33 +162,33 @@ static PFRTBitmapNode copyAndRemoveValue_m(PFRTBitmapNode node, uint32_t bitpos,
 	PMapNodeResult details) {
 
 	uint32_t idx = TUPLELEN * dataIndex(node->datamap,bitpos);
-	uint32_t oldlen = nodelength(node);	
+	uint32_t oldlen = nodelength(node);
 	uint32_t newlen = oldlen - 2;
 	PFRTAny  *dst = allocRawAnyArray(newlen);
 	PFRTAny  *old = node->slots;
 	arraycopy(node->slots,dst,idx);
 	arraycopy(&node->slots[idx+2],&dst[idx],(oldlen - idx) - 2);
-	node->datamap = node->datamap ^ bitpos;	
+	node->datamap = node->datamap ^ bitpos;
 	node->slots = dst;
 	foidl_xdel(old);
 	return node;
 }
 
 
-//	Called on persist operation to update a slot for a node 
+//	Called on persist operation to update a slot for a node
 
 static PFRTBitmapNode copyAndSetNode (PFRTBitmapNode src,
-	uint32_t pos,PFRTBitmapNode node) {	
-	PFRTBitmapNode dst = (PFRTBitmapNode) nil;	
+	uint32_t pos,PFRTBitmapNode node) {
+	PFRTBitmapNode dst = (PFRTBitmapNode) nil;
 	if(src->slots == emtndarray) {
 		//printf("MAJOR CONDITION FAULT src->slots == emtndarray copyAndSetNode\n");
 		//exit(-1);
 		unknown_handler();
 	}
 	else {
-		ft slen = nodelength(src); 
+		ft slen = nodelength(src);
 		uint32_t idx = slen - 1 - nodeIndex(src->nodemap,pos);
-		dst = allocNodeClone(src,slen);	
+		dst = allocNodeClone(src,slen);
 		dst->slots[idx+0] = (PFRTAny) node;
 	}
 	return dst;
@@ -196,7 +196,7 @@ static PFRTBitmapNode copyAndSetNode (PFRTBitmapNode src,
 
 static PFRTBitmapNode copyAndSetNode_m (PFRTBitmapNode src,
 	uint32_t pos,PFRTBitmapNode node) {
-	
+
 	//printf("	Copy/Set node with addy 0x%08llX\n",(ft) node);
 	if(src->slots == emtndarray) {
 		//printf("MAJOR POSITION FAULT copyAndSetNode_m\n");
@@ -204,8 +204,8 @@ static PFRTBitmapNode copyAndSetNode_m (PFRTBitmapNode src,
 		unknown_handler();
 	}
 	else {
-		ft slen = nodelength(src); 		
-		uint32_t idx = slen - 1 - nodeIndex(src->nodemap,pos);		
+		ft slen = nodelength(src);
+		uint32_t idx = slen - 1 - nodeIndex(src->nodemap,pos);
 		src->slots[idx] = (PFRTAny) node;
 	}
 	return src;
@@ -214,21 +214,21 @@ static PFRTBitmapNode copyAndSetNode_m (PFRTBitmapNode src,
 //	Return node copy with inserted new K/V pair
 
 static PFRTBitmapNode copyAndInsertValue (PFRTBitmapNode src,uint32_t pos,
-	PFRTAny key, PFRTAny value) {	
+	PFRTAny key, PFRTAny value) {
 
 	//printf("	Insert/Adjust value %s at index %u of node 0x%08llX\n",(char *)key->value,idx,(ft) src);
-	return allocNodeWithAll(src->datamap | pos, 
+	return allocNodeWithAll(src->datamap | pos,
 		src->nodemap,
 		insertKV(src->slots,
 			nodelength(src),
 			TUPLELEN * dataIndex(src->datamap,pos),
 			pos,
 			key,
-			value));	
+			value));
 }
 
 static PFRTBitmapNode copyAndInsertValue_m (PFRTBitmapNode src,uint32_t pos,
-	PFRTAny key, PFRTAny value) {	
+	PFRTAny key, PFRTAny value) {
 	//printf("	Insert/Adjust value %s at index %u of node 0x%08llX\n",(char *)key->value,idx,(ft) src);
 	PFRTAny *old = src->slots;
 	src->slots = insertKV(old,
@@ -246,14 +246,14 @@ static PFRTBitmapNode copyAndInsertValue_m (PFRTBitmapNode src,uint32_t pos,
 
 static PFRTBitmapNode mergeTwoKeyValPairs(PFRTAny cKey, PFRTAny cValue,
 	PFRTAny key, PFRTAny value, ft shift) {
-	PFRTBitmapNode node;	
+	PFRTBitmapNode node;
 	//printf("Merge two key pairs ");
 	//printf("	Merge cKey %s key %s shift %llu\n",(char *)cKey->value,(char *)key->value,shift);
 	if (shift >= WCNT) {
         // throw new
         // IllegalStateException("Hash collision not yet fixed.");
         //printf("Can't handle collisions yet on shift %llu\n",shift);
-        //printf("Current Key %s cKeyHash 0x%04X Key %s keyHash 0x%04X\n", 
+        //printf("Current Key %s cKeyHash 0x%04X Key %s keyHash 0x%04X\n",
         //	(char*)cKey->value,cKey->hash,(char*)key->value,key->hash);
         //exit(-1);
         unknown_handler();
@@ -263,12 +263,12 @@ static PFRTBitmapNode mergeTwoKeyValPairs(PFRTAny cKey, PFRTAny cValue,
 
 	uint32_t mask0 = mask(hash(cKey), shift);
 	uint32_t mask1 = mask(hash(key), shift);
-	
+
 	//	Can add somehow
 	if(mask0 != mask1) {
-		//printf("	Simple shot\n");		
+		//printf("	Simple shot\n");
 		node = allocNodeWith(bit_pos(mask0) | bit_pos(mask1),0,4);
-		if(mask0 < mask1) {			
+		if(mask0 < mask1) {
 			node->slots[0] = cKey;
 			node->slots[1] = cValue;
 			node->slots[2] = key;
@@ -284,18 +284,18 @@ static PFRTBitmapNode mergeTwoKeyValPairs(PFRTAny cKey, PFRTAny cValue,
 	else {
 		//printf("	Recursive shot\n");
 		node = allocNodeWith(0,bit_pos(mask0),1);
-		node->slots[0] = (PFRTAny) mergeTwoKeyValPairs(cKey,cValue,key,value,shift+SHIFT);		
+		node->slots[0] = (PFRTAny) mergeTwoKeyValPairs(cKey,cValue,key,value,shift+SHIFT);
 	}
-	return node;	
+	return node;
 }
 
-static PFRTBitmapNode migrateFromEntryToNode(PFRTBitmapNode o, uint32_t pos, 
+static PFRTBitmapNode migrateFromEntryToNode(PFRTBitmapNode o, uint32_t pos,
 	PFRTBitmapNode node) {
-	
+
 	uint32_t idxOld = TUPLELEN * dataIndex(o->datamap,pos);
-	uint32_t oldlen = nodelength(o);	
-	uint32_t idxNew = (oldlen - TUPLELEN) - nodeIndex(o->nodemap,pos);	
-	
+	uint32_t oldlen = nodelength(o);
+	uint32_t idxNew = (oldlen - TUPLELEN) - nodeIndex(o->nodemap,pos);
+
 	return allocNodeWithAll(o->datamap ^ pos,o->nodemap | pos,
 		entryToNode(o->slots,oldlen,idxOld, idxNew, (PFRTAny) node));
 }
@@ -303,35 +303,35 @@ static PFRTBitmapNode migrateFromEntryToNode(PFRTBitmapNode o, uint32_t pos,
 static PFRTBitmapNode migrateFromEntryToNode_m(PFRTBitmapNode o, uint32_t pos, PFRTBitmapNode node) {
 
 	uint32_t idxOld = TUPLELEN * dataIndex(o->datamap,pos);
-	uint32_t oldlen = nodelength(o);	
-	uint32_t idxNew = (oldlen - TUPLELEN) - nodeIndex(o->nodemap,pos);	
-	
+	uint32_t oldlen = nodelength(o);
+	uint32_t idxNew = (oldlen - TUPLELEN) - nodeIndex(o->nodemap,pos);
+
 	o->datamap = o->datamap ^ pos;
 	o->nodemap = o->nodemap | pos;
-	PFRTAny *old = o->slots;	
+	PFRTAny *old = o->slots;
 	o->slots   = entryToNode(old,oldlen,idxOld, idxNew, (PFRTAny) node);
 	foidl_xdel(old);
 
 	return o;
 }
 
-static PFRTBitmapNode migrateFromNodeToEntry(PFRTBitmapNode o, uint32_t pos, 
+static PFRTBitmapNode migrateFromNodeToEntry(PFRTBitmapNode o, uint32_t pos,
 	PFRTBitmapNode node) {
-	
+
 	uint32_t idxNew = TUPLELEN * dataIndex(o->datamap,pos);
-	uint32_t oldlen = nodelength(o);	
-	uint32_t idxOld = oldlen - TUPLELENSFT - nodeIndex(o->nodemap,pos);	
+	uint32_t oldlen = nodelength(o);
+	uint32_t idxOld = oldlen - TUPLELENSFT - nodeIndex(o->nodemap,pos);
 	return allocNodeWithAll(o->datamap | pos, o->nodemap ^ pos,
 		nodeToEntry(o->slots,oldlen,idxOld,idxNew,getKey(node,0),getValue(node,0)));
 }
 
-static PFRTBitmapNode migrateFromNodeToEntry_m(PFRTBitmapNode o, uint32_t pos, 
+static PFRTBitmapNode migrateFromNodeToEntry_m(PFRTBitmapNode o, uint32_t pos,
 	PFRTBitmapNode node) {
-	
+
 	uint32_t idxNew = TUPLELEN * dataIndex(o->datamap,pos);
-	uint32_t oldlen = nodelength(o);	
+	uint32_t oldlen = nodelength(o);
 	uint32_t idxOld = oldlen - TUPLELENSFT - nodeIndex(o->nodemap,pos);
-	PFRTAny  *old = o->slots;	
+	PFRTAny  *old = o->slots;
 	o->slots = nodeToEntry(old,oldlen,idxOld,idxNew,getKey(node,0),getValue(node,0));
 	o->datamap = o->datamap | pos;
 	o->nodemap = o->nodemap ^ pos;
@@ -341,22 +341,22 @@ static PFRTBitmapNode migrateFromNodeToEntry_m(PFRTBitmapNode o, uint32_t pos,
 
 //	Extend (insert, associate) map with new key/value pair
 
-static PFRTBitmapNode map_extend_i(PFRTBitmapNode srcNode,PMapNodeResult details, 
+static PFRTBitmapNode map_extend_i(PFRTBitmapNode srcNode,PMapNodeResult details,
 	ft shift, uint32_t keyHash, PFRTAny key, PFRTAny value) {
-	uint32_t 		keyMask = mask(keyHash,shift);	
+	uint32_t 		keyMask = mask(keyHash,shift);
 	uint32_t 		bitpos = bit_pos(keyMask);
 
 	PFRTBitmapNode 	newNode = (PFRTBitmapNode) nil;
 
 	//printf("Map Extend with key %s at shift %llu \n", (char *) key->value,shift);
-	
-	if((srcNode->datamap & bitpos) != 0) {		
+
+	if((srcNode->datamap & bitpos) != 0) {
 		uint32_t dindex = dataIndex(srcNode->datamap,bitpos);
 		PFRTAny currentKey = getKey(srcNode,dindex);
 		PFRTAny currentValue = getValue(srcNode,dindex);
 		//	If keys are the same then replace value for key
 		if(foidl_equal_qmark(key,currentKey) == true) {
-			//printf("	Extend: key match, replace value\n");			
+			//printf("	Extend: key match, replace value\n");
 			details->isModified = true;
 			details->isReplaced = true;
 			details->replacedValue = currentValue;
@@ -365,8 +365,8 @@ static PFRTBitmapNode map_extend_i(PFRTBitmapNode srcNode,PMapNodeResult details
 		//	We have another kv at position
 		else {
 			//printf("	Extend: key no match, push to node\n");
-			details->isModified = true;			
-			newNode = mergeTwoKeyValPairs(currentKey,currentValue,key,value,shift + SHIFT);			
+			details->isModified = true;
+			newNode = mergeTwoKeyValPairs(currentKey,currentValue,key,value,shift + SHIFT);
 			return migrateFromEntryToNode(srcNode,bitpos,newNode);
 		}
 	}
@@ -378,12 +378,12 @@ static PFRTBitmapNode map_extend_i(PFRTBitmapNode srcNode,PMapNodeResult details
 			newNode = copyAndSetNode(srcNode,bitpos,subNewNode);
 		}
 	}
-	else {		
+	else {
 		//printf("	Extend: No data or node positions match...\n");
 		details->isModified = true;
 		newNode = copyAndInsertValue(srcNode,bitpos,key,value);
 	}
-	return newNode;		
+	return newNode;
 }
 
 //	Map contains predicate
@@ -394,7 +394,7 @@ static PFRTAny map_contains_qmark_i(PFRTBitmapNode node,uint32_t khash,PFRTAny k
 	uint32_t mask0 = mask(khash,shift);
 	uint32_t bpos = bit_pos(mask0);
 	if((node->datamap & bpos) != 0) {
-		uint32_t idx = dataIndex(node->datamap,bpos);		
+		uint32_t idx = dataIndex(node->datamap,bpos);
 		return foidl_equal_qmark(getKey(node,idx),key);
 	}
 
@@ -417,18 +417,18 @@ PFRTAny map_contains_qmark(PFRTAny m,PFRTAny el) {
 
 //	Remove element identified by key (if found) from map
 
-static PFRTBitmapNode map_remove_i(PFRTBitmapNode node,PMapNodeResult details, 
+static PFRTBitmapNode map_remove_i(PFRTBitmapNode node,PMapNodeResult details,
 	ft shift, uint32_t keyHash, PFRTAny key) {
 
-	uint32_t 		keyMask = mask(keyHash,shift);	
+	uint32_t 		keyMask = mask(keyHash,shift);
 	uint32_t 		bitpos = bit_pos(keyMask);
 	if((node->datamap & bitpos) != 0) {
-		uint32_t idx = dataIndex(node->datamap,bitpos);		
+		uint32_t idx = dataIndex(node->datamap,bitpos);
 		if(foidl_equal_qmark(getKey(node,idx),key) == true) {
 			details->replacedValue = getValue(node,idx);
 			details->isModified = true;
 			if(payloadArity(node) == 2 && nodeArity(node) == 0) {
-				uint32_t newDataMap = 
+				uint32_t newDataMap =
 				(shift == 0) ? (node->datamap ^ bitpos) : bit_pos(mask(keyHash,0));
 				PFRTAny *dst = allocRawAnyArray(2);
 				if(idx == 0) {
@@ -439,7 +439,7 @@ static PFRTBitmapNode map_remove_i(PFRTBitmapNode node,PMapNodeResult details,
 				else {
 					dst[0] = getKey(node,0);
 					dst[1] = getValue(node,0);
-					return allocNodeWithAll(newDataMap,0,dst);					
+					return allocNodeWithAll(newDataMap,0,dst);
 				}
 			}
 			else {
@@ -475,27 +475,27 @@ static PFRTBitmapNode map_remove_i(PFRTBitmapNode node,PMapNodeResult details,
 }
 
 PFRTAny map_remove(PFRTAny m, PFRTAny k) {
-	PFRTMap 	 			map = (PFRTMap) m;	
+	PFRTMap 	 			map = (PFRTMap) m;
 	struct MapNodeResult 	details = {end,false,false};
-	uint32_t 				keyhash = hash(k);	
+	uint32_t 				keyhash = hash(k);
 	uint32_t 				ohash  = map->hash;
 	uint32_t 				ocount = map->count;
 	PFRTBitmapNode 			newRoot = map_remove_i(map->root,&details,0,keyhash,k);
 	PFRTMap 				newMap = map;
 
-	if(details.isModified == true) {		
+	if(details.isModified == true) {
 		newMap = allocMap(ocount-1,SHIFT,newRoot);
 		uint32_t valhash = hash(details.replacedValue);
-		newMap->hash  = ohash - ((keyhash ^ valhash));		
+		newMap->hash  = ohash - ((keyhash ^ valhash));
 	}
-	
+
 	return (PFRTAny) newMap;
 }
 
 
 //	Map get
-static void map_get_i(PFRTBitmapNode node, PFRTAny el,uint32_t khash,uint32_t shift, 
-	PGetResult res) {	
+static void map_get_i(PFRTBitmapNode node, PFRTAny el,uint32_t khash,uint32_t shift,
+	PGetResult res) {
 	uint32_t mask0 = mask(khash,shift);
 	uint32_t bpos = bit_pos(mask0);
 	debugMap("Get",node,el,bpos);
@@ -519,21 +519,21 @@ static void map_get_i(PFRTBitmapNode node, PFRTAny el,uint32_t khash,uint32_t sh
 PFRTAny map_get(PFRTAny m,PFRTAny el) {
 	PFRTMap map = (PFRTMap) m;
 	struct GetResult res = {nil,nil,nil,false};
-	map_get_i(map->root,el,hash(el),0, &res);	
+	map_get_i(map->root,el,hash(el),0, &res);
 	return (res.isFound == true ? res.result : nil);
 }
 
 PFRTAny map_get_default(PFRTAny m,PFRTAny el, PFRTAny def) {
 	PFRTMap map = (PFRTMap) m;
 	struct GetResult res = {nil,nil,nil,false};
-	map_get_i(map->root,el,hash(el),0, &res);	
+	map_get_i(map->root,el,hash(el),0, &res);
 	if(res.isFound == true) {
 		return res.result;
 	}
 	else {
 		if(foidl_function_qmark(def) == true)
 			 return dispatch2(def,m,el);
-		else 
+		else
 			return def;
 	}
 	return nil;
@@ -545,16 +545,16 @@ PFRTAny map_get_default(PFRTAny m,PFRTAny el, PFRTAny def) {
 //
 
 
-static PFRTBitmapNode map_extend_bang_i(PFRTBitmapNode node,PMapNodeResult details, 
-	ft shift, uint32_t keyHash, PFRTAny key, PFRTAny value) {	
+static PFRTBitmapNode map_extend_bang_i(PFRTBitmapNode node,PMapNodeResult details,
+	ft shift, uint32_t keyHash, PFRTAny key, PFRTAny value) {
 
-	uint32_t 		keyMask = mask(keyHash,shift);	
+	uint32_t 		keyMask = mask(keyHash,shift);
 	uint32_t 		bitpos = bit_pos(keyMask);
 	PFRTBitmapNode 	newNode = node;
 
 	//printf("Map Extend with key %s with hash 0x%04X at shift %llu \n", (char *) key->value,keyHash,shift);
-	
-	if((node->datamap & bitpos) != 0) {		
+
+	if((node->datamap & bitpos) != 0) {
 		uint32_t dindex = dataIndex(node->datamap,bitpos);
 		PFRTAny currentKey = getKey(node,dindex);
 		PFRTAny currentValue = getValue(node,dindex);
@@ -565,18 +565,18 @@ static PFRTBitmapNode map_extend_bang_i(PFRTBitmapNode node,PMapNodeResult detai
 			details->isReplaced = true;
 			details->replacedValue = currentValue;
 			newNode = copyAndSetValue_m(node,bitpos,value);
-			debugMap("Inplace update after ",node,key,bitpos); 
+			debugMap("Inplace update after ",node,key,bitpos);
 		}
 		//	We have another kv at position
 		else {
 			//if( key->ftype == keyword_type )
 			//	printf("	Extend: key %s no match, push to node\n",(char *) key->value);
-			details->isModified = true;			
-			newNode = mergeTwoKeyValPairs(currentKey,currentValue,key,value,shift + SHIFT);			
+			details->isModified = true;
+			newNode = mergeTwoKeyValPairs(currentKey,currentValue,key,value,shift + SHIFT);
 			return migrateFromEntryToNode_m(node,bitpos,newNode);
 		}
 	}
-	else if((node->nodemap & bitpos) != 0) {		
+	else if((node->nodemap & bitpos) != 0) {
 		debugMap("	Node shift update before ",node,key,bitpos);
 		PFRTBitmapNode subNode = getNode(node,nodeIndex(node->nodemap,bitpos));
 		PFRTBitmapNode subNewNode = map_extend_bang_i(subNode,details,shift + SHIFT,keyHash,key,value);
@@ -586,7 +586,7 @@ static PFRTBitmapNode map_extend_bang_i(PFRTBitmapNode node,PMapNodeResult detai
 		}
 
 	}
-	else {		
+	else {
 		//printf("	Extend: No data or node positions match...\n");
 		debugMap("	All new before ",node,key,bitpos);
 		details->isModified = true;
@@ -599,16 +599,16 @@ static PFRTBitmapNode map_extend_bang_i(PFRTBitmapNode node,PMapNodeResult detai
 PFRTAny foidl_map_extend_bang(PFRTAny m, PFRTAny k, PFRTAny v) {
 	struct MapNodeResult 	details = {end,false,false};
 	uint32_t 				keyhash = hash(k);
-	uint32_t 				valhash = hash(v);	
-	PFRTMap  map = ((PFRTMap) m != empty_map) ? (PFRTMap) m  
-					: allocMap(0,SHIFT,allocNode());		
+	uint32_t 				valhash = hash(v);
+	PFRTMap  map = ((PFRTMap) m != empty_map) ? (PFRTMap) m
+					: allocMap(0,SHIFT,allocNode());
 	uint32_t 				ohash  = map->hash;
 	map_extend_bang_i(map->root,&details,0,keyhash,k,v);
 	PFRTMap 				newMap = map;
 
 	if(details.isModified == true) {
 		if(details.replacedValue != end) {
-			uint32_t oldvhash = hash(details.replacedValue);						
+			uint32_t oldvhash = hash(details.replacedValue);
 			newMap->hash  = ohash + ((keyhash ^ valhash)) - ((keyhash ^ oldvhash));
 		}
 		else {
@@ -616,12 +616,12 @@ PFRTAny foidl_map_extend_bang(PFRTAny m, PFRTAny k, PFRTAny v) {
 			newMap->hash = ohash + ((keyhash ^ valhash));
 		}
 	}
-	
+
 	return (PFRTAny) newMap;
 }
 
 PFRTAny map_extend(PFRTAny m, PFRTAny k, PFRTAny v) {
-	
+
 	struct MapNodeResult 	details = {end,false,false};
 	uint32_t 				keyhash = hash(k);
 	uint32_t 				valhash = hash(v);
@@ -635,9 +635,9 @@ PFRTAny map_extend(PFRTAny m, PFRTAny k, PFRTAny v) {
 	PFRTMap 				newMap = map;
 
 	if(details.isModified == true) {
-		newMap = allocMap(ocount,SHIFT,newRoot);		
+		newMap = allocMap(ocount,SHIFT,newRoot);
 		if(details.replacedValue != end) {
-			uint32_t oldvhash = hash(details.replacedValue);						
+			uint32_t oldvhash = hash(details.replacedValue);
 			newMap->hash  = ohash + ((keyhash ^ valhash)) - ((keyhash ^ oldvhash));
 		}
 		else {
@@ -649,7 +649,7 @@ PFRTAny map_extend(PFRTAny m, PFRTAny k, PFRTAny v) {
 		newMap->count = ocount;
 		newMap->hash  = ohash;
 	}
-	
+
 	return (PFRTAny) newMap;
 }
 
@@ -657,18 +657,18 @@ PFRTAny map_update(PFRTAny m, PFRTAny k, PFRTAny v) {
 	return map_extend(m,k,v);
 }
 
-static PFRTBitmapNode map_remove_bang_i(PFRTBitmapNode node,PMapNodeResult details, 
+static PFRTBitmapNode map_remove_bang_i(PFRTBitmapNode node,PMapNodeResult details,
 	ft shift, uint32_t keyHash, PFRTAny key) {
 
-	uint32_t 		keyMask = mask(keyHash,shift);	
+	uint32_t 		keyMask = mask(keyHash,shift);
 	uint32_t 		bitpos = bit_pos(keyMask);
 	if((node->datamap & bitpos) != 0) {
-		uint32_t idx = dataIndex(node->datamap,bitpos);		
+		uint32_t idx = dataIndex(node->datamap,bitpos);
 		if(foidl_equal_qmark(getKey(node,idx),key) == true) {
 			details->replacedValue = getValue(node,idx);
 			details->isModified = true;
 			if(payloadArity(node) == 2 && nodeArity(node) == 0) {
-				uint32_t newDataMap = 
+				uint32_t newDataMap =
 				(shift == 0) ? (node->datamap ^ bitpos) : bit_pos(mask(keyHash,0));
 				PFRTAny *dst = allocRawAnyArray(2);
 				if(idx == 0) {
@@ -679,7 +679,7 @@ static PFRTBitmapNode map_remove_bang_i(PFRTBitmapNode node,PMapNodeResult detai
 				else {
 					dst[0] = getKey(node,0);
 					dst[1] = getValue(node,0);
-					return allocNodeWithAll(newDataMap,0,dst);					
+					return allocNodeWithAll(newDataMap,0,dst);
 				}
 			}
 			else {
@@ -715,19 +715,19 @@ static PFRTBitmapNode map_remove_bang_i(PFRTBitmapNode node,PMapNodeResult detai
 }
 
 PFRTAny map_remove_bang(PFRTAny m, PFRTAny k) {
-	PFRTMap 	 			map = (PFRTMap) m;	
+	PFRTMap 	 			map = (PFRTMap) m;
 	struct MapNodeResult 	details = {end,false,false};
-	uint32_t 				keyhash = hash(k);	
+	uint32_t 				keyhash = hash(k);
 	uint32_t 				ohash  = map->hash;
 	map_remove_bang_i(map->root,&details,0,keyhash,k);
 	PFRTMap 				newMap = map;
 
-	if(details.isModified == true) {		
+	if(details.isModified == true) {
 		uint32_t valhash = hash(details.replacedValue);
 		newMap->hash  = ohash - ((keyhash ^ valhash));
 		--newMap->count;
 	}
-	
+
 	return (PFRTAny) newMap;
 }
 
@@ -752,11 +752,11 @@ PFRTAny	map_second(PFRTAny map) {
 		result = iteratorNext(mi);
 	}
 	foidl_xdel(mi);
-	result = (result == end) ? nil : ((PFRTMapEntry) result)->value;	
+	result = (result == end) ? nil : ((PFRTMapEntry) result)->value;
 	return result;
 }
 
-PFRTAny map_rest(PFRTAny src) {	
+PFRTAny map_rest(PFRTAny src) {
 	PFRTAny result = (PFRTAny) empty_map;
 	if(src->count > 1) {
 		PFRTAny 		itm = nil;
@@ -786,68 +786,18 @@ PFRTAny map_print(PFRTIOChannel chn,PFRTAny map) {
 	if(mcount > 0) {
 		uint32_t count=0;
 		--mcount;
-		while ((entry = iteratorNext(mi)) != end) {			
+		while ((entry = iteratorNext(mi)) != end) {
 			PFRTMapEntry e = (PFRTMapEntry) entry;
 			cfn(chn,e->key);
 			cfn(chn,comma);
 			cfn(chn,e->value);
 			if(mcount > count++) cfn(chn,comma);
-			foidl_xdel(e);			
+			foidl_xdel(e);
 		}
 		foidl_xdel(mi);
-	} 
+	}
 	cfn(chn,rbrace);
 	return nil;
-}
-
-//	Use by compiler to understand literal metrics
-localKeyword(flms_subtype,":subtype");
-localKeyword(flms_inttype,":integer");
-localKeyword(flms_strtype,":string");
-localKeyword(flms_kwdtype,":keyword");
-localKeyword(flms_fname,":fname");
-
-localKeyword(flms_icnt,":intcnt");
-localKeyword(flms_scnt,":strcnt");
-localKeyword(flms_smlen,":strmlen");
-localKeyword(flms_ucnt,":unkncnt");
-
-PFRTAny foidl_literal_map_stats(PFRTAny m) {
-	PFRTAny result = nil;
-	uint32_t icnt;
-	uint32_t skwcnt;
-	uint32_t maxskwlen;
-	uint32_t unknowncnt;
-	icnt = skwcnt = maxskwlen = unknowncnt = 0;
-	if(m->fclass == collection_class && m->ftype == map2_type && m->count > 0) {
-		PFRTIterator mi = iteratorFor(m);
-		PFRTAny entry;
-		while((entry = iteratorNext(mi)) != end) {
-			PFRTMapEntry e = (PFRTMapEntry) entry;
-			PFRTAny stype = foidl_get(e->value,flms_subtype);
-			if( foidl_equal_qmark(stype,flms_strtype) == true ||
-				foidl_equal_qmark(stype,flms_kwdtype) == true ) {
-				PFRTAny fname = foidl_get(e->value,flms_fname);
-				if(fname->count > maxskwlen) 
-					maxskwlen = fname->count;
-				++skwcnt;
-			}
-			else if( foidl_equal_qmark(stype,flms_inttype) == true) {
-				++icnt;
-			}
-			else 
-				++unknowncnt;			
-			
-			foidl_xdel(e);			
-		}
-		foidl_xdel(mi);
-		result = foidl_map_inst_bang();
-		foidl_map_extend_bang(result,flms_icnt,allocIntegerWithValue(icnt));
-		foidl_map_extend_bang(result,flms_scnt,allocIntegerWithValue(skwcnt));
-		foidl_map_extend_bang(result,flms_smlen,allocIntegerWithValue(maxskwlen));
-		foidl_map_extend_bang(result,flms_ucnt,allocIntegerWithValue(unknowncnt));
-	}	
-	return result;
 }
 
 
@@ -859,7 +809,7 @@ PFRTAny coerce_to_map(PFRTAny mtemplate, PFRTAny src) {
 PFRTAny foidl_key(PFRTAny me) {
 	if(me->ftype == mapentry_type)
 		return ((PFRTMapEntry) me)->key;
-	else 
+	else
 		unknown_handler();
 	return nil;
 }
@@ -867,7 +817,7 @@ PFRTAny foidl_key(PFRTAny me) {
 PFRTAny foidl_value(PFRTAny me) {
 	if(me->ftype == mapentry_type)
 		return ((PFRTMapEntry) me)->value;
-	else 
+	else
 		unknown_handler();
 	return nil;
 }

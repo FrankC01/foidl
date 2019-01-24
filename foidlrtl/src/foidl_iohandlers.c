@@ -470,7 +470,7 @@ PFRTAny io_count(PFRTIOChannel chn) {
 			vcnt = chn->bufferptr->buffersize - chn->bufferptr->current_read_offset;
 			break;
 	}
-	return (vcnt > 0) ? allocIntegerWithValue(vcnt) : zero;
+	return (vcnt > 0) ? foidl_reg_intnum(vcnt) : zero;
 }
 
 PFRTAny io_countto(PFRTIOChannel chn, PFRTAny exp) {
@@ -494,7 +494,7 @@ PFRTAny io_countto(PFRTIOChannel chn, PFRTAny exp) {
 				unknown_handler();
 			break;
 	}
-	return (vcnt > 0) ? allocIntegerWithValue(vcnt) : zero;
+	return (vcnt > 0) ? foidl_reg_intnum(vcnt) : zero;
 }
 
 PFRTIOChannel io_unread(PFRTIOChannel chn) {

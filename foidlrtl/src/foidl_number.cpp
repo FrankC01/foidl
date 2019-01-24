@@ -174,6 +174,13 @@ EXTERNC PFRTAny     foidl_num_div(PFRTAny flhs, PFRTAny frhs) {
     return allocAny(scalar_class, number_type, (void *)res);
 }
 
+EXTERNC PFRTAny foidl_num_mod(PFRTAny arg1, PFRTAny arg2) {
+    M_APM q = m_apm_init();
+    M_APM r = m_apm_init();
+    m_apm_integer_div_rem(q, r, (M_APM)arg1->value, (M_APM)arg2->value);
+    m_apm_free(q);
+    return allocAny(scalar_class, number_type, (void *)r);
+}
 
 // Call to extract numeric part of binary or hex declaration
 // to intenger (number)

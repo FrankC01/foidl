@@ -1,7 +1,7 @@
 /*
 	foidl_series.c
 	Library series support
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -17,7 +17,7 @@ Infinite - A specific series with a start of 0, step of 1 and
 has no end
 
 Constructs:
-infinite = series: nil, nil, nil 
+infinite = series: nil, nil, nil
 finite = series: 0, 16, 1 (0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
 finite = series: 16, -1, -1 (reverse of above)
 */
@@ -63,35 +63,35 @@ void foidl_rtl_init_series() {
 //	API
 
 PFRTAny 	foidl_series(PFRTAny start, PFRTAny stop, PFRTAny step) {
-	
+
 	if(start == nil && end == nil && step == nil)
 		return (PFRTAny) infinite;
 
 	PFRTSeries 	result = allocSeries();
 	if(start == nil) {
-		result->start = zero;		
+		result->start = zero;
 	}
-	else if(foidl_function_qmark(start) == true && 
+	else if(foidl_function_qmark(start) == true &&
 		function_strict_arg(start,zero)) {
 		result->start = start;
 	}
-	else if(start->ftype == integer_type){
-		result->start = start;		
+	else if(start->ftype == number_type){
+		result->start = start;
 	}
 	else
 		unknown_handler();
 
 	if(step == nil) {
-		result->step = one;		
+		result->step = one;
 	}
-	else if(foidl_function_qmark(step) == true && 
+	else if(foidl_function_qmark(step) == true &&
 		function_strict_arg(step,one)) {
 		result->step = step;
 	}
-	else if(step->ftype == integer_type) {
+	else if(step->ftype == number_type) {
 		result->step = step;
 	}
-	else 
+	else
 		unknown_handler();
 
 	if(stop == nil) {
@@ -101,10 +101,10 @@ PFRTAny 	foidl_series(PFRTAny start, PFRTAny stop, PFRTAny step) {
 		function_strict_arg(stop,one)) {
 		result->stop = stop;
 	}
-	else if(stop->ftype == integer_type) {
-		result->stop  = stop;		
+	else if(stop->ftype == number_type) {
+		result->stop  = stop;
 	}
-	else 
+	else
 		unknown_handler();
 
 	return (PFRTAny) result;

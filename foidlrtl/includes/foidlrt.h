@@ -797,19 +797,10 @@ EXTERNC PFRTAny 	allocCharWithValue(ft);
 EXTERNC PFRTAny 	allocECharWithValue(ft, ft);
 #endif
 
-// Integers
-#ifndef INTEGER_IMPL
-EXTERNC PFRTAny 	allocIntegerWithValue(long long val);
-EXTERNC PFRTAny 	foidl_add_ints(PFRTAny, PFRTAny);
-EXTERNC PFRTAny 	foidl_sub_ints(PFRTAny, PFRTAny);
-EXTERNC PFRTAny 	foidl_div_ints(PFRTAny, PFRTAny);
-EXTERNC PFRTAny 	foidl_mul_ints(PFRTAny, PFRTAny);
-EXTERNC PFRTAny 	foidl_mod_ints(PFRTAny, PFRTAny);
-#endif
-
 #ifndef NUMBER_IMPL
 EXTERNC void        foidl_rtl_init_numbers();
 EXTERNC PFRTAny     foidl_reg_number(char *);
+EXTERNC PFRTAny     foidl_reg_intnum(ft);
 EXTERNC ft          number_tostring_buffersize(PFRTAny);
 EXTERNC char*       number_tostring(PFRTAny);
 EXTERNC long long   number_tolong(PFRTAny);
@@ -826,6 +817,7 @@ EXTERNC PFRTAny     foidl_num_add(PFRTAny flhs, PFRTAny frhs);
 EXTERNC PFRTAny     foidl_num_sub(PFRTAny flhs, PFRTAny frhs);
 EXTERNC PFRTAny     foidl_num_mul(PFRTAny flhs, PFRTAny frhs);
 EXTERNC PFRTAny     foidl_num_div(PFRTAny flhs, PFRTAny frhs);
+EXTERNC PFRTAny     foidl_num_mod(PFRTAny flhs, PFRTAny frhs);
 
 #endif
 

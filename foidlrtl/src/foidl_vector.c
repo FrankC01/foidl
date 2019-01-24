@@ -119,9 +119,10 @@ static PFRTHamtNode pushTail(ft cnt, ft level, PFRTHamtNode parent, PFRTHamtNode
 
 PFRTAny vector_get(PFRTVector src, PFRTAny index) {
 	PFRTAny res = nil;
-	if (index->ftype == integer_type) {
-		if(src->count > (ft) index->value)
-			res = vector_nth(src,(ft) index->value);
+	if (index->ftype == number_type) {
+		ft val = number_toft(index);
+		if(src->count > val)
+			res = vector_nth(src,val);
 		else
 			;
 	}
@@ -135,9 +136,10 @@ PFRTAny vector_get(PFRTVector src, PFRTAny index) {
 
 PFRTAny vector_get_default(PFRTVector src,PFRTAny index, PFRTAny def) {
 	PFRTAny res = nil;
-	if (index->ftype == integer_type) {
-		if(src->count > (ft) index->value)
-			res = vector_nth(src,(ft) index->value);
+	if (index->ftype == number_type) {
+		ft val = number_toft(index);
+		if(src->count > val)
+			res = vector_nth(src,val);
 		else {
 			if(foidl_function_qmark(def) == true)
 				res = dispatch2(def,(PFRTAny) src,index);
