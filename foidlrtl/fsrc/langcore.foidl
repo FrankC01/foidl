@@ -389,8 +389,8 @@ func byte? [x]
 func char? [x]
 	foidl_char?: x
 
-func integer? [x]
-	foidl_integer?: x
+func number? [x]
+	foidl_number?: x
 
 func string? [x]
 	foidl_string?: x

@@ -9,7 +9,8 @@
 #define NUMBER_IMPL
 #include <foidlrt.h>
 #include <stdio.h>
-#include <m_apm.h>
+//#include <m_apm.h>
+#include <m_apm_lc.h>
 
 static PFRTAny fend = (PFRTAny) &_end.fclass;
 static PFRTAny fnil = (PFRTAny) &_nil.fclass;
@@ -70,11 +71,12 @@ EXTERNC char *number_tostring(PFRTAny num) {
 EXTERNC long long number_tolong(PFRTAny num) {
     M_APM   numapm = (M_APM) num->value;
     M_APM   numabs = m_apm_init();
-    m_apm_absolute_value(numapm, numabs);
+    m_apm_absolute_value(numabs, numapm);
     char *nts = (char *)foidl_xall(num_buffersize(numabs));
     m_apm_to_fixpt_string(nts, -1, numabs);
     long long res = strtoll(nts, NULL, 10);
     foidl_xdel(nts);
+    m_apm_free(numabs);
     return res;
 }
 
@@ -188,18 +190,28 @@ PFRTAny foidl_s2i(PFRTAny el) {
 // Global 0 - 16 setup
 
 EXTERNC void foidl_rtl_init_numbers() {
+    M_init_trig_globals();
     //  Utilitity counters
+    zero = allocAny(scalar_class, number_type, (void *)MM_Zero);
+    one = allocAny(scalar_class, number_type, (void *)MM_One);
+    two = allocAny(scalar_class, number_type, (void *)MM_Two);
+    three = allocAny(scalar_class, number_type, (void *)MM_Three);
+    four = allocAny(scalar_class, number_type, (void *)MM_Four);
+    five = allocAny(scalar_class, number_type, (void *)MM_Five);
+    /*
     genint(zero,0x00);
     genint(one,0x01);
     genint(two,0x02);
     genint(three,0x03);
     genint(four,0x04);
     genint(five,0x05);
+    */
     genint(six,0x06);
     genint(seven,0x07);
     genint(eight,0x08);
     genint(nine,0x09);
-    genint(ten,0x0A);
+    // genint(ten,0x0A);
+    ten = allocAny(scalar_class, number_type, (void *)MM_Ten);
     genint(eleven,0x0B);
     genint(twelve,0x0C);
     genint(thirteen,0x0D);

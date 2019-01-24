@@ -1,5 +1,5 @@
 
-/* 
+/*
  *  M_APM  -  m_apm_lc.h
  *
  *  Copyright (C) 1999 - 2007   Michael C. Ring
@@ -170,7 +170,7 @@
 #include <math.h>
 #include "m_apm.h"
 
-/* 
+/*
  *   this supports older (and maybe newer?) Borland compilers.
  *   these Borland compilers define __MSDOS__
  */
@@ -181,7 +181,7 @@
 #endif
 #endif
 
-/* 
+/*
  *   this supports some newer Borland compilers (i.e., v5.5).
  */
 
@@ -191,7 +191,7 @@
 #endif
 #endif
 
-/* 
+/*
  *   this supports the LCC-WIN32 compiler
  */
 
@@ -201,7 +201,7 @@
 #endif
 #endif
 
-/* 
+/*
  *   this supports Micro$oft Visual C++ and also possibly older
  *   straight C compilers as well.
  */
@@ -212,7 +212,7 @@
 #endif
 #endif
 
-/* 
+/*
  *   this supports the Metrowerks CodeWarrior 7.0 compiler (I think...)
  */
 
@@ -222,7 +222,7 @@
 #endif
 #endif
 
-/* 
+/*
  *   this supports the MINGW 32 compiler
  */
 
@@ -232,7 +232,7 @@
 #endif
 #endif
 
-/* 
+/*
  *   this supports the Open Watcom 1.0 compiler
  */
 
@@ -242,7 +242,7 @@
 #endif
 #endif
 
-/* 
+/*
  *   this supports the Digital Mars compiler
  */
 
@@ -252,7 +252,7 @@
 #endif
 #endif
 
-/* 
+/*
  *   this supports National Instruments LabWindows CVI
  */
 
@@ -262,9 +262,16 @@
 #endif
 #endif
 
+#ifdef __cplusplus
+    #define EXTERNC extern "C"
+#else
+    #define EXTERNC extern
+#endif
+
+
 /*
- *  If for some reason (RAM limitations, slow floating point, whatever) 
- *  you do NOT want to use the FFT multiply algorithm, un-comment the 
+ *  If for some reason (RAM limitations, slow floating point, whatever)
+ *  you do NOT want to use the FFT multiply algorithm, un-comment the
  *  #define below, delete mapm_fft.c and remove mapm_fft from the build.
  */
 
@@ -277,9 +284,9 @@
  */
 
 /*
-extern   void   *memory_allocate(unsigned int);
-extern   void   *memory_reallocate(void *, unsigned int);
-extern   void   memory_free(void *);
+EXTERNC   void   *memory_allocate(unsigned int);
+EXTERNC   void   *memory_reallocate(void *, unsigned int);
+EXTERNC   void   memory_free(void *);
 
 #define  MAPM_MALLOC memory_allocate
 #define  MAPM_REALLOC memory_reallocate
@@ -308,93 +315,93 @@ extern   void   memory_free(void *);
 
 #define	VALID_DECIMAL_PLACES 128
 
-extern  int     MM_lc_PI_digits;
-extern  int     MM_lc_log_digits;
+EXTERNC  int     MM_lc_PI_digits;
+EXTERNC  int     MM_lc_log_digits;
 
 /*
  *   constants not in m_apm.h
  */
 
-extern	M_APM	MM_0_5;
-extern	M_APM	MM_0_85;
-extern	M_APM	MM_5x_125R;
-extern	M_APM	MM_5x_64R;
-extern	M_APM	MM_5x_256R;
-extern	M_APM	MM_5x_Eight;
-extern	M_APM	MM_5x_Sixteen;
-extern	M_APM	MM_5x_Twenty;
-extern	M_APM	MM_lc_PI;
-extern	M_APM	MM_lc_HALF_PI;
-extern	M_APM	MM_lc_2_PI;
-extern	M_APM	MM_lc_log2;
-extern	M_APM	MM_lc_log10;
-extern	M_APM	MM_lc_log10R;
+EXTERNC	M_APM	MM_0_5;
+EXTERNC	M_APM	MM_0_85;
+EXTERNC	M_APM	MM_5x_125R;
+EXTERNC	M_APM	MM_5x_64R;
+EXTERNC	M_APM	MM_5x_256R;
+EXTERNC	M_APM	MM_5x_Eight;
+EXTERNC	M_APM	MM_5x_Sixteen;
+EXTERNC	M_APM	MM_5x_Twenty;
+EXTERNC	M_APM	MM_lc_PI;
+EXTERNC	M_APM	MM_lc_HALF_PI;
+EXTERNC	M_APM	MM_lc_2_PI;
+EXTERNC	M_APM	MM_lc_log2;
+EXTERNC	M_APM	MM_lc_log10;
+EXTERNC	M_APM	MM_lc_log10R;
 
 /*
  *   prototypes for internal functions
  */
 
 #ifndef NO_FFT_MULTIPLY
-extern	void	M_free_all_fft(void);
+EXTERNC	void	M_free_all_fft(void);
 #endif
 
-extern	void	M_init_trig_globals(void);
-extern	void	M_free_all_add(void);
-extern	void	M_free_all_div(void);
-extern	void	M_free_all_exp(void);
-extern	void	M_free_all_pow(void);
-extern	void	M_free_all_rnd(void);
-extern	void	M_free_all_set(void);
-extern	void	M_free_all_cnst(void);
-extern	void	M_free_all_fmul(void);
-extern	void	M_free_all_stck(void);
-extern	void	M_free_all_util(void);
+EXTERNC	void	M_init_trig_globals(void);
+EXTERNC	void	M_free_all_add(void);
+EXTERNC	void	M_free_all_div(void);
+EXTERNC	void	M_free_all_exp(void);
+EXTERNC	void	M_free_all_pow(void);
+EXTERNC	void	M_free_all_rnd(void);
+EXTERNC	void	M_free_all_set(void);
+EXTERNC	void	M_free_all_cnst(void);
+EXTERNC	void	M_free_all_fmul(void);
+EXTERNC	void	M_free_all_stck(void);
+EXTERNC	void	M_free_all_util(void);
 
-extern	int 	M_exp_compute_nn(int *, M_APM, M_APM);
-extern	void	M_raw_exp(M_APM, int, M_APM);
-extern	void	M_raw_sin(M_APM, int, M_APM);
-extern	void	M_raw_cos(M_APM, int, M_APM);
-extern	void	M_5x_sin(M_APM, int, M_APM);
-extern	void	M_4x_cos(M_APM, int, M_APM);
-extern	void	M_5x_do_it(M_APM, int, M_APM);
-extern	void	M_4x_do_it(M_APM, int, M_APM);
+EXTERNC	int 	M_exp_compute_nn(int *, M_APM, M_APM);
+EXTERNC	void	M_raw_exp(M_APM, int, M_APM);
+EXTERNC	void	M_raw_sin(M_APM, int, M_APM);
+EXTERNC	void	M_raw_cos(M_APM, int, M_APM);
+EXTERNC	void	M_5x_sin(M_APM, int, M_APM);
+EXTERNC	void	M_4x_cos(M_APM, int, M_APM);
+EXTERNC	void	M_5x_do_it(M_APM, int, M_APM);
+EXTERNC	void	M_4x_do_it(M_APM, int, M_APM);
 
-extern	M_APM	M_get_stack_var(void);
-extern	void	M_restore_stack(int);
-extern	int 	M_get_sizeof_int(void);
+EXTERNC	M_APM	M_get_stack_var(void);
+EXTERNC	void	M_restore_stack(int);
+EXTERNC	int 	M_get_sizeof_int(void);
 
-extern	void	M_apm_sdivide(M_APM, int, M_APM, M_APM);
-extern	void	M_cos_to_sin(M_APM, int, M_APM);
-extern	void	M_limit_angle_to_pi(M_APM, int, M_APM);
-extern	void	M_log_near_1(M_APM, int, M_APM);
-extern	void	M_get_sqrt_guess(M_APM, M_APM);
-extern	void	M_get_cbrt_guess(M_APM, M_APM);
-extern	void	M_get_log_guess(M_APM, M_APM);
-extern	void	M_get_asin_guess(M_APM, M_APM);
-extern	void	M_get_acos_guess(M_APM, M_APM);
-extern	void	M_arcsin_near_0(M_APM, int, M_APM);
-extern	void	M_arccos_near_0(M_APM, int, M_APM);
-extern	void	M_arctan_near_0(M_APM, int, M_APM);
-extern	void	M_arctan_large_input(M_APM, int, M_APM);
-extern	void	M_log_basic_iteration(M_APM, int, M_APM);
-extern  void    M_log_solve_cubic(M_APM, int, M_APM);
-extern	void	M_check_log_places(int);
-extern	void	M_log_AGM_R_func(M_APM, int, M_APM, M_APM);
-extern	void	M_init_util_data(void);
-extern	void	M_get_div_rem_addr(UCHAR **, UCHAR **);
-extern	void	M_get_div_rem(int,UCHAR *, UCHAR *);
-extern	void	M_get_div_rem_10(int, UCHAR *, UCHAR *);
-extern	void	M_apm_normalize(M_APM);
-extern	void	M_apm_scale(M_APM, int);
-extern	void	M_apm_pad(M_APM, int);
-extern  void    M_long_2_ascii(char *, long);
-extern	void	M_check_PI_places(int);
-extern  void    M_calculate_PI_AGM(M_APM, int);
-extern  void    M_set_to_zero(M_APM);
-extern	int	M_strposition(char *, char *);
-extern	char	*M_lowercase(char *);
-extern  void    M_apm_log_error_msg(int, char *);
-extern  void	M_apm_round_fixpt(M_APM, int, M_APM);
+EXTERNC	void	M_apm_sdivide(M_APM, int, M_APM, M_APM);
+EXTERNC	void	M_cos_to_sin(M_APM, int, M_APM);
+EXTERNC	void	M_limit_angle_to_pi(M_APM, int, M_APM);
+EXTERNC	void	M_log_near_1(M_APM, int, M_APM);
+EXTERNC	void	M_get_sqrt_guess(M_APM, M_APM);
+EXTERNC	void	M_get_cbrt_guess(M_APM, M_APM);
+EXTERNC	void	M_get_log_guess(M_APM, M_APM);
+EXTERNC	void	M_get_asin_guess(M_APM, M_APM);
+EXTERNC	void	M_get_acos_guess(M_APM, M_APM);
+EXTERNC	void	M_arcsin_near_0(M_APM, int, M_APM);
+EXTERNC	void	M_arccos_near_0(M_APM, int, M_APM);
+EXTERNC	void	M_arctan_near_0(M_APM, int, M_APM);
+EXTERNC	void	M_arctan_large_input(M_APM, int, M_APM);
+EXTERNC	void	M_log_basic_iteration(M_APM, int, M_APM);
+EXTERNC  void    M_log_solve_cubic(M_APM, int, M_APM);
+EXTERNC	void	M_check_log_places(int);
+EXTERNC	void	M_log_AGM_R_func(M_APM, int, M_APM, M_APM);
+EXTERNC	void	M_init_util_data(void);
+EXTERNC	void	M_get_div_rem_addr(UCHAR **, UCHAR **);
+EXTERNC	void	M_get_div_rem(int,UCHAR *, UCHAR *);
+EXTERNC	void	M_get_div_rem_10(int, UCHAR *, UCHAR *);
+EXTERNC	void	M_apm_normalize(M_APM);
+EXTERNC	void	M_apm_scale(M_APM, int);
+EXTERNC	void	M_apm_pad(M_APM, int);
+EXTERNC  void    M_long_2_ascii(char *, long);
+EXTERNC	void	M_check_PI_places(int);
+EXTERNC  void    M_calculate_PI_AGM(M_APM, int);
+EXTERNC  void    M_set_to_zero(M_APM);
+EXTERNC	int	M_strposition(char *, char *);
+EXTERNC	char	*M_lowercase(char *);
+EXTERNC  void    M_apm_log_error_msg(int, char *);
+EXTERNC  void	M_apm_round_fixpt(M_APM, int, M_APM);
 
 #endif
 

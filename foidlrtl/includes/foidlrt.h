@@ -692,7 +692,7 @@ EXTERNC PFRTAny foidl_falsey_qmark(PFRTAny);
 EXTERNC PFRTAny foidl_truthy_qmark(PFRTAny);
 EXTERNC PFRTAny foidl_not_equal_qmark(PFRTAny,PFRTAny);
 EXTERNC PFRTAny foidl_function_qmark(PFRTAny);
-EXTERNC PFRTAny foidl_integer_qmark(PFRTAny);
+EXTERNC PFRTAny foidl_number_qmark(PFRTAny);
 EXTERNC PFRTAny foidl_collection_qmark(PFRTAny);
 EXTERNC PFRTAny foidl_extendable_qmark(PFRTAny);
 EXTERNC PFRTAny function_strict_arg(PFRTAny, PFRTAny);

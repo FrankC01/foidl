@@ -26,11 +26,11 @@ var n7  0b00000001
 var n8  10
 
 var s1  "foo"
+var l1  [n1 n2 n3 n4 s1]
 
 func main [argv]
 
-    printnl!: format: "This is {}" [[n1 n2 n3 n4 s1]]
-
+    printnl!: format: "This is {}" [l1]
     ; Equality
     printnl!: =: n5 five    ; true
     printnl!: <: five n1    ; true

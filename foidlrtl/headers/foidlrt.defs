@@ -191,7 +191,7 @@ func  foidl_not 		[x]
 
 func  foidl_byte? 		[x]
 func  foidl_char? 		[x]
-func  foidl_integer? 	[x]
+func  foidl_number? 	[x]
 func  foidl_string? 	[x]
 func  foidl_keyword? 	[x]
 

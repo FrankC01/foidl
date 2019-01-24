@@ -220,12 +220,6 @@ PFRTAny foidl_char_qmark(PFRTAny el) {
 	return (el->ftype == character_type) ? true : false;
 }
 
-PFRTAny foidl_integer_qmark(PFRTAny el) {
-	printf("foidl_integer_qmark deprecated\n");
-	unknown_handler();
-	return (el->ftype == integer_type) ? true : false;
-}
-
 PFRTAny foidl_number_qmark(PFRTAny el) {
 	return (el->ftype == number_type) ? true : false;
 }

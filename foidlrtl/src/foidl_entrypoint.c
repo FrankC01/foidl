@@ -418,14 +418,19 @@ PFRTAny 	drop_fn(ft cnt, PFRTAny lbang, PFRTIterator rI) {
 }
 
 PFRTAny 	foidl_drop(PFRTAny arg, PFRTAny coll) {
-	if( foidl_integer_qmark(arg) == true &&
-		foidl_collection_qmark(coll) &&
-			((ft)arg->value <= (ft)coll->count)) {
-		PFRTAny lbang = foidl_list_inst_bang();
-		if((ft)arg->value == (ft)coll->count)
-			return lbang;
+	ft val=0;
+	if( foidl_number_qmark(arg) == true) {
+		val = number_toft(arg);
+		if( foidl_collection_qmark(coll) == true && (val <= (ft)coll->count)) {
+			PFRTAny lbang = foidl_list_inst_bang();
+			if(val == (ft)coll->count)
+				return lbang;
+			else {
+				return drop_fn(val, lbang, iteratorFor(coll));
+			}
+		}
 		else {
-			return drop_fn((ft) arg->value, lbang, iteratorFor(coll));
+
 		}
 	}
 	else {
@@ -483,14 +488,17 @@ PFRTAny  take_fn(ft cnt, PFRTAny lbang, PFRTIterator rI) {
 }
 
 PFRTAny 	foidl_take(PFRTAny arg, PFRTAny coll) {
-	if( foidl_integer_qmark(arg) == true &&
-		foidl_collection_qmark(coll) &&
-			((ft)arg->value < (ft)coll->count)) {
-		PFRTAny lbang = foidl_list_inst_bang();
-		if((ft)arg->value == 0)
-			return lbang;
-		else {
-			return take_fn((ft) arg->value, lbang, iteratorFor(coll));
+	ft val=0;
+	if( foidl_number_qmark(arg) == true) {
+		val = number_toft(arg);
+
+		if( foidl_collection_qmark(coll) && val < (ft)coll->count) {
+			PFRTAny lbang = foidl_list_inst_bang();
+			if(val == 0)
+				return lbang;
+			else {
+				return take_fn(val, lbang, iteratorFor(coll));
+			}
 		}
 	}
 	else {
