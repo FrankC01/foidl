@@ -1,7 +1,7 @@
 /*
 	foidl_iterators.c
 	Library support for data iterations
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -20,7 +20,7 @@ static 	PFRTAny trieiterator_searchNextValueNode(PFRTTrie_Iterator itr) {
 		int nodeCursor = itr->nodeCursorAndLength[ccI];
 		int nodeLength   = itr->nodeCursorAndLength[clI];
 		if( nodeCursor < nodeLength ) {
-			PFRTBitmapNode nextNode = 
+			PFRTBitmapNode nextNode =
 				itr->ftype == set_iterator_type ?
 				set_getNode(itr->nodes[itr->currentStackLevel],nodeCursor) :
 				getNode(itr->nodes[itr->currentStackLevel],nodeCursor);
@@ -46,7 +46,7 @@ static 	PFRTAny trieiterator_searchNextValueNode(PFRTTrie_Iterator itr) {
 		}
 	}
 	return false;
-} 
+}
 
 static PFRTAny trieiterator_hasNext(PFRTTrie_Iterator itr) {
 	if(itr->currentValueCursor < itr->currentValueLength) {
@@ -97,7 +97,7 @@ PFRTAny seriesiterator_next(PFRTIterator sitr) {
 	//	If this is the first element
 	if(serItr->counter == -1) {
 		++serItr->counter;
-		res = serItr->lastValue =  serItr->initialValue;		
+		res = serItr->lastValue =  serItr->initialValue;
 	}
 	//	Otherwise, step and validate
 	else {
@@ -110,29 +110,29 @@ PFRTAny seriesiterator_next(PFRTIterator sitr) {
 			iterRes = dispatch2(ss_defstep,serItr->lastValue,one);
 		}
 		else {
-			if(serItr->series->step->ftype == integer_type) {
+			if(serItr->series->step->ftype == number_type) {
 				iterRes =  dispatch2(ss_defstep,serItr->lastValue,serItr->series->step);
 			}
 			else {
-				iterRes =  dispatch1(serItr->series->step,serItr->lastValue);	
+				iterRes =  dispatch1(serItr->series->step,serItr->lastValue);
 			}
 		}
 		//	Then test end
 		if(serItr->series == infinite)
 			shouldStop = false;	// do nothing
-		else if(serItr->series->stop->ftype == integer_type) {
+		else if(serItr->series->stop->ftype == number_type) {
 			shouldStop =  dispatch2(ss_defend,iterRes,serItr->series->stop);
 		}
 		else if(serItr->series->stop->ftype == boolean_type) {
 			shouldStop = serItr->series->stop;
 		}
-		else 
+		else
 			shouldStop = dispatch1(serItr->series->stop,iterRes);
 
 		if(shouldStop == true)
 			res = serItr->lastValue = end;
 		else {
-			res = serItr->lastValue = iterRes;			
+			res = serItr->lastValue = iterRes;
 		}
 
 	}
@@ -145,27 +145,27 @@ PFRTIterator seriesiterator_initiate(PFRTIterator sitr) {
 		serItr->initialValue = zero;
 	}
 	else if(foidl_function_qmark(serItr->series->start) == true) {
-		serItr->initialValue = dispatch0(serItr->series->start);	
+		serItr->initialValue = dispatch0(serItr->series->start);
 	}
-	else 
-		serItr->initialValue = serItr->series->start;	
+	else
+		serItr->initialValue = serItr->series->start;
 	return sitr;
 }
 
 PFRTIterator channeliterator_setup(PFRTIOChannel chan) {
 	PFRTIterator citr = (PFRTIterator) nil;
-	if(chan->openflag == open_read_only || 
+	if(chan->openflag == open_read_only ||
 		chan->openflag == open_read_write) {
 		if(chan->bufferptr->ftype != no_buffer) {
 			if(chan->readhandler == byte_reader)
 				citr = allocChannelIterator(chan->bufferptr,io_nextByteReader);
 			else if(chan->readhandler == char_reader)
 				citr = allocChannelIterator(chan->bufferptr,io_nextCharReader);
-			else 
+			else
 				citr = allocChannelIterator(chan->bufferptr,io_nextStringReader);
 		}
 		else {
-			foidl_fail();	
+			foidl_fail();
 		}
 	}
 	else {
@@ -190,7 +190,7 @@ PFRTIterator iteratorFor(PFRTAny t) {
 			switch(t->ftype) {
 				case 	vector2_type:
 					i = allocVectorIterator(
-						(PFRTVector) t,					 	
+						(PFRTVector) t,
 						(itrNext) vectoriterator_next);
 					break;
 				case 	list2_type:
@@ -201,7 +201,7 @@ PFRTIterator iteratorFor(PFRTAny t) {
 				case 	map2_type:
 				case 	set2_type:
 					i = allocTrieIterator(
-							(PFRTAssocType)t,							
+							(PFRTAssocType)t,
 							(itrNext) trieiterator_nextKey);
 					break;
 				case 	series_type:
@@ -223,7 +223,7 @@ PFRTIterator iteratorFor(PFRTAny t) {
 
 	}
 	return i;
-} 
+}
 
 PFRTAny iteratorNext(PFRTIterator i) {
 	return i->next(i);

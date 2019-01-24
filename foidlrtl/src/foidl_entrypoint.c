@@ -765,7 +765,8 @@ static PFRTAny 	reduction_bang(PFRTAny fn, PFRTAny accum, PFRTIterator rI) {
 
 PFRTAny 	foidl_fold(PFRTAny fn, PFRTAny accum, PFRTAny coll) {
 	verifyFold(fn,fold_requires_function, coll, fold_requires_collection);
-	return reduction(fn,accum,iteratorFor(coll));
+	PFRTIterator itr = iteratorFor(coll);
+	return reduction(fn,accum,itr);
 }
 
 PFRTAny 	foidl_fold_bang(PFRTAny fn, PFRTAny accum, PFRTAny coll) {
