@@ -225,8 +225,8 @@ static PFRTHamtNode vector_doupdate(ft level, PFRTHamtNode node, ft index, PFRTA
 }
 
 PFRTAny vector_update(PFRTVector src, PFRTAny index, PFRTAny item) {
-	if( index->fclass == scalar_class && index->ftype == integer_type) {
-		ft 	i = (ft) index->value;
+	if( index->fclass == scalar_class && index->ftype == number_type) {
+		ft 	i = number_toft(index);
 		ft  cnt = src->count;
 		if((long long) i >= 0 && i < cnt) {
 			if(i >= tailOffset(src)) {
@@ -388,7 +388,9 @@ PFRTAny foidl_vector_extend_bang(PFRTAny v,PFRTAny e) {
 }
 
 PFRTAny vector_update_bang(PFRTVector src, PFRTAny index, PFRTAny item) {
-	ft 	i = (ft) index->value;
+	if(index->ftype != number_type)
+		unknown_handler();
+	ft i =  number_toft(index);
 	nodeFor(src,i)->slots[i&MASK] = item;
 	return (PFRTAny) src;
 }
@@ -461,8 +463,11 @@ PFRTAny	vector_dropLast_bang(PFRTAny src) {
 
 PFRTAny	vector_drop_bang(PFRTAny src, PFRTAny cnt) {
 	PFRTVector pv = (PFRTVector) src;
-	if(pv->count > (ft) cnt->value) {
-		for(ft x = 0; x < (ft) cnt->value; ++x)
+	if(cnt->ftype != number_type)
+		unknown_handler();
+	ft val = number_toft(cnt);
+	if(pv->count > val) {
+		for(ft x = 0; x < val; ++x)
 			vector_pop_bang(pv);
 	}
 	return src;

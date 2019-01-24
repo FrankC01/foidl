@@ -153,17 +153,6 @@ PFRTAny allocGlobalCharType(int v) {
 	return c;
 }
 
-PFRTAny allocGlobalIntegerType(long long v) {
-	PFRTTypeG 	c0 = (PFRTTypeG) malloc(sizeof (struct FRTTypeG));
-	c0->fsig = global_signature;
-	PFRTAny 	c = (PFRTAny) &c0->fclass;
-	c->fclass = scalar_class;
-	c->ftype  = integer_type;
-	c->count  = 0;
-	c->value  = (void *) (ft) v;
-	return c;
-}
-
 //	IO Channels
 
 PFRTIOChannel 	allocIOChannel(ft ftype,PFRTAny name) {

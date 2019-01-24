@@ -87,8 +87,12 @@ PFRTAny 	list_pop(PFRTAny l) {
 
 PFRTAny  list_drop_bang(PFRTAny src,PFRTAny cnt) {
 	PFRTList pv = (PFRTList) src;
-	if(pv->count >= (ft) cnt->value) {
-		for(ft x = 0; x < (ft) cnt->value; ++x)
+	ft val = 0;
+	if(cnt->ftype != number_type)
+		unknown_handler();
+	val = number_toft(cnt);
+	if(pv->count >= val) {
+		for(ft x = 0; x < val; ++x)
 			list_pop_bang(src);
 	}
 	return src;
@@ -174,7 +178,9 @@ PFRTAny 	foidl_list_inst_bang() {
 
 PFRTAny 	list_update(PFRTAny l, PFRTAny i, PFRTAny v) {
 	PFRTList 	newList = empty_list;
-	ft 	index = (ft) i->value;
+	if(i->ftype != number_type)
+		unknown_handler();
+	ft 	index = number_toft(i);
 	//	If in range
 	if(l->count > 0 && index < l->count) {
 		PFRTList 	 	oldList = (PFRTList) l;
@@ -291,7 +297,10 @@ PFRTAny list_get_default(PFRTAny l, PFRTAny index, PFRTAny def) {
 
 PFRTAny 	list_update_bang(PFRTAny l, PFRTAny i, PFRTAny v) {
 	PFRTList list = (PFRTList) l;
-	getListLinkNode(list, (ft) i->value)->data = v;
+	if(i->ftype != number_type)
+		unknown_handler();
+
+	getListLinkNode(list, number_toft(i))->data = v;
 	return l;
 }
 

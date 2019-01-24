@@ -723,7 +723,6 @@ EXTERNC PFRTAny 			allocStringWithCopyCnt(uint32_t, char *);
 EXTERNC PFRTAny 			allocAndConcatString(uint32_t,char *, uint32_t, char *, uint32_t);
 
 EXTERNC PFRTAny 			allocGlobalCharType(int);
-EXTERNC PFRTAny 			allocGlobalIntegerType(long long v);
 
 EXTERNC PFRTAny          allocRegex(PFRTAny sbase, void* regex);
 

@@ -202,8 +202,11 @@ PFRTAny 	string_last(PFRTAny s) {
 
 PFRTAny 	string_get(PFRTAny s, PFRTAny index) {
 	PFRTAny res = nil;
-	if(strlen((char *)s->value) > (ft) index->value)
-		res = allocCharWithValue(((char *)s->value)[(ft) index->value]);
+	if(index->ftype != number_type)
+		unknown_handler();
+	ft val = number_toft(index);
+	if(strlen((char *)s->value) > val)
+		res = allocCharWithValue(((char *)s->value)[val]);
 	return res;
 }
 
@@ -211,8 +214,15 @@ PFRTAny 	string_get(PFRTAny s, PFRTAny index) {
 
 PFRTAny 	string_get_default(PFRTAny s, PFRTAny index,PFRTAny def) {
 	PFRTAny res = nil;
-	if(s->count > (ft) index->value)
-		res = allocCharWithValue(((char *)s->value)[(ft) index->value]);
+	ft 	    val = 0;
+	if(index->ftype == number_type) {
+		val = number_toft(index);
+	}
+	else {
+		unknown_handler();
+	}
+	if(s->count > val)
+		res = allocCharWithValue(((char *)s->value)[val]);
 	else {
 		if(foidl_function_qmark(def) == true)
 			res=dispatch2(def,s,index);
@@ -224,6 +234,7 @@ PFRTAny 	string_get_default(PFRTAny s, PFRTAny index,PFRTAny def) {
 
 PFRTAny 	string_extend(PFRTAny s, PFRTAny v) {
 	char 	 *p1=0;
+	int 	 delp = 0;
 	uint32_t bcnt=0;
 	uint32_t tcnt = s->count;
 	switch(v->ftype) {
@@ -241,9 +252,10 @@ PFRTAny 	string_extend(PFRTAny s, PFRTAny v) {
 			tcnt += bcnt = v->count;
 			}
 			break;
-		case 	integer_type:
+		case 	number_type:
 			{
-				asprintf(&p1,"%lld",(ft) v->value);
+				p1 = number_tostring(v);
+				delp = 1;
 				tcnt += bcnt = strlen(p1);
 			}
 			break;
@@ -259,6 +271,8 @@ PFRTAny 	string_extend(PFRTAny s, PFRTAny v) {
 	PFRTAny res = allocAndConcatString(tcnt,s->value,s->count,p1,bcnt);
 	if(s->ftype == keyword_type)
 		res->ftype = keyword_type;
+	if(delp == 1)
+		foidl_xdel(p1);
 
 	return res;
 }
@@ -267,22 +281,28 @@ PFRTAny 	string_extend(PFRTAny s, PFRTAny v) {
 	Concatenate cnt number of characters to string
 */
 PFRTAny foidl_strcatnc(PFRTAny s, PFRTAny cnt, PFRTAny chc) {
-	ft 		nlen = s->count + (uint32_t) cnt->value + 1;
+	if(cnt->ftype != number_type)
+		unknown_handler();
+	ft 		nval = number_toft(cnt);
+	ft 		nlen = s->count + (uint32_t) nval + 1;
 	PFRTAny res = allocAny(scalar_class,string_type,(void *) nlen);
 	res->count = nlen -1;
 	res->value = strcpy(foidl_xall(nlen), s->value);
 	char 	val = (char) chc->value;
-	for(ft i = 0; i< (ft) cnt->value; i++ ) ((char *)res->value)[s->count+i] = val;
+	for(ft i = 0; i< nval; i++ ) ((char *)res->value)[s->count+i] = val;
 	return res;
 }
 
 PFRTAny foidl_strcatns(PFRTAny s, PFRTAny cnt, PFRTAny chs) {
-	ft 		nlen = s->count + ((ft) cnt->value * chs->count) + 1;
+	if(cnt->ftype != number_type)
+		unknown_handler();
+	ft 		val = number_toft(cnt);
+	ft 		nlen = s->count + (val * chs->count) + 1;
 	PFRTAny res = allocAny(scalar_class,string_type,(void *) nlen);
 	res->count = nlen -1;
 	res->value = strcpy(foidl_xall(nlen), s->value);
 	char 	*str = (char*) chs->value;
-	for(ft i = 0; i< (ft) cnt->value; i++ )
+	for(ft i = 0; i< val; i++ )
 		strcat((char *)res->value,str);
 
 	return res;

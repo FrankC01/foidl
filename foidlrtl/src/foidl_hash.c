@@ -1,7 +1,7 @@
 /*
 	foidl_hash.c
 	Library support for HAMT map
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -67,11 +67,13 @@ static uint32_t nodeHashCode(PFRTBitmapNode node) {
 uint32_t hash(PFRTAny p) {
 	if(p->fclass == scalar_class) {
 		if(p->ftype == string_type || p->ftype == keyword_type)
-			return murmur3_32((uint8_t *)p->value,p->count,0);			
-		else if (p->ftype == integer_type)
-			return murmur3_32((uint8_t*)&p->value,8,0);	
+			return murmur3_32((uint8_t *)p->value,p->count,0);
+		else if (p->ftype == number_type) {
+      ft val = number_toft(p);
+			return murmur3_32((uint8_t*)&p,8,0);
+    }
     else if (p->ftype == character_type)
-      return murmur3_32((uint8_t*)&p->value,8,0); 		
+      return murmur3_32((uint8_t*)&p->value,8,0);
 	}
 	else if(p->fclass == bitmapnode_class) {
 		return nodeHashCode((PFRTBitmapNode) p);

@@ -533,10 +533,9 @@ static PFRTAny validateIndexable(PFRTAny coll,PFRTAny indx) {
 		|| coll->ftype == string_type || coll->ftype == keyword_type) {
 		if(isIndex == false)
 			foidl_ep_excp(update_not_integral);
-		else if((ft) indx->value >= coll->count)
-			foidl_ep_excp(index_out_of_bounds);
+		else if(number_toft(indx) >= coll->count)
+				foidl_ep_excp(index_out_of_bounds);
 		}
-
 	return isIndex;
 }
 

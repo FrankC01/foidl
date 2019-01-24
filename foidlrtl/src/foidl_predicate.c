@@ -170,15 +170,22 @@ PFRTAny foidl_io_qmark(PFRTAny el) {
 
 
 PFRTAny function_strict_arg(PFRTAny fn, PFRTAny cnt) {
-	printf("Warning:  function_strict_arg needs update to number\n");
-	if(fn->ftype == funcref_type && ((PFRTFuncRef) fn)->argcount == (ft) cnt->value)
+
+	ft val = 0;
+	if(cnt->ftype == number_type) {
+		val = number_toft(cnt);
+	}
+	else {
+		unknown_handler();
+	}
+	if(fn->ftype == funcref_type && ((PFRTFuncRef) fn)->argcount == val)
 		return true;
 	else if(fn->ftype == lambref_type &&
-		((PFRTLambdaRef)fn)->ffuncref->argcount == (ft) cnt->value)
+		((PFRTLambdaRef)fn)->ffuncref->argcount == val)
 		return true;
 	else if(fn->ftype == funcinst_type) {
 		PFRTFuncRef2 fn2 = (PFRTFuncRef2) fn;
-		if((ft) cnt->value == (fn2->mcount - fn2->args->count))
+		if(val == (fn2->mcount - fn2->args->count))
 			return true;
 		else
 			return false;

@@ -181,7 +181,7 @@ PFRTIterator iteratorFor(PFRTAny t) {
 		case 	scalar_class:
 			switch(t->ftype) {
 				case 	string_type:
-				case 	integer_type:
+				case 	number_type:
 				case 	character_type:
 					unknown_handler();
 			}
