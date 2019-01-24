@@ -34,10 +34,6 @@ int foidl_return_code(PFRTAny rc) {
 	if(rc->ftype == integer_type) {
 		return (int) rc->value;
 	}
-	else {
-		printf("Attempting to return non integer from main\n");
-		unknown_handler();
-	}
 	return 0;
 }
 

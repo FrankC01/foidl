@@ -37,9 +37,11 @@ func list_func_2 [] "Func Two called"
 var list_for_coll_funcs [9 8 7 6 5 4 3 2 1 0]
 
 ; Entry point
-func main []
+func main [argv]
+    ; Greeting
+    let msg [] get: argv 1
     printnl!: ""
-    printnl!: "Welcome to the foidl playground!"
+    printnl!: format: "Welcome to the foidl playground {}!" [msg]
     printnl!: ""
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -271,5 +273,5 @@ func main []
     print!: " The old list is still the same "
     printnl!: list_for_coll_funcs
 
-    printnl!: "Huh???"
+    ; Return success (i.e. 0) to the OS
     zero
