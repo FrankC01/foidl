@@ -73,10 +73,15 @@ EXTERNC char *number_tostring(PFRTAny num) {
     return foo;
 }
 
-EXTERNC long long number_tolong(PFRTAny num) {
-    M_APM   numapm = (M_APM) num->value;
+static M_APM _make_abs(M_APM numapm) {
     M_APM   numabs = m_apm_init();
     m_apm_absolute_value(numabs, numapm);
+    return numabs;
+}
+
+EXTERNC long long number_tolong(PFRTAny num) {
+    M_APM   numapm = (M_APM) num->value;
+    M_APM   numabs = _make_abs(numapm);
     char *nts = (char *)foidl_xall(num_buffersize(numabs));
     m_apm_to_fixpt_string(nts, -1, numabs);
     long long res = strtoll(nts, NULL, 10);
@@ -187,15 +192,24 @@ EXTERNC PFRTAny foidl_num_mod(PFRTAny arg1, PFRTAny arg2) {
     return allocAny(scalar_class, number_type, (void *)r);
 }
 
-// Call to extract numeric part of binary or hex declaration
-// to intenger (number)
+// Functions on numbers
 
-PFRTAny foidl_s2i(PFRTAny el) {
-    printf("Exception: foidl_s2i is disabled\n");
-    unknown_handler();
-    return fnil;//foidl_reg_integer(result);
+EXTERNC PFRTAny foidl_num_abs(PFRTAny arg) {
+    if(arg->ftype != number_type)
+        unknown_handler();
+    M_APM numabs = (_make_abs((M_APM) arg->value));
+    return allocAny(scalar_class, number_type, (void *)numabs);
 }
 
+EXTERNC PFRTAny foidl_num_neg(PFRTAny arg) {
+    if(arg->ftype != number_type)
+        unknown_handler();
+    M_APM numneg = m_apm_init();
+    m_apm_negate(numneg, (M_APM) arg->value);
+    return allocAny(scalar_class, number_type, (void *)numneg);
+}
+
+// Shorthand macro
 
 #define genint(lsym,v)  lsym = foidl_reg_intnum((long long) v)
 
