@@ -72,10 +72,10 @@ var :private context_tail "
 declare i64 @`dfoidl_return_code`d(%`dAny`d* %`d.1`d)
 declare %`dAny`d* @`dfoidl_convert_mainargs`d(i32 %`d.1`d, i8** %`d.2`d, i8** %`d.3`d)
 declare %`dAny`d* @`dfoidl_reg_character`d(i64 %`d.1`d)
-declare %`dAny`d* @`dfoidl_reg_integer`d(i64 %`d.1`d)
 declare %`dAny`d* @`dfoidl_reg_keyword`d(i8* %`d.1`d)
 declare %`dAny`d* @`dfoidl_reg_string`d(i8* %`d.1`d)
 declare %`dAny`d* @`dfoidl_reg_number`d(i8* %`d.1`d)
+declare %`dAny`d* @`dfoidl_reg_intnum`d(i64 %`d.1`d)
 declare %`dAny`d* @`dfoidl_tofuncref`d(i8* %`d.1`d, %`dAny`d* %`d.2`d)
 declare %`dAny`d* @`dfoidl_imbue`d(%`dAny`d* %`d.1`d, %`dAny`d* %`d.2`d)
 declare %`dAny`d* @`dfoidl_fref_instance`d(%`dAny`d* %`d.1`d)`n"

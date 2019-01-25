@@ -25,13 +25,14 @@ var :private b_list [0 8 7 9]
 var :private c_list [15 25 391]
 
 func main [argv]
-    let even_list [] fold:
-        ^[result element]
-            match count: result
-            | three reduced: result
-            | :default match mod: element two
+    let even_list []
+        fold:
+            ^[result element]
+                match count: result
+                | three reduced: result
+                | :default match mod: element two
                         | zero extend: result element
                         | :default result
-        [] flatten: [a_list b_list c_list]
+            [] flatten: [a_list b_list c_list]
     printnl!: even_list
     zero

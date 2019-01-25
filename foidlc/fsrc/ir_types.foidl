@@ -48,7 +48,7 @@ var true_const_ref  reference_constant_type:
                         global_reference: "true"
 
 ; Global func references
-var intreg_ref          global_reference: "foidl_reg_integer"
+var intreg_ref          global_reference: "foidl_reg_intnum"
 var kwreg_ref           global_reference: "foidl_reg_keyword"
 var strreg_ref          global_reference: "foidl_reg_string"
 var numreg_ref          global_reference: "foidl_reg_number"

@@ -64,7 +64,12 @@ EXTERNC ft  number_tostring_buffersize(PFRTAny num) {
 EXTERNC char *number_tostring(PFRTAny num) {
     M_APM   numapm = (M_APM) num->value;
     char *foo = (char *) foidl_xall(num_buffersize(numapm));
-    m_apm_to_fixpt_string(foo, -1, numapm);
+    if(m_apm_is_integer(numapm) == 1) {
+        m_apm_to_integer_string(foo, numapm);
+    }
+    else {
+        m_apm_to_fixpt_string(foo, -1, numapm);
+    }
     return foo;
 }
 
