@@ -897,6 +897,42 @@ PFRTAny 	foidl_flatten(PFRTAny coll) {
 		return (PFRTAny) empty_vector;
 }
 
+// zip creates a list of list where each inner list
+// contains the 'n' element from either collection
+// if unequal lengths, the shorter collection controls
+
+static PFRTAny internal_zip(ft maxcnt, PFRTIterator cntrlI, PFRTIterator slvI) {
+	PFRTAny coll = foidl_list_inst_bang();
+	ft 	cnt = 0;
+	while(cnt < maxcnt) {
+		PFRTAny inner = foidl_list_inst_bang();
+		foidl_list_extend_bang(
+			coll,
+			foidl_list_extend_bang(
+				foidl_list_extend_bang(
+					inner,
+					iteratorNext(cntrlI)),
+				iteratorNext(slvI)));
+		++cnt;
+	}
+	foidl_xdel(cntrlI);
+	foidl_xdel(slvI);
+	return coll;
+}
+PFRTAny 	foidl_zip(PFRTAny coll1, PFRTAny coll2) {
+	if(foidl_collection_qmark(coll1) == true && foidl_collection_qmark(coll2) == true) {
+		if(coll1->count != 0 && coll2->count != 0) {
+			ft maxcnt = coll1->count;
+			maxcnt = (maxcnt == coll2->count) ?
+							maxcnt
+							: (maxcnt < coll2->count) ?
+								maxcnt : coll2->count;
+			return internal_zip(maxcnt, iteratorFor(coll1), iteratorFor(coll2));
+		}
+	}
+	return empty_list;
+}
+
 //	Coercion routine
 
 PFRTAny 	foidl_coerce(PFRTAny type, PFRTAny data) {

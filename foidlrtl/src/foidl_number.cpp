@@ -158,6 +158,20 @@ EXTERNC PFRTAny foidl_num_even(PFRTAny flhs) {
         return ffalse;
 }
 
+// Positive negative
+
+EXTERNC PFRTAny is_number_positive(PFRTAny arg) {
+    return (m_apm_sign((M_APM) arg->value) == -1) ? ffalse: ftrue;
+}
+
+EXTERNC PFRTAny is_number_negative(PFRTAny arg) {
+    return (m_apm_sign((M_APM)arg->value) == -1) ? ftrue : ffalse;
+}
+
+EXTERNC PFRTAny is_number_integer(PFRTAny arg) {
+    return (m_apm_is_integer((M_APM)arg->value) == 1) ? ftrue : ffalse;
+}
+
 // +, -, *, /
 
 EXTERNC PFRTAny     foidl_num_add(PFRTAny flhs, PFRTAny frhs) {

@@ -34,6 +34,7 @@ func main [argv]
 
     printnl!: format: "This is {}" [l1]
     ; Equality
+    printnl!: "Equality Tests"
     printnl!: =: n5 five    ; true
     printnl!: <: five n1    ; true
     printnl!: <: n1 five    ; false
@@ -43,30 +44,39 @@ func main [argv]
     printnl!: >=: n1 five   ; true
     printnl!: =: n5 s1      ; false
     ; Odd/Even
+    printnl!: "Predicate Tests"
     printnl!: even?: n8     ; true
     printnl!: odd?: n8      ; false
     printnl!: odd?: n4      ; true
+    printnl!: pos?: n1 ; true
+    printnl!: pos?: n9 ; false
+    printnl!: neg?: n6 ; false
+    printnl!: neg?: n9 ; true
+    printnl!: int?:  n9 ; false
+    printnl!: int?:  n7 ; true
     ; Basic Math
+    printnl!: "Simple Math Tests"
     printnl!: +: one two    ; 3
     printnl!: -: one two    ; -1
     printnl!: *: one two    ; 2
     printnl!: /: n1 n4      ; -0.13064102564
     printnl!: /: 5 0        ; 0 with error to stderr
     printnl!: =: mod: 3 2 1 ; true
+    printnl!:
+        format:
+            "{} divided by {} = {} "
+            [n9 n4 /: n9 n4] ; (should be 211217765986995831534225445831535160082666405.74135482102)
     ; Things that involve numbers
     printnl!: n2
     printnl!: n4
     printnl!: n9
     printnl!: n10
+    printnl!: "Numeric functions"
     printnl!: abs: n2       ; 7
     printnl!: abs: n4       ; 39
     printnl!: abs: n9       ; 8237492873492837429834792387429871243223989823.91283801983012983012983109283019823019283
     printnl!: abs: n10      ; 42.3
-    printnl!: neg: n2       ; -7
-    printnl!: neg: n4       ; 39
-    printnl!: neg: n10      ; -42.3
-    printnl!:
-        format:
-            "{} divided by {} = {} "
-            [n9 n4 /: n9 n4] ; (should be 211217765986995831534225445831535160082666405.74135482102)
+    printnl!: negate: n2       ; -7
+    printnl!: negate: n4       ; 39
+    printnl!: negate: n10      ; -42.3
 

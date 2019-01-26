@@ -216,7 +216,7 @@ func dec [x]
 func abs[x]
 	foidl_num_abs: x
 
-func neg[x]
+func negate[x]
 	foidl_num_neg: x
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -310,6 +310,9 @@ func split [s delim]
 func series [start stop step]
 	foidl_series: start stop step
 
+func zip [coll1 coll2]
+	foidl_zip: coll1 coll2
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; String functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -381,6 +384,12 @@ func  even?	[arg]
 func  odd?  [arg]
 	foidl_odd?: arg
 
+func pos? [arg]
+	foidl_positive?: arg
+
+func neg? [arg]
+	foidl_negative?: arg
+
 func ws? [val]
 	get: whitespace val
 
@@ -393,14 +402,17 @@ func tabOrSpace? [val]
 func digit? [val]
 	getd: digits val false
 
-func byte? [x]
-	foidl_byte?: x
+;func byte? [x]
+;	foidl_byte?: x
 
 func char? [x]
 	foidl_char?: x
 
 func number? [x]
 	foidl_number?: x
+
+func int? [x]
+	foidl_integer?: x
 
 func string? [x]
 	foidl_string?: x

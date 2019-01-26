@@ -185,6 +185,8 @@ func  foidl_categorize_num [arg]
 func  foidl_categorize 	  [arg]
 func  foidl_even?         [arg]
 func  foidl_odd?          [arg]
+func  foidl_positive?     [arg]
+func  foidl_negative?     [arg]
 
 func  foidl_equal? 		[x, y]
 func  foidl_not_equal?	[x, y]
@@ -199,6 +201,7 @@ func  foidl_not 		[x]
 func  foidl_byte? 		[x]
 func  foidl_char? 		[x]
 func  foidl_number? 	[x]
+func  foidl_integer?    [x]
 func  foidl_string? 	[x]
 func  foidl_keyword? 	[x]
 
@@ -279,6 +282,7 @@ func 	foidl_series 	[start stop step]
 
 func 	foidl_key 		[me]
 func 	foidl_value 	[me]
+func    foidl_zip       [coll1 coll2]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; IO

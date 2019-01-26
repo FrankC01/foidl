@@ -87,13 +87,13 @@ func main [argv]
 
     ; Test Four: 'empty?' function
     let pred_an_empty_list [] []
-    print!: "Test Four - The 'empty?' function will indicate if a collection is empty in " 
+    print!: "Test Four - The 'empty?' function will indicate if a collection is empty in "
     print!: pred_an_empty_list
     printnl!: format: " The result is {} " [empty?: pred_an_empty_list]
 
     ; Test Five: 'collection?' function
     let pred_a_list [] [1 2 3 4 5]
-    print!: "Test Five - The 'collection?' function will indicate if a list is a collection in " 
+    print!: "Test Five - The 'collection?' function will indicate if a list is a collection in "
     print!: pred_a_list
     printnl!: format: " The result is {} " [collection?: pred_a_list]
 
@@ -103,11 +103,11 @@ func main [argv]
     printnl!: format: " The result is {} " [collection?: pred_a_string]
 
     ; Test Seven: 'extendable?' function
-    print!: format: "Test Seven - The 'extendable?' function will indicate if a string is extendable in [{}] " [pred_a_string] 
+    print!: format: "Test Seven - The 'extendable?' function will indicate if a string is extendable in [{}] " [pred_a_string]
     printnl!: format: "the result is {}" [extendable?: pred_a_string]
 
     ; Test Eight: 'extendable?' function
-    print!: format: "Test Eight - The 'extendable?' function will indicate if a number is extendable in [{}] " [999] 
+    print!: format: "Test Eight - The 'extendable?' function will indicate if a number is extendable in [{}] " [999]
     printnl!: format: "the result is {}" [extendable?: 999]
 
     ; Test Nine: 'extendable?' function
@@ -272,6 +272,22 @@ func main [argv]
     printnl!: take: 5 list_for_coll_funcs
     print!: " The old list is still the same "
     printnl!: list_for_coll_funcs
+
+    ; Test Seventeen 'getd' with lambda
+    let map17 [] {:foo "bar" :flim "flam"}
+    printnl!: "Test 17 - The 'getd' function with a lambda default"
+    printnl!:
+        getd: map17 :slim
+            ^[coll el]
+            @(
+                printnl!: format: "Did not find {} in {}" [el coll]
+                printnl!: "Returning 'Jim' instead"
+                "Jim"
+            )
+
+    ; Test Eighteen 'zip' with two collections
+    printnl!: "Test 18 - The 'zip' function returns list of two collection tuples"
+    printnl!: zip: [1 2 3 4 5] [6 7 8]
 
     ; Return success (i.e. 0) to the OS
     zero

@@ -607,11 +607,6 @@ EXTERNC void foidl_release(void *);
 
 EXTERNC void unknown_handler();
 
-//	RTL Asm Math functions
-
-#ifndef MATH_IMPL
-EXTERNC PFRTAny 	foidl_add(PFRTAny, PFRTAny);
-#endif
 
 #ifndef GLOBALS_IMPL
 EXTERNC void foidl_rtl_init_globals();
@@ -646,6 +641,7 @@ EXTERNC void foidl_rtl_init_types();
 #endif
 
 #ifndef ENTRYPOINT_IMPL
+EXTERNC PFRTAny     foidl_add(PFRTAny, PFRTAny);
 EXTERNC PFRTAny 	foidl_count(PFRTAny);
 EXTERNC PFRTAny 	foidl_get(PFRTAny,PFRTAny);
 EXTERNC PFRTAny 	foidl_getd(PFRTAny,PFRTAny,PFRTAny);
@@ -804,6 +800,9 @@ EXTERNC ft          number_tostring_buffersize(PFRTAny);
 EXTERNC char*       number_tostring(PFRTAny);
 EXTERNC long long   number_tolong(PFRTAny);
 EXTERNC ft          number_toft(PFRTAny);
+EXTERNC PFRTAny     is_number_positive(PFRTAny);
+EXTERNC PFRTAny     is_number_negative(PFRTAny);
+EXTERNC PFRTAny     is_number_integer(PFRTAny);
 EXTERNC PFRTAny     foidl_num_equal(PFRTAny flhs, PFRTAny frhs);
 EXTERNC PFRTAny     foidl_num_nequal(PFRTAny flhs, PFRTAny frhs);
 EXTERNC PFRTAny     foidl_num_lt(PFRTAny flhs, PFRTAny frhs);

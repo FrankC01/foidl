@@ -236,6 +236,8 @@ PFRTAny foidl_even_qmark(PFRTAny el) {
 	if(foidl_number_qmark(el) == true) {
 		return foidl_num_even(el);
 	}
+	else
+		unknown_handler();
 	return res;
 }
 
@@ -244,6 +246,38 @@ PFRTAny foidl_odd_qmark(PFRTAny el) {
 	if(foidl_number_qmark(el) == true) {
 		return foidl_num_odd(el);
 	}
+	else
+		unknown_handler();
+	return res;
+}
+
+PFRTAny foidl_positive_qmark(PFRTAny el) {
+	PFRTAny res = false;
+	if(foidl_number_qmark(el) == true) {
+		return is_number_positive(el);
+	}
+	else
+		unknown_handler();
+	return res;
+}
+
+PFRTAny foidl_negative_qmark(PFRTAny el) {
+	PFRTAny res = false;
+	if(foidl_number_qmark(el) == true) {
+		return is_number_negative(el);
+	}
+	else
+		unknown_handler();
+	return res;
+}
+
+PFRTAny foidl_integer_qmark(PFRTAny el) {
+	PFRTAny res = false;
+	if(foidl_number_qmark(el) == true) {
+		return is_number_integer(el);
+	}
+	else
+		unknown_handler();
 	return res;
 }
 
