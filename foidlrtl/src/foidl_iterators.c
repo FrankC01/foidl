@@ -77,6 +77,15 @@ PFRTAny vectoriterator_next(PFRTVector_Iterator itr) {
 	return res;
 }
 
+PFRTAny 	stringiterator_next(PFRTString_Iterator itr) {
+	PFRTAny res = end;
+	if((long long) itr->index < (long long) itr->slen) {
+		itr->index += 1;
+		res = allocCharWithValue((ft)(char)itr->str[itr->index]);
+	}
+	return res;
+}
+
 PFRTAny 	listiterator_next(PFRTList_Iterator itr) {
 	PFRTAny res = end;
 	if(itr->node != empty_link) {
@@ -181,6 +190,10 @@ PFRTIterator iteratorFor(PFRTAny t) {
 		case 	scalar_class:
 			switch(t->ftype) {
 				case 	string_type:
+					i = allocStringIterator(
+						t,
+						(itrNext)stringiterator_next);
+					break;
 				case 	number_type:
 				case 	character_type:
 					unknown_handler();

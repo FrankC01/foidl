@@ -313,6 +313,9 @@ func series [start stop step]
 func zip [coll1 coll2]
 	foidl_zip: coll1 coll2
 
+func zipmap [coll1 coll2]
+	foidl_zipmap: coll1 coll2
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; String functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

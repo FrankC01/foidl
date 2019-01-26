@@ -196,11 +196,17 @@ PFRTAny function_strict_arg(PFRTAny fn, PFRTAny cnt) {
 }
 
 PFRTAny foidl_collection_qmark(PFRTAny el) {
-	return (el->fclass == io_class ||
+	PFRTAny res = false;
+	res =  (el->fclass == io_class ||
 		(el->fclass == collection_class &&
 		(el->ftype == map2_type || el->ftype == list2_type
 		 || el->ftype == list2_type || el->ftype == vector2_type
 		 || el->ftype == set2_type|| el->ftype == series_type))) ? true : false;
+	if(res == false) {
+		if(el->ftype == string_type || el->ftype == keyword_type)
+			res = true;
+	}
+	return res;
 }
 
 PFRTAny foidl_extendable_qmark(PFRTAny el) {

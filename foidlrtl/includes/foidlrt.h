@@ -68,17 +68,18 @@ static const ft 	map2_type       = 0xffffffff100000cc;
 static const ft 	mapentry_type   = 0xffffffff100000cb;
 static const ft 	linknode_type   = 0xffffffff100000ca;
 
-static const ft 	series_type     = 0xffffffff100000c7;
-static const ft 	reduced_type    = 0xffffffff100000c6;
+static const ft 	series_type     = 0xffffffff100000c9;
+static const ft 	reduced_type    = 0xffffffff100000c8;
 
 //	Iterator types
 
-static const ft 	vector_iterator_type = 0xffffffff100000c5;
-static const ft 	map_iterator_type 	 = 0xffffffff100000c4;
-static const ft 	set_iterator_type 	 = 0xffffffff100000c3;
-static const ft 	list_iterator_type   = 0xffffffff100000c2;
-static const ft 	series_iterator_type = 0xffffffff100000c1;
-static const ft 	channel_iterator_type = 0xffffffff100000c0;
+static const ft 	vector_iterator_type = 0xffffffff300000cf;
+static const ft 	map_iterator_type 	 = 0xffffffff300000ce;
+static const ft 	set_iterator_type 	 = 0xffffffff300000cd;
+static const ft 	list_iterator_type   = 0xffffffff300000cc;
+static const ft 	series_iterator_type = 0xffffffff300000cb;
+static const ft 	channel_iterator_type = 0xffffffff300000ca;
+static const ft     string_iterator_type = 0xffffffff300000c9;
 
 //	Function/Lambda types
 
@@ -506,6 +507,18 @@ typedef struct FRTIterator {
 	typeGetter 		get;
 } *PFRTIterator;
 
+typedef struct FRTString_Iterator {
+    ft              fclass;     //  FOIDL Class - Iterator
+    ft              ftype;      //  string_iterator_type
+    itrNext         next;
+    //typeGetter      get;
+    char            *str;       //  Base string
+    ft              hash;       //  hash (TBD)
+    ft              slen;       //  max length
+    ft              index;      //  Last fetched element
+} *PFRTString_Iterator;
+
+
 typedef struct FRTVector_Iterator {
 	ft 				fclass; 	//	FOIDL Class - Iterator
 	ft 				ftype;		//	vector_iterator_type
@@ -754,6 +767,7 @@ EXTERNC PFRTIterator 	allocVectorIterator(PFRTVector,itrNext);
 EXTERNC PFRTIterator 	allocListIterator(PFRTList,itrNext);
 EXTERNC PFRTIterator 	allocSeriesIterator(PFRTSeries,itrNext);
 EXTERNC PFRTIterator 	allocChannelIterator(PFRTIOBuffer,itrNext);
+EXTERNC PFRTIterator    allocStringIterator(PFRTAny, itrNext);
 
 #endif
 

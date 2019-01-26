@@ -283,6 +283,7 @@ func 	foidl_series 	[start stop step]
 func 	foidl_key 		[me]
 func 	foidl_value 	[me]
 func    foidl_zip       [coll1 coll2]
+func    foidl_zipmap    [coll1 coll2]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; IO

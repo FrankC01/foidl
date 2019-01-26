@@ -286,8 +286,19 @@ func main [argv]
             )
 
     ; Test Eighteen 'zip' with two collections
+    let cntl [] [1 2 3 4 5]
     printnl!: "Test 18 - The 'zip' function returns list of two collection tuples"
-    printnl!: zip: [1 2 3 4 5] [6 7 8]
+    printnl!: zip: cntl [6 7 8]
+    printnl!: zip: cntl #{6 7 8}
+    printnl!: zip: cntl <6 7 8>
+    printnl!: zip: cntl "YONNY"
 
+    ; Test Nineteen 'zipmap' with two collections
+    printnl!: "Test 19 - The 'zipmap' function returns map"
+    printnl!: zipmap: cntl [6 7 8]
+    printnl!: zipmap: cntl #{6 7 8}
+    printnl!: zipmap: cntl <6 7 8>
+    printnl!: zipmap: cntl "YONNY"
+    printnl!: zipmap: "YONNY" cntl
     ; Return success (i.e. 0) to the OS
     zero

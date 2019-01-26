@@ -349,6 +349,17 @@ PFRTBitmapNode allocNodeWithAll(uint32_t datamap,
 
 //	Iterators
 
+PFRTIterator allocStringIterator(PFRTAny str, itrNext next) {
+	PFRTString_Iterator i = foidl_xall(sizeof(struct FRTString_Iterator));
+	i->fclass = iterator_class;
+	i->ftype  = string_iterator_type;
+    i->next =  next;
+    i->str = (char *) str->value;   //  Base string
+    i->slen = str->count;
+    i->index = -1;      			//  Last fetched element
+	return (PFRTIterator) i;
+}
+
 PFRTIterator allocTrieIterator(PFRTAssocType base,itrNext next) {
 	uint32_t node_arity = nodeArity(base->root);
 	uint32_t payload_arity = payloadArity(base->root);
