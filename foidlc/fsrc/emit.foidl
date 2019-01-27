@@ -178,34 +178,45 @@ func :private literals [state]
             "void"
             return_void
 
-    ; Get functions basic block
-    let lit_bb [] get_basic_block: lit_fn
+    match =: bsc count: mbb
+        | false
+            @(
+                ; Get functions basic block
+                let lit_bb [] get_basic_block: lit_fn
 
-    ; Setup reusable serializer based on actual literal
-    ; declaration counts
-    let litser [] series: bsc count: mbb one
+                ; Setup reusable serializer based on actual literal
+                ; declaration counts
 
-    ; Insert comment and function definition
-    list_extend!: mbb comment_type: "Literal initializers"
-    list_extend!: mbb lit_fn
+                let litser [] series: bsc count: mbb one
 
-    ; Check for max string/keyword length
-    let lit_maxlen [] fold: (literal_max_len mbb) zero litser
+                ; Insert comment and function definition
+                list_extend!: mbb comment_type: "Literal initializers"
+                list_extend!: mbb lit_fn
 
-    ; Prepare local buffer if there are strings
-    let basebufcast []
-        ?: =: lit_maxlen zero
-            nil
-            literal_buffer_setup:
-                lit_fn
-                lit_bb
-                lit_maxlen
+                ; Check for max string/keyword length
+                let lit_maxlen [] fold: (literal_max_len mbb) zero litser
 
+                ; Prepare local buffer if there are strings
+                let basebufcast []
+                    ?: =: lit_maxlen zero
+                        nil
+                        literal_buffer_setup:
+                            lit_fn
+                            lit_bb
+                            lit_maxlen
 
-    ; Emit the literal registrations
-    fold:
-        (literal_registration basebufcast lit_fn get: lit_bb :instructions)
-        mbb litser
+                ; Emit the literal registrations
+                fold:
+                    (literal_registration basebufcast lit_fn get: lit_bb :instructions)
+                    mbb litser
+            )
+        | :default
+            @(
+                ; Insert comment and function definition
+                list_extend!: mbb comment_type: "Literal initializers"
+                list_extend!: mbb lit_fn
+            )
+
     state
 
 ; Function: variables
