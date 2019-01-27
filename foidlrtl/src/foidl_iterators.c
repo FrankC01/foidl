@@ -156,8 +156,12 @@ PFRTIterator seriesiterator_initiate(PFRTIterator sitr) {
 	else if(foidl_function_qmark(serItr->series->start) == true) {
 		serItr->initialValue = dispatch0(serItr->series->start);
 	}
-	else
+	else if(foidl_number_qmark(serItr->series->start) == true) {
 		serItr->initialValue = serItr->series->start;
+	}
+	else {
+		unknown_handler();
+	}
 	return sitr;
 }
 

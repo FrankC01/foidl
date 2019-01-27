@@ -30,7 +30,8 @@ static PFRTAny 	ss_default_step(PFRTAny s, PFRTAny l) {
 globalFuncConst(ss_defstep,2,ss_default_step);
 
 static PFRTAny 	ss_default_end(PFRTAny e,PFRTAny last) {
-	return foidl_equal_qmark(e,last);
+	return foidl_gteq_qmark(e, last);
+	//return foidl_equal_qmark(e,last);
 }
 
 globalFuncConst(ss_defend,2,ss_default_end);
