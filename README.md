@@ -18,10 +18,21 @@ Building foidl
 Building the executable, self-hosted, foidl compiler (`foidlc`) is 2 step process:
 
 1. Build the `libfoidl` run time library - This is done with C/C++ and Python bootstrapping.
+```
+cd foidlrtl
+make clean
+make
+```
 2. Build the `foidlc`compiler - This is done with Python bootstrapping.
+```
+cd foidlc
+make clean
+make
+```
 
 The folder `tests/selfhosted` contains a few contrived foidl examples. Once the foidl compiler is built it will be used to build them. After building the compiler do:
 ```
 cd tests/selfhosted
+make clean
 make
 ```
