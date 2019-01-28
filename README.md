@@ -14,7 +14,16 @@ My own twists:
 * Delimiterless (mostly) - Not for the weak of heart but I like to decide using format style
 
 
-Building foidl
+## Prereqs
+* Python 3.6+
+* LLVM/Clang 7.0+
+
+### Python libraries to `pip` in
+* rply
+* colorlog
+* llvmlite
+
+## Building foidl
 Building the executable, self-hosted, foidl compiler (`foidlc`) is 2 step process:
 
 1. Build the `libfoidl` run time library - This is done with C/C++ and Python bootstrapping.
