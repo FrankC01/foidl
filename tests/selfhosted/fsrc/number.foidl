@@ -26,6 +26,7 @@ var n7  0b00000001
 var n8  10
 var n9  -8237492873492837429834792387429871243223989823.91283801983012983012983109283019823019283
 var n10 42.3
+var n11 0.5
 
 var s1  "foo"
 var l1  [n1 n2 n3 n4 s1]
@@ -81,4 +82,7 @@ func main [argv]
     printnl!: negate: n10   ; -42.3
     printnl!: floor: n10    ; 42
     printnl!: ceil: n10     ; 43
+    printnl!: sqrt: n10 five ; 6.50385
+    printnl!: sin: n11 five  ; 0.479426
+    printnl!: cos: n11 five  ; 0.877583
 

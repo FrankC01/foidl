@@ -90,6 +90,10 @@ EXTERNC long long number_tolong(PFRTAny num) {
     return res;
 }
 
+static int _number_toint(PFRTAny num) {
+    return (int) number_tolong(num);
+}
+
 EXTERNC ft number_toft(PFRTAny num) {
     return (ft) number_tolong(num);
 }
@@ -239,6 +243,32 @@ EXTERNC PFRTAny foidl_num_ceil(PFRTAny arg) {
     return allocAny(scalar_class, number_type, (void *)numcil);
 }
 
+EXTERNC PFRTAny foidl_num_sqrt(PFRTAny arg, PFRTAny decpl) {
+    if(arg->ftype != number_type || decpl->ftype != number_type)
+        unknown_handler();
+    M_APM numcil = m_apm_init();
+    int decs = _number_toint(decpl);
+    m_apm_sqrt(numcil, decs, (M_APM) arg->value);
+    return allocAny(scalar_class, number_type, (void *)numcil);
+}
+
+EXTERNC PFRTAny foidl_num_sin(PFRTAny arg, PFRTAny decpl) {
+    if(arg->ftype != number_type || decpl->ftype != number_type)
+        unknown_handler();
+    M_APM numcil = m_apm_init();
+    int decs = _number_toint(decpl);
+    m_apm_sin(numcil, decs, (M_APM) arg->value);
+    return allocAny(scalar_class, number_type, (void *)numcil);
+}
+
+EXTERNC PFRTAny foidl_num_cos(PFRTAny arg, PFRTAny decpl) {
+    if(arg->ftype != number_type || decpl->ftype != number_type)
+        unknown_handler();
+    M_APM numcil = m_apm_init();
+    int decs = _number_toint(decpl);
+    m_apm_cos(numcil, decs, (M_APM) arg->value);
+    return allocAny(scalar_class, number_type, (void *)numcil);
+}
 // Shorthand macro
 
 #define genint(lsym,v)  lsym = foidl_reg_intnum((long long) v)
