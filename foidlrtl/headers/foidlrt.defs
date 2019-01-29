@@ -168,6 +168,8 @@ func  foidl_dec [x]
 
 func  foidl_num_abs[x]
 func  foidl_num_neg[x]
+func  foidl_num_floor[x]
+func  foidl_num_ceil[x]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Predicate Functions

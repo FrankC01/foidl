@@ -76,7 +76,9 @@ func main [argv]
     printnl!: abs: n4       ; 39
     printnl!: abs: n9       ; 8237492873492837429834792387429871243223989823.91283801983012983012983109283019823019283
     printnl!: abs: n10      ; 42.3
-    printnl!: negate: n2       ; -7
-    printnl!: negate: n4       ; 39
-    printnl!: negate: n10      ; -42.3
+    printnl!: negate: n2    ; -7
+    printnl!: negate: n4    ; 39
+    printnl!: negate: n10   ; -42.3
+    printnl!: floor: n10    ; 42
+    printnl!: ceil: n10     ; 43
 

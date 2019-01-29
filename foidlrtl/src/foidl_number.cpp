@@ -223,6 +223,22 @@ EXTERNC PFRTAny foidl_num_neg(PFRTAny arg) {
     return allocAny(scalar_class, number_type, (void *)numneg);
 }
 
+EXTERNC PFRTAny foidl_num_floor(PFRTAny arg) {
+    if(arg->ftype != number_type)
+        unknown_handler();
+    M_APM numflr = m_apm_init();
+    m_apm_floor(numflr, (M_APM) arg->value);
+    return allocAny(scalar_class, number_type, (void *)numflr);
+}
+
+EXTERNC PFRTAny foidl_num_ceil(PFRTAny arg) {
+    if(arg->ftype != number_type)
+        unknown_handler();
+    M_APM numcil = m_apm_init();
+    m_apm_ceil(numcil, (M_APM) arg->value);
+    return allocAny(scalar_class, number_type, (void *)numcil);
+}
+
 // Shorthand macro
 
 #define genint(lsym,v)  lsym = foidl_reg_intnum((long long) v)

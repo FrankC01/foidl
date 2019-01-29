@@ -219,6 +219,13 @@ func abs[x]
 func negate[x]
 	foidl_num_neg: x
 
+func  floor[x]
+	foidl_num_floor: x
+
+func  ceil[x]
+	foidl_num_ceil: x
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Collection functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
