@@ -219,6 +219,12 @@ func abs[x]
 func negate[x]
 	foidl_num_neg: x
 
+func round[x d]
+	foidl_num_round: x d
+
+func  factorial[x]
+	foidl_num_factorial: x
+
 func  floor[x]
 	foidl_num_floor: x
 
@@ -229,11 +235,11 @@ func  ceil[x]
 func  sqrt[x d]
 	foidl_num_sqrt: x d
 
-; Sine of x to d decimal places
+; Sine of x (radians) to d decimal places
 func  sin[x d]
 	foidl_num_sin: x d
 
-; Cosine of x to d decimal places
+; Cosine of x (radians) to d decimal places
 func  cos[x d]
 	foidl_num_cos: x d
 

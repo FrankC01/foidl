@@ -227,6 +227,23 @@ EXTERNC PFRTAny foidl_num_neg(PFRTAny arg) {
     return allocAny(scalar_class, number_type, (void *)numneg);
 }
 
+EXTERNC PFRTAny foidl_num_round(PFRTAny arg, PFRTAny decpl) {
+    if(arg->ftype != number_type || decpl->ftype != number_type)
+        unknown_handler();
+    M_APM numcil = m_apm_init();
+    int decs = _number_toint(decpl);
+    m_apm_round(numcil, decs, (M_APM) arg->value);
+    return allocAny(scalar_class, number_type, (void *)numcil);
+}
+
+EXTERNC PFRTAny foidl_num_factorial(PFRTAny arg) {
+    if(arg->ftype != number_type)
+        unknown_handler();
+    M_APM numflr = m_apm_init();
+    m_apm_factorial(numflr, (M_APM) arg->value);
+    return allocAny(scalar_class, number_type, (void *)numflr);
+}
+
 EXTERNC PFRTAny foidl_num_floor(PFRTAny arg) {
     if(arg->ftype != number_type)
         unknown_handler();

@@ -168,6 +168,8 @@ func  foidl_dec [x]
 
 func  foidl_num_abs[x]
 func  foidl_num_neg[x]
+func  foidl_num_round[x d]
+func  foidl_num_factorial[x]
 func  foidl_num_floor[x]
 func  foidl_num_ceil[x]
 func  foidl_num_sqrt[x d]

@@ -27,6 +27,7 @@ var n8  10
 var n9  -8237492873492837429834792387429871243223989823.91283801983012983012983109283019823019283
 var n10 42.3
 var n11 0.5
+var n12 8.75e+3
 
 var s1  "foo"
 var l1  [n1 n2 n3 n4 s1]
@@ -74,12 +75,11 @@ func main [argv]
     printnl!: n10
     printnl!: "Numeric functions"
     printnl!: abs: n2       ; 7
-    printnl!: abs: n4       ; 39
     printnl!: abs: n9       ; 8237492873492837429834792387429871243223989823.91283801983012983012983109283019823019283
-    printnl!: abs: n10      ; 42.3
-    printnl!: negate: n2    ; -7
-    printnl!: negate: n4    ; 39
     printnl!: negate: n10   ; -42.3
+    printnl!: n12           ; 8750
+    printnl!: round: n12 1  ; 8800
+    printnl!: factorial: n5 ; 120
     printnl!: floor: n10    ; 42
     printnl!: ceil: n10     ; 43
     printnl!: sqrt: n10 five ; 6.50385
