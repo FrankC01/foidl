@@ -951,6 +951,7 @@ static PFRTAny internal_zipmap(ft maxcnt, PFRTIterator cntrlI, PFRTIterator slvI
 	foidl_xdel(slvI);
 	return coll;
 }
+
 PFRTAny 	foidl_zipmap(PFRTAny coll1, PFRTAny coll2) {
 	if(foidl_collection_qmark(coll1) == true
 		&& foidl_collection_qmark(coll2) == true) {

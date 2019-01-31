@@ -170,10 +170,6 @@ PFRTAny  foidl_reg_keyword(char *i) {
 	return res;
 }
 
-PFRTAny 	string_from_carray(char p[]) {
-	return empty_string;
-}
-
 PFRTAny 	string_first(PFRTAny s) {
 	return allocCharWithValue((ft) *((char *)s->value));
 }
@@ -232,6 +228,9 @@ PFRTAny 	string_get_default(PFRTAny s, PFRTAny index,PFRTAny def) {
 	return res;
 }
 
+// Extend a string
+// TODO: Possibly leverage 'format'
+
 PFRTAny 	string_extend(PFRTAny s, PFRTAny v) {
 	char 	 *p1=0;
 	int 	 delp = 0;
@@ -277,37 +276,6 @@ PFRTAny 	string_extend(PFRTAny s, PFRTAny v) {
 	return res;
 }
 
-/*
-	Concatenate cnt number of characters to string
-*/
-PFRTAny foidl_strcatnc(PFRTAny s, PFRTAny cnt, PFRTAny chc) {
-	if(cnt->ftype != number_type)
-		unknown_handler();
-	ft 		nval = number_toft(cnt);
-	ft 		nlen = s->count + (uint32_t) nval + 1;
-	PFRTAny res = allocAny(scalar_class,string_type,(void *) nlen);
-	res->count = nlen -1;
-	res->value = strcpy(foidl_xall(nlen), s->value);
-	char 	val = (char) chc->value;
-	for(ft i = 0; i< nval; i++ ) ((char *)res->value)[s->count+i] = val;
-	return res;
-}
-
-PFRTAny foidl_strcatns(PFRTAny s, PFRTAny cnt, PFRTAny chs) {
-	if(cnt->ftype != number_type)
-		unknown_handler();
-	ft 		val = number_toft(cnt);
-	ft 		nlen = s->count + (val * chs->count) + 1;
-	PFRTAny res = allocAny(scalar_class,string_type,(void *) nlen);
-	res->count = nlen -1;
-	res->value = strcpy(foidl_xall(nlen), s->value);
-	char 	*str = (char*) chs->value;
-	for(ft i = 0; i< val; i++ )
-		strcat((char *)res->value,str);
-
-	return res;
-}
-
 PFRTAny 	string_extend_bang(PFRTAny s, PFRTAny v) {
 	PFRTAny sn = s;
 	return sn;
@@ -348,18 +316,6 @@ PFRTAny 	string_droplast_bang(PFRTAny s) {
 	return s;
 }
 
-PFRTAny 	number_to_string(PFRTAny t) {
-	return t;
-}
-
-PFRTAny 	char_to_string(PFRTAny t) {
-	return t;
-}
-
-PFRTAny 	coerce_to_string(PFRTAny t) {
-	return t;
-}
-
 PFRTAny 	release_string(PFRTAny s) {
 	PFRTTypeG  rs = ANYTOG(s);
 	if(rs->fsig == global_signature)
@@ -367,34 +323,5 @@ PFRTAny 	release_string(PFRTAny s) {
 	foidl_xdel(s->value);
 	foidl_xdel(s);
 	return nil;
-}
-
-PFRTAny 	foidl_hasChar(PFRTAny s, PFRTAny c) {
-	return true;
-}
-
-PFRTAny 	foidl_collc2str(PFRTAny v) {
-	ft 			nlen = v->count+1;
-	PFRTAny 	res = allocAny(scalar_class,string_type,(void *) nlen);
-
-	res->count = nlen -1;
-	res->value = foidl_xall(nlen);
-	PFRTIterator mi = iteratorFor(v);
-	PFRTAny 	entry;
-	uint32_t 	i = 0;
-	while((entry = iteratorNext(mi)) != end) {
-		((char *) res->value)[i] = (char) entry->value;
-		++i;
-		}
-
-	return res;
-}
-
-PFRTAny 	foidl_string_from(PFRTAny s, PFRTAny d) {
-	return s;
-}
-
-PFRTAny 	foidl_trim(PFRTAny s) {
-	return s;
 }
 

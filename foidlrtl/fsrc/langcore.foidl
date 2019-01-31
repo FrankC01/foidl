@@ -347,12 +347,6 @@ func zipmap [coll1 coll2]
 func trim [s]
 	foidl_trim: s
 
-func strb [arg]
-	foidl_strb: arg
-
-func hasChar [s chr]
-	foidl_hasChar: s chr
-
 func format [s coll]
 	foidl_format: s coll
 

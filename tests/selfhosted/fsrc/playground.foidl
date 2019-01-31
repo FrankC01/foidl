@@ -300,5 +300,13 @@ func main [argv]
     printnl!: zipmap: cntl <6 7 8>
     printnl!: zipmap: cntl "YONNY"
     printnl!: zipmap: "YONNY" cntl
+
+    ; String stuff
+    ; Test 20 'trip' stips leading and trailing ws chars
+    let witm [] "   Words in the Middle "
+
+    printnl!: "Test 20 - the 'trim' function returns whitespace left/right removed string"
+    print!: "Trimmed = " printnl!: trim: witm
+    print!: "Original = " printnl!: witm
     ; Return success (i.e. 0) to the OS
     zero

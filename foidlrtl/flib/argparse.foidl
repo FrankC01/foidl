@@ -40,8 +40,6 @@ include langcorem
 ; }
 ;
 
-var :private comma_str strb: comma
-
 ; General failure functions
 
 func :private argparse_error_unrecognized [arg]

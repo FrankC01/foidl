@@ -229,20 +229,12 @@ func  foidl_io? 		[x]
 
 func 	foidl_type 			[arg]
 func 	foidl_isType? 		[arg with]
-func 	foidl_c2i 			[arg]
-func    foidl_s2i           [arg]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Fundemental String Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 func 	foidl_trim 	      [str]
-func 	foidl_conjstr     [args]
-func 	foidl_hasChar     [str chr]
-func 	foidl_strb        [arg]
-func 	foidl_collc2str   [coll]
-func 	foidl_strcatnc    [str cnt chr]
-func 	foidl_strcatns    [str cnt chs]
 func    foidl_format      [str coll]
 func    foidl_descan_string [str]
 

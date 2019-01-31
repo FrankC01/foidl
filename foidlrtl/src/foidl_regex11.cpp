@@ -7,7 +7,7 @@
 */
 #include <foidl_regex11.hpp>
 //#include <stdio.h>
-//#include <iostream>
+#include <iostream>
 #include <sstream>
 #include <regex>
 #include <list>
@@ -324,4 +324,31 @@ EXTERNC PFRTAny foidl_format(PFRTAny s, PFRTAny coll) {
     }
 
     return s;
+}
+
+const char* whts = " \t\n\r\f\v";
+
+// trim from end of string (right)
+inline string& rtrim(string& s, const char* t = whts) {
+    s.erase(s.find_last_not_of(t) + 1);
+    return s;
+}
+
+// trim from beginning of string (left)
+inline string& ltrim(string& s, const char* t = whts) {
+    s.erase(0, s.find_first_not_of(t));
+    return s;
+}
+
+// trim from both ends of string (right then left)
+inline string& trim(string& s, const char* t = whts) {
+    return ltrim(rtrim(s, t), t);
+}
+
+EXTERNC PFRTAny foidl_trim(PFRTAny s) {
+    if(s->ftype != string_type)
+        unknown_handler();
+    string content((char *)s->value);
+    string result = trim(content);
+    return allocStringWithCopy((char *) result.c_str());
 }

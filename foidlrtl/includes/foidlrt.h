@@ -850,7 +850,6 @@ EXTERNC  PFRTAny string_extend_bang(PFRTAny, PFRTAny);
 EXTERNC  PFRTAny string_droplast(PFRTAny);
 EXTERNC  PFRTAny string_droplast_bang(PFRTAny);
 EXTERNC  PFRTAny release_string(PFRTAny s);
-//EXTERNC 	PFRTAny charPtrToString(char *);
 #endif
 
 #ifndef INVOKE_IMPL
