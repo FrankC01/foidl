@@ -849,30 +849,6 @@ PFRTAny 	foidl_remove(PFRTAny pred, PFRTAny coll) {
 	return remove_fn(pred, iteratorFor(coll));
 }
 
-
-globalFuncConst(str_builder,2,string_extend);
-
-PFRTAny 	foidl_strb (PFRTAny a) {
-	PFRTAny 	res = a;
-	switch(a->fclass) {
-		case 	scalar_class:
-			switch(a->ftype) {
-				case 	string_type:
-					break;
-				default:
-					res = string_extend(empty_string,a);
-					break;
-			}
-			break;
-		case 	collection_class:
-			res = foidl_fold_bang((PFRTAny) str_builder,empty_string,a);
-			break;
-		default:
-			unknown_handler();
-	}
-	return res;
-}
-
 //	Flatten takes any nested combinations of collections and
 //	returns a vector of their contents
 
