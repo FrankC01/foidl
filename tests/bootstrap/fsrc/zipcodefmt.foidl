@@ -59,16 +59,16 @@ func greeting [msg]
 func emptyGreeting [msg]
     printnl!: empty?: msg
 
-func matchZip [zip]
-    match matchResult count: zip
+func matchZip [zip_code]
+    match matchResult count: zip_code
         | <: %0 5       "Invalid. Less than 5"
         | =: %0 5       "Valid. Count = 5"
         | =: %0 10      "Valid. Count = 10"
         | >: %0 10      "Invalid. Greater than 10"
 
-func validZipFmt[zip]
+func validZipFmt[zip_code]
     ; Indicates if given zip is in the correct format for processing
-    regex_match?: zip "\d{5}(-\d{1,4})*"
+    regex_match?: zip_code "\d{5}(-\d{1,4})*"
 
 func main [argv]
     ; Greeting
@@ -76,6 +76,6 @@ func main [argv]
     greeting: msg
 
     ; Zip playground
-    let zip [] get: argv 2
-    printnl!: format: "Given Zip Code is {}." [zip]
-    printnl!: format: "Zip Code contains valid characters: {}." [validZipFmt: zip]
+    let zip_code [] get: argv 2
+    printnl!: format: "Given Zip Code is {}." [zip_code]
+    printnl!: format: "Zip Code contains valid characters: {}." [validZipFmt: zip_code]
