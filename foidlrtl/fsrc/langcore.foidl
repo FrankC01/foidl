@@ -219,9 +219,6 @@ func abs[x]
 func negate[x]
 	foidl_num_neg: x
 
-func round[x d]
-	foidl_num_round: x d
-
 func  factorial[x]
 	foidl_num_factorial: x
 
@@ -231,17 +228,22 @@ func  floor[x]
 func  ceil[x]
 	foidl_num_ceil: x
 
+; Round x to d decimal places
+
+func round[d x]
+	foidl_num_round: d x
+
 ; Square root of x to d decimal places
-func  sqrt[x d]
-	foidl_num_sqrt: x d
+func  sqrt[d x]
+	foidl_num_sqrt: d x
 
 ; Sine of x (radians) to d decimal places
-func  sin[x d]
-	foidl_num_sin: x d
+func  sin[d x]
+	foidl_num_sin: d x
 
 ; Cosine of x (radians) to d decimal places
-func  cos[x d]
-	foidl_num_cos: x d
+func  cos[d x]
+	foidl_num_cos: d x
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Collection functions

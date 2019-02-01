@@ -78,11 +78,11 @@ func main [argv]
     printnl!: abs: n9       ; 8237492873492837429834792387429871243223989823.91283801983012983012983109283019823019283
     printnl!: negate: n10   ; -42.3
     printnl!: n12           ; 8750
-    printnl!: round: n12 1  ; 8800
+    printnl!: round: 1 n12  ; 8800
     printnl!: factorial: n5 ; 120
     printnl!: floor: n10    ; 42
     printnl!: ceil: n10     ; 43
-    printnl!: sqrt: n10 five ; 6.50385
-    printnl!: sin: n11 five  ; 0.479426
-    printnl!: cos: n11 five  ; 0.877583
+    printnl!: sqrt: five n10  ; 6.50385
+    printnl!: sin: five n11  ; 0.479426
+    printnl!: cos: five n11 ; 0.877583
 
