@@ -46,7 +46,7 @@ func emit_literal_declarations [acc el]
 ; Description: Gets the maximum string/keyword/real number len for
 ; those types
 
-var :private lit_set #{:keyword :string :real_number :integer :hex :bit}
+var :private lit_set #{:char :keyword :string :real_number :integer :hex :bit}
 
 func literal_max_len [bblock max_cnt ndx]
     let element      [] get: bblock ndx
@@ -89,10 +89,10 @@ func literal_buffer_setup [lit_fn lit_bb lit_maxlen]
     list_extend!: inst bc
     bc
 
-; Function: literal_chartype_registration
-; Description: Registers a type of char string (string, keyword)
+; Function: literal_stringtype_registration
+; Description: Registers a type of using string (numbers, string, keyword)
 
-func :private literal_chartype_registration [
+func :private literal_stringtype_registration [
     basecast lit_fn lit_bb regc sval sname scnt]
     ; Create an array signature based on size of input
     let va  [] array_type: int_8 scnt
@@ -127,12 +127,29 @@ func :private literal_chartype_registration [
             reference_register_type: any get: reg_call :register
             reference_constant_type: any_ptr_ptr global_reference: sname
 
+; Function: literal_char
+; Description: Register a char type
+
+func :private literal_char [basecast lit_fn lit_bb lit_char]
+    ; Convert the character string to a unsigned long long
+    ; Call the registration
+    ; Store the result
+    let lstr [] get: lit_char :lval
+    literal_stringtype_registration:
+        basecast
+        lit_fn
+        lit_bb
+        charreg_ref
+        lstr
+        get: lit_char :name
+        inc: count: lstr
+
 ; Function: literal_string
 ; Description: Prepare a string registration at initialization
 
 func :private literal_string    [basecast lit_fn lit_bb lit_string]
     let lstr [] rest: drop_last: get: lit_string :lval
-    literal_chartype_registration:
+    literal_stringtype_registration:
         basecast
         lit_fn
         lit_bb
@@ -146,7 +163,7 @@ func :private literal_string    [basecast lit_fn lit_bb lit_string]
 
 func :private literal_keyword   [basecast lit_fn lit_bb lit_keyword]
     let lstr [] get: lit_keyword :lval
-    literal_chartype_registration:
+    literal_stringtype_registration:
         basecast
         lit_fn
         lit_bb
@@ -160,7 +177,7 @@ func :private literal_keyword   [basecast lit_fn lit_bb lit_keyword]
 
 func :private literal_number   [basecast lit_fn lit_bb lit_number]
     let lstr [] get: lit_number :lval
-    literal_chartype_registration:
+    literal_stringtype_registration:
         basecast
         lit_fn
         lit_bb
@@ -180,6 +197,7 @@ func literal_registration [basecast lit_fn lit_bb literals ndx]
         | :real_number  literal_number: basecast lit_fn lit_bb lit
         | :integer      literal_number: basecast lit_fn lit_bb lit
         | :hex          literal_number: basecast lit_fn lit_bb lit
+        | :char         literal_char: basecast lit_fn lit_bb lit
         | :bit          literal_number: basecast lit_fn lit_bb lit
         | :default      @(
                             printnl!: lit

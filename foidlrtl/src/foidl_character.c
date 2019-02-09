@@ -1,7 +1,7 @@
 /*
 	foidl_character.c
 	Library ascii and UTF-8 character
-	
+
 	Copyright Frank V. Castellucci
 	All Rights Reserved
 */
@@ -31,13 +31,26 @@ PFRTAny  foidl_reg_character(ft i) {
 	return allocCharWithValue(i);
 }
 
-PFRTAny allocECharWithValue(ft v, ft count) {	
+PFRTAny allocECharWithValue(ft v, ft count) {
 	PFRTAny c = (PFRTAny) allocAny(scalar_class, character_type,(void *)v);
-	//c->fclass = scalar_class;
-	//;c->ftype  = character_type;
 	c->count  = count;
-	//c->value  = (void *)v;	
 	return c;
+}
+
+PFRTAny  foidl_reg_char(char *p) {
+	ft l = strlen(p);
+	if(l == 3)
+		return allocCharWithValue((ft) p[1]);
+	else if(l == 4)
+		return allocECharWithValue((p[1] | p[2] << 8),2);
+	else if(l == 5)
+		return allocECharWithValue((p[1] | p[2] << 8 | p[3] << 16), 3);
+	else if(l == 6)
+		return allocECharWithValue((p[1] | p[2] << 8 | p[3] << 16 | p[4] << 24), 4);
+	else {
+		unknown_handler();
+	}
+	return nil;
 }
 
 
