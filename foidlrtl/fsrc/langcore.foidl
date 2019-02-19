@@ -104,7 +104,7 @@ func  gteq [x, y]
 ; IO functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-func fileExists? [fname]
+func file_exists? [fname]
 	foidl_fexists?: fname
 
 func open! [argmap]
@@ -128,10 +128,10 @@ func peek?  [channel arg]
 func skip_while! [channel exp]
 	foidl_skipwhile!: channel exp
 
-func skip_whileWS! [channel]
+func skip_while_ws! [channel]
 	foidl_skipwhile!: channel tbspdelim
 
-func skip_toNL! [channel]
+func skip_to_nl! [channel]
 	foidl_skipto!: channel nlchr
 
 func take_until! [coll pred]
@@ -143,10 +143,10 @@ func take_string! [channel]
 func take_qchar! [channel]
 	foidl_take_qchar!: channel
 
-func take_untilNL! [coll]
+func take_until_nl! [coll]
 	foidl_take_until!: coll nlchr
 
-func take_untilWS! [coll]
+func take_until_ws! [coll]
 	foidl_take_until!: coll whitespace
 
 func close! [channel]

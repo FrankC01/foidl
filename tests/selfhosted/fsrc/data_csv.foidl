@@ -1,0 +1,96 @@
+; ------------------------------------------------------------------------------
+; Copyright 2018 Frank V. Castellucci
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+; ------------------------------------------------------------------------------
+
+; The 'module' statement must be the first in foidl and
+; should be the same as the filename
+
+module data_csv
+
+var :private usage "usage: data_csv input [true | false]"
+var :private comma_re regex: ","
+
+; Function: open_target fname
+; Description: Creates a read channel on csv file
+
+func :private open_target [fname]
+    open!: {
+        :channel fname
+        :open :r
+        :buffer :mmap
+        :read_handler :string}
+
+; Function: get_val_list
+; Description: Reads next line from channel and
+; converts string of value and comma separators to list of values
+
+func :private get_val_list [chan]
+    let next_val [] take_until_nl!: chan
+    match empty?: next_val
+        | true nil
+        | :default @(
+                    skip_while!: chan nlchr
+                    split: next_val comma_re
+                )
+
+; Function: read_csv chan accum indx
+; Description: Reads each row into list of list of values per row
+
+func :private read_csv [chan accum indx]
+    let vals [] get_val_list: chan
+    match nil?: vals
+        | true   reduced: accum
+        | :default push: accum vals
+
+
+; Function: invert accum el
+; Description: Inverts inbound list of list order
+
+func :private invert[grid]
+    fold: ^[a e] extend: a e [] grid
+
+; Function: to_map hdr accum el
+; Description: zips header key with row values to produce list of maps
+
+func :private to_map[hdr accum el]
+    extend: accum zipmap: hdr el
+
+; Function: consume_with_hdr grid
+; Description: first row of grid is header of keys
+
+func :private to_map_with_header [grid]
+    fold: (to_map first: grid) [] invert: pop: grid
+
+; Function: parse_csv fname hashdr
+; Description: Reads file to grid of values and
+; either returns or creates list of maps
+
+func parse_csv [fname hashdr]
+    let chan [] open_target: fname
+    let grid [] invert: fold: (read_csv chan) [] infinite
+    let res []
+        match hashdr
+            | "true"    to_map_with_header: grid
+            | "false"   grid
+    close!: chan
+    res
+
+; main
+
+func main [argv]
+    printnl!:"`ndata_csv - reads CSV files to list of maps or list of lists`n"
+    match count: argv
+        | 3         printnl!: parse_csv: get: argv 1 get: argv 2
+        | :default  printnl!:usage
