@@ -69,7 +69,6 @@ void *foidl_open_ro_mmap_file(char * fname, size_t sz) {
     size_t br = _read(fd, mscbuffer, sz);
     mscbuffer[br] = 0;
     return mscbuffer;
-    // return malloc(size);
     #else
     return mmap(0, sz, PROT_READ, MAP_PRIVATE, fd, 0);
     #endif

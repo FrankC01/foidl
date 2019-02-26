@@ -293,11 +293,15 @@ EXTERNC   void   memory_free(void *);
 #define  MAPM_FREE memory_free
 */
 
+void * foidl_xall(uint32_t sz);
+void * foidl_xreall(void *p, uint32_t newsz);
+void foidl_xdel(void *v);
+
 /* default: use the standard C library memory functions ... */
 
-#define  MAPM_MALLOC malloc
-#define  MAPM_REALLOC realloc
-#define  MAPM_FREE free
+#define  MAPM_MALLOC foidl_xall
+#define  MAPM_REALLOC foidl_xreall
+#define  MAPM_FREE foidl_xdel
 
 #ifndef TRUE
 #define TRUE 1

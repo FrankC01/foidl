@@ -16,6 +16,8 @@
 #include <stdlib.h> /* needed for malloc, free */
 #include <stdarg.h> /* needed for va_*         */
 
+void * foidl_xall(uint32_t sz);
+void foidl_xdel(void *v);
 /*
  * vscprintf:
  * MSVC implements this as _vscprintf, thus we just 'symlink' it here
@@ -48,12 +50,13 @@ int vasprintf(char **strp, const char *format, va_list ap)
     int len = vscprintf(format, ap);
     if (len == -1)
         return -1;
-    char *str = (char*)malloc((size_t) len + 1);
+    char *str = (char*)foidl_xall((size_t) len + 1);
     if (!str)
         return -1;
     int retval = vsnprintf(str, len + 1, format, ap);
     if (retval == -1) {
-        free(str);
+        foidl_xdel(str);
+        //free(str);
         return -1;
     }
     *strp = str;

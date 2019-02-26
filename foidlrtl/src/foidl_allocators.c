@@ -16,11 +16,27 @@ static PFRTAny gc_initialized = (PFRTAny) &_false.fclass;
 const PFRTAny emtndarray[0];// = {end,end};
 
 void * foidl_xall(uint32_t sz) {
-	return calloc(sz,1);
+	if(gc_initialized == true)
+		return calloc(sz,1);
+	else {
+		return calloc(sz,1);
+	}
+}
+
+void * foidl_xreall(void *p, uint32_t newsz) {
+	if(gc_initialized == true)
+		return realloc(p, newsz);
+	else {
+		return realloc(p, newsz);
+	}
 }
 
 void foidl_xdel(void *v) {
-	return free(v);
+	if(gc_initialized == true)
+		return free(v);
+	else {
+		return free(v);
+	}
 }
 
 void foidl_gc_init() {
@@ -56,7 +72,7 @@ PFRTAny allocStringWithBufferSize (uint32_t cnt) {
 }
 
 PFRTAny allocGlobalStringCopy(char *v) {
-	PFRTTypeG 	c0 = (PFRTTypeG) malloc(sizeof (struct FRTTypeG));
+	PFRTTypeG 	c0 = (PFRTTypeG) foidl_xall(sizeof (struct FRTTypeG));
 	c0->fsig = global_signature;
 	PFRTAny 	c = (PFRTAny) &c0->fclass;
 	uint32_t plen = strlen(v);
@@ -70,7 +86,7 @@ PFRTAny allocGlobalStringCopy(char *v) {
 }
 
 PFRTAny allocGlobalKeywordCopy(char *v) {
-	PFRTTypeG 	c0 = (PFRTTypeG) malloc(sizeof (struct FRTTypeG));
+	PFRTTypeG 	c0 = (PFRTTypeG) foidl_xall(sizeof (struct FRTTypeG));
 	c0->fsig = global_signature;
 	PFRTAny 	c = (PFRTAny) &c0->fclass;
 	uint32_t plen = strlen(v);
@@ -84,7 +100,7 @@ PFRTAny allocGlobalKeywordCopy(char *v) {
 }
 
 PFRTAny allocGlobalString(char *v) {
-	PFRTTypeG 	c0 = (PFRTTypeG) malloc(sizeof (struct FRTTypeG));
+	PFRTTypeG 	c0 = (PFRTTypeG) foidl_xall(sizeof (struct FRTTypeG));
 	c0->fsig = global_signature;
 	PFRTAny 	c = (PFRTAny) &c0->fclass;
 	c->fclass = scalar_class;
@@ -143,7 +159,7 @@ PFRTAny allocRegex(PFRTAny sbase, void* regex) {
 }
 
 PFRTAny allocGlobalCharType(int v) {
-	PFRTTypeG 	c0 = (PFRTTypeG) malloc(sizeof (struct FRTTypeG));
+	PFRTTypeG 	c0 = (PFRTTypeG) foidl_xall(sizeof (struct FRTTypeG));
 	c0->fsig = global_signature;
 	PFRTAny 	c = (PFRTAny) &c0->fclass;
 	c->fclass = scalar_class;

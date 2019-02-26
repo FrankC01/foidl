@@ -39,7 +39,7 @@ PFRTAny 	foidl_rtl_init() {
 
 	if(foidl_rtl_initialized == false) {
 		//foidl_heap_setup();
-		foidl_gc_init();
+		//foidl_gc_init();
 		foidl_rtl_init_chars();
 		foidl_rtl_init_globals();
 		foidl_rtl_init_numbers(); //foidl_rtl_init_ints();
@@ -56,6 +56,7 @@ PFRTAny 	foidl_rtl_init() {
 //	Application entry point
 
 PFRTAny 	foidl_convert_mainargs(int argc, char **as, char **es) {
+	foidl_gc_init();
 	genEnvMap(es);
 	foidl_argv = vector_from_argv(argc,as);
 	return foidl_argv;
