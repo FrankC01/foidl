@@ -718,7 +718,7 @@ EXTERNC 	uint32_t hash(PFRTAny);
 
 EXTERNC const PFRTAny emtndarray[];
 EXTERNC void 			foidl_gc_init();
-EXTERNC void *			foidl_xall(uint32_t sz);
+EXTERNC void *			foidl_xall(int sz);
 EXTERNC void 			foidl_xdel(void *);
 //	Scalar types
 EXTERNC PFRTAny 			*allocRawAnyArray(ft count);

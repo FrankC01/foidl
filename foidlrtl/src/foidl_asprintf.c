@@ -16,7 +16,7 @@
 #include <stdlib.h> /* needed for malloc, free */
 #include <stdarg.h> /* needed for va_*         */
 
-void * foidl_xall(uint32_t sz);
+void * foidl_xall(int sz);
 void foidl_xdel(void *v);
 /*
  * vscprintf:
