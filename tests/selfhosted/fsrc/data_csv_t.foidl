@@ -14,52 +14,32 @@
 ; limitations under the License.
 ; ------------------------------------------------------------------------------
 
-; Uses channel IO to chunk up each row
+; Uses tokenization to chunk up each row
 ; to a token
 
-module data_csv
+module data_csv_t
 
-var :private usage "usage: data_csv input [true | false]"
+var :private usage "usage: data_csv_t input [true | false]"
 var :private comma_re regex: ","
 
-; Function: open_target fname
-; Description: Creates a read channel on csv file
+var :private patterns [
+    {
+        :type   :row
+        :regex  regex: ".+"
+    }
+]
 
-func :private open_target [fname]
-    open!: {
-        :channel fname
-        :open :r
-        :buffer :mmap
-        :read_handler :string}
-
-; Function: get_val_list
-; Description: Reads next line from channel and
-; converts string of value and comma separators to list of values
-
-func :private get_val_list [chan]
-    let next_val [] take_until_nl!: chan
-    match empty?: next_val
-        | true nil
-        | :default @(
-                    skip_while!: chan nlchr
-                    split: next_val comma_re
-                )
-
-; Function: read_csv chan accum indx
-; Description: Reads each row into list of list of values per row
-
-func :private read_csv [chan accum indx]
-    let vals [] get_val_list: chan
-    match nil?: vals
-        | true   reduced: accum
-        | :default push: accum vals
-
-
-; Function: invert accum el
-; Description: Inverts inbound list of list order
+; Function: invert grid
+; Description: Inverts inbound list elements
 
 func :private invert[grid]
     fold: ^[a e] extend: a e [] grid
+
+; Function: to_grid accum tok
+; Description: split the token stream on the comma
+
+func :private to_grid [accum tok]
+    extend: accum split: get: tok :token_str comma_re
 
 ; Function: to_map hdr accum el
 ; Description: zips header key with row values to produce list of maps
@@ -74,21 +54,26 @@ func :private to_map[hdr accum el]
 func :private to_map_with_header [grid]
     fold: (to_map first: grid) [] invert: pop: grid
 
-; Function: parse_csv fname hashdr
-; Description: Reads file to grid of values and
-; either returns or creates list of maps
+; Function: parse_csv
+; Description: Tokenizes file and convert to
+; lists of lists (grid) and either returns the grid
+; or a list of maps where the first row from grid is
+; assumed to be the header (keys)
 
 func parse_csv [fname hashdr]
-    let chan [] open_target: fname
-    let grid [] invert: fold: (read_csv chan) [] infinite
+    let src_string [] quaf!: fname
+    let grid []
+        invert:
+            fold:
+                to_grid
+                []
+                tokenize: src_string patterns []
     let res []
         match hashdr
             | "true"    to_map_with_header: grid
             | "false"   grid
-    close!: chan
     res
 
-; main
 
 func main [argv]
     printnl!:"`ndata_csv - reads CSV files to list of maps or list of lists`n"
