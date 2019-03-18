@@ -1011,3 +1011,14 @@ PFRTAny foidl_dec(PFRTAny el) {
 		unknown_handler();
 	return nil;
 }
+
+//	Console shortcuts used in RTL
+
+PFRTAny 	writeCout(PFRTAny el) {
+	return foidl_write_bang(cout,el);
+}
+
+PFRTAny 	writeCoutNl(PFRTAny el) {
+	foidl_write_bang(cout,el);
+	return foidl_write_bang(cout,nlchr);
+}

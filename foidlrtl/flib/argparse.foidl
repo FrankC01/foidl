@@ -98,7 +98,7 @@ func :private update_index [state]
 ; Function: inc_index_by
 ; Description: Increment state index by cnt, returns new state
 func :private inc_index_by [state, cnt]
-    extendKV: state :index +: get: state :index cnt
+    extends: state :index +: get: state :index cnt
 
 ; Function: current_value
 ; Description: Gets the next value expeceted, fails if end of args
@@ -119,7 +119,7 @@ func :private argparse_default_handler [state cmdmap]
             akey      get: cmdmap :keyword
           ]
           update_index:
-            extendKV: state :result extendKV: res akey true
+            extends: state :result extends: res akey true
 
 ; Function: argparse_get_next_value
 ; Description: Generic function that attempts to retrieve the
@@ -141,7 +141,7 @@ func argparse_get_next_value [state cmdmap unexpected_str expect_str]
         let [res      get: nstate :result
             akey      get: cmdmap :keyword]
             update_index:
-                extendKV: nstate :result extendKV: res akey nextarg
+                extends: nstate :result extends: res akey nextarg
 
 ; Function: argparse_singlevalue
 ; Description: Default handler for switches that expect one argument
@@ -201,7 +201,7 @@ func argparse_until_next_switch [state cmdmap]
         [0 nstate]
         let [res            get: nstate :result
              akey           get: cmdmap :keyword
-             istate         extendKV: nstate :result extendKV: res akey alist
+             istate         extends: nstate :result extends: res akey alist
              icnt           count: alist]
             [icnt inc_index_by: istate icnt]
 

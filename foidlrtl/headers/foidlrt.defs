@@ -284,6 +284,37 @@ func 	foidl_value 	[me]
 func    foidl_zip       [coll1 coll2]
 func    foidl_zipmap    [coll1 coll2]
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; New IO
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+var chan_file   Type
+
+var open_r      Type
+var open_rb     Type
+var open_w      Type
+var open_wb     Type
+var open_rw     Type
+var open_rwb    Type
+var open_a      Type
+var open_ab     Type
+var open_ar     Type
+var open_arb    Type
+
+var render_byte Type
+var render_char Type
+var render_line Type
+var render_file Type
+
+var chan_target Type
+var chan_type   Type
+var chan_render Type
+var chan_mode   Type
+
+func    foidl_open_file!        [name mode args]
+func    foidl_channel_read!     [channel]
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; IO
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -293,6 +324,7 @@ func 	foidl_fexists? [fname]
 
 ;	Functions
 func 	foidl_open!				[argmap]
+
 func 	foidl_read!				[channel]
 func 	foidl_unread!			[channel]
 func 	foidl_write!			[channel data]

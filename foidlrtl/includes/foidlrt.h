@@ -440,6 +440,56 @@ typedef	struct   FRTIOChannel {
     PFRTIOBuffer 	bufferptr;
 } *PFRTIOChannel;
 
+/*
+typedef struct FRTTypeG {
+    ft          fsig;
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *value;     // Maps to count on collections
+} *PFRTTypeG;
+*/
+typedef struct   FRTIOChannel2G {
+    ft          fsig;
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *value;         // Maps to count on collections
+} *PFRTIOChannel2G;
+
+typedef struct   FRTIOChannel2 {
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *value;         // Maps to count on collections
+} *PFRTIOChannel2;
+
+typedef struct   FRTIOFileChannelG {
+    ft          fsig;
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *value;         // Maps to count on collections
+    PFRTAny     name;
+    PFRTAny     mode;
+    PFRTAny     render;
+} *PFRTIOFileChannelG;
+
+
+typedef struct   FRTIOFileChannel {
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *value;         // Maps to count on collections
+    PFRTAny     name;
+    PFRTAny     mode;
+    PFRTAny     render;
+} *PFRTIOFileChannel;
 
 //	Forward decls and macros
 
@@ -674,12 +724,14 @@ EXTERNC PFRTAny 	foidl_pop(PFRTAny);
 EXTERNC PFRTAny 	foidl_pop_bang(PFRTAny);
 EXTERNC PFRTAny 	foidl_push(PFRTAny, PFRTAny);
 EXTERNC PFRTAny 	foidl_push_bang(PFRTAny, PFRTAny);
-EXTERNC PFRTAny  foidl_apply(PFRTAny, PFRTAny);
-EXTERNC PFRTAny  foidl_map(PFRTAny, PFRTAny);
+EXTERNC PFRTAny     foidl_apply(PFRTAny, PFRTAny);
+EXTERNC PFRTAny     foidl_map(PFRTAny, PFRTAny);
 EXTERNC PFRTAny 	foidl_fold(PFRTAny, PFRTAny, PFRTAny);
 EXTERNC PFRTAny 	foidl_reduce(PFRTAny, PFRTAny, PFRTAny);
-EXTERNC PFRTAny  foidl_reduced(PFRTAny);
-EXTERNC PFRTAny  foidl_split(PFRTAny,PFRTAny); 	//	May move to string
+EXTERNC PFRTAny     foidl_reduced(PFRTAny);
+EXTERNC PFRTAny     foidl_split(PFRTAny,PFRTAny); 	//	May move to string
+EXTERNC PFRTAny     writeCout(PFRTAny);
+EXTERNC PFRTAny     writeCoutNl(PFRTAny);
 #endif
 
 #ifndef F_ASPRINTF
@@ -730,6 +782,7 @@ EXTERNC PFRTAny 			allocGlobalKeywordCopy(char *);
 EXTERNC PFRTAny 			allocStringWithBufferSize(uint32_t);
 EXTERNC PFRTAny 			allocStringWithCopy(char *);
 EXTERNC PFRTAny 			allocStringWithCopyCnt(uint32_t, char *);
+EXTERNC PFRTAny             allocStringWithCptr(char *, long int);
 EXTERNC PFRTAny 			allocAndConcatString(uint32_t,char *, uint32_t, char *, uint32_t);
 
 EXTERNC PFRTAny 			allocGlobalCharType(int);
@@ -743,6 +796,7 @@ EXTERNC PFRTIOBuffer 	allocIOBlockBuffer(ft);
 EXTERNC PFRTIOBuffer 	allocIONoBuffer();
 EXTERNC void 			deallocChannelBuffer(PFRTIOChannel);
 
+EXTERNC PFRTIOChannel2  allocFileChannel(PFRTAny, PFRTAny);
 // Function types
 EXTERNC PFRTFuncRef2 	allocFuncRef2(void *fn, ft maxarg,invoke_funcptr ifn);
 EXTERNC void 			deallocFuncRef2(PFRTFuncRef2);
@@ -977,8 +1031,6 @@ EXTERNC  PFRTAny  release_list_bang(PFRTAny);
 
 // IO
 #ifndef IO_IMPL
-EXTERNC 	PFRTAny  writeCout(PFRTAny);
-EXTERNC 	PFRTAny  writeCoutNl(PFRTAny);
 EXTERNC 	PFRTAny  foidl_open_bang(PFRTAny);
 EXTERNC 	PFRTAny  foidl_write_bang(PFRTIOChannel,PFRTAny);
 EXTERNC 	PFRTAny  io_get(PFRTAny,PFRTAny);
@@ -987,6 +1039,9 @@ EXTERNC  PFRTAny  foidl_io_first(PFRTAny);
 EXTERNC  PFRTAny  foidl_io_second(PFRTAny);
 EXTERNC  PFRTAny  foidl_io_countto(PFRTAny,PFRTAny);
 EXTERNC  PFRTAny  foidl_io_countnotto(PFRTAny,PFRTAny);
+
+size_t fileSizeInfo(PFRTAny);
+
 #endif
 
 // IO Handlers

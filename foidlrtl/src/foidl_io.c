@@ -44,10 +44,6 @@ constKeyword(byteKW,":byte");		//	For both read and write channel control
 constKeyword(charKW,":char"); 	//	ditto
 constKeyword(stringKW,":string"); //  ditto
 
-//	Forward declarations
-
-PFRTAny 	writeCout(PFRTAny);
-PFRTAny 	writeCoutNl(PFRTAny);
 
 struct chanFlags {
 	ft 	oflag;
@@ -154,7 +150,7 @@ static struct chanFlags setupChanFromDecl(PFRTAny decl) {
 	return flags;
 }
 
-static size_t fileSizeInfo(PFRTAny name) {
+size_t fileSizeInfo(PFRTAny name) {
 	#if _MSC_VER
 	struct _stat64 buffer;
 	int status = _stat64(name->value, &buffer);
@@ -540,15 +536,3 @@ PFRTAny foidl_io_quaf_bang(PFRTIOChannel chan) {
 	}
 }
 
-
-
-//	Console shortcuts used in RTL
-
-PFRTAny 	writeCout(PFRTAny el) {
-	return foidl_write_bang(cout,el);
-}
-
-PFRTAny 	writeCoutNl(PFRTAny el) {
-	foidl_write_bang(cout,el);
-	return foidl_write_bang(cout,nlchr);
-}

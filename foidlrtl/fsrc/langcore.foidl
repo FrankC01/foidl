@@ -101,6 +101,22 @@ func  gteq [x, y]
 	foidl_gteq?: x y
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; New Channel IO
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func opens! [args]
+	match get: args chan_type
+	| chan_file
+		foidl_open_file!:
+			get: args chan_target
+			getd: args chan_mode open_r
+			args
+	| :default nil
+
+func reads! [channel]
+	foidl_channel_read!: channel
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; IO functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -306,7 +322,7 @@ func reduced [arg]
 func extend [coll args]
 	foidl_extend: coll args
 
-func extendKV [coll k v]
+func extends [coll k v]
 	foidl_extendKV: coll k v
 
 func 	pop  [coll]

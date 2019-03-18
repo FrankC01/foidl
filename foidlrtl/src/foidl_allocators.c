@@ -121,6 +121,15 @@ PFRTAny allocStringWithCopyCnt(uint32_t cnt, char *p) {
 	return s;
 }
 
+PFRTAny allocStringWithCptr(char *p, long int cnt) {
+	PFRTAny 	s = (PFRTAny) foidl_xall(sizeof (struct FRTType));
+	s->fclass = scalar_class;
+	s->ftype  = string_type;
+	s->value  = (void *)p;
+	s->count  = (ft) cnt;
+	return s;
+}
+
 PFRTAny allocStringWithCopy(char *p) {
 	uint32_t plen = strlen(p);
 	char 	*newp = foidl_xall(plen+1);
@@ -167,6 +176,17 @@ PFRTAny allocGlobalCharType(int v) {
 	c->count  = 1;
 	c->value  = (void *) (ft) v;
 	return c;
+}
+
+// New IO Channel
+
+PFRTIOChannel2 allocFileChannel(PFRTAny name, PFRTAny mode) {
+	PFRTIOFileChannel fc = foidl_xall(sizeof(struct FRTIOFileChannel));
+	fc->fclass = io_class;
+	fc->ftype  = file_type;
+	fc->name   = name;
+	fc->mode   = mode;
+	return (PFRTIOChannel2) fc;
 }
 
 //	IO Channels
