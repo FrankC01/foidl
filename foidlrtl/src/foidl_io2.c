@@ -75,14 +75,12 @@ static FileStat count_to_nl(FILE *fptr) {
     FileStat ffs = {ftell(fptr),0,0,0,0};
     while((ch = fgetc(fptr)) != EOF) {
         if(ch == 0x0d || ch == 0x0a) {
-#ifdef _MSC_VER            
+#ifdef _MSC_VER
             ffs.skip = ffs.ahead=2;
 #else
             ffs.skip = ffs.ahead=1;
             if((ch=fgetc(fptr)) != EOF) {
-                printf("second 0x%04x\n", ch);                
                 if(ch == 0x0a || ch == 0x0d) {
-                    printf("0x%04x\n", ch);
                     ffs.skip = ffs.ahead=2;
                 }
                 else {
