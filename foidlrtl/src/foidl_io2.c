@@ -53,6 +53,9 @@ globalScalarConst(open_ab,byte_type,(void *) 0x7,1);
 globalScalarConst(open_ar,byte_type,(void *) 0x8,1);
 globalScalarConst(open_arb,byte_type,(void *) 0x9,1);
 
+globalScalarConst(eof,byte_type,(void *) 0xF,1);
+
+
 static char *stuff[] = {"r", "rb", "w", "wb","w+","wb+","a","ab","a+","ab+"};
 
 // For read rendering
@@ -100,12 +103,16 @@ static FileStat count_to_nl(FILE *fptr) {
 }
 
 static PFRTAny readline(FILE *fptr) {
+    PFRTAny reof = eof;
     FileStat ffs = count_to_nl(fptr);
-    fseek(fptr, 0 - (ffs.epos + ffs.ahead), SEEK_CUR);
-    char *s = foidl_xall(ffs.epos+1);
-    int x = fread(s,ffs.epos,1,fptr);
-    fseek(fptr, ffs.skip, SEEK_CUR);
-    return allocStringWithCptr(s,ffs.epos);
+    if(ffs.epos) {
+        fseek(fptr, 0 - (ffs.epos + ffs.ahead), SEEK_CUR);
+        char *s = foidl_xall(ffs.epos+1);
+        int x = fread(s,ffs.epos,1,fptr);
+        fseek(fptr, ffs.skip, SEEK_CUR);
+        reof = allocStringWithCptr(s,ffs.epos);
+    }
+    return reof;
 }
 
 // Opens and return channels

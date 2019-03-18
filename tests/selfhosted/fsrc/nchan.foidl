@@ -27,10 +27,19 @@ var cprp {
     chan_mode   open_r
 }
 
+func lines [chan]
+    let line [] reads!: chan
+    ?: =: line eof
+        nil
+        @(
+            printnl!: line
+            lines: chan
+        )
+
+
 func consume [fname]
     let chan [] opens!: extends: cprp chan_target fname
-    printnl!: reads!: chan
-    printnl!: reads!: chan
+    lines: chan
 
 func main [argv]
     consume: "data/csv_hdr.csv"

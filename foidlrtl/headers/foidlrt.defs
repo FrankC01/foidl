@@ -290,6 +290,7 @@ func    foidl_zipmap    [coll1 coll2]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 var chan_file   Type
+var eof         Type
 
 var open_r      Type
 var open_rb     Type
