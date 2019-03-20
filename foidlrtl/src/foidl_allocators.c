@@ -61,6 +61,7 @@ PFRTAny    allocAny(ft fclass, ft ftype, void *value) {
 	return s;
 }
 
+
 PFRTAny allocStringWithBufferSize (uint32_t cnt) {
 	PFRTAny 	s = (PFRTAny) foidl_xall(sizeof (struct FRTType));
 	char 		*newp = foidl_xall(cnt+1);

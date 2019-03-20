@@ -1031,14 +1031,15 @@ EXTERNC  PFRTAny  release_list_bang(PFRTAny);
 
 // IO
 #ifndef IO_IMPL
-EXTERNC 	PFRTAny  foidl_open_bang(PFRTAny);
-EXTERNC 	PFRTAny  foidl_write_bang(PFRTIOChannel,PFRTAny);
-EXTERNC 	PFRTAny  io_get(PFRTAny,PFRTAny);
-EXTERNC 	PFRTAny  foidl_io_count(PFRTAny);
-EXTERNC  PFRTAny  foidl_io_first(PFRTAny);
-EXTERNC  PFRTAny  foidl_io_second(PFRTAny);
-EXTERNC  PFRTAny  foidl_io_countto(PFRTAny,PFRTAny);
-EXTERNC  PFRTAny  foidl_io_countnotto(PFRTAny,PFRTAny);
+EXTERNC PFRTAny  foidl_fexists_qmark(PFRTAny);
+EXTERNC PFRTAny  foidl_open_bang(PFRTAny);
+EXTERNC PFRTAny  foidl_write_bang(PFRTIOChannel,PFRTAny);
+EXTERNC PFRTAny  io_get(PFRTAny,PFRTAny);
+EXTERNC PFRTAny  foidl_io_count(PFRTAny);
+EXTERNC PFRTAny  foidl_io_first(PFRTAny);
+EXTERNC PFRTAny  foidl_io_second(PFRTAny);
+EXTERNC PFRTAny  foidl_io_countto(PFRTAny,PFRTAny);
+EXTERNC PFRTAny  foidl_io_countnotto(PFRTAny,PFRTAny);
 
 size_t fileSizeInfo(PFRTAny);
 

@@ -721,6 +721,7 @@ static void io_scalarRawWriter(PFRTIOChannel chn, PFRTAny el) {
 				_write(chn->handle,rel->value->value,rel->count);
 			}
 			break;
+		case 	byte_type:
 		case 	character_type:
 			_write(chn->handle,&el->value,el->count);
 			break;

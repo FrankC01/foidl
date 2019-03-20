@@ -115,13 +115,60 @@ static PFRTAny readline(FILE *fptr) {
     return reof;
 }
 
+static PFRTAny readchar(FILE *fptr) {
+    int ch;
+    PFRTAny reof = eof;
+    if((ch=fgetc(fptr)) != EOF) {
+        reof = allocCharWithValue((ft) ch);
+    }
+    return reof;
+}
+
+static PFRTAny readbyte(FILE *fptr) {
+    int ch;
+    PFRTAny reof = eof;
+    if((ch=fgetc(fptr)) != EOF) {
+        reof = allocAny(scalar_class,byte_type,(void *)(ft)ch);
+    }
+    return reof;
+}
+
+static PFRTAny foidl_channel_readfile(PFRTIOFileChannel channel) {
+    int render = (int) channel->render->value;
+    FILE *fp = (FILE *)channel->value;
+    PFRTAny feof = eof;
+    switch(render) {
+        case    0:
+            feof = readbyte(fp);
+            break;
+        case    1:
+            feof = readchar(fp);
+            break;
+        case    2:
+            feof = readline(fp);
+            break;
+        case    3:
+            unknown_handler();
+            break;
+        default:
+            unknown_handler();
+            break;
+
+    }
+    return feof;
+}
+
 // Opens and return channels
+// File
 
 PFRTAny foidl_open_file_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
     PFRTAny fc2 = nil; //(PFRTIOFileChannel) allocFileChannel(name,mode);
     FILE    *fptr;
     ft      imode = (ft) mode->value;
     if(imode >= 0 && imode <= 9) {
+        if((imode == 0 || imode == 1) && (foidl_fexists_qmark(name) == false)) {
+            return fc2;
+        }
         fptr = fopen(name->value, stuff[imode]);
         if(fptr == NULL)
             unknown_handler();
@@ -137,9 +184,7 @@ PFRTAny foidl_open_file_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
     return fc2;
 }
 
-static PFRTAny foidl_channel_readfile(PFRTIOFileChannel channel) {
-    return readline((FILE *)channel->value);
-}
+// Reads from channel
 
 PFRTAny foidl_channel_read_bang(PFRTAny channel) {
     PFRTAny res = nil;
