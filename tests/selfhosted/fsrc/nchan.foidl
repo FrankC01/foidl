@@ -44,6 +44,7 @@ func consume [fname]
             print!: fname printnl!: " does not exist for reading"
         )
         lines: chan
+        printnl!: closes!: chan
 
 func main [argv]
     consume: "data/csv_hdr.csv"

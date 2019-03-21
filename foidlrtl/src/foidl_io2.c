@@ -40,6 +40,7 @@ constKeyword(chan_render,":render");
 constKeyword(chan_mode,":mode");
 
 globalScalarConst(chan_file,byte_type,(void *) 0,1);
+globalScalarConst(chan_http,byte_type,(void *) 1,1);
 
 // For file disposition
 globalScalarConst(open_r,byte_type,(void *) 0x0,1);
@@ -158,6 +159,26 @@ static PFRTAny foidl_channel_readfile(PFRTIOFileChannel channel) {
     return feof;
 }
 
+PFRTAny foidl_channel_read_bang(PFRTAny channel) {
+    PFRTAny res = nil;
+    if(channel->ftype == file_type)
+        res = foidl_channel_readfile((PFRTIOFileChannel) channel);
+    else
+        unknown_handler();
+    return res;
+}
+
+// Writes to channel
+
+PFRTAny foidl_channel_write_bang(PFRTAny channel) {
+    PFRTAny res = nil;
+    if(channel->ftype == file_type)
+        ;
+    else
+        ;
+    return res;
+}
+
 // Opens and return channels
 // File
 
@@ -184,13 +205,28 @@ PFRTAny foidl_open_file_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
     return fc2;
 }
 
-// Reads from channel
+// Closes file
 
-PFRTAny foidl_channel_read_bang(PFRTAny channel) {
-    PFRTAny res = nil;
+static PFRTAny close_file(PFRTIOFileChannel fc) {
+    PFRTAny res = true;
+    if( fclose((FILE *)fc->value) == EOF) {
+        res = false;
+    }
+    fc->ftype = closed_type;
+    return res;
+}
+
+// Closes channel
+
+PFRTAny foidl_channel_close_bang(PFRTAny channel) {
+    PFRTAny res = true;
+    if(channel->ftype == closed_type)
+        return true;
+
     if(channel->ftype == file_type)
-        res = foidl_channel_readfile((PFRTIOFileChannel) channel);
+        res = close_file((PFRTIOFileChannel) channel);
     else
         unknown_handler();
     return res;
 }
+

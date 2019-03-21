@@ -114,7 +114,19 @@ func opens! [args]
 	| :default nil
 
 func reads! [channel]
-	foidl_channel_read!: channel
+	?: io?: channel
+		foidl_channel_read!: channel
+		nil
+
+func writes! [channel data]
+	?: io?: channel
+		foidl_channel_write!: channel data
+		nil
+
+func closes! [channel]
+	?: io?: channel
+		foidl_channel_close!: channel
+		true
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; IO functions

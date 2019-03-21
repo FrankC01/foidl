@@ -315,6 +315,8 @@ var chan_mode   Type
 
 func    foidl_open_file!        [name mode args]
 func    foidl_channel_read!     [channel]
+func    foidl_channel_write!    [channel data]
+func    foidl_channel_close!    [channel]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; IO
