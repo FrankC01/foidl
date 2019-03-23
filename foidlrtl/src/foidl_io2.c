@@ -28,8 +28,16 @@
 #define IO_IMPL2
 #include    <foidlrt.h>
 #include    <stdio.h>
-#ifdef _MSC_VER
+
+#ifndef _MSC_VER
+#include <unistd.h>
 #else
+#include <io.h>
+#endif
+
+#ifndef _MSC_VER
+#define _read read
+#define _write write
 #endif
 
 // Common global flags
@@ -168,14 +176,63 @@ PFRTAny foidl_channel_read_bang(PFRTAny channel) {
     return res;
 }
 
+static void io_file_scalar_writer(int chn, PFRTAny el) {
+    switch(el->ftype) {
+        case    keyword_type:
+        case    string_type:
+            _write(chn,el->value,el->count);
+            break;
+        case    regex_type:
+            {
+                PFRTRegEx rel = (PFRTRegEx)el;
+                _write(chn,rel->value->value,rel->count);
+            }
+            break;
+        case    byte_type:
+        case    character_type:
+            _write(chn,&el->value,el->count);
+            break;
+        case    nil_type:
+            _write(chn,nilstr,3);
+            break;
+        case    end_type:
+            _write(chn,endstr,3);
+            break;
+        case    boolean_type:
+            if((ft) el->value == 0)
+                _write(chn,falsestr,5);
+            else
+                _write(chn,truestr,4);
+            break;
+        case    number_type:
+            {
+                char *tmp = number_tostring(el);
+                _write(chn,tmp,strlen(tmp));
+                foidl_xdel(tmp);
+            }
+            break;
+        default:
+            unknown_handler();
+            break;
+    }
+
+}
+
 // Writes to channel
 
-PFRTAny foidl_channel_write_bang(PFRTAny channel) {
+PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el) {
     PFRTAny res = nil;
-    if(channel->ftype == file_type)
+    if(channel->ftype == file_type) {
+        if(el->fclass == scalar_class) {
+            io_file_scalar_writer(fileno(channel->value), el);
+        }
+        else {
+            unknown_handler();
+        }
+    }
+    else {
         ;
-    else
-        ;
+    }
     return res;
 }
 
@@ -186,6 +243,10 @@ PFRTAny foidl_open_file_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
     PFRTAny fc2 = nil; //(PFRTIOFileChannel) allocFileChannel(name,mode);
     FILE    *fptr;
     ft      imode = (ft) mode->value;
+    if( name == nil || mode == nil ) {
+        printf("Exception: Requires :target and :mode to open channel\n");
+        foidl_error_exit(-1);
+    }
     if(imode >= 0 && imode <= 9) {
         if((imode == 0 || imode == 1) && (foidl_fexists_qmark(name) == false)) {
             return fc2;
@@ -195,7 +256,10 @@ PFRTAny foidl_open_file_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
             unknown_handler();
         PFRTIOFileChannel fc1 = (PFRTIOFileChannel) allocFileChannel(name,mode);
         fc1->value = (void *) fptr;
-        fc1->render = foidl_getd(args, chan_render, render_line);
+        // If reading, check for render statement
+        if( imode == 0 || imode == 1) {
+            fc1->render = foidl_getd(args, chan_render, render_line);
+        }
         fc2 = (PFRTAny) fc1;
     }
     else {

@@ -109,7 +109,7 @@ func opens! [args]
 	| chan_file
 		foidl_open_file!:
 			get: args chan_target
-			getd: args chan_mode open_r
+			get: args chan_mode
 			args
 	| :default nil
 

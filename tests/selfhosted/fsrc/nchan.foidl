@@ -46,5 +46,6 @@ func consume [fname]
         lines: chan
         printnl!: closes!: chan
 
+
 func main [argv]
     consume: "data/csv_hdr.csv"

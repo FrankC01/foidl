@@ -25,7 +25,7 @@ constString(cerrstr,"cerr");
 constString(nilstr,"nil");
 constString(truestr,"true");
 constString(falsestr,"false");
-
+constString(endstr,"end");
 
 // Character types
 
