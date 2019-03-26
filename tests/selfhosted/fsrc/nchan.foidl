@@ -27,6 +27,13 @@ var cprp {
     chan_mode   open_r
 }
 
+var cpwp {
+    chan_target nil
+    chan_type   chan_file
+    chan_render render_line
+    chan_mode   open_w
+}
+
 func lines [chan]
     let line [] reads!: chan
     ?: =: line eof
@@ -46,6 +53,15 @@ func consume [fname]
         lines: chan
         printnl!: closes!: chan
 
+func writedata[fname]
+    let chan [] opens!: extends: cpwp chan_target fname
+    writes!: chan "This is a foo bar `n"
+    writes!: chan "This is too `n"
+    writes!: chan :fungus
+    writes!: chan 'c'
+    writes!: chan open_rb
+    closes!: chan
 
 func main [argv]
     consume: "data/csv_hdr.csv"
+    writedata: "fname.txt"

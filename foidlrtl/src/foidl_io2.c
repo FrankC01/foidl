@@ -28,6 +28,7 @@
 #define IO_IMPL2
 #include    <foidlrt.h>
 #include    <stdio.h>
+#include    <stdlib.h>
 
 #ifndef _MSC_VER
 #include <unistd.h>
@@ -74,6 +75,7 @@ globalScalarConst(render_char,byte_type,(void *) 1,1);
 globalScalarConst(render_line,byte_type,(void *) 2,1);
 globalScalarConst(render_file,byte_type,(void *) 3,1);
 
+// Line reader to nl information structure
 typedef struct _ffile_st {
     long int spos;
     long int epos;
@@ -81,6 +83,8 @@ typedef struct _ffile_st {
     int      ahead;
     int      eof;
 } FileStat;
+
+// Counts characters to nl or EOF
 
 static FileStat count_to_nl(FILE *fptr) {
     int ch;
@@ -111,6 +115,9 @@ static FileStat count_to_nl(FILE *fptr) {
     return ffs;
 }
 
+
+// Read a line into a string
+
 static PFRTAny readline(FILE *fptr) {
     PFRTAny reof = eof;
     FileStat ffs = count_to_nl(fptr);
@@ -124,6 +131,8 @@ static PFRTAny readline(FILE *fptr) {
     return reof;
 }
 
+// Read a single character
+
 static PFRTAny readchar(FILE *fptr) {
     int ch;
     PFRTAny reof = eof;
@@ -133,6 +142,8 @@ static PFRTAny readchar(FILE *fptr) {
     return reof;
 }
 
+// Read a single byte
+
 static PFRTAny readbyte(FILE *fptr) {
     int ch;
     PFRTAny reof = eof;
@@ -141,6 +152,8 @@ static PFRTAny readbyte(FILE *fptr) {
     }
     return reof;
 }
+
+// General read-file function
 
 static PFRTAny foidl_channel_readfile(PFRTIOFileChannel channel) {
     int render = (int) channel->render->value;
@@ -167,6 +180,8 @@ static PFRTAny foidl_channel_readfile(PFRTIOFileChannel channel) {
     return feof;
 }
 
+// Read entry point
+
 PFRTAny foidl_channel_read_bang(PFRTAny channel) {
     PFRTAny res = nil;
     if(channel->ftype == file_type)
@@ -176,38 +191,46 @@ PFRTAny foidl_channel_read_bang(PFRTAny channel) {
     return res;
 }
 
-static void io_file_scalar_writer(int chn, PFRTAny el) {
+// Scalar writer
+
+static void io_file_scalar_txt_writer(FILE *chn, PFRTAny el) {
     switch(el->ftype) {
         case    keyword_type:
         case    string_type:
-            _write(chn,el->value,el->count);
+            fprintf(chn,"%s", el->value);
             break;
         case    regex_type:
             {
                 PFRTRegEx rel = (PFRTRegEx)el;
-                _write(chn,rel->value->value,rel->count);
+                fprintf(chn,"%s", rel->value->value);
             }
             break;
-        case    byte_type:
         case    character_type:
-            _write(chn,&el->value,el->count);
+            fprintf(chn, "%c", (int) el->value );
+            break;
+        case    byte_type:
+            {
+                char buffer[5];
+                snprintf(buffer, 5, "%d", (int)el->value);
+                fprintf(chn, "%s", buffer);
+            }
             break;
         case    nil_type:
-            _write(chn,nilstr,3);
+            fprintf(chn,"%s", nilstr->value);
             break;
         case    end_type:
-            _write(chn,endstr,3);
+            fprintf(chn,"%s", endstr->value);
             break;
         case    boolean_type:
             if((ft) el->value == 0)
-                _write(chn,falsestr,5);
+                fprintf(chn,"%s", falsestr->value);
             else
-                _write(chn,truestr,4);
+                fprintf(chn,"%s", truestr->value);
             break;
         case    number_type:
             {
                 char *tmp = number_tostring(el);
-                _write(chn,tmp,strlen(tmp));
+                fprintf(chn,"%s", tmp);
                 foidl_xdel(tmp);
             }
             break;
@@ -218,13 +241,13 @@ static void io_file_scalar_writer(int chn, PFRTAny el) {
 
 }
 
-// Writes to channel
+// Writes entry point
 
 PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el) {
     PFRTAny res = nil;
     if(channel->ftype == file_type) {
         if(el->fclass == scalar_class) {
-            io_file_scalar_writer(fileno(channel->value), el);
+            io_file_scalar_txt_writer(channel->value, el);
         }
         else {
             unknown_handler();
@@ -236,8 +259,7 @@ PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el) {
     return res;
 }
 
-// Opens and return channels
-// File
+// Channel open entry point
 
 PFRTAny foidl_open_file_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
     PFRTAny fc2 = nil; //(PFRTIOFileChannel) allocFileChannel(name,mode);
@@ -269,7 +291,7 @@ PFRTAny foidl_open_file_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
     return fc2;
 }
 
-// Closes file
+// Close file
 
 static PFRTAny close_file(PFRTIOFileChannel fc) {
     PFRTAny res = true;
@@ -280,7 +302,7 @@ static PFRTAny close_file(PFRTIOFileChannel fc) {
     return res;
 }
 
-// Closes channel
+// Close channel entry point
 
 PFRTAny foidl_channel_close_bang(PFRTAny channel) {
     PFRTAny res = true;
