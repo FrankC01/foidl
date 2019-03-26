@@ -26,6 +26,10 @@ constString(nilstr,"nil");
 constString(truestr,"true");
 constString(falsestr,"false");
 constString(endstr,"end");
+constString(fnstr,"function reference");
+constString(chanstr,"channel reference");
+constString(infserstr,"infinite series");
+constString(seriesstr,"serries reference");
 
 // Character types
 

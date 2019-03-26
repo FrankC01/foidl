@@ -384,6 +384,25 @@ PFRTAny list_print(PFRTIOChannel chn,PFRTAny list) {
 	return nil;
 }
 
+PFRTAny write_list(PFRTAny channel, PFRTAny list, channel_writer writer) {
+	PFRTIterator li = iteratorFor(list);
+	PFRTAny entry = nil;
+	writer(channel,lbracket);
+	ft 		 mcount=((PFRTList) list)->count;
+	if(mcount > 0) {
+		uint32_t count=0;
+		--mcount;
+		while((entry = iteratorNext(li)) != end) {
+			writer(channel,entry);
+			if(mcount > count++) writer(channel,comma);
+		}
+		foidl_xdel(li);
+	}
+
+	writer(channel,rbracket);
+	return nil;
+}
+
 PFRTAny coerce_to_list(PFRTAny stemplate, PFRTAny src) {
 	unknown_handler();
 	return src;

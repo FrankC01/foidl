@@ -57,7 +57,9 @@ func writedata[fname]
     let chan [] opens!: extends: cpwp chan_target fname
     writes!: chan "This is a foo bar `n"
     writes!: chan "This is too `n"
-    writes!: chan :fungus
+    writes!: chan nlchr
+    writes!: chan [1 2 3 4]
+    writes!: chan nlchr
     writes!: chan 'c'
     writes!: chan open_rb
     closes!: chan

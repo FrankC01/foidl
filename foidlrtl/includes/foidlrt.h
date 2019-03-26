@@ -543,6 +543,7 @@ typedef PFRTAny (*itrNext)(PFRTIterator);
 typedef PFRTAny (*typeGetter)(PFRTAny,uint32_t);
 typedef PFRTAny (*io_readFuncPtr)(PFRTIOChannel);
 typedef PFRTAny (*io_writeFuncPtr)(PFRTIOChannel, PFRTAny);
+typedef PFRTAny (*channel_writer)(PFRTAny, PFRTAny);
 typedef PFRTAny (*invoke_funcptr)(PFRTFuncRef2);
 typedef PFRTAny (*_d0)();
 typedef PFRTAny (*_d1)(PFRTAny);
@@ -1027,6 +1028,7 @@ EXTERNC  PFRTAny  list_last(PFRTAny);
 EXTERNC 	PFRTAny  list_print(PFRTIOChannel,PFRTAny);
 EXTERNC  PFRTAny  empty_list_bang(PFRTAny);
 EXTERNC  PFRTAny  release_list_bang(PFRTAny);
+EXTERNC  PFRTAny    write_list(PFRTAny, PFRTAny, channel_writer);
 #endif
 
 // IO

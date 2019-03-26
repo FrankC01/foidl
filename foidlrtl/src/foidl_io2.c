@@ -241,6 +241,30 @@ static void io_file_scalar_txt_writer(FILE *chn, PFRTAny el) {
 
 }
 
+PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el);
+
+static PFRTAny io_file_compound_txt_writer(PFRTAny channel, PFRTAny el) {
+    switch(el->ftype) {
+        case    vector2_type:
+            break;
+        case    list2_type:
+            write_list(channel, el, foidl_channel_write_bang);
+            break;
+        case    set2_type:
+            break;
+        case    map2_type:
+            break;
+        case    series_type:
+            break;
+        case    mapentry_type:
+            break;
+        default:
+            unknown_handler();
+            break;
+    }
+    return nil;
+}
+
 // Writes entry point
 
 PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el) {
@@ -248,6 +272,9 @@ PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el) {
     if(channel->ftype == file_type) {
         if(el->fclass == scalar_class) {
             io_file_scalar_txt_writer(channel->value, el);
+        }
+        else if(el->fclass == collection_class) {
+            io_file_compound_txt_writer(channel, el);
         }
         else {
             unknown_handler();
