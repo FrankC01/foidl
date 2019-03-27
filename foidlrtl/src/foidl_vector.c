@@ -530,6 +530,26 @@ PFRTAny vector_print(PFRTIOChannel chn,PFRTAny v) {
 	return nil;
 }
 
+PFRTAny write_vector(PFRTAny channel, PFRTAny vector, channel_writer writer) {
+	writer(channel,meta);
+	writer(channel,lbracket);
+	ft 			max = ((PFRTVector) vector)->count;
+	if(max > 0) {
+		PFRTAny 		res = nil;
+		PFRTIterator	vi = iteratorFor(vector);
+		ft 				i = 0;
+		--max;
+		while((res = iteratorNext(vi)) != end) {
+			writer(channel,res);
+			if(max > i++) writer(channel,comma);
+		}
+		foidl_xdel(vi);
+	}
+	writer(channel,rbracket);
+	return nil;
+}
+
+
 PFRTAny coerce_to_vector(PFRTAny mtemplate, PFRTAny src) {
 	unknown_handler();
 	return src;

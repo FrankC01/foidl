@@ -800,6 +800,27 @@ PFRTAny map_print(PFRTIOChannel chn,PFRTAny map) {
 	return nil;
 }
 
+PFRTAny write_map(PFRTAny chn, PFRTAny map, channel_writer writer) {
+	PFRTIterator mi = iteratorFor(map);
+	PFRTAny entry;
+	ft 		 mcount=((PFRTMap) map)->count;
+	writer(chn,lbrace);
+	if(mcount > 0) {
+		uint32_t count=0;
+		--mcount;
+		while ((entry = iteratorNext(mi)) != end) {
+			PFRTMapEntry e = (PFRTMapEntry) entry;
+			writer(chn,e->key);
+			writer(chn,spchr);
+			writer(chn,e->value);
+			if(mcount > count++) writer(chn,comma);
+			foidl_xdel(e);
+		}
+		foidl_xdel(mi);
+	}
+	writer(chn,rbrace);
+	return nil;
+}
 
 PFRTAny coerce_to_map(PFRTAny mtemplate, PFRTAny src) {
 	unknown_handler();

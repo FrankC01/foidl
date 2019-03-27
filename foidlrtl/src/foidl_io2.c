@@ -246,15 +246,22 @@ PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el);
 static PFRTAny io_file_compound_txt_writer(PFRTAny channel, PFRTAny el) {
     switch(el->ftype) {
         case    vector2_type:
+            write_vector(channel, el, foidl_channel_write_bang);
             break;
         case    list2_type:
             write_list(channel, el, foidl_channel_write_bang);
             break;
         case    set2_type:
+            write_set(channel, el, foidl_channel_write_bang);
             break;
         case    map2_type:
+            write_map(channel, el, foidl_channel_write_bang);
             break;
         case    series_type:
+            if((PFRTSeries) el == infinite)
+                io_file_scalar_txt_writer(channel, infserstr);
+            else
+                io_file_scalar_txt_writer(channel, seriesstr);
             break;
         case    mapentry_type:
             break;

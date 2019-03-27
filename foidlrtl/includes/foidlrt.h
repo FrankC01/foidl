@@ -965,6 +965,7 @@ EXTERNC  PFRTAny	vector_dropLast_bang(PFRTAny);
 EXTERNC  PFRTAny vector_droplast(PFRTAny);
 EXTERNC 	PFRTAny vectorGetDefault(PFRTAny v, uint32_t index);
 EXTERNC 	PFRTAny vector_print(PFRTIOChannel,PFRTAny);
+EXTERNC  PFRTAny    write_vector(PFRTAny, PFRTAny, channel_writer);
 #endif
 
 //	Set function
@@ -982,6 +983,7 @@ EXTERNC PFRTBitmapNode set_getNode(PFRTBitmapNode, uint32_t);
 EXTERNC PFRTAny 	set_get_default(PFRTAny, PFRTAny,PFRTAny);
 EXTERNC PFRTAny 	setGetDefault(PFRTAny node, uint32_t index);
 EXTERNC PFRTAny 	set_print(PFRTIOChannel,PFRTAny);
+EXTERNC  PFRTAny    write_set(PFRTAny, PFRTAny, channel_writer);
 #endif
 
 //	Map functions
@@ -1000,6 +1002,7 @@ EXTERNC PFRTAny  map_remove(PFRTAny, PFRTAny);
 EXTERNC PFRTAny  map_contains_qmark(PFRTAny, PFRTAny);
 EXTERNC PFRTAny 	mapGetDefault(PFRTAny node, uint32_t index);
 EXTERNC PFRTAny 	map_print(PFRTIOChannel,PFRTAny);
+EXTERNC  PFRTAny    write_map(PFRTAny, PFRTAny, channel_writer);
 #endif
 
 // List
