@@ -30,16 +30,6 @@
 #include    <stdio.h>
 #include    <stdlib.h>
 
-#ifndef _MSC_VER
-#include <unistd.h>
-#else
-#include <io.h>
-#endif
-
-#ifndef _MSC_VER
-#define _read read
-#define _write write
-#endif
 
 // Common global flags
 
@@ -74,6 +64,33 @@ globalScalarConst(render_byte,byte_type,(void *) 0,1);
 globalScalarConst(render_char,byte_type,(void *) 1,1);
 globalScalarConst(render_line,byte_type,(void *) 2,1);
 globalScalarConst(render_file,byte_type,(void *) 3,1);
+
+// Utility
+
+static PFRTAny is_file_read(PFRTIOFileChannel channel) {
+    switch((ft) channel->mode->value) {
+        case 0:
+        case 1:
+        case 4:
+        case 5:
+        case 8:
+        case 9:
+            return true;
+    }
+    return false;
+}
+
+static PFRTAny is_file_text(PFRTIOFileChannel channel) {
+    switch((ft) channel->mode->value) {
+        case 0:
+        case 2:
+        case 4:
+        case 6:
+        case 8:
+            return true;
+    }
+    return false;
+}
 
 // Line reader to nl information structure
 typedef struct _ffile_st {
@@ -118,7 +135,7 @@ static FileStat count_to_nl(FILE *fptr) {
 
 // Read a line into a string
 
-static PFRTAny readline(FILE *fptr) {
+static PFRTAny read_txt_line(FILE *fptr) {
     PFRTAny reof = eof;
     FileStat ffs = count_to_nl(fptr);
     if(ffs.epos) {
@@ -131,9 +148,13 @@ static PFRTAny readline(FILE *fptr) {
     return reof;
 }
 
+static PFRTAny read_bin_line(FILE *fptr) {
+    return eof;
+}
+
 // Read a single character
 
-static PFRTAny readchar(FILE *fptr) {
+static PFRTAny read_txt_char(FILE *fptr) {
     int ch;
     PFRTAny reof = eof;
     if((ch=fgetc(fptr)) != EOF) {
@@ -142,9 +163,13 @@ static PFRTAny readchar(FILE *fptr) {
     return reof;
 }
 
+static PFRTAny read_bin_char(FILE *fptr) {
+    return eof;
+}
+
 // Read a single byte
 
-static PFRTAny readbyte(FILE *fptr) {
+static PFRTAny read_txt_byte(FILE *fptr) {
     int ch;
     PFRTAny reof = eof;
     if((ch=fgetc(fptr)) != EOF) {
@@ -153,21 +178,23 @@ static PFRTAny readbyte(FILE *fptr) {
     return reof;
 }
 
-// General read-file function
+static PFRTAny read_bin_byte(FILE *fptr) {
+    return eof;
+}
 
-static PFRTAny foidl_channel_readfile(PFRTIOFileChannel channel) {
+static PFRTAny render_txt_read(PFRTIOFileChannel channel) {
     int render = (int) channel->render->value;
     FILE *fp = (FILE *)channel->value;
     PFRTAny feof = eof;
     switch(render) {
         case    0:
-            feof = readbyte(fp);
+            feof = read_txt_byte(fp);
             break;
         case    1:
-            feof = readchar(fp);
+            feof = read_txt_char(fp);
             break;
         case    2:
-            feof = readline(fp);
+            feof = read_txt_line(fp);
             break;
         case    3:
             unknown_handler();
@@ -180,14 +207,53 @@ static PFRTAny foidl_channel_readfile(PFRTIOFileChannel channel) {
     return feof;
 }
 
+static PFRTAny render_bin_read(PFRTIOFileChannel channel) {
+    int render = (int) channel->render->value;
+    FILE *fp = (FILE *)channel->value;
+    PFRTAny feof = eof;
+    switch(render) {
+        case    0:
+            feof = read_bin_byte(fp);
+            break;
+        case    1:
+            feof = read_bin_char(fp);
+            break;
+        case    2:
+            feof = read_bin_line(fp);
+            break;
+        case    3:
+            unknown_handler();
+            break;
+        default:
+            unknown_handler();
+            break;
+
+    }
+    return feof;
+}
+// General read-file function
+
+static PFRTAny foidl_channel_readfile(PFRTIOFileChannel channel) {
+    if( is_file_text(channel) ) {
+        return render_txt_read(channel);
+    }
+    else {
+        return render_bin_read(channel);
+    }
+    return eof;
+}
+
 // Read entry point
 
 PFRTAny foidl_channel_read_bang(PFRTAny channel) {
     PFRTAny res = nil;
-    if(channel->ftype == file_type)
-        res = foidl_channel_readfile((PFRTIOFileChannel) channel);
-    else
+    PFRTIOFileChannel chan = (PFRTIOFileChannel) channel;
+    if(chan->ftype == file_type) {
+        res = foidl_channel_readfile(chan);
+    }
+    else {
         unknown_handler();
+    }
     return res;
 }
 
@@ -259,17 +325,34 @@ static PFRTAny io_file_compound_txt_writer(PFRTAny channel, PFRTAny el) {
             break;
         case    series_type:
             if((PFRTSeries) el == infinite)
-                io_file_scalar_txt_writer(channel, infserstr);
+                io_file_scalar_txt_writer(channel->value, infserstr);
             else
-                io_file_scalar_txt_writer(channel, seriesstr);
+                io_file_scalar_txt_writer(channel->value, seriesstr);
             break;
         case    mapentry_type:
+            {
+                io_file_scalar_txt_writer(channel->value,lbracket);
+                foidl_channel_write_bang(channel,((PFRTMapEntry)el)->key);
+                io_file_scalar_txt_writer(channel->value,spchr);
+                foidl_channel_write_bang(channel,((PFRTMapEntry)el)->value);
+                io_file_scalar_txt_writer(channel->value,rbracket);
+            }
             break;
         default:
             unknown_handler();
             break;
     }
     return nil;
+}
+
+static PFRTAny foidl_channel_writefile(PFRTIOFileChannel channel) {
+    if( is_file_text(channel) ) {
+        //return render_txt_read(channel);
+    }
+    else {
+        //return render_bin_read(channel);
+    }
+    return eof;
 }
 
 // Writes entry point

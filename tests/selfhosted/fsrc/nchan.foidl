@@ -55,6 +55,7 @@ func consume [fname]
 
 func writedata[fname]
     let chan [] opens!: extends: cpwp chan_target fname
+    let imap [] {"foo" "bar" :key :value}
     writes!: chan "This is a foo bar `n"
     writes!: chan "This is too `n"
     writes!: chan [1 2 3 4]
@@ -63,8 +64,16 @@ func writedata[fname]
     writes!: chan nlchr
     writes!: chan #{10 11 10 9}
     writes!: chan nlchr
-    writes!: chan {"foo" "bar" :key :value}
+    writes!: chan imap
     writes!: chan nlchr
+    fold:
+        ^[a b]
+            @(
+                writes!: a b
+                writes!: a nlchr
+                a
+            )
+        chan imap
     writes!: chan 'c'
     writes!: chan nlchr
     writes!: chan open_rb

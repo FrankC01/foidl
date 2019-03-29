@@ -697,7 +697,7 @@ EXTERNC PFRTAny 	zero, one,two,three,four,five,six,seven,eight;
 EXTERNC PFRTAny 	nine,ten,eleven,twelve,thirteen,fourteen,fifteen,sixteen;
 EXTERNC PFRTAny 	empty_string, space_string;
 
-EXTERNC PFRTAny 	nilstr, truestr, falsestr, endstr;
+EXTERNC PFRTAny 	nilstr, truestr, falsestr, endstr, infserstr, seriesstr;
 #endif
 
 #ifndef TYPE_IMPL
