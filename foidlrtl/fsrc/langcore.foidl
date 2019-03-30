@@ -450,11 +450,8 @@ func nl? [val]
 func tabOrSpace? [val]
 	get: tbspdelim val
 
-func digit? [val]
-	getd: digits val false
-
-;func byte? [x]
-;	foidl_byte?: x
+func byte? [x]
+	foidl_byte?: x
 
 func char? [x]
 	foidl_char?: x

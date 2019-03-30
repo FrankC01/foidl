@@ -345,9 +345,20 @@ static PFRTAny io_file_compound_txt_writer(PFRTAny channel, PFRTAny el) {
     return nil;
 }
 
-static PFRTAny foidl_channel_writefile(PFRTIOFileChannel channel) {
-    if( is_file_text(channel) ) {
+// Write file
+
+static PFRTAny foidl_channel_writefile(PFRTAny channel, PFRTAny el) {
+    if( is_file_text((PFRTIOFileChannel)channel) ) {
         //return render_txt_read(channel);
+        if(el->fclass == scalar_class) {
+            io_file_scalar_txt_writer(channel->value, el);
+        }
+        else if(el->fclass == collection_class) {
+            io_file_compound_txt_writer(channel, el);
+        }
+        else {
+            unknown_handler();
+        }
     }
     else {
         //return render_bin_read(channel);
@@ -360,14 +371,8 @@ static PFRTAny foidl_channel_writefile(PFRTIOFileChannel channel) {
 PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el) {
     PFRTAny res = nil;
     if(channel->ftype == file_type) {
-        if(el->fclass == scalar_class) {
-            io_file_scalar_txt_writer(channel->value, el);
-        }
-        else if(el->fclass == collection_class) {
-            io_file_compound_txt_writer(channel, el);
-        }
-        else {
-            unknown_handler();
+        if(is_file_read((PFRTIOFileChannel)channel) == false) {
+            foidl_channel_writefile(channel, el);
         }
     }
     else {

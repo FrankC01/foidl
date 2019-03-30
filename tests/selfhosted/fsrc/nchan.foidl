@@ -43,7 +43,6 @@ func lines [chan]
             lines: chan
         )
 
-
 func consume [fname]
     let chan [] opens!: extends: cprp chan_target fname
     ?: nil?: chan
@@ -80,5 +79,6 @@ func writedata[fname]
     closes!: chan
 
 func main [argv]
+    printnl!: chr0
     consume: "data/csv_hdr.csv"
     writedata: "fname.txt"

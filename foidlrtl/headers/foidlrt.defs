@@ -105,8 +105,8 @@ var meta	 Type 	;	#
 var prchr 	 Type 	; 	.
 
 var whitespace		Type
-var boundarySet 	Type
-var boundarySetLite Type
+;var boundarySet 	Type
+;var boundarySetLite Type
 
 var cin 	Type
 var cout 	Type

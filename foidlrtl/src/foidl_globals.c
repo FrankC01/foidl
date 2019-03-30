@@ -33,15 +33,25 @@ constString(seriesstr,"serries reference");
 
 // Character types
 
+globalScalarConst(chr0,character_type,(void *) 0x30,1);
+globalScalarConst(chr1,character_type,(void *) 0x31,1);
+globalScalarConst(chr2,character_type,(void *) 0x32,1);
+globalScalarConst(chr3,character_type,(void *) 0x33,1);
+globalScalarConst(chr4,character_type,(void *) 0x34,1);
+globalScalarConst(chr5,character_type,(void *) 0x35,1);
+globalScalarConst(chr6,character_type,(void *) 0x36,1);
+globalScalarConst(chr7,character_type,(void *) 0x37,1);
+globalScalarConst(chr8,character_type,(void *) 0x38,1);
+globalScalarConst(chr9,character_type,(void *) 0x39,1);
+
+
 PFRTAny	lparen,rparen,lbracket,rbracket,langle,rangle,comma,lbrace,rbrace;
 PFRTAny meta,atchr,pctchr,tildchr,prchr;
 PFRTAny tbchr,nlchr,crchr,spchr;
 PFRTAny semichr,colonchr,sqchr,dqchr,eschr,exchr, carchr,qmchr,orchr;
 PFRTAny eqchr, tmchr, addchr, subchr, divchr;
-PFRTAny chr0, chr1, chr2, chr3, chr4, chr5, chr6, chr7, chr8, chr9;
 PFRTAny boundarySet;
 PFRTAny boundarySetLite;
-PFRTAny digits;
 PFRTAny whitespace;
 
 PFRTAny zero,one,two,three,four,five,six,seven,eight;
@@ -60,21 +70,9 @@ void foidl_rtl_init_globals() {
 
 	//	Setup some character sets
 
-	digits = foidl_set_inst_bang();
 	whitespace = foidl_set_inst_bang();
 	boundarySet = foidl_set_inst_bang();
 	boundarySetLite = foidl_set_inst_bang();
-
-	gencharToSet(digits,chr0,'0');
-	gencharToSet(digits,chr1,'1');
-	gencharToSet(digits,chr2,'2');
-	gencharToSet(digits,chr3,'3');
-	gencharToSet(digits,chr4,'4');
-	gencharToSet(digits,chr5,'5');
-	gencharToSet(digits,chr6,'6');
-	gencharToSet(digits,chr7,'7');
-	gencharToSet(digits,chr8,'8');
-	gencharToSet(digits,chr9,'9');
 
 	gencharToSet(boundarySet, lbracket,'[');
 	gencharToSet(boundarySet, rbracket,']');
