@@ -40,12 +40,12 @@ var selfhost_comment ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Write out the top comment block
 func :private write_comment_block [ochan]
-    write!: ochan selfhost_comment
+    writes!: ochan selfhost_comment
 
 ; Write out top comment block followed by module statement
 func :private write_comment_block_and_module [ochan modname]
     write_comment_block: ochan
-    write!: ochan format: "module {}`n" [modname]
+    writes!: ochan format: "module {}`n" [modname]
 
 ; Function: module_name_validation
 ; Description: Takes top entry from token list and validates
@@ -74,8 +74,8 @@ func :private token_print [state]
     fold:
         ^[acc el]
             @(
-                write!: cout el
-                write!: cout nlchr
+                writes!: cout el
+                writes!: cout nlchr
             )
         nil get: state :tokens
     state
@@ -103,11 +103,11 @@ func :private setup_output [state]
     let output [] get: get: state :cmap :output
     ?: output
         map_extend!: state :outchannel
-                open!: {
-                    :channel output
-                    :open :w
-                    :buffer :block
-                    :write_handler :char }
+                opens!: {
+                    chan_target output
+                    chan_mode   open_w
+                    chan_render render_line
+                    chan_type   chan_file}
         map_extend!: state :outchannel cout
 
 ; Function: setup_symboltable
@@ -365,23 +365,23 @@ func :private emit_llvm   [state]
 ;   acnt    - Count of args in arglist
 
 func :private func_genhdr [ochan ntok arglist acnt]
-    write!: ochan "func "
-    write!: ochan get: ntok :token_str
-    write!: ochan " ["
+    writes!: ochan "func "
+    writes!: ochan get: ntok :token_str
+    writes!: ochan " ["
     ?: >: acnt zero
         fold:
             ^[acc indx]
                 @(
                     ?: >: indx 0
-                        write!: ochan " "
+                        writes!: ochan " "
                         nil
-                    write!: ochan get: arglist indx
+                    writes!: ochan get: arglist indx
                     acc
                 )
             nil series: 0 acnt 1
         nil
-    write!: ochan "]"
-    write!: ochan nlchr
+    writes!: ochan "]"
+    writes!: ochan nlchr
 
 ; Function: var_genhdr
 ; Description: Writes out variable signature in genheader processing
@@ -390,10 +390,10 @@ func :private func_genhdr [ochan ntok arglist acnt]
 ;   ntok    - The symbol found for the variable
 
 func :private var_genhdr [ochan ntok]
-    write!: ochan "var "
-    write!: ochan get: ntok :token_str
-    write!: ochan " any"
-    write!: ochan nlchr
+    writes!: ochan "var "
+    writes!: ochan get: ntok :token_str
+    writes!: ochan " any"
+    writes!: ochan nlchr
 
 ; Function: genheader
 ; Description: Generates module, public vars and public funcs
@@ -411,7 +411,7 @@ func :private genheader [state]
     write_comment_block_and_module: ochan get: state :module_name
     ; Walk tokens and spit vars and funcs
     process_tpdwn_vf: state (var_genhdr ochan) (func_genhdr ochan)
-    write!: ochan nlchr
+    writes!: ochan nlchr
     state
 
 ; Function: close_output
@@ -423,7 +423,7 @@ func :private close_output [state]
     let output [] get: state :outchannel
     ?: =: output cout
         state
-        close!: output
+        closes!: output
     state
 
 ; Function: skip_step

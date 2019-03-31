@@ -513,27 +513,6 @@ PFRTAny set_rest(PFRTAny src) {
 	return result;
 }
 
-
-PFRTAny set_print(PFRTIOChannel chn,PFRTAny set) {
-	PFRTIterator mi = iteratorFor(set);
-	PFRTAny entry;
-	ft 		 mcount=((PFRTSet) set)->count;
-	io_writeFuncPtr	cfn = chn->writehandler->fnptr;
-	cfn(chn,meta);
-	cfn(chn,lbrace);
-	if(mcount > 0) {
-		uint32_t count=0;
-		--mcount;
-		while ((entry = iteratorNext(mi)) != end) {
-			cfn(chn,entry);
-			if(mcount > count++) cfn(chn,comma);
-		}
-		foidl_xdel(mi);
-	}
-	cfn(chn,rbrace);
-	return nil;
-}
-
 PFRTAny write_set(PFRTAny channel, PFRTAny set, channel_writer writer) {
 	PFRTIterator mi = iteratorFor(set);
 	PFRTAny entry;

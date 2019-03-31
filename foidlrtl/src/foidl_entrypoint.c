@@ -42,6 +42,7 @@ PFRTAny 	foidl_rtl_init() {
 		//foidl_gc_init();
 		foidl_rtl_init_chars();
 		foidl_rtl_init_globals();
+		foidl_rtl_init_channel();
 		foidl_rtl_init_numbers(); //foidl_rtl_init_ints();
 		foildl_rtl_init_strings();
 		foidl_rtl_init_types();
@@ -86,33 +87,14 @@ PFRTAny 	foidl_count(PFRTAny el) {
 		return nil;
 
 	PFRTAny 	res=zero;
-	if(el->fclass == collection_class || el->ftype == string_type || el->ftype == keyword_type)
+	if(el->fclass == collection_class || el->ftype == string_type || el->ftype == keyword_type) {
 		res = foidl_reg_intnum(el->count);
-	else if(el->fclass == io_class)
-		res = foidl_io_count(el);
-	return res;
-}
-
-PFRTAny foidl_countto(PFRTAny coll, PFRTAny exp) {
-	unknown_handler();
-	PFRTAny 	res=zero;
-	if(coll->fclass == io_class)
-		res = foidl_io_countto(coll,exp);
-	else
+	}
+	else {
 		unknown_handler();
+	}
 	return res;
 }
-
-PFRTAny foidl_countnotto(PFRTAny coll, PFRTAny exp) {
-	unknown_handler();
-	PFRTAny 	res=zero;
-	if(coll->fclass == io_class)
-		res = foidl_io_countnotto(coll,exp);
-	else
-		unknown_handler();
-	return res;
-}
-
 
 //	Gets the element from collection or string
 //	for string: el == index
@@ -208,9 +190,6 @@ PFRTAny 	foidl_first(PFRTAny a) {
 	if(foidl_extendable_qmark(a) == false)
 		return result;
 
-	if(a->fclass == io_class)
-		return foidl_io_first(a);
-
 	switch(a->ftype) {
 		case 	vector2_type:
 			result = vector_first(a);
@@ -237,9 +216,6 @@ PFRTAny foidl_second(PFRTAny a) {
 	PFRTAny result = nil;
 	if(foidl_extendable_qmark(a) == false)
 		return result;
-
-	if(a->fclass == io_class)
-		return foidl_io_second(a);
 
 	switch(a->ftype) {
 		case 	vector2_type:
@@ -1015,10 +991,10 @@ PFRTAny foidl_dec(PFRTAny el) {
 //	Console shortcuts used in RTL
 
 PFRTAny 	writeCout(PFRTAny el) {
-	return foidl_write_bang(cout,el);
+	return foidl_channel_write_bang((PFRTAny) cout,el);
 }
 
 PFRTAny 	writeCoutNl(PFRTAny el) {
-	foidl_write_bang(cout,el);
-	return foidl_write_bang(cout,nlchr);
+	foidl_channel_write_bang((PFRTAny) cout,el);
+	return foidl_channel_write_bang((PFRTAny) cout,nlchr);
 }

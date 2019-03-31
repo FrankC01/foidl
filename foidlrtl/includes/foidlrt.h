@@ -383,80 +383,13 @@ typedef struct FRTSeries {
 
 //	IO Structures
 
-typedef	struct   FRTIOBufferG {
-	ft 				fsig;		//
-	ft 				fclass; 	//	io_buffer_class
-	ft 				ftype;		//	block_type, mmem_type
-	uint32_t 		buffersize;
-    uint32_t 		previous_read_offset;
-    uint32_t 		current_read_offset;
-    uint32_t 		previous_write_offset;
-    uint32_t 		current_write_offset;
-    uint32_t 		max_read_position;
-    uint32_t 		current_line;
-    uint32_t 		current_pos;
-	char 			*bufferPtr;
-} *PFRTIOBufferG;
-
-typedef	struct   FRTIOBuffer {
-	ft 				fclass; 	//	io_buffer_class
-	ft 				ftype;		//	block_type, mmem_type
-	uint32_t 		buffersize;
-    uint32_t 		previous_read_offset;
-    uint32_t 		current_read_offset;
-    uint32_t 		previous_write_offset;
-    uint32_t 		current_write_offset;
-    uint32_t 		max_read_position;
-    uint32_t 		current_line;
-    uint32_t 		current_pos;
-	char 			*bufferPtr;
-} *PFRTIOBuffer;
-
-
-typedef	struct   FRTIOChannelG {
-	ft 				fsig;
-	ft 				fclass; 	//	FOIDL_CLASS_IO
-	ft 				ftype;		//	FOIDL_FILE_REF, etc.
-	PFRTAny 		channelMap; //	Initiating structure
-	PFRTAny 		name;
-    ft 				openflag;
-    ft 				buffertype;
-    ft 				handle;
-    PFRTFuncRef 	readhandler;
-    PFRTFuncRef 	writehandler;
-    PFRTIOBuffer 	bufferptr;
-} *PFRTIOChannelG;
-
-typedef	struct   FRTIOChannel {
-	ft 				fclass; 	//	FOIDL_CLASS_IO
-	ft 				ftype;		//	FOIDL_FILE_REF, etc.
-	PFRTAny 		channelMap; //	Initiating structure
-	PFRTAny 		name;
-    ft 				openflag;
-    ft 				buffertype;
-    ft 				handle;
-    PFRTFuncRef 	readhandler;
-    PFRTFuncRef 	writehandler;
-    PFRTIOBuffer 	bufferptr;
-} *PFRTIOChannel;
-
-/*
-typedef struct FRTTypeG {
-    ft          fsig;
-    ft          fclass;
-    ft          ftype;
-    ft          count;
-    uint32_t    hash;
-    void        *value;     // Maps to count on collections
-} *PFRTTypeG;
-*/
 typedef struct   FRTIOChannel2G {
     ft          fsig;
     ft          fclass;
     ft          ftype;
     ft          count;
     uint32_t    hash;
-    void        *value;         // Maps to count on collections
+    void        *value;         // Maps to IO handle
 } *PFRTIOChannel2G;
 
 typedef struct   FRTIOChannel2 {
@@ -464,7 +397,7 @@ typedef struct   FRTIOChannel2 {
     ft          ftype;
     ft          count;
     uint32_t    hash;
-    void        *value;         // Maps to count on collections
+    void        *value;         // Maps to IO handle
 } *PFRTIOChannel2;
 
 typedef struct   FRTIOFileChannelG {
@@ -473,7 +406,7 @@ typedef struct   FRTIOFileChannelG {
     ft          ftype;
     ft          count;
     uint32_t    hash;
-    void        *value;         // Maps to count on collections
+    void        *value;         // Maps to IO handle
     PFRTAny     name;
     PFRTAny     mode;
     PFRTAny     render;
@@ -485,7 +418,7 @@ typedef struct   FRTIOFileChannel {
     ft          ftype;
     ft          count;
     uint32_t    hash;
-    void        *value;         // Maps to count on collections
+    void        *value;         // Maps to IO handle
     PFRTAny     name;
     PFRTAny     mode;
     PFRTAny     render;
@@ -541,8 +474,6 @@ typedef struct FRTIterator *PFRTIterator;
 
 typedef PFRTAny (*itrNext)(PFRTIterator);
 typedef PFRTAny (*typeGetter)(PFRTAny,uint32_t);
-typedef PFRTAny (*io_readFuncPtr)(PFRTIOChannel);
-typedef PFRTAny (*io_writeFuncPtr)(PFRTIOChannel, PFRTAny);
 typedef PFRTAny (*channel_writer)(PFRTAny, PFRTAny);
 typedef PFRTAny (*invoke_funcptr)(PFRTFuncRef2);
 typedef PFRTAny (*_d0)();
@@ -613,7 +544,7 @@ typedef struct FRTSeries_Iterator {
 	PFRTAny 		initialValue;
 	PFRTAny 		lastValue;
 } *PFRTSeries_Iterator;
-
+/*
 typedef struct FRTChannel_Iterator {
 	ft 				fclass; 	//	FOIDL Class - Iterator
 	ft 				ftype;		//	channel_iterator_type
@@ -621,7 +552,7 @@ typedef struct FRTChannel_Iterator {
 	uint32_t 		currRef;
 	PFRTIOBuffer 	buffer;
 } *PFRTChannel_Iterator;
-
+*/
 //	Local use structures
 
 //	Local structures
@@ -678,7 +609,6 @@ EXTERNC PFRTAny end;
 
 #ifndef __cplusplus
 EXTERNC PFRTAny  nil,true,false;
-EXTERNC PFRTIOChannel    cin,cout,cerr;
 #endif
 
 EXTERNC struct FRTTypeG _end;
@@ -698,6 +628,7 @@ EXTERNC PFRTAny 	nine,ten,eleven,twelve,thirteen,fourteen,fifteen,sixteen;
 EXTERNC PFRTAny 	empty_string, space_string;
 
 EXTERNC PFRTAny 	nilstr, truestr, falsestr, endstr, infserstr, seriesstr;
+EXTERNC PFRTAny     cinstr, coutstr, cerrstr;
 #endif
 
 #ifndef TYPE_IMPL
@@ -774,30 +705,25 @@ EXTERNC void 			foidl_gc_init();
 EXTERNC void *			foidl_xall(int sz);
 EXTERNC void 			foidl_xdel(void *);
 //	Scalar types
-EXTERNC PFRTAny 			*allocRawAnyArray(ft count);
-EXTERNC PFRTAny 			allocAny(ft fclass,ft ftype,void *value);
-EXTERNC PFRTAny 			allocGlobalString(char *);
-EXTERNC PFRTAny 			allocGlobalStringCopy(char *);
-EXTERNC PFRTAny 			allocGlobalKeywordCopy(char *);
+EXTERNC PFRTAny 		*allocRawAnyArray(ft count);
+EXTERNC PFRTAny 		allocAny(ft fclass,ft ftype,void *value);
+EXTERNC PFRTAny 		allocGlobalString(char *);
+EXTERNC PFRTAny 		allocGlobalStringCopy(char *);
+EXTERNC PFRTAny 		allocGlobalKeywordCopy(char *);
 
-EXTERNC PFRTAny 			allocStringWithBufferSize(uint32_t);
-EXTERNC PFRTAny 			allocStringWithCopy(char *);
-EXTERNC PFRTAny 			allocStringWithCopyCnt(uint32_t, char *);
-EXTERNC PFRTAny             allocStringWithCptr(char *, long int);
-EXTERNC PFRTAny 			allocAndConcatString(uint32_t,char *, uint32_t, char *, uint32_t);
+EXTERNC PFRTAny 		allocStringWithBufferSize(uint32_t);
+EXTERNC PFRTAny 		allocStringWithCopy(char *);
+EXTERNC PFRTAny 		allocStringWithCopyCnt(uint32_t, char *);
+EXTERNC PFRTAny         allocStringWithCptr(char *, long int);
+EXTERNC PFRTAny 		allocAndConcatString(uint32_t,char *, uint32_t, char *, uint32_t);
 
-EXTERNC PFRTAny 			allocGlobalCharType(int);
+EXTERNC PFRTAny 		allocGlobalCharType(int);
 
-EXTERNC PFRTAny          allocRegex(PFRTAny sbase, void* regex);
+EXTERNC PFRTAny         allocRegex(PFRTAny sbase, void* regex);
 
 // IO Types
-EXTERNC PFRTIOChannel 	allocIOChannel(ft,PFRTAny);
-EXTERNC PFRTIOBuffer 	allocIOMMapBuffer(void *, size_t);
-EXTERNC PFRTIOBuffer 	allocIOBlockBuffer(ft);
-EXTERNC PFRTIOBuffer 	allocIONoBuffer();
-EXTERNC void 			deallocChannelBuffer(PFRTIOChannel);
-
 EXTERNC PFRTIOChannel2  allocFileChannel(PFRTAny, PFRTAny);
+
 // Function types
 EXTERNC PFRTFuncRef2 	allocFuncRef2(void *fn, ft maxarg,invoke_funcptr ifn);
 EXTERNC void 			deallocFuncRef2(PFRTFuncRef2);
@@ -805,9 +731,9 @@ EXTERNC void 			deallocFuncRef2(PFRTFuncRef2);
 // Collection types
 EXTERNC PFRTList   		allocList(ft, PFRTLinkNode);
 EXTERNC PFRTLinkNode   	allocLinkNode();
-EXTERNC PFRTLinkNode     allocLinkNodeWith(PFRTAny data, PFRTLinkNode nextNode);
-EXTERNC PFRTSet 			allocSet(ft,ft,PFRTBitmapNode);
-EXTERNC PFRTMap 			allocMap(ft,ft,PFRTBitmapNode);
+EXTERNC PFRTLinkNode    allocLinkNodeWith(PFRTAny data, PFRTLinkNode nextNode);
+EXTERNC PFRTSet 		allocSet(ft,ft,PFRTBitmapNode);
+EXTERNC PFRTMap 		allocMap(ft,ft,PFRTBitmapNode);
 EXTERNC PFRTVector 		allocVector(ft,ft,PFRTHamtNode,PFRTHamtNode);
 EXTERNC PFRTMapEntry 	allocMapEntryWith(PFRTAny, PFRTAny);
 EXTERNC PFRTSeries 		allocSeries();
@@ -822,7 +748,7 @@ EXTERNC PFRTIterator 	allocTrieIterator(PFRTAssocType,itrNext);
 EXTERNC PFRTIterator 	allocVectorIterator(PFRTVector,itrNext);
 EXTERNC PFRTIterator 	allocListIterator(PFRTList,itrNext);
 EXTERNC PFRTIterator 	allocSeriesIterator(PFRTSeries,itrNext);
-EXTERNC PFRTIterator 	allocChannelIterator(PFRTIOBuffer,itrNext);
+//EXTERNC PFRTIterator 	allocChannelIterator(PFRTIOBuffer,itrNext);
 EXTERNC PFRTIterator    allocStringIterator(PFRTAny, itrNext);
 
 #endif
@@ -964,7 +890,6 @@ EXTERNC  PFRTAny	vector_drop_bang(PFRTAny,PFRTAny);
 EXTERNC  PFRTAny	vector_dropLast_bang(PFRTAny);
 EXTERNC  PFRTAny vector_droplast(PFRTAny);
 EXTERNC 	PFRTAny vectorGetDefault(PFRTAny v, uint32_t index);
-EXTERNC 	PFRTAny vector_print(PFRTIOChannel,PFRTAny);
 EXTERNC  PFRTAny    write_vector(PFRTAny, PFRTAny, channel_writer);
 #endif
 
@@ -982,7 +907,6 @@ EXTERNC PFRTAny 	set_get(PFRTAny,PFRTAny);
 EXTERNC PFRTBitmapNode set_getNode(PFRTBitmapNode, uint32_t);
 EXTERNC PFRTAny 	set_get_default(PFRTAny, PFRTAny,PFRTAny);
 EXTERNC PFRTAny 	setGetDefault(PFRTAny node, uint32_t index);
-EXTERNC PFRTAny 	set_print(PFRTIOChannel,PFRTAny);
 EXTERNC  PFRTAny    write_set(PFRTAny, PFRTAny, channel_writer);
 #endif
 
@@ -1001,7 +925,6 @@ EXTERNC PFRTAny 	map_update(PFRTAny,PFRTAny,PFRTAny);
 EXTERNC PFRTAny  map_remove(PFRTAny, PFRTAny);
 EXTERNC PFRTAny  map_contains_qmark(PFRTAny, PFRTAny);
 EXTERNC PFRTAny 	mapGetDefault(PFRTAny node, uint32_t index);
-EXTERNC PFRTAny 	map_print(PFRTIOChannel,PFRTAny);
 EXTERNC  PFRTAny    write_map(PFRTAny, PFRTAny, channel_writer);
 #endif
 
@@ -1028,50 +951,21 @@ EXTERNC 	PFRTAny  list_first(PFRTAny);
 EXTERNC 	PFRTAny  list_second(PFRTAny);
 EXTERNC 	PFRTAny  list_rest(PFRTAny);
 EXTERNC  PFRTAny  list_last(PFRTAny);
-EXTERNC 	PFRTAny  list_print(PFRTIOChannel,PFRTAny);
 EXTERNC  PFRTAny  empty_list_bang(PFRTAny);
 EXTERNC  PFRTAny  release_list_bang(PFRTAny);
 EXTERNC  PFRTAny    write_list(PFRTAny, PFRTAny, channel_writer);
 #endif
 
 // IO
-#ifndef IO_IMPL
-EXTERNC PFRTAny  foidl_fexists_qmark(PFRTAny);
-EXTERNC PFRTAny  foidl_open_bang(PFRTAny);
-EXTERNC PFRTAny  foidl_write_bang(PFRTIOChannel,PFRTAny);
-EXTERNC PFRTAny  io_get(PFRTAny,PFRTAny);
-EXTERNC PFRTAny  foidl_io_count(PFRTAny);
-EXTERNC PFRTAny  foidl_io_first(PFRTAny);
-EXTERNC PFRTAny  foidl_io_second(PFRTAny);
-EXTERNC PFRTAny  foidl_io_countto(PFRTAny,PFRTAny);
-EXTERNC PFRTAny  foidl_io_countnotto(PFRTAny,PFRTAny);
-
-size_t fileSizeInfo(PFRTAny);
-
+#ifndef IO_CHANNEL
+EXTERNC void        foidl_rtl_init_channel();
+#ifndef __cplusplus
+EXTERNC PFRTAny     cout,cin,cerr;
+#endif
+EXTERNC PFRTAny     foidl_channel_write_bang(PFRTAny, PFRTAny);
+EXTERNC PFRTAny     foidl_fexists_qmark(PFRTAny);
 #endif
 
-// IO Handlers
-#ifndef IOHANDLERS_IMPL
-EXTERNC PFRTAny 	io_nextByteReader(PFRTIterator);
-EXTERNC PFRTAny 	io_nextCharReader(PFRTIterator);
-EXTERNC PFRTAny 	io_nextStringReader(PFRTIterator);
-EXTERNC PFRTFuncRef const byte_reader;
-EXTERNC PFRTFuncRef const char_reader;
-EXTERNC PFRTFuncRef const string_reader;
-EXTERNC PFRTFuncRef const char_writer;
-EXTERNC PFRTAny 	io_skipto(PFRTIOChannel, PFRTAny);
-EXTERNC PFRTAny 	io_skipwhile(PFRTIOChannel, PFRTAny);
-EXTERNC PFRTAny 	io_countto(PFRTIOChannel, PFRTAny);
-EXTERNC PFRTAny 	io_take_until(PFRTIOChannel, PFRTAny);
-EXTERNC PFRTAny 	io_take_string(PFRTIOChannel);
-EXTERNC PFRTAny 	io_take_qchar(PFRTIOChannel);
-EXTERNC PFRTAny 	io_unread(PFRTIOChannel);
-EXTERNC PFRTAny 	io_count(PFRTIOChannel);
-EXTERNC PFRTAny 	io_first(PFRTIOChannel);
-EXTERNC PFRTAny 	io_second(PFRTIOChannel);
-EXTERNC PFRTAny 	io_peek_match(PFRTIOChannel,PFRTAny);
-EXTERNC void 	io_blockBufferClose(PFRTIOChannel);
-#endif
 
 // Series
 

@@ -164,7 +164,7 @@ PFRTIterator seriesiterator_initiate(PFRTIterator sitr) {
 	}
 	return sitr;
 }
-
+/*
 PFRTIterator channeliterator_setup(PFRTIOChannel chan) {
 	PFRTIterator citr = (PFRTIterator) nil;
 	if(chan->openflag == open_read_only ||
@@ -187,6 +187,7 @@ PFRTIterator channeliterator_setup(PFRTIOChannel chan) {
 
 	return citr;
 }
+*/
 
 PFRTIterator iteratorFor(PFRTAny t) {
 	PFRTIterator i = (PFRTIterator) nil;
@@ -233,7 +234,8 @@ PFRTIterator iteratorFor(PFRTAny t) {
 			}
 			break;
 		case 	io_class:
-			i = channeliterator_setup((PFRTIOChannel) t);
+			//i = channeliterator_setup((PFRTIOChannel) t);
+			unknown_handler();
 			break;
 		default:
 			unknown_handler();

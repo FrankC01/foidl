@@ -128,78 +128,29 @@ func closes! [channel]
 		foidl_channel_close!: channel
 		true
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; IO functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 func file_exists? [fname]
 	foidl_fexists?: fname
-
-func open! [argmap]
-	foidl_open!: argmap
-
-func read! [channel]
-	foidl_read!: channel
-
-func unread! [channel]
-	foidl_unread!: channel
-
-func write! [channel data]
-	foidl_write!: channel data
-
-func skip_to! [channel exp]
-	foidl_skipto!: channel exp
-
-func peek?  [channel arg]
-	foidl_peek?: channel arg
-
-func skip_while! [channel exp]
-	foidl_skipwhile!: channel exp
-
-func skip_while_ws! [channel]
-	foidl_skipwhile!: channel tbspdelim
-
-func skip_to_nl! [channel]
-	foidl_skipto!: channel nlchr
-
-func take_until! [coll pred]
-	foidl_take_until!: coll pred
-
-func take_string! [channel]
-	foidl_take_string!: channel
-
-func take_qchar! [channel]
-	foidl_take_qchar!: channel
-
-func take_until_nl! [coll]
-	foidl_take_until!: coll nlchr
-
-func take_until_ws! [coll]
-	foidl_take_until!: coll whitespace
-
-func close! [channel]
-	foidl_close!: channel
 
 func quaf! [s]
 	let src_chan []
 		?: io?: s
 			s
-			open!: {
-                :channel s
-                :open :r
-                :buffer :mmap
-                :read_handler :char
-            	}
-    let qs [] foidl_io_quaf!: src_chan
-    close!: src_chan
+			opens!: {
+    			chan_target s
+    			chan_type   chan_file
+    			chan_render render_file
+    			chan_mode   open_r
+				}
+	let qs [] foidl_channel_quaf!: src_chan
+    closes!: src_chan
     qs
 
 func print! [s]
-	write!: cout s
+	writes!: cout s
 
 func printnl! [s]
-	write!: cout s
-	write!: cout nlchr
+	writes!: cout s
+	writes!: cout nlchr
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Process functions
@@ -209,7 +160,7 @@ func  fail 		[]
 	foidl_fail:
 
 func  failWith 	[msg]
-	write!: cerr msg
+	writes!: cerr msg
 	fail:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -279,12 +230,6 @@ func  cos[d x]
 
 func count [coll]
 	foidl_count: coll
-
-func count_to [channel exp]
-	foidl_countto: channel exp
-
-func count_notto [channel exp]
-	foidl_countnotto: channel exp
 
 func first [coll]
 	foidl_first: coll

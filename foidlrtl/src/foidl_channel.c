@@ -25,10 +25,16 @@
 
 */
 
-#define IO_IMPL2
+#define IO_CHANNEL
 #include    <foidlrt.h>
 #include    <stdio.h>
 #include    <stdlib.h>
+#ifdef _MSC_VER
+#include <io.h>
+#else
+#include    <unistd.h>
+#endif
+#include    <sys/stat.h>
 
 
 // Common global flags
@@ -64,6 +70,59 @@ globalScalarConst(render_byte,byte_type,(void *) 0,1);
 globalScalarConst(render_char,byte_type,(void *) 1,1);
 globalScalarConst(render_line,byte_type,(void *) 2,1);
 globalScalarConst(render_file,byte_type,(void *) 3,1);
+
+// stdin, stdout and stderr
+
+struct FRTIOFileChannelG _cin2_base = {
+    global_signature,
+    io_class,
+    cin_type,
+    0,
+    0,
+    NULL,//(void *)stdin,
+    NULL,
+    open_r,
+    render_line
+};
+
+PFRTAny const cin = (PFRTAny) &_cin2_base.fclass;
+
+struct FRTIOFileChannelG _cout2_base = {
+    global_signature,
+    io_class,
+    cout_type,
+    0,
+    0,
+    NULL,//(void *)stdin,
+    NULL,
+    open_w,
+    render_line
+};
+
+PFRTAny const cout = (PFRTAny) &_cout2_base.fclass;
+
+struct FRTIOFileChannelG _cerr2_base = {
+    global_signature,
+    io_class,
+    cerr_type,
+    0,
+    0,
+    NULL,//(void *)stdin,
+    NULL,
+    open_w,
+    render_line
+};
+
+PFRTAny const cerr = (PFRTAny) &_cerr2_base.fclass;
+
+void foidl_rtl_init_channel() {
+    _cin2_base.value = (void *) stdin;
+    _cin2_base.name = cinstr;
+    _cout2_base.value = (void *) stdout;
+    _cout2_base.name = coutstr;
+    _cerr2_base.value = (void *) stderr;
+    _cerr2_base.name = cerrstr;
+}
 
 // Utility
 
@@ -130,6 +189,59 @@ static FileStat count_to_nl(FILE *fptr) {
     ffs.eof = feof(fptr);
 
     return ffs;
+}
+
+// Get size of file from file/stream descriptor
+
+static size_t file_size_desc(FILE *fptr) {
+    size_t off = 0;
+    if(fseek(fptr, 0L, SEEK_END) == -1) {
+        unknown_handler();
+    }
+    off = ftell(fptr);
+    if( off == (long) - 1) {
+        unknown_handler();
+    }
+    if(fseek(fptr, 0L, SEEK_SET) == -1) {
+        unknown_handler();
+    }
+    return off;
+
+}
+
+PFRTAny foidl_fexists_qmark(PFRTAny s) {
+    PFRTAny     result = true;
+    if(string_type_qmark(s) == false)
+        return false;
+    #if _MSC_VER
+    struct _stat64 buffer;
+    int status = _stat64(s->value, &buffer);
+    #else
+    struct stat buffer;
+    int status = stat(s->value, &buffer);
+    #endif
+    if( status == - 1)
+        return false;
+    result = true;
+    #ifdef _MSC_VER
+    if (_S_IFDIR & buffer.st_mode) {
+    #else
+    if (S_ISDIR(buffer.st_mode)) {
+    #endif
+        writeCerrNl(file_is_directory);
+        foidl_fail();
+    }
+    #ifdef _MSC_VER
+    else if (! (_S_IFREG & buffer.st_mode) ) {
+    #else
+    else if (! S_ISREG(buffer.st_mode)) {
+    #endif
+        foidl_fail();
+    }
+    else {
+        ;
+    }
+    return result;
 }
 
 
@@ -257,6 +369,22 @@ PFRTAny foidl_channel_read_bang(PFRTAny channel) {
     return res;
 }
 
+PFRTAny foidl_channel_quaf_bang(PFRTAny channel) {
+
+    PFRTAny res = empty_string;
+    PFRTIOFileChannel chan = (PFRTIOFileChannel) channel;
+    if(chan->ftype == file_type) {
+        size_t  buffsize = file_size_desc((FILE *)chan->value);
+        char *s = foidl_xall(buffsize+1);
+        int x = fread(s,buffsize,1,(FILE *)chan->value);
+        res = allocStringWithCptr(s,buffsize);
+    }
+    else {
+        unknown_handler();
+    }
+    return res;
+}
+
 // Scalar writer
 
 static void io_file_scalar_txt_writer(FILE *chn, PFRTAny el) {
@@ -370,7 +498,7 @@ static PFRTAny foidl_channel_writefile(PFRTAny channel, PFRTAny el) {
 
 PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el) {
     PFRTAny res = nil;
-    if(channel->ftype == file_type) {
+    if(channel->ftype == file_type || channel->ftype == cout_type || channel->ftype == cerr_type) {
         if(is_file_read((PFRTIOFileChannel)channel) == false) {
             foidl_channel_writefile(channel, el);
         }

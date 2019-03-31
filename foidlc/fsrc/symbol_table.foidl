@@ -179,7 +179,7 @@ func :private except_and_fail [sref symbol_name reference]
             ]
 
 func :private warn_and_add [sref symbol_name reference]
-    write!:
+    writes!:
         cerr
         format:
             "Warning: `q{}`q {} {} redeclares `q{}`q at {} {}.`n"

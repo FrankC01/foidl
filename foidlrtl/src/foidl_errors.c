@@ -48,23 +48,23 @@ PFRTAny 	foidl_fail() {
 }
 
 PFRTAny 	writeCerr(PFRTAny el) {
-	return foidl_write_bang(cerr,el);
+	return foidl_channel_write_bang((PFRTAny) cerr,el);
 }
 
 PFRTAny 	writeCerrNl(PFRTAny el) {
-	foidl_write_bang(cerr,el);
-	return foidl_write_bang(cerr,nlchr);
+	foidl_channel_write_bang((PFRTAny)cerr,el);
+	return foidl_channel_write_bang((PFRTAny)cerr,nlchr);
 }
 
 void 	foidl_ep_excp(PFRTAny estring) {
-	foidl_write_bang(cerr,rteprefix);
+	foidl_channel_write_bang((PFRTAny)cerr,rteprefix);
 	writeCerrNl(estring);
 	foidl_exit();
 }
 
 void 	foidl_ep_excp2(PFRTAny hdr,PFRTAny estring) {
-	foidl_write_bang(cerr,rteprefix);
-	foidl_write_bang(cerr,hdr);
+	foidl_channel_write_bang((PFRTAny)cerr,rteprefix);
+	foidl_channel_write_bang((PFRTAny)cerr,hdr);
 	writeCerrNl(estring);
 	foidl_exit();
 }

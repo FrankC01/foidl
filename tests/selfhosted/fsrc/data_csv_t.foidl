@@ -76,7 +76,7 @@ func parse_csv [fname hashdr]
 
 
 func main [argv]
-    printnl!:"`ndata_csv - reads CSV files to list of maps or list of lists`n"
+    printnl!:"`ndata_csv_t - reads CSV files to list of maps or list of lists`n"
     match count: argv
         | 3         printnl!: parse_csv: get: argv 1 get: argv 2
         | :default  printnl!:usage

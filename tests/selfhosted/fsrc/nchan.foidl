@@ -82,3 +82,4 @@ func main [argv]
     printnl!: chr0
     consume: "data/csv_hdr.csv"
     writedata: "fname.txt"
+    printnl!: quaf!: "fname.txt"

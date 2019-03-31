@@ -116,10 +116,10 @@ func :private initialize [state]
 func :private spit_header [state]
     let oc      [] get: state :outchannel
     let mname   [] get: context :module_name
-    write!: oc format!: selfhost_llvm [mname get: state :source]
-    write!: oc format!: module_id [mname]
-    write!: oc context_str
-    write!: oc format!: context_tail [mname mname]
+    writes!: oc format!: selfhost_llvm [mname get: state :source]
+    writes!: oc format!: module_id [mname]
+    writes!: oc context_str
+    writes!: oc format!: context_tail [mname mname]
     state
 
 ; Function: spit
@@ -347,7 +347,7 @@ func :private vinits [state]
 
 func :private user_defined_main [state]
     ?: let decl [] getd: state :main_hit false
-        write!:
+        writes!:
             get: state :outchannel
             match get: get: decl ARGLIST ARGCNT
                 | 0         main_noarg_string

@@ -510,26 +510,6 @@ PFRTAny vector_from_argv(int cnt, char** argv) {
 // 	Iteration support
 //
 
-PFRTAny vector_print(PFRTIOChannel chn,PFRTAny v) {
-	io_writeFuncPtr	cfn = chn->writehandler->fnptr;
-	cfn(chn,meta);
-	cfn(chn,lbracket);
-	ft 			max = ((PFRTVector) v)->count;
-	if(max > 0) {
-		PFRTAny 		res = nil;
-		PFRTIterator	vi = iteratorFor(v);
-		ft 				i = 0;
-		--max;
-		while((res = iteratorNext(vi)) != end) {
-			cfn(chn,res);
-			if(max > i++) cfn(chn,comma);
-		}
-		foidl_xdel(vi);
-	}
-	cfn(chn,rbracket);
-	return nil;
-}
-
 PFRTAny write_vector(PFRTAny channel, PFRTAny vector, channel_writer writer) {
 	writer(channel,meta);
 	writer(channel,lbracket);

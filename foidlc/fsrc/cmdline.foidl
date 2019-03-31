@@ -126,25 +126,25 @@ func :private cl_validate [cmap]
     match get: ecmap :command
     | :compile  ?: not: get: ecmap :includes
                     @(
-                        write!: cerr "Compilation requires setting include paths"
-                        write!: cerr nlchr
+                        writes!: cerr "Compilation requires setting include paths"
+                        writes!: cerr nlchr
                         fail:
                     )
                     ecmap
     | :genhdr   ?: or: get: ecmap :printsyms
                     or: get: ecmap :printast get: ecmap :printir
                     @(
-                        write!: cerr "Generating header ignores "
+                        writes!: cerr "Generating header ignores "
                         ?: get: ecmap :printast
-                            write!: cerr "-pa "
+                            writes!: cerr "-pa "
                             nil
                         ?: get: ecmap :printir
-                            write!: cerr "-pi "
+                            writes!: cerr "-pi "
                             nil
                         ?: get: ecmap :printsyms
-                            write!: cerr "-ps "
+                            writes!: cerr "-ps "
                             nil
-                        write!: cerr nlchr
+                        writes!: cerr nlchr
                         ecmap
                     )
                     ecmap

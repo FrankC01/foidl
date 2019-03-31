@@ -317,30 +317,6 @@ func    foidl_open_file!        [name mode args]
 func    foidl_channel_read!     [channel]
 func    foidl_channel_write!    [channel data]
 func    foidl_channel_close!    [channel]
+func    foidl_channel_quaf!     [channel]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; IO
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;	File oriented
-func 	foidl_fexists? [fname]
-
-;	Functions
-func 	foidl_open!				[argmap]
-
-func 	foidl_read!				[channel]
-func 	foidl_unread!			[channel]
-func 	foidl_write!			[channel data]
-func 	foidl_close!			[channel]
-func 	foidl_take_until! 		[channel pred]
-func 	foidl_take_string! 		[channel]
-func 	foidl_take_qchar!		[channel]
-func 	foidl_peek? 			[channel arg]
-func 	foidl_skipto! 			[channel exp]
-func 	foidl_skipwhile! 		[channel pred]
-func    foidl_io_quaf!          [channel]
-func 	foidl_countto 			[channel exp]
-func 	foidl_countnotto 		[channel exp]
-func 	foidl_io_line 			[channel]
-func 	foidl_io_pos 			[channel]
-
+func    foidl_fexists? [fname]

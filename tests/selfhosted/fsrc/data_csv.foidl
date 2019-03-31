@@ -24,26 +24,25 @@ var :private comma_re regex: ","
 
 ; Function: open_target fname
 ; Description: Creates a read channel on csv file
+var cprp {
+    chan_target nil
+    chan_type   chan_file
+    chan_render render_line
+    chan_mode   open_r
+}
 
 func :private open_target [fname]
-    open!: {
-        :channel fname
-        :open :r
-        :buffer :mmap
-        :read_handler :string}
+    opens!: extends: cprp chan_target fname
 
 ; Function: get_val_list
 ; Description: Reads next line from channel and
 ; converts string of value and comma separators to list of values
 
 func :private get_val_list [chan]
-    let next_val [] take_until_nl!: chan
+    let next_val [] reads!: chan
     match empty?: next_val
         | true nil
-        | :default @(
-                    skip_while!: chan nlchr
-                    split: next_val comma_re
-                )
+        | :default  split: next_val comma_re
 
 ; Function: read_csv chan accum indx
 ; Description: Reads each row into list of list of values per row
@@ -85,7 +84,7 @@ func parse_csv [fname hashdr]
         match hashdr
             | "true"    to_map_with_header: grid
             | "false"   grid
-    close!: chan
+    closes!: chan
     res
 
 ; main

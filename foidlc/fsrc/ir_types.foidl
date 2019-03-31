@@ -114,7 +114,7 @@ func :private type_tostring [irtype]
 
 func :private simple_name_writer [ochan irtype]
     let tstr_fn [] get: irtype :tostring
-    write!: ochan (tstr_fn irtype)
+    writes!: ochan (tstr_fn irtype)
     ochan
 
 ; Invoke writer on arbitrary type
@@ -155,7 +155,7 @@ func :private pointer_tostring [ptype]
         [(vs_fn v)]
 
 func :private pointer_writer [ochan ptype]
-    write!: ochan pointer_tostring: ptype
+    writes!: ochan pointer_tostring: ptype
 
 func ptr_type [valtype]
     {
@@ -188,7 +188,7 @@ func :private reference_register_type_tostring [ptype]
             type_tostring: get: ptype :register]
 
 func :private reference_register_type_writer [ochan ptype]
-    write!: ochan
+    writes!: ochan
         [reference_register_type_tostring: ptype]
 
 func reference_register_type [valtype regref]
@@ -213,7 +213,7 @@ func :private reference_constant_type_tostring [ptype]
 
 
 func :private reference_constant_type_writer [ochan ptype]
-    write!: ochan
+    writes!: ochan
         [reference_constant_type_tostring: ptype]
 
 func reference_constant_type [valtype val]
@@ -288,7 +288,7 @@ func :private return_tostring [rettype]
     type_tostring: get: rettype :returns
 
 func :private return_writer [ochan rettype]
-    write!:
+    writes!:
         ochan
         format!:
             get: rettype :declaration
@@ -314,7 +314,7 @@ func :private array_type_tostring [arrtype]
 
 func :private array_type_writer [ochan arrtype]
     let astr_fn [] get: arrtype :tostring
-    write!: ochan (astr_fn arrtype)
+    writes!: ochan (astr_fn arrtype)
 
 func array_type [eltype cnt]
     {
@@ -401,7 +401,7 @@ func :private anyptr_for [aptrstr r]
     format!: aptrstr [r]
 
 func :private extern_func_writer [ochan efunc]
-    write!:
+    writes!:
         ochan
         format!:
         get: efunc :declaration
@@ -432,7 +432,7 @@ func external_function_type [funcref]
 
 func :private function_definition [ochan gft rett]
     ; Write definition
-    write!: ochan
+    writes!: ochan
         format!:
             get: gft :declaration
             [   get: gft :scope
@@ -510,7 +510,7 @@ func :private funcref_tostring [irtype]
         ]
 
 func :private funcref_writer [ochan irtype]
-    write!: ochan funcref_tostring: irtype
+    writes!: ochan funcref_tostring: irtype
     ochan
 
 func funcref_type [name rettype argcnt]
@@ -536,7 +536,7 @@ func get_basic_block [function]
 ; The body of the variable is set in the 'modulename_vinits' function
 
 func :private variable_writer [ochan gvt]
-    write!:
+    writes!:
         ochan
         format!:
             get: gvt :declaration
@@ -586,7 +586,7 @@ func :private two_var_writer [fval sval ochan irtype]
             format!:
                 "Type {} does not have :tostring function"
                 [get: sval_t :type]
-    write!:
+    writes!:
         ochan
         format!:
             get: irtype :declaration
@@ -640,7 +640,7 @@ func :private bitcast_writer [ochan bctype]
     let reg [] type_tostring: get: bctype :register
     let to  [] type_tostring: get: bctype :to
     let from  [] type_tostring: get: bctype :from
-    write!:
+    writes!:
         ochan
         format!: get: bctype :declaration [reg from to]
     ochan
@@ -661,7 +661,7 @@ func bitcast [function from_ptr to_ptr]
 ; store %"Any"* %".318", %"Any"** @"ir_types_KEYWORD_43"
 
 func :private store_writer [ochan strtype]
-    write!:
+    writes!:
         ochan
         format!:
             get: strtype :declaration
@@ -685,7 +685,7 @@ func store [from_ref to_ref]
 ; %".29" = load %"Any"*, %"Any"** @"ir_types_STRING_35"
 
 func :private load_writer [ochan strtype]
-    write!:
+    writes!:
         ochan
         format!:
             get: strtype :declaration
@@ -719,7 +719,7 @@ func load_and_extend [function scope ref]
 
 func :private call_writer [ochan irtype]
     let args [] get: irtype :args
-    write!:
+    writes!:
         ochan
         format!:
         get: irtype :declaration
@@ -756,7 +756,7 @@ func call [function call_site args]
 ; Function: branch
 
 func :private branch_writer [ochan irtype]
-    write!:
+    writes!:
         ochan
         format!:
             get: irtype :declaration
@@ -780,7 +780,7 @@ func branch [testreg iflab elselab]
 ; Function: uc_branch_to_label
 
 func :private uc_branch_writer [ochan irtype]
-    write!:
+    writes!:
         ochan
         format!:
             get: irtype :declaration
@@ -798,7 +798,7 @@ func uc_branch_to_label [val]
 ; Function: pointer_cmp
 
 func :private pointer_cmp_writer [ochan irtype]
-    write!:
+    writes!:
         ochan
         format!:
             get: irtype :declaration

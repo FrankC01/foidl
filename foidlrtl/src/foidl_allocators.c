@@ -190,51 +190,6 @@ PFRTIOChannel2 allocFileChannel(PFRTAny name, PFRTAny mode) {
 	return (PFRTIOChannel2) fc;
 }
 
-//	IO Channels
-
-PFRTIOChannel 	allocIOChannel(ft ftype,PFRTAny name) {
-	PFRTIOChannel ioc = foidl_xall(sizeof (struct FRTIOChannel));
-	ioc->fclass = io_class;
-	ioc->ftype  = ftype;
-	ioc->name   = name;
-	return ioc;
-}
-
-PFRTIOBuffer 	allocIONoBuffer() {
-	PFRTIOBuffer b = foidl_xall(sizeof (struct FRTIOBuffer));
-	b->fclass = io_class;
-	b->ftype  = no_buffer;
-	b->buffersize =
-    b->previous_read_offset =
-    b->current_read_offset =
-    b->previous_write_offset =
-    b->current_write_offset =
-    b->max_read_position =
-    b->current_line =
-    b->current_pos = 0;
-	return b;
-}
-
-PFRTIOBuffer 	allocIOMMapBuffer(void *mmap, size_t sz) {
-	PFRTIOBuffer b = allocIONoBuffer();
-	b->current_line = 1;
-	b->ftype  = mem_map_buffer;
-	b->buffersize = (ft) sz;
-	b->max_read_position = (ft) sz;
-	b->bufferPtr = (char *) mmap;
-	return b;
-}
-
-PFRTIOBuffer 	allocIOBlockBuffer(ft sz) {
-	PFRTIOBuffer b = allocIONoBuffer();
-	b->ftype = mem_block_buffer;
-	b->current_line = 1;
-	b->buffersize = b->max_read_position = sz;
-	b->bufferPtr = (char *) foidl_xall(sz);
-	return b;
-}
-
-
 //	Function reference instance
 
 PFRTFuncRef2 allocFuncRef2(void *fn, ft maxarg, invoke_funcptr ifn) {
@@ -460,6 +415,7 @@ PFRTIterator allocSeriesIterator(PFRTSeries s, itrNext next) {
 	return (PFRTIterator) li;
 }
 
+/*
 PFRTIterator allocChannelIterator(PFRTIOBuffer cb, itrNext next) {
 	PFRTChannel_Iterator ci = (PFRTChannel_Iterator)
 		foidl_xall(sizeof(struct FRTChannel_Iterator));
@@ -470,6 +426,7 @@ PFRTIterator allocChannelIterator(PFRTIOBuffer cb, itrNext next) {
 	ci->currRef = 0;
 	return (PFRTIterator) ci;
 }
+*/
 
 //
 //	Deallocators
@@ -490,18 +447,4 @@ void deallocFuncRef2(PFRTFuncRef2 fref) {
 			foidl_xdel(pv->root);
 		foidl_xdel(pv);
 	}
-}
-
-void deallocChannelBuffer(PFRTIOChannel chan) {
-	PFRTIOBuffer b = chan->bufferptr;
-	switch(b->ftype) {
-		case 	mem_map_buffer:
-			foidl_deallocate_mmap(b->bufferPtr,b->buffersize);
-			break;
-		case 	mem_block_buffer:
-			foidl_xdel(b->bufferPtr);
-			break;
-	}
-	foidl_xdel(b);
-	chan->bufferptr = (PFRTIOBuffer) nil;
 }

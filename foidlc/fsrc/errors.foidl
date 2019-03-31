@@ -25,7 +25,7 @@ include langcorem
 ; Description: Writes warning message
 
 func warning [warn_str]
-    write!:
+    writes!:
         cerr
         format!:
             "Warning: {}`n"

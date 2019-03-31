@@ -777,29 +777,6 @@ PFRTAny map_rest(PFRTAny src) {
 }
 
 
-PFRTAny map_print(PFRTIOChannel chn,PFRTAny map) {
-	PFRTIterator mi = iteratorFor(map);
-	PFRTAny entry;
-	ft 		 mcount=((PFRTMap) map)->count;
-	io_writeFuncPtr	cfn = chn->writehandler->fnptr;
-	cfn(chn,lbrace);
-	if(mcount > 0) {
-		uint32_t count=0;
-		--mcount;
-		while ((entry = iteratorNext(mi)) != end) {
-			PFRTMapEntry e = (PFRTMapEntry) entry;
-			cfn(chn,e->key);
-			cfn(chn,comma);
-			cfn(chn,e->value);
-			if(mcount > count++) cfn(chn,comma);
-			foidl_xdel(e);
-		}
-		foidl_xdel(mi);
-	}
-	cfn(chn,rbrace);
-	return nil;
-}
-
 PFRTAny write_map(PFRTAny chn, PFRTAny map, channel_writer writer) {
 	PFRTIterator mi = iteratorFor(map);
 	PFRTAny entry;
