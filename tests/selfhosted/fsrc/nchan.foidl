@@ -83,3 +83,5 @@ func main [argv]
     consume: "data/csv_hdr.csv"
     writedata: "fname.txt"
     printnl!: quaf!: "fname.txt"
+    print!: "Enter something : "
+    printnl!: reads!: cin

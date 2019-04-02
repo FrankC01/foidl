@@ -355,6 +355,19 @@ static PFRTAny foidl_channel_readfile(PFRTIOFileChannel channel) {
     return eof;
 }
 
+static PFRTAny foidl_channel_read_cin(PFRTIOFileChannel channel) {
+    char    buffer[1024];
+    PFRTAny res = empty_string;
+    if(fgets(buffer, sizeof(buffer), (FILE *) channel->value) != NULL) {
+        res = allocStringWithCopy(buffer);
+    }
+    else {
+        unknown_handler();
+    }
+    return res;
+}
+
+
 // Read entry point
 
 PFRTAny foidl_channel_read_bang(PFRTAny channel) {
@@ -362,6 +375,9 @@ PFRTAny foidl_channel_read_bang(PFRTAny channel) {
     PFRTIOFileChannel chan = (PFRTIOFileChannel) channel;
     if(chan->ftype == file_type) {
         res = foidl_channel_readfile(chan);
+    }
+    else if(chan->ftype == cin_type) {
+        res = foidl_channel_read_cin(chan);
     }
     else {
         unknown_handler();
@@ -498,13 +514,16 @@ static PFRTAny foidl_channel_writefile(PFRTAny channel, PFRTAny el) {
 
 PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el) {
     PFRTAny res = nil;
-    if(channel->ftype == file_type || channel->ftype == cout_type || channel->ftype == cerr_type) {
+    if(channel->ftype == file_type ) {
         if(is_file_read((PFRTIOFileChannel)channel) == false) {
             foidl_channel_writefile(channel, el);
         }
     }
+    else if(channel->ftype == cout_type || channel->ftype == cerr_type) {
+        foidl_channel_writefile(channel, el);
+    }
     else {
-        ;
+        unknown_handler();
     }
     return res;
 }
