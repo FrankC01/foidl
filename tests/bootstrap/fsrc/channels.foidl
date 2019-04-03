@@ -48,25 +48,25 @@ func :private slurp [ifile]
 ; Run when command line has 2 args. E.g. 'bin/channels fsrc/channels ./dump.txt'
 
 func :private read_write [ifile ofile]
-    let [ichan  open!: {
-                    :channel ifile
-                    :open   :r
-                    :buffer :mmap
-                    :read_handler :char}
-         ochan   open!: {
-                    :channel ofile
-                    :open :w
-                    :buffer :block
-                    :write_handler :char }]
+    let [ichan  opens!: {
+                    chan_target ifile
+                    chan_type   chan_file
+                    chan_mode   open_r
+                    chan_render render_char}
+         ochan   opens!: {
+                    chan_target ofile
+                    chan_mode   open_w
+                    chan_render render_char
+                    chan_type   chan_file}]
             @(
                 fold: ^[ofn el]
                     @(
-                        write!: ofn el
+                        writes!: ofn el
                         ofn
                     )
                 ochan ichan
-                close!: ichan
-                close!: ochan
+                closes!: ichan
+                closes!: ochan
             )
 
 ; Function: console_read_write
@@ -75,8 +75,8 @@ func :private read_write [ifile ofile]
 
 func :private console_read_write []
     print!: "`n> "
-    let [istr read!: cin]
-        write!: cout istr
+    let [istr reads!: cin]
+        writes!: cout istr
 
 ; Function: main
 ; Description: main entry point to program
