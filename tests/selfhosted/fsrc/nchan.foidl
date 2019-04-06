@@ -43,14 +43,22 @@ func lines [chan]
             lines: chan
         )
 
+func flines [acc el]
+    extend: acc el
+
 func consume [fname]
-    let chan [] opens!: extends: cprp chan_target fname
+    let chan_desc [] extends: cprp chan_target fname
+    let chan [] opens!: chan_desc
     ?: nil?: chan
         @(
             print!: fname printnl!: " does not exist for reading"
         )
         lines: chan
         printnl!: closes!: chan
+
+    let fchan [] opens!: chan_desc
+    printnl!: fold: flines [] fchan
+    printnl!: closes!: fchan
 
 func writedata[fname]
     let chan [] opens!: extends: cpwp chan_target fname

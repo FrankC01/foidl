@@ -415,18 +415,18 @@ PFRTIterator allocSeriesIterator(PFRTSeries s, itrNext next) {
 	return (PFRTIterator) li;
 }
 
-/*
-PFRTIterator allocChannelIterator(PFRTIOBuffer cb, itrNext next) {
+
+PFRTIterator allocChannelIterator(PFRTIOChannel2 cb, itrNext next) {
 	PFRTChannel_Iterator ci = (PFRTChannel_Iterator)
 		foidl_xall(sizeof(struct FRTChannel_Iterator));
 	ci->fclass = iterator_class;
 	ci->ftype  = channel_iterator_type;
 	ci->next   = next;
-	ci->buffer = cb;
+	ci->channel = cb;
 	ci->currRef = 0;
 	return (PFRTIterator) ci;
 }
-*/
+
 
 //
 //	Deallocators

@@ -544,15 +544,15 @@ typedef struct FRTSeries_Iterator {
 	PFRTAny 		initialValue;
 	PFRTAny 		lastValue;
 } *PFRTSeries_Iterator;
-/*
+
 typedef struct FRTChannel_Iterator {
 	ft 				fclass; 	//	FOIDL Class - Iterator
 	ft 				ftype;		//	channel_iterator_type
 	itrNext 		next;
 	uint32_t 		currRef;
-	PFRTIOBuffer 	buffer;
+	PFRTIOChannel2 	channel;
 } *PFRTChannel_Iterator;
-*/
+
 //	Local use structures
 
 //	Local structures
@@ -748,7 +748,7 @@ EXTERNC PFRTIterator 	allocTrieIterator(PFRTAssocType,itrNext);
 EXTERNC PFRTIterator 	allocVectorIterator(PFRTVector,itrNext);
 EXTERNC PFRTIterator 	allocListIterator(PFRTList,itrNext);
 EXTERNC PFRTIterator 	allocSeriesIterator(PFRTSeries,itrNext);
-//EXTERNC PFRTIterator 	allocChannelIterator(PFRTIOBuffer,itrNext);
+EXTERNC PFRTIterator    allocChannelIterator(PFRTIOChannel2, itrNext);
 EXTERNC PFRTIterator    allocStringIterator(PFRTAny, itrNext);
 
 #endif
@@ -913,47 +913,47 @@ EXTERNC  PFRTAny    write_set(PFRTAny, PFRTAny, channel_writer);
 //	Map functions
 #ifndef MAP_IMPL
 EXTERNC PFRTAny const empty_map;
-EXTERNC PFRTAny 	foidl_map_inst_bang();
-EXTERNC PFRTAny 	foidl_map_extend_bang(PFRTAny,PFRTAny,PFRTAny);
-EXTERNC PFRTAny 	map_first(PFRTAny);
-EXTERNC PFRTAny 	map_second(PFRTAny);
-EXTERNC PFRTAny 	map_rest(PFRTAny);
+EXTERNC PFRTAny  foidl_map_inst_bang();
+EXTERNC PFRTAny  foidl_map_extend_bang(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC PFRTAny  map_first(PFRTAny);
+EXTERNC PFRTAny  map_second(PFRTAny);
+EXTERNC PFRTAny  map_rest(PFRTAny);
 EXTERNC PFRTAny  map_get(PFRTAny, PFRTAny);
 EXTERNC PFRTAny  map_get_default(PFRTAny, PFRTAny,PFRTAny);
-EXTERNC PFRTAny 	map_extend(PFRTAny,PFRTAny,PFRTAny);
-EXTERNC PFRTAny 	map_update(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC PFRTAny  map_extend(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC PFRTAny  map_update(PFRTAny,PFRTAny,PFRTAny);
 EXTERNC PFRTAny  map_remove(PFRTAny, PFRTAny);
 EXTERNC PFRTAny  map_contains_qmark(PFRTAny, PFRTAny);
-EXTERNC PFRTAny 	mapGetDefault(PFRTAny node, uint32_t index);
-EXTERNC  PFRTAny    write_map(PFRTAny, PFRTAny, channel_writer);
+EXTERNC PFRTAny  mapGetDefault(PFRTAny node, uint32_t index);
+EXTERNC PFRTAny  write_map(PFRTAny, PFRTAny, channel_writer);
 #endif
 
 // List
 #ifndef LIST_IMPL
 EXTERNC  PFRTAny  const empty_list;
 EXTERNC  PFRTLinkNode empty_link;
-EXTERNC 	PFRTAny  foidl_list_inst_bang();
-EXTERNC 	PFRTAny  foidl_list_extend_bang(PFRTAny,PFRTAny);
-EXTERNC 	PFRTAny  list_extend(PFRTAny,PFRTAny);
+EXTERNC  PFRTAny  foidl_list_inst_bang();
+EXTERNC  PFRTAny  foidl_list_extend_bang(PFRTAny,PFRTAny);
+EXTERNC  PFRTAny  list_extend(PFRTAny,PFRTAny);
 EXTERNC  PFRTAny  list_prepend_bang(PFRTAny,PFRTAny);
-EXTERNC 	PFRTAny  list_get(PFRTAny,PFRTAny);
+EXTERNC  PFRTAny  list_get(PFRTAny,PFRTAny);
 EXTERNC  PFRTAny  list_get_default(PFRTAny, PFRTAny, PFRTAny);
 EXTERNC  PFRTAny  list_index_of(PFRTAny,PFRTAny);
-EXTERNC 	PFRTAny  list_update(PFRTAny,PFRTAny,PFRTAny);
-EXTERNC 	PFRTAny  list_update_bang(PFRTAny,PFRTAny,PFRTAny);
-EXTERNC 	PFRTAny  list_pop(PFRTAny);
-EXTERNC 	PFRTAny  list_pop_bang(PFRTAny);
+EXTERNC  PFRTAny  list_update(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC  PFRTAny  list_update_bang(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC  PFRTAny  list_pop(PFRTAny);
+EXTERNC  PFRTAny  list_pop_bang(PFRTAny);
 EXTERNC  PFRTAny  list_drop_bang(PFRTAny,PFRTAny);
 EXTERNC  PFRTAny  list_droplast(PFRTAny);
-EXTERNC 	PFRTAny  list_push(PFRTAny,PFRTAny);
-EXTERNC 	PFRTAny  list_push_bang(PFRTAny,PFRTAny);
-EXTERNC 	PFRTAny  list_first(PFRTAny);
-EXTERNC 	PFRTAny  list_second(PFRTAny);
-EXTERNC 	PFRTAny  list_rest(PFRTAny);
+EXTERNC  PFRTAny  list_push(PFRTAny,PFRTAny);
+EXTERNC  PFRTAny  list_push_bang(PFRTAny,PFRTAny);
+EXTERNC  PFRTAny  list_first(PFRTAny);
+EXTERNC  PFRTAny  list_second(PFRTAny);
+EXTERNC  PFRTAny  list_rest(PFRTAny);
 EXTERNC  PFRTAny  list_last(PFRTAny);
 EXTERNC  PFRTAny  empty_list_bang(PFRTAny);
 EXTERNC  PFRTAny  release_list_bang(PFRTAny);
-EXTERNC  PFRTAny    write_list(PFRTAny, PFRTAny, channel_writer);
+EXTERNC  PFRTAny  write_list(PFRTAny, PFRTAny, channel_writer);
 #endif
 
 // IO
@@ -962,6 +962,9 @@ EXTERNC void        foidl_rtl_init_channel();
 #ifndef __cplusplus
 EXTERNC PFRTAny     cout,cin,cerr;
 #endif
+EXTERNC PFRTAny     is_file_read(PFRTIOFileChannel);
+EXTERNC PFRTAny     is_file_text(PFRTIOFileChannel);
+EXTERNC PFRTAny     file_channel_read_next(PFRTIterator);
 EXTERNC PFRTAny     foidl_channel_write_bang(PFRTAny, PFRTAny);
 EXTERNC PFRTAny     foidl_fexists_qmark(PFRTAny);
 #endif

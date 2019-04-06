@@ -164,18 +164,12 @@ PFRTIterator seriesiterator_initiate(PFRTIterator sitr) {
 	}
 	return sitr;
 }
-/*
-PFRTIterator channeliterator_setup(PFRTIOChannel chan) {
+
+PFRTIterator channeliterator_setup(PFRTIOChannel2 chan) {
 	PFRTIterator citr = (PFRTIterator) nil;
-	if(chan->openflag == open_read_only ||
-		chan->openflag == open_read_write) {
-		if(chan->bufferptr->ftype != no_buffer) {
-			if(chan->readhandler == byte_reader)
-				citr = allocChannelIterator(chan->bufferptr,io_nextByteReader);
-			else if(chan->readhandler == char_reader)
-				citr = allocChannelIterator(chan->bufferptr,io_nextCharReader);
-			else
-				citr = allocChannelIterator(chan->bufferptr,io_nextStringReader);
+	if(chan->ftype == file_type) {
+		if(is_file_read((PFRTIOFileChannel)chan) == true) {
+			citr = allocChannelIterator(chan, file_channel_read_next);
 		}
 		else {
 			foidl_fail();
@@ -184,10 +178,9 @@ PFRTIterator channeliterator_setup(PFRTIOChannel chan) {
 	else {
 		foidl_fail();
 	}
-
 	return citr;
 }
-*/
+
 
 PFRTIterator iteratorFor(PFRTAny t) {
 	PFRTIterator i = (PFRTIterator) nil;
@@ -234,8 +227,7 @@ PFRTIterator iteratorFor(PFRTAny t) {
 			}
 			break;
 		case 	io_class:
-			//i = channeliterator_setup((PFRTIOChannel) t);
-			unknown_handler();
+			i = channeliterator_setup((PFRTIOChannel2) t);
 			break;
 		default:
 			unknown_handler();

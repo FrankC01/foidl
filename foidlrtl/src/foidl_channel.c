@@ -126,7 +126,7 @@ void foidl_rtl_init_channel() {
 
 // Utility
 
-static PFRTAny is_file_read(PFRTIOFileChannel channel) {
+PFRTAny is_file_read(PFRTIOFileChannel channel) {
     switch((ft) channel->mode->value) {
         case 0:
         case 1:
@@ -139,7 +139,7 @@ static PFRTAny is_file_read(PFRTIOFileChannel channel) {
     return false;
 }
 
-static PFRTAny is_file_text(PFRTIOFileChannel channel) {
+PFRTAny is_file_text(PFRTIOFileChannel channel) {
     switch((ft) channel->mode->value) {
         case 0:
         case 2:
@@ -382,6 +382,14 @@ PFRTAny foidl_channel_read_bang(PFRTAny channel) {
     else {
         unknown_handler();
     }
+    return res;
+}
+
+PFRTAny file_channel_read_next(PFRTIterator i) {
+    PFRTAny res = foidl_channel_readfile(
+        (PFRTIOFileChannel)((PFRTChannel_Iterator)i)->channel);
+    if(res == eof)
+        res = end;
     return res;
 }
 
