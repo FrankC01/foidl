@@ -36,7 +36,6 @@ module typeless
 
 ; Here are most of the literal expressions supported
 
-var iamnil                      ; No expression will be assigned 'nil'
 var inttype 5                   ; Will parse as an integer
 var hextype 0xdead09a764        ; Hex, '0x...' converts to integer
 var bintype 0b10010011          ; Binary, '0b...' converts to integer
@@ -55,7 +54,7 @@ var kwdtype :keyword            ; No quotes needed on keywords
 
 var l_type [inttype hextype
             bintype, strtype,
-            spitvars, iamnil]
+            spitvars]
 
 var  l_empty []
 
@@ -66,7 +65,7 @@ var  l_empty []
 ; When printed, vectors are distinguised by #[ ... ]
 ; Oh look, our vector contains our list. Yes, you can nest data
 
-var v_type <inttype iamnil l_type>
+var v_type <inttype l_type>
 var v_empty <>
 
 ; Map
@@ -105,7 +104,6 @@ var derived_list [get: m_type "key"]
 
 func :private spitvars []
     print!: nlchr
-    print!: "iamnil evaluates to      " printnl!: iamnil
     print!: "literal inttype evaluates to " printnl!: inttype
     print!: "literal hextype evaluates to " printnl!: hextype
     print!: "literal bintype evaluates to " printnl!: bintype

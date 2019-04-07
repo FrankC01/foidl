@@ -45,11 +45,11 @@ func lt_compare [a b]
 		printnl!: "'a' is NOT less than 'b'"
 
 ; Match
-; Syntax 'match' [symbol] match_expression
+; Syntax 'match' [symbol] matchexpression
 ;           '|' expression_pattern then_expression
 ;           '|' :default then_expression
 ;   [symbol] - Optional local symbol exposing result in enclosing scope
-;   match_expression - The expression whose result is used to test match pattern
+;   matchexpression - The expression whose result is used to test match pattern
 ;   |        - Match 'guard' indicating a pair, consisting of
 ;   predicate_expression - Expression to test for match, typical with the
 ;                        match expression
@@ -60,19 +60,19 @@ func lt_compare [a b]
 ; Note: Matches are the semantic equivalent of 1 expression
 
 
-func match_expression0 [a]
+func expression0 [a]
 
     ; Capture the result in a local variable, which is lexically scoped
     ; to the function, that is determined by a match guard or nil default
-    ; Note that '%0' refers to result of match_expression
+    ; Note that '%0' refers to result of matchexpression
 
     match +: a 10
         | <: %0 100   "Less than 100"
         | >: %0 100   "Greater than 100"
-        | =: %0 100   "Equal to 100"
+        | 100         "Equal to 100"
         ;           Compiler adds default which returns nil
 
-func match_expression1 [a]
+func expression1 [a]
 
     ; Capture the result in a local variable, which is lexically scoped
     ; to the function
@@ -81,9 +81,9 @@ func match_expression1 [a]
     ;   100 - a single value (typically a literal) that the compiler
     ;           expands to =: %0 100
     ;   :default - The fall through expression to execute
-    ; Note that '%0' refers to result of match_expression
+    ; Note that '%0' refers to result of matchexpression
 
-    match b +: a 10
+    match  +: a 10
         | <: %0 100     /: %0 5
         | >: %0 160     /: %0 10
         | 100           %0
@@ -92,9 +92,9 @@ func match_expression1 [a]
 
     ; Now we can use 'b' in lexical scope, or deeper
 
-    ?: =: b 0
-        "Default encountered"
-        b
+    ;?: =: b 0
+    ;    "Default encountered"
+    ;    b
 
 
 func main [argv]
@@ -103,18 +103,18 @@ func main [argv]
     print!: "Is 5 nil? Answer   : " printnl!: nil_expression: 5
     print!: nlchr
     print!: "Match_0 to see if 82 + 10 is : "
-        printnl!: match_expression0: 82
+        printnl!: expression0: 82
     print!: "Match_0 to see if 92 + 10 is : "
-        printnl!: match_expression0: 92
+        printnl!: expression0: 92
     print!: "Match_0 to see if 90 + 10 is : "
-        printnl!: match_expression0: 90
+        printnl!: expression0: 90
     print!: nlchr
     print!: "Match_1 to see if 82 + 10 is : "
-        printnl!: match_expression1: 82
+        printnl!: expression1: 82
     print!: "Match_1 to see if 155 + 10 is : "
-        printnl!: match_expression1: 155
+        printnl!: expression1: 155
     print!: "Match_1 to see if 90 + 10 is : "
-        printnl!: match_expression1: 90
+        printnl!: expression1: 90
     print!: "Match_1 to test if 100 + 10 is : "
-        printnl!: match_expression1: 100
+        printnl!: expression1: 100
     print!: "Is 'a' less than 'b'? Answer : " lt_compare: 1 2

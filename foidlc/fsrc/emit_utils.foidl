@@ -237,6 +237,7 @@ func new_function [asttype]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 func :private default_expression_handler [scope_fn frame scope_bb etype]
+    printnl!: etype
     warning:
         format!:
             "No emit implementation for {}" [get: etype TYPE]

@@ -33,6 +33,7 @@ module funccalls
 ; Function 'emptyfunc' takes no arguments and returns nil
 
 func emptyfunc []
+    nil
 
 ; Function 'plus_ten' that takes one argument 'singlearg' and
 ; returns the argument plus 10

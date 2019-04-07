@@ -16,7 +16,7 @@
 
 ; Introduction to the let and group expressions
 
-module letgrpexprs
+module fletgrpexprs
 
 ; For function and function calls see funcalls.foidl
 ; For flow (?: and match) expressions see flowexprs.foidl
@@ -27,7 +27,7 @@ module letgrpexprs
 ;                Returns result of last expression in the group body.
 ; Note: Groups are the semantic equivalent of 1 expression
 
-func group_expression0 [a]
+func gexpression0 [a]
 
     ; Nonsensical group to demonstrate multiple functions
     @(
@@ -47,7 +47,7 @@ func group_expression0 [a]
 ; Note: Lets are the semantic equivalent of 1 expression
 
 
-func let_expression0 [a]
+func lexpression0 [a]
 
     ; Nonsensical addition of function argument with 10 with function locally
     ; scope result 'b'
@@ -78,5 +78,5 @@ func let_expression0 [a]
 
 func main [argv]
     printnl!: "Let_0 churns up 7 "
-    let x [] let_expression0: 20
-    print!: "Result of Let_0 = " printnl!: x
+    let x [] lexpression0: 20
+    print!: "Result of lexpression0 = " printnl!: x

@@ -29,7 +29,7 @@ constString(endstr,"end");
 constString(fnstr,"function reference");
 constString(chanstr,"channel reference");
 constString(infserstr,"infinite series");
-constString(seriesstr,"serries reference");
+constString(seriesstr,"series reference");
 
 // Character types
 

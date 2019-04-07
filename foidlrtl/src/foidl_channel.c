@@ -508,6 +508,9 @@ static PFRTAny foidl_channel_writefile(PFRTAny channel, PFRTAny el) {
         else if(el->fclass == collection_class) {
             io_file_compound_txt_writer(channel, el);
         }
+        else if(el->fclass == function_class) {
+            io_file_scalar_txt_writer(channel->value, fnstr);
+        }
         else {
             unknown_handler();
         }
