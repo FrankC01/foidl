@@ -901,6 +901,7 @@ var :private emit_handlers
         :let_argref     emit_expression_result
         :let_resref     emit_expression_result
         :match_predref  emit_expression_result
+        :match_resref   emit_expression_result
         :literalref     emit_global_ref
         :funcref        emit_func_ref
         :varref         emit_global_ref
