@@ -59,7 +59,7 @@ func greeting [msg]
 func emptyGreeting [msg]
     printnl!: empty?: msg
 
-func checkzip [zip_code]
+func matchZip [zip_code]
     match result count: zip_code
         | <: %0 5       "Invalid. Less than 5"
         | =: %0 5       "Valid. Count = 5"
@@ -68,6 +68,9 @@ func checkzip [zip_code]
 
 func validZipFmt[zip_code]
     ; Indicates if given zip is in the correct format for processing
+    printnl!:
+        format: "Length check = {}"
+            [matchZip: zip_code]
     regex_match?: zip_code "\d{5}(-\d{1,4})*"
 
 func main [argv]

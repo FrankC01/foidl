@@ -47,11 +47,11 @@ var patterns [
     }
     {
         :type   :let
-        :regex  regex:"let"
+        :regex  regex:"let "
     }
     {
         :type   :match
-        :regex  regex: "match"
+        :regex  regex: "match "
     }
     {
         :type   :match_guard
