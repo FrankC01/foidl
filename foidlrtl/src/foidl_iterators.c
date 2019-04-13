@@ -165,7 +165,7 @@ PFRTIterator seriesiterator_initiate(PFRTIterator sitr) {
 	return sitr;
 }
 
-PFRTIterator channeliterator_setup(PFRTIOChannel2 chan) {
+PFRTIterator channeliterator_setup(PFRTIOChannel chan) {
 	PFRTIterator citr = (PFRTIterator) nil;
 	if(chan->ftype == file_type) {
 		if(is_file_read((PFRTIOFileChannel)chan) == true) {
@@ -227,7 +227,7 @@ PFRTIterator iteratorFor(PFRTAny t) {
 			}
 			break;
 		case 	io_class:
-			i = channeliterator_setup((PFRTIOChannel2) t);
+			i = channeliterator_setup((PFRTIOChannel) t);
 			break;
 		default:
 			unknown_handler();

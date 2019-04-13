@@ -1,5 +1,5 @@
 /*
-    foidl_io2.c
+    foidl_channel.c
     Library support for IO channels
 
     Copyright Frank V. Castellucci

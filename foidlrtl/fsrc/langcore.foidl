@@ -164,6 +164,22 @@ func  failWith 	[msg]
 	fail:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Concurrency functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func nap [timeout]
+	foidl_nap: timeout
+
+func thrd0 [fnref]
+	foidl_thread0: fnref
+
+func thrd [fnref argvector]
+	foidl_thread: fnref argvector
+
+func wait [thrdref]
+	foidl_wait: thrdref
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Math functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

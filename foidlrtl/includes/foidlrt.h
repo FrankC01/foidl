@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 
 #ifdef __cplusplus
@@ -81,11 +82,12 @@ static const ft 	series_iterator_type = 0xffffffff300000cb;
 static const ft 	channel_iterator_type = 0xffffffff300000ca;
 static const ft     string_iterator_type = 0xffffffff300000c9;
 
-//	Function/Lambda types
+//	Function/Lambda/Worker types
 
 static const ft 	funcref_type  = 0xffffffff100000ef;
 static const ft 	lambref_type  = 0xffffffff100000ee;
 static const ft 	funcinst_type = 0xffffffff100000ed;
+static const ft     worker_type   = 0xffffffff100000ec;
 
 //	IO types
 
@@ -99,29 +101,11 @@ static const ft 	cerr_type   = 0xffffffff100000b9;
 static const ft 	closed_type = 0xffffffff100000b8;
 
 // IO buffer types
-
+/*
 static const ft 	mem_map_buffer   = 0xffffffff100000b6;
 static const ft 	mem_block_buffer = 0xffffffff100000b5;
 static const ft 	no_buffer        = 0xffffffff100000b4;
-
-//	IO Flags
-
-static const ft 	open_read_only    = 0x0000000000000000;
-static const ft 	open_write_only   = 0x0000000000000001;
-static const ft 	open_read_write   = 0x0000000000000002;
-static const ft 	open_write_append = 0x0000000000000008;
-static const ft 	open_create   	  = 0x0000000000000200;
-static const ft 	open_truncate 	  = 0x0000000000000400;
-
-//	Reader/writer handling flags
-
-static const ft 	read_byte   = 0x0000000000000000;
-static const ft 	read_char   = 0x0000000000000001;
-static const ft 	read_string = 0x0000000000000002;
-
-static const ft 	write_byte   = 0x0000000000000003;
-static const ft 	write_char   = 0x0000000000000004;
-static const ft 	write_string = 0x0000000000000005;
+*/
 
 //	Other constants
 
@@ -319,7 +303,7 @@ typedef struct FRTSet {
     ft 				shift;		//	Dynamic
 } *PFRTSet;
 
-//	Function and Lambda Structures
+//	Function, Lambda and Concurrency Structures
 
 typedef struct   FRTFuncRefG {
 	ft 			fsig;
@@ -354,9 +338,29 @@ typedef struct FRTFuncRef2 {
 	ft  		mcount;
 	uint32_t 	spare;
 	void 		*fnptr;
-	PFRTAny 	args; 	//	Could be a vector as well
+	PFRTAny 	args; 	         //	Could be a vector as well
 	void 		*invokefnptr;
 } *PFRTFuncRef2;
+
+typedef struct   FRTWorkerG {
+    ft          fsig;
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *fnptr;         // Invoication func
+    pthread_t   thread_id;
+} *PFRTWorkerG;
+
+typedef struct   FRTWorker {
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *fnptr;         // Invoication func
+    pthread_t   thread_id;
+} *PFRTWorker;
+
 
 //	Series
 
@@ -381,24 +385,24 @@ typedef struct FRTSeries {
 	PFRTAny 	step;
 } *PFRTSeries;
 
-//	IO Structures
+//	Channel Structures
 
-typedef struct   FRTIOChannel2G {
+typedef struct   FRTIOChannelG {
     ft          fsig;
     ft          fclass;
     ft          ftype;
     ft          count;
     uint32_t    hash;
     void        *value;         // Maps to IO handle
-} *PFRTIOChannel2G;
+} *PFRTIOChannelG;
 
-typedef struct   FRTIOChannel2 {
+typedef struct   FRTIOChannel {
     ft          fclass;
     ft          ftype;
     ft          count;
     uint32_t    hash;
     void        *value;         // Maps to IO handle
-} *PFRTIOChannel2;
+} *PFRTIOChannel;
 
 typedef struct   FRTIOFileChannelG {
     ft          fsig;
@@ -423,6 +427,7 @@ typedef struct   FRTIOFileChannel {
     PFRTAny     mode;
     PFRTAny     render;
 } *PFRTIOFileChannel;
+
 
 //	Forward decls and macros
 
@@ -550,7 +555,7 @@ typedef struct FRTChannel_Iterator {
 	ft 				ftype;		//	channel_iterator_type
 	itrNext 		next;
 	uint32_t 		currRef;
-	PFRTIOChannel2 	channel;
+	PFRTIOChannel 	channel;
 } *PFRTChannel_Iterator;
 
 //	Local use structures
@@ -694,8 +699,8 @@ EXTERNC PFRTAny string_type_qmark(PFRTAny);
 #endif
 
 #ifndef HASH_IMPL
-EXTERNC  uint32_t murmur3_32(const uint8_t*, size_t, uint32_t);
-EXTERNC 	uint32_t hash(PFRTAny);
+EXTERNC uint32_t murmur3_32(const uint8_t*, size_t, uint32_t);
+EXTERNC uint32_t hash(PFRTAny);
 #endif
 
 #ifndef	ALLOC_IMPL
@@ -722,11 +727,12 @@ EXTERNC PFRTAny 		allocGlobalCharType(int);
 EXTERNC PFRTAny         allocRegex(PFRTAny sbase, void* regex);
 
 // IO Types
-EXTERNC PFRTIOChannel2  allocFileChannel(PFRTAny, PFRTAny);
+EXTERNC PFRTIOChannel   allocFileChannel(PFRTAny, PFRTAny);
 
 // Function types
 EXTERNC PFRTFuncRef2 	allocFuncRef2(void *fn, ft maxarg,invoke_funcptr ifn);
 EXTERNC void 			deallocFuncRef2(PFRTFuncRef2);
+EXTERNC PFRTWorker      allocWorker(PFRTFuncRef2);
 
 // Collection types
 EXTERNC PFRTList   		allocList(ft, PFRTLinkNode);
@@ -748,7 +754,7 @@ EXTERNC PFRTIterator 	allocTrieIterator(PFRTAssocType,itrNext);
 EXTERNC PFRTIterator 	allocVectorIterator(PFRTVector,itrNext);
 EXTERNC PFRTIterator 	allocListIterator(PFRTList,itrNext);
 EXTERNC PFRTIterator 	allocSeriesIterator(PFRTSeries,itrNext);
-EXTERNC PFRTIterator    allocChannelIterator(PFRTIOChannel2, itrNext);
+EXTERNC PFRTIterator    allocChannelIterator(PFRTIOChannel, itrNext);
 EXTERNC PFRTIterator    allocStringIterator(PFRTAny, itrNext);
 
 #endif
@@ -844,9 +850,15 @@ EXTERNC PFRTAny 	dispatch1i(PFRTAny fn, PFRTAny arg1);
 EXTERNC PFRTAny 	dispatch2i(PFRTAny fn, PFRTAny arg1, PFRTAny arg2);
 #endif
 
+// Work
+#ifndef WORK_IMPL
+EXTERNC PFRTAny     foidl_nap(PFRTAny);
+#endif
+
+
 #ifndef ITERATORS_IMPL
-EXTERNC PFRTIterator iteratorFor(PFRTAny);
-EXTERNC PFRTAny 		iteratorNext(PFRTIterator);
+EXTERNC PFRTIterator   iteratorFor(PFRTAny);
+EXTERNC PFRTAny 	   iteratorNext(PFRTIterator);
 #endif
 
 //	Node functions
@@ -968,7 +980,6 @@ EXTERNC PFRTAny     file_channel_read_next(PFRTIterator);
 EXTERNC PFRTAny     foidl_channel_write_bang(PFRTAny, PFRTAny);
 EXTERNC PFRTAny     foidl_fexists_qmark(PFRTAny);
 #endif
-
 
 // Series
 

@@ -181,13 +181,13 @@ PFRTAny allocGlobalCharType(int v) {
 
 // New IO Channel
 
-PFRTIOChannel2 allocFileChannel(PFRTAny name, PFRTAny mode) {
+PFRTIOChannel allocFileChannel(PFRTAny name, PFRTAny mode) {
 	PFRTIOFileChannel fc = foidl_xall(sizeof(struct FRTIOFileChannel));
 	fc->fclass = io_class;
 	fc->ftype  = file_type;
 	fc->name   = name;
 	fc->mode   = mode;
-	return (PFRTIOChannel2) fc;
+	return (PFRTIOChannel) fc;
 }
 
 //	Function reference instance
@@ -201,6 +201,15 @@ PFRTFuncRef2 allocFuncRef2(void *fn, ft maxarg, invoke_funcptr ifn) {
 	fr->args   = foidl_vector_inst_bang();
 	fr->invokefnptr = ifn;
 	return fr;
+}
+
+PFRTWorker  allocWorker(PFRTFuncRef2 ref) {
+	PFRTWorker wrk = foidl_xall(sizeof(struct FRTWorker));
+	wrk->fclass = function_class;
+	wrk->ftype = worker_type;
+	wrk->count = 0;
+	wrk->fnptr = ref;
+	return wrk;
 }
 
 //	Collection related
@@ -416,7 +425,7 @@ PFRTIterator allocSeriesIterator(PFRTSeries s, itrNext next) {
 }
 
 
-PFRTIterator allocChannelIterator(PFRTIOChannel2 cb, itrNext next) {
+PFRTIterator allocChannelIterator(PFRTIOChannel cb, itrNext next) {
 	PFRTChannel_Iterator ci = (PFRTChannel_Iterator)
 		foidl_xall(sizeof(struct FRTChannel_Iterator));
 	ci->fclass = iterator_class;
