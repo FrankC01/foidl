@@ -424,7 +424,10 @@ static void io_file_scalar_txt_writer(FILE *chn, PFRTAny el) {
             }
             break;
         case    character_type:
-            fprintf(chn, "%c", (int) el->value );
+            if(el == nlchr)
+                fprintf(chn,"\n");
+            else
+                fprintf(chn, "%c", (int) el->value );
             break;
         case    byte_type:
             {

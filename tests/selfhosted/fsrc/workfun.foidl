@@ -22,15 +22,24 @@ func sleeper[timeout]
     nap: timeout
 
 func noarg[]
-    sleeper: 2
-    printnl!: "In no arg from thread"
+    sleeper: 1
+    printnl!: "In no arg from thread, returning 'zero'"
     "zero"
 
+func onearg[arg]
+    sleeper: 1
+    print!: "In one arg with "
+    printnl!: arg
+    "one"
+
 func main[argv]
-    let a [] thrd0: noarg       ; Safe
-    let b [] thrd0: ^[] printnl!: +: 1 1  ; Safe
-    ;let c [] thrd0: sleeper     ; Should throw error
+    let a [] thrd0: noarg           ; Test explicit no args
+    let b [] thrd0: ^[] +: 1 1      ; Test lambda no args
+    let c [] thrd: onearg [1]       ; Test explicit multi-arg
+    let d [] thrd: ^[a] +: a 1 [2]  ; Test lamda multi-arg
+
     printnl!: wait: a
-    wait: b
-    ;wait: c
+    printnl!: wait: b
+    printnl!: wait: c
+    printnl!: wait: d
 

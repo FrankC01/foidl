@@ -353,6 +353,7 @@ typedef struct   FRTWorkerG {
     ft          count;
     uint32_t    hash;
     void        *fnptr;         // Invoication func
+    PFRTAny     vector_args;
 #ifdef _MSC_VER
     HANDLE      thread_id;
 #else
@@ -367,6 +368,7 @@ typedef struct   FRTWorker {
     ft          count;
     uint32_t    hash;
     void        *fnptr;         // Invoication func
+    PFRTAny     vector_args;
 #ifdef _MSC_VER
     HANDLE      thread_id;
 #else
