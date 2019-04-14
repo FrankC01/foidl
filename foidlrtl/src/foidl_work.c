@@ -8,7 +8,9 @@
 
 #define WORK_IMPL
 #include <foidlrt.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <stdio.h>
 
 /*
@@ -19,12 +21,17 @@ PFRTAny foidl_nap(PFRTAny timeout) {
     PFRTAny res = nil;
     if(timeout->fclass == scalar_class &&
         timeout->ftype == number_type) {
+        #ifdef _MSC_VER
+        Sleep(number_toft(timeout)*1000);
+        res = zero;
+        #else
         ft timo = number_toft(timeout);
         unsigned int ires = sleep(timo);
         if(ires == 0)
             res = zero;
         else
             res = foidl_reg_intnum(ires);
+        #endif
     }
     else {
         unknown_handler();
@@ -35,6 +42,7 @@ PFRTAny foidl_nap(PFRTAny timeout) {
 void *worker0(void *arg) {
     PFRTWorker wrk = (PFRTWorker) arg;
     PFRTAny res = dispatch0(wrk->fnptr);
+    wrk->result = res;
 #ifdef _MSC_VER
 #else
     pthread_exit((void *) res);
@@ -46,6 +54,7 @@ void *worker0(void *arg) {
 DWORD WINAPI wworker0(void* arg) {
     PFRTWorker wrk = (PFRTWorker) arg;
     PFRTAny res = dispatch0(wrk->fnptr);
+    wrk->result = res;
   return 0;
 }
 #endif
@@ -73,7 +82,8 @@ PFRTAny foidl_wait(PFRTAny thrdref) {
         thrdref->ftype == worker_type) {
         PFRTWorker wrk = (PFRTWorker) thrdref;
 #ifdef _MSC_VER
-
+        WaitForSingleObject(wrk->thread_id, INFINITE);
+        res = wrk->result;
 #else
         pthread_join(wrk->thread_id, (void *) &res);
 #endif

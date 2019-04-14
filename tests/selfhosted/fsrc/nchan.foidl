@@ -36,7 +36,7 @@ var cpwp {
 
 func lines [chan]
     let line [] reads!: chan
-    ?: =: line eof
+    ?: =: line file_eof
         nil
         @(
             printnl!: line

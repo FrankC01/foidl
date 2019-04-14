@@ -59,7 +59,7 @@ globalScalarConst(open_ab,byte_type,(void *) 0x7,1);
 globalScalarConst(open_ar,byte_type,(void *) 0x8,1);
 globalScalarConst(open_arb,byte_type,(void *) 0x9,1);
 
-globalScalarConst(eof,byte_type,(void *) 0xF,1);
+globalScalarConst(file_eof,byte_type,(void *) 0xF,1);
 
 
 static char *stuff[] = {"r", "rb", "w", "wb","w+","wb+","a","ab","a+","ab+"};
@@ -248,7 +248,7 @@ PFRTAny foidl_fexists_qmark(PFRTAny s) {
 // Read a line into a string
 
 static PFRTAny read_txt_line(FILE *fptr) {
-    PFRTAny reof = eof;
+    PFRTAny reof = file_eof;
     FileStat ffs = count_to_nl(fptr);
     if(ffs.epos) {
         fseek(fptr, 0 - (ffs.epos + ffs.ahead), SEEK_CUR);
@@ -261,14 +261,14 @@ static PFRTAny read_txt_line(FILE *fptr) {
 }
 
 static PFRTAny read_bin_line(FILE *fptr) {
-    return eof;
+    return file_eof;
 }
 
 // Read a single character
 
 static PFRTAny read_txt_char(FILE *fptr) {
     int ch;
-    PFRTAny reof = eof;
+    PFRTAny reof = file_eof;
     if((ch=fgetc(fptr)) != EOF) {
         reof = allocCharWithValue((ft) ch);
     }
@@ -276,14 +276,14 @@ static PFRTAny read_txt_char(FILE *fptr) {
 }
 
 static PFRTAny read_bin_char(FILE *fptr) {
-    return eof;
+    return file_eof;
 }
 
 // Read a single byte
 
 static PFRTAny read_txt_byte(FILE *fptr) {
     int ch;
-    PFRTAny reof = eof;
+    PFRTAny reof = file_eof;
     if((ch=fgetc(fptr)) != EOF) {
         reof = allocAny(scalar_class,byte_type,(void *)(ft)ch);
     }
@@ -291,13 +291,13 @@ static PFRTAny read_txt_byte(FILE *fptr) {
 }
 
 static PFRTAny read_bin_byte(FILE *fptr) {
-    return eof;
+    return file_eof;
 }
 
 static PFRTAny render_txt_read(PFRTIOFileChannel channel) {
     int render = (int) channel->render->value;
     FILE *fp = (FILE *)channel->value;
-    PFRTAny feof = eof;
+    PFRTAny feof = file_eof;
     switch(render) {
         case    0:
             feof = read_txt_byte(fp);
@@ -322,7 +322,7 @@ static PFRTAny render_txt_read(PFRTIOFileChannel channel) {
 static PFRTAny render_bin_read(PFRTIOFileChannel channel) {
     int render = (int) channel->render->value;
     FILE *fp = (FILE *)channel->value;
-    PFRTAny feof = eof;
+    PFRTAny feof = file_eof;
     switch(render) {
         case    0:
             feof = read_bin_byte(fp);
@@ -352,7 +352,7 @@ static PFRTAny foidl_channel_readfile(PFRTIOFileChannel channel) {
     else {
         return render_bin_read(channel);
     }
-    return eof;
+    return file_eof;
 }
 
 static PFRTAny foidl_channel_read_cin(PFRTIOFileChannel channel) {
@@ -388,7 +388,7 @@ PFRTAny foidl_channel_read_bang(PFRTAny channel) {
 PFRTAny file_channel_read_next(PFRTIterator i) {
     PFRTAny res = foidl_channel_readfile(
         (PFRTIOFileChannel)((PFRTChannel_Iterator)i)->channel);
-    if(res == eof)
+    if(res == file_eof)
         res = end;
     return res;
 }
@@ -518,7 +518,7 @@ static PFRTAny foidl_channel_writefile(PFRTAny channel, PFRTAny el) {
     else {
         //return render_bin_read(channel);
     }
-    return eof;
+    return file_eof;
 }
 
 // Writes entry point
