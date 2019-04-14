@@ -35,9 +35,20 @@ PFRTAny foidl_nap(PFRTAny timeout) {
 void *worker0(void *arg) {
     PFRTWorker wrk = (PFRTWorker) arg;
     PFRTAny res = dispatch0(wrk->fnptr);
+#ifdef _MSC_VER
+#else
     pthread_exit((void *) res);
+#endif
     return NULL;
 }
+
+#ifdef _MSC_VER
+DWORD WINAPI wworker0(void* arg) {
+    PFRTWorker wrk = (PFRTWorker) arg;
+    PFRTAny res = dispatch0(wrk->fnptr);
+  return 0;
+}
+#endif
 
 PFRTAny foidl_thread(PFRTAny funcref, PFRTAny arglist) {
     PFRTWorker wrk = allocWorker((PFRTFuncRef2)funcref);
@@ -47,7 +58,12 @@ PFRTAny foidl_thread(PFRTAny funcref, PFRTAny arglist) {
 
 PFRTAny foidl_thread0(PFRTAny funcref) {
     PFRTWorker wrk = allocWorker((PFRTFuncRef2)funcref);
+#ifdef _MSC_VER
+    HANDLE tid = CreateThread(NULL,0,wworker0, wrk, 0, NULL);
+    wrk->thread_id = tid;
+#else
     pthread_create(&wrk->thread_id, NULL, worker0, wrk);
+#endif
     return (PFRTAny) wrk;
 }
 
@@ -56,7 +72,11 @@ PFRTAny foidl_wait(PFRTAny thrdref) {
     if(thrdref->fclass == function_class &&
         thrdref->ftype == worker_type) {
         PFRTWorker wrk = (PFRTWorker) thrdref;
+#ifdef _MSC_VER
+
+#else
         pthread_join(wrk->thread_id, (void *) &res);
+#endif
     }
     else {
         unknown_handler();

@@ -13,8 +13,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 
+#ifdef _MSC_VER
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
 
 #ifdef __cplusplus
     #define EXTERNC extern "C"
@@ -358,7 +362,11 @@ typedef struct   FRTWorker {
     ft          count;
     uint32_t    hash;
     void        *fnptr;         // Invoication func
+#ifdef _MSC_VER
+    HANDLE      thread_id;
+#else
     pthread_t   thread_id;
+#endif
 } *PFRTWorker;
 
 
