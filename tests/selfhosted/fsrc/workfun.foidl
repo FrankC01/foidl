@@ -18,28 +18,40 @@
 
 module workfun
 
-func sleeper[timeout]
-    nap: timeout
-
+; A noarg function, used by 'thrd0:' invocation
 func noarg[]
-    sleeper: 1
+    nap!: 1
     printnl!: "In no arg from thread, returning 'zero'"
     "zero"
 
+func longloop []
+    fold: ^[a b]
+        @(
+            nap!: 1
+            print!: format: "Evaluating {} `n" [b]
+            b
+        )
+        nil [1 2 3 4 5 6 7 8 9 0]
+    "done"
+
+; A onearg function, used by 'thrd:' invocation
 func onearg[arg]
-    sleeper: 1
+    nap!: 1
     print!: "In one arg with "
     printnl!: arg
     "one"
 
 func main[argv]
-    let a [] thrd0: noarg           ; Test explicit no args
-    let b [] thrd0: ^[] +: 1 1      ; Test lambda no args
-    let c [] thrd: onearg [1]       ; Test explicit multi-arg
-    let d [] thrd: ^[a] +: a 1 [2]  ; Test lamda multi-arg
+    let a [] thrd0!: noarg           ; Test explicit no args
+    let b [] thrd0!: ^[] +: 1 1      ; Test lambda no args
+    let c [] thrd!: onearg [1]       ; Test explicit multi-arg
+    let d [] thrd!: ^[x] +: x 1 [2]  ; Test lamda multi-arg
+    let e [] thrd0!: longloop
 
-    printnl!: wait: a
-    printnl!: wait: b
-    printnl!: wait: c
-    printnl!: wait: d
+    printnl!: wait!: a
+    printnl!: wait!: b
+    printnl!: wait!: c
+    printnl!: wait!: d
+    printnl!: wait!: e
+
 

@@ -17,7 +17,7 @@
     Sleeps for timeout seconds
 */
 
-PFRTAny foidl_nap(PFRTAny timeout) {
+PFRTAny foidl_nap_bang(PFRTAny timeout) {
     PFRTAny res = nil;
     if(timeout->fclass == scalar_class &&
         timeout->ftype == number_type) {
@@ -25,12 +25,13 @@ PFRTAny foidl_nap(PFRTAny timeout) {
         Sleep(number_toft(timeout)*1000);
         res = zero;
         #else
-        ft timo = number_toft(timeout);
-        unsigned int ires = sleep(timo);
-        if(ires == 0)
+        unsigned int ires = sleep(number_toft(timeout));
+        if(ires == 0) {
             res = zero;
-        else
+        }
+        else {
             res = foidl_reg_intnum(ires);
+        }
         #endif
     }
     else {
@@ -39,10 +40,14 @@ PFRTAny foidl_nap(PFRTAny timeout) {
     return res;
 }
 
+/*
+    worker0
+    Invokes function with no arguments
+*/
 #ifdef _MSC_VER
-DWORD WINAPI worker0(void* arg)
+static DWORD WINAPI worker0(void* arg)
 #else
-void *worker0(void *arg)
+static void *worker0(void *arg)
 #endif
 {
     PFRTWorker wrk = (PFRTWorker) arg;
@@ -56,10 +61,15 @@ void *worker0(void *arg)
 #endif
 }
 
+/*
+    worker
+    Invokes function with arbitrary arguments
+*/
+
 #ifdef _MSC_VER
-DWORD WINAPI worker(void* arg)
+static DWORD WINAPI worker(void* arg)
 #else
-void *worker(void *arg)
+static void *worker(void *arg)
 #endif
 {
     PFRTWorker wrk = (PFRTWorker) arg;
@@ -84,8 +94,12 @@ void *worker(void *arg)
 #endif
 }
 
+/*
+    foidl_thread
+    Entry point for spawning a worker with arguments
+*/
 
-PFRTAny foidl_thread(PFRTAny funcref, PFRTAny argvector) {
+PFRTAny foidl_thread_bang(PFRTAny funcref, PFRTAny argvector) {
     PFRTWorker wrk = allocWorker((PFRTFuncRef2)funcref);
     wrk->vector_args = argvector;
 #ifdef _MSC_VER
@@ -97,7 +111,11 @@ PFRTAny foidl_thread(PFRTAny funcref, PFRTAny argvector) {
     return (PFRTAny) wrk;
 }
 
-PFRTAny foidl_thread0(PFRTAny funcref) {
+/*
+    foidl_thread0
+    Entry point for spawning a worker with no arguments
+*/
+PFRTAny foidl_thread0_bang(PFRTAny funcref) {
     PFRTWorker wrk = allocWorker((PFRTFuncRef2)funcref);
 #ifdef _MSC_VER
     HANDLE tid = CreateThread(NULL,0,worker0, wrk, 0, NULL);
@@ -108,7 +126,12 @@ PFRTAny foidl_thread0(PFRTAny funcref) {
     return (PFRTAny) wrk;
 }
 
-PFRTAny foidl_wait(PFRTAny thrdref) {
+/*
+    foidl_wait
+    Blocks for worker indefinitly
+*/
+
+PFRTAny foidl_wait_bang(PFRTAny thrdref) {
     PFRTAny res = nil;
     if(thrdref->fclass == function_class &&
         thrdref->ftype == worker_type) {

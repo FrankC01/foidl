@@ -155,10 +155,10 @@ func  foidl_dispatch0 [fn]
 ; Concurrency functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-func foidl_nap      [timeout]
-func foidl_thread   [fnref argvector]
-func foidl_thread0  [fnref]
-func foidl_wait     [thrdref]
+func foidl_nap!      [timeout]
+func foidl_thread!   [fnref argvector]
+func foidl_thread0!  [fnref]
+func foidl_wait!     [thrdref]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Basic Math Functions
