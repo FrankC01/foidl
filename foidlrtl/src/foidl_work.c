@@ -11,21 +11,33 @@
 #ifndef _MSC_VER
 #include <unistd.h>
 #endif
+#include <time.h>
 #include <stdio.h>
 
+#define NANO_SECOND_MULTIPLIER  1000000
 /*
-    Sleeps for timeout seconds
+    Sleeps for timeout milliseconds
 */
 
 PFRTAny foidl_nap_bang(PFRTAny timeout) {
     PFRTAny res = nil;
     if(timeout->fclass == scalar_class &&
         timeout->ftype == number_type) {
+        ft  tmms = number_toft(timeout);
         #ifdef _MSC_VER
-        Sleep(number_toft(timeout)*1000);
+        Sleep(number_toft(tmms);
         res = zero;
         #else
-        unsigned int ires = sleep(number_toft(timeout));
+        struct timespec req;
+        if(tmms > 999) {
+            req.tv_sec = (int)(tmms / 1000);                            /* Must be Non-Negative */
+            req.tv_nsec = (tmms - ((long)req.tv_sec * 1000)) * NANO_SECOND_MULTIPLIER;
+        }
+        else {
+            req.tv_sec = 0;
+            req.tv_nsec = tmms * NANO_SECOND_MULTIPLIER;
+        }
+        int ires = nanosleep(&req , NULL);
         if(ires == 0) {
             res = zero;
         }

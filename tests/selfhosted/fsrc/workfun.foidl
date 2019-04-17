@@ -20,14 +20,14 @@ module workfun
 
 ; A noarg function, used by 'thrd0:' invocation
 func noarg[]
-    nap!: 1
+    nap!: 500
     printnl!: "In no arg from thread, returning 'zero'"
     "zero"
 
 func longloop []
     fold: ^[a b]
         @(
-            nap!: 1
+            nap!: 100
             print!: format: "Evaluating {} `n" [b]
             b
         )
@@ -36,7 +36,7 @@ func longloop []
 
 ; A onearg function, used by 'thrd:' invocation
 func onearg[arg]
-    nap!: 1
+    nap!: 500
     print!: "In one arg with "
     printnl!: arg
     "one"
@@ -48,6 +48,7 @@ func main[argv]
     let d [] thrd!: ^[x] +: x 1 [2]  ; Test lamda multi-arg
     let e [] thrd0!: longloop
 
+    printnl!: a
     printnl!: wait!: a
     printnl!: wait!: b
     printnl!: wait!: c

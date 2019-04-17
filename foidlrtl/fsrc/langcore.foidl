@@ -167,8 +167,8 @@ func  failWith 	[msg]
 ; Concurrency functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-func nap! [timeout]
-	foidl_nap!: timeout
+func nap! [timeout_ms]
+	foidl_nap!: timeout_ms
 
 func thrd0! [fnref]
 	foidl_thread0!: fnref
