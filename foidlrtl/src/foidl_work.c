@@ -73,6 +73,16 @@ static void *worker0(void *arg)
 #endif
 }
 
+static PFRTAny spawn_worker0(PFRTWorker wrk) {
+#ifdef _MSC_VER
+    HANDLE tid = CreateThread(NULL,0,worker0, wrk, 0, NULL);
+    wrk->thread_id = tid;
+#else
+    pthread_create(&wrk->thread_id, NULL, worker0, wrk);
+#endif
+    return (PFRTAny) wrk;
+}
+
 /*
     worker
     Invokes function with arbitrary arguments
@@ -106,14 +116,7 @@ static void *worker(void *arg)
 #endif
 }
 
-/*
-    foidl_thread
-    Entry point for spawning a worker with arguments
-*/
-
-PFRTAny foidl_thread_bang(PFRTAny funcref, PFRTAny argvector) {
-    PFRTWorker wrk = allocWorker((PFRTFuncRef2)funcref);
-    wrk->vector_args = argvector;
+static PFRTAny spawn_worker(PFRTWorker wrk) {
 #ifdef _MSC_VER
     HANDLE tid = CreateThread(NULL,0,worker, wrk, 0, NULL);
     wrk->thread_id = tid;
@@ -123,19 +126,28 @@ PFRTAny foidl_thread_bang(PFRTAny funcref, PFRTAny argvector) {
     return (PFRTAny) wrk;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//                      Threads
+///////////////////////////////////////////////////////////////////////////////
+
+/*
+    foidl_thread
+    Entry point for spawning a worker with arguments
+*/
+
+PFRTAny foidl_thread_bang(PFRTAny funcref, PFRTAny argvector) {
+    PFRTWorker wrk = allocWorker((PFRTFuncRef2)funcref);
+    wrk->vector_args = argvector;
+    return spawn_worker(wrk);
+}
+
 /*
     foidl_thread0
     Entry point for spawning a worker with no arguments
 */
 PFRTAny foidl_thread0_bang(PFRTAny funcref) {
     PFRTWorker wrk = allocWorker((PFRTFuncRef2)funcref);
-#ifdef _MSC_VER
-    HANDLE tid = CreateThread(NULL,0,worker0, wrk, 0, NULL);
-    wrk->thread_id = tid;
-#else
-    pthread_create(&wrk->thread_id, NULL, worker0, wrk);
-#endif
-    return (PFRTAny) wrk;
+    return spawn_worker0(wrk);
 }
 
 /*
@@ -160,3 +172,8 @@ PFRTAny foidl_wait_bang(PFRTAny thrdref) {
     }
     return res;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+//                      OTHER?
+///////////////////////////////////////////////////////////////////////////////
+

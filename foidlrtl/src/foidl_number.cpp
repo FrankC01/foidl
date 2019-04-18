@@ -9,7 +9,6 @@
 #define NUMBER_IMPL
 #include <foidlrt.h>
 #include <stdio.h>
-//#include <m_apm.h>
 #include <m_apm_lc.h>
 
 static PFRTAny fend = (PFRTAny) &_end.fclass;
@@ -17,7 +16,48 @@ static PFRTAny fnil = (PFRTAny) &_nil.fclass;
 static PFRTAny ftrue = (PFRTAny) &_true.fclass;
 static PFRTAny ffalse = (PFRTAny) &_false.fclass;
 
+/*
+    Handle library re-entrancy issues
+*/
+#ifdef _MSC_VER
+static HANDLE   number_lock;
+#else
+static pthread_mutex_t number_lock;
+#endif
+
+static void init_locks() {
+#ifdef _MSC_VER
+    number_lock = CreateMutex(
+        NULL,              // default security attributes
+        FALSE,             // initially not owned
+        NULL);
+#else
+    pthread_mutex_init(&number_lock, NULL);
+#endif
+}
+
+static int get_nlock() {
+#ifdef _MSC_VER
+    return (int) WaitForSingleObject(
+            number_lock,    // handle to mutex
+            INFINITE);
+#else
+    return pthread_mutex_lock(&number_lock);
+#endif
+}
+
+static int release_nlock() {
+#ifdef _MSC_VER
+    return (int) ReleaseMutex(number_lock);
+#else
+    return pthread_mutex_unlock(&number_lock);
+#endif
+}
+
+// Register a new number
+
 EXTERNC PFRTAny  foidl_reg_number(char *s) {
+    get_nlock();
     M_APM   numapm = m_apm_init();
     if(strlen(s) > 2 && s[0] == '0') {
         switch(s[1]) {
@@ -38,12 +78,15 @@ EXTERNC PFRTAny  foidl_reg_number(char *s) {
     else {
         m_apm_set_string(numapm, s);
     }
+    release_nlock();
     return allocAny(scalar_class, number_type, (void *)numapm);
 }
 
 EXTERNC PFRTAny foidl_reg_intnum(long long v) {
+    get_nlock();
     M_APM   numapm = m_apm_init();
     m_apm_set_long(numapm,v);
+    release_nlock();
     return allocAny(scalar_class, number_type, (void *)numapm);
 }
 
@@ -80,6 +123,7 @@ static M_APM _make_abs(M_APM numapm) {
 }
 
 EXTERNC long long number_tolong(PFRTAny num) {
+    get_nlock();
     M_APM   numapm = (M_APM) num->value;
     M_APM   numabs = _make_abs(numapm);
     char *nts = (char *)foidl_xall(num_buffersize(numabs));
@@ -87,6 +131,7 @@ EXTERNC long long number_tolong(PFRTAny num) {
     long long res = strtoll(nts, NULL, 10);
     foidl_xdel(nts);
     m_apm_free(numabs);
+    release_nlock();
     return res;
 }
 
@@ -294,6 +339,7 @@ EXTERNC PFRTAny foidl_num_cos(PFRTAny decpl, PFRTAny arg) {
 
 EXTERNC void foidl_rtl_init_numbers() {
     M_init_trig_globals();
+    init_locks();
     //  Utilitity counters
     zero = allocAny(scalar_class, number_type, (void *)MM_Zero);
     one = allocAny(scalar_class, number_type, (void *)MM_One);
