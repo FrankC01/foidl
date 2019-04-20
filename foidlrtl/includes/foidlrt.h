@@ -353,7 +353,8 @@ typedef struct   FRTWorkerG {
     ft          count;
     uint32_t    hash;
     void        *fnptr;         // Invoication func
-    PFRTAny     vector_args;
+    PFRTAny     argcollection;
+    PFRTAny     work_state;
 #ifdef _MSC_VER
     HANDLE      thread_id;
 #else
@@ -368,7 +369,8 @@ typedef struct   FRTWorker {
     ft          count;
     uint32_t    hash;
     void        *fnptr;         // Invoication func
-    PFRTAny     vector_args;
+    PFRTAny     argcollection;
+    PFRTAny     work_state;
 #ifdef _MSC_VER
     HANDLE      thread_id;
 #else
@@ -700,6 +702,7 @@ EXTERNC int asprintf(char **strp, const char *format, ...);
 #endif
 
 #ifndef PREDICATE_IMPL
+EXTERNC PFRTAny foidl_empty_qmark(PFRTAny);
 EXTERNC PFRTAny scalar_equality(PFRTAny,PFRTAny);
 EXTERNC PFRTAny foidl_equal_qmark(PFRTAny,PFRTAny);
 EXTERNC PFRTAny foidl_falsey_qmark(PFRTAny);
@@ -869,6 +872,7 @@ EXTERNC PFRTAny 	dispatch2i(PFRTAny fn, PFRTAny arg1, PFRTAny arg2);
 // Work
 #ifndef WORK_IMPL
 EXTERNC PFRTAny     foidl_nap(PFRTAny);
+EXTERNC PFRTAny     wrk_alloc;
 #endif
 
 

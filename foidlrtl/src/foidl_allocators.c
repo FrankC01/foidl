@@ -209,6 +209,7 @@ PFRTWorker  allocWorker(PFRTFuncRef2 ref) {
 	wrk->ftype = worker_type;
 	wrk->count = 0;
 	wrk->fnptr = ref;
+	wrk->work_state = wrk_alloc;
 	return wrk;
 }
 

@@ -170,14 +170,20 @@ func  failWith 	[msg]
 func nap! [timeout_ms]
 	foidl_nap!: timeout_ms
 
-func thrd0! [fnref]
-	foidl_thread0!: fnref
+func task! [fnref argvector]
+	foidl_task!: fnref argvector
 
 func thrd! [fnref argvector]
 	foidl_thread!: fnref argvector
 
-func wait! [thrdref]
-	foidl_wait!: thrdref
+func start! [wrkref]
+	foidl_start!: wrkref
+
+func wait! [wrkref]
+	foidl_wait!: wrkref
+
+func work_state [wrkref]
+	foidl_work_state: wrkref
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Math functions

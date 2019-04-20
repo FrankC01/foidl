@@ -41,18 +41,33 @@ func onearg[arg]
     printnl!: arg
     "one"
 
+func twoarg[arg1 arg2]
+    nap!: 500
+    print!: format: "In two arg with {} and {}`n" [arg1 arg2]
+    arg1
+
+
+func nestit [arg1]
+    printnl!: "Nestit is starting task"
+    start!: arg1
+    wait!: arg1
+
 func main[argv]
-    let a [] thrd0!: noarg           ; Test explicit no args
-    let b [] thrd0!: ^[] +: 1 1      ; Test lambda no args
+    let a [] thrd!: noarg []         ; Test explicit no args
+    let b [] thrd!: ^[] +: 1 1 []    ; Test lambda no args
     let c [] thrd!: onearg [1]       ; Test explicit multi-arg
     let d [] thrd!: ^[x] +: x 1 [2]  ; Test lamda multi-arg
-    let e [] thrd0!: longloop
+    let e [] thrd!: longloop []
+    let f [] thrd!: twoarg [7 8]
+    let g [] thrd!: (twoarg 9) [10]
+    let h [] thrd!: nestit [task!: onearg [12]]
 
-    printnl!: a
     printnl!: wait!: a
     printnl!: wait!: b
     printnl!: wait!: c
     printnl!: wait!: d
     printnl!: wait!: e
-
-
+    printnl!: wait!: f
+    printnl!: wait!: g
+    ;start!: h
+    printnl!: wait!: h
