@@ -168,6 +168,11 @@ func foidl_start!       [wrkref]
 func foidl_wait!        [wrkref]
 func foidl_work_state   [wrkref]
 
+func foidl_create_thread_pool!  []
+func foidl_queue_work!          [poolref wrkref]
+func foidl_exit_thread_pool!    [poolref]
+func foidl_kill_thread_pool!    [poolref]
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Basic Math Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

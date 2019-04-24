@@ -37,7 +37,6 @@ int getNumberOfCores() {
     int nm[2];
     size_t len = 4;
     uint32_t count;
-    printf("In mac code\n");
     nm[0] = CTL_HW; nm[1] = HW_AVAILCPU;
     sysctl(nm, 2, &count, &len, NULL, 0);
     if(count < 1) {
@@ -152,8 +151,7 @@ static void *worker(void *arg)
 static PFRTAny spawn_worker(PFRTWorker wrk) {
     wrk->work_state = wrk_create;
 #ifdef _MSC_VER
-    HANDLE tid = CreateThread(NULL,0,worker, wrk, 0, NULL);
-    wrk->thread_id = tid;
+    wrk->thread_id = CreateThread(NULL,0,worker, wrk, 0, NULL);
 #else
     pthread_create(&wrk->thread_id, NULL, worker, wrk);
 #endif
@@ -217,7 +215,8 @@ PFRTAny foidl_wait_bang(PFRTAny thrdref) {
 //      initiated
 
 PFRTAny foidl_task_bang(PFRTAny funcref, PFRTAny argcoll) {
-    PFRTWorker wrk = allocWorker((PFRTFuncRef2)funcref);
+
+    PFRTWorker wrk = allocWorker((PFRTFuncRef2)foidl_fref_instance(funcref));
     wrk->work_state = wrk_init;
     wrk->argcollection = argcoll;
     return (PFRTAny) wrk;
@@ -233,3 +232,147 @@ PFRTAny foidl_start_bang(PFRTAny wrkref) {
     return res;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//                      Thread Pool
+///////////////////////////////////////////////////////////////////////////////
+
+static void run_wait(PFRTThreadPool poolref) {
+    // Get lock, wait on cond, release lock
+    pthread_mutex_lock(&poolref->run_mutex);
+    while(poolref->run_value != 1) {
+        pthread_cond_wait(&poolref->run_condition, &poolref->run_mutex);
+    }
+    poolref->run_value = 0;
+    pthread_mutex_unlock(&poolref->run_mutex);
+}
+
+static void run_post(PFRTThreadPool poolref) {
+    pthread_mutex_lock(&poolref->run_mutex);
+    poolref->run_value = 1;
+    pthread_cond_signal(&poolref->run_condition);
+    pthread_mutex_unlock(&poolref->run_mutex);
+}
+
+static void run_broadcast(PFRTThreadPool poolref) {
+    pthread_mutex_lock(&poolref->run_mutex);
+    poolref->run_value = 1;
+    pthread_cond_broadcast(&poolref->run_condition);
+    pthread_mutex_unlock(&poolref->run_mutex);
+}
+
+static PFRTAny  pull_task(PFRTThreadPool poolref) {
+    PFRTAny res = end;
+    pthread_mutex_lock(&poolref->work_mutex);
+    res = list_first(poolref->work_list);
+    if(res == end) {
+        printf("Last is end\n"); ;
+    }
+    else {
+        list_pop_bang(poolref->work_list);
+    }
+    pthread_mutex_unlock(&poolref->work_mutex);
+    return res;
+}
+
+static void  push_task(PFRTThreadPool poolref, PFRTAny wrkref) {
+    pthread_mutex_lock(&poolref->work_mutex);
+    // Push
+    foidl_list_extend_bang(poolref->work_list,wrkref);
+    run_post(poolref);
+    pthread_mutex_unlock(&poolref->work_mutex);
+    return;
+}
+
+
+#ifdef _MSC_VER
+static DWORD WINAPI pool_worker(void* arg)
+#else
+static void *pool_worker(void *arg)
+#endif
+{
+    PFRTThreadPool poolref = (PFRTThreadPool) arg;
+    printf("In worker thread\n");
+    for(;;) {
+        // Wait for work
+        run_wait(poolref);
+        // Get worker and check for end
+        PFRTAny ptsk = pull_task(poolref);
+        if(ptsk == end) {
+            break;
+        }
+        PFRTWorker wrk = (PFRTWorker) ptsk;
+        PFRTFuncRef2 iref = (PFRTFuncRef2) wrk->fnptr;
+        PFRTAny res = (PFRTAny) iref;
+        wrk->work_state = wrk_run;
+        if(foidl_empty_qmark(wrk->argcollection) == true) {
+            res = dispatch0(wrk->fnptr);
+        }
+        else {
+            PFRTIterator itr = iteratorFor(wrk->argcollection);
+            while(res == (PFRTAny) iref) {
+                PFRTAny iNext = iteratorNext(itr);
+                if(iNext != end) {
+                    res = foidl_imbue((PFRTAny) iref,iNext);
+                }
+                else {
+                    printf("iNext == end\n");
+                    unknown_handler();
+                }
+            }
+        }
+        wrk->result = res;
+        wrk->work_state = wrk_complete;
+        break;
+    }
+    printf("Exiting thread\n");
+#ifdef _MSC_VER
+    return 0;
+#else
+    pthread_exit((void *) poolref);
+    return NULL;
+#endif
+}
+
+static PFRTThreadPool initialize_pool(PFRTThreadPool poolref) {
+    // Mutex and semaphore
+#ifdef _MSC_VER
+    poolref->pool_mutex = CreateMutex(NULL,FALSE,NULL);
+    poolref->run_mutex = CreateMutex(NULL,FALSE,NULL);
+    InitializeConditionVariable(&poolref->run_condition);
+    poolref->work_mutex = CreateMutex(NULL,FALSE,NULL);
+#else
+    pthread_mutex_init(&poolref->pool_mutex, NULL);
+    pthread_mutex_init(&poolref->run_mutex, NULL);
+    pthread_cond_init(&poolref->run_condition,NULL);
+    pthread_mutex_init(&poolref->work_mutex, NULL);
+#endif
+    for(ft x=0; x < poolref->count; ++x) {
+    //for(ft x=0; x < 1; ++x) {
+#ifdef _MSC_VER
+    HANDLE thread_id =CreateThread(NULL,0,pool_worker, poolref, 0, NULL);
+#else
+    pthread_t   thread_id;
+    pthread_create(&thread_id, NULL, pool_worker, poolref);
+#endif
+    }
+    return poolref;
+}
+
+PFRTAny foidl_create_thread_pool_bang() {
+    PFRTThreadPool poolref = allocThreadPool();
+    poolref->count = getNumberOfCores();
+    return (PFRTAny) initialize_pool(poolref);
+}
+
+PFRTAny foidl_queue_work_bang(PFRTAny poolref, PFRTAny wrkref) {
+    push_task((PFRTThreadPool)poolref, wrkref);
+    return poolref;
+}
+
+PFRTAny foidl_exit_thread_pool_bang(PFRTAny poolref) {
+    return nil;
+}
+
+PFRTAny foidl_kill_thread_pool_bang(PFRTAny poolref) {
+    return nil;
+}

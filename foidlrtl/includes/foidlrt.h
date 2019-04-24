@@ -92,6 +92,7 @@ static const ft 	funcref_type  = 0xffffffff100000ef;
 static const ft 	lambref_type  = 0xffffffff100000ee;
 static const ft 	funcinst_type = 0xffffffff100000ed;
 static const ft     worker_type   = 0xffffffff100000ec;
+static const ft     thrdpool_type = 0xffffffff100000eb;
 
 //	IO types
 
@@ -379,6 +380,53 @@ typedef struct   FRTWorker {
     PFRTAny 	result;
 } *PFRTWorker;
 
+
+/*
+typedef struct   FRTThreadPoolG {
+    ft          fsig;
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *fnptr;
+    ft          thread_count;
+    PFRTAny     thread_list;
+    PFRTAny     work_list;
+    ft          run_value;
+#ifdef _MSC_VER
+    HANDLE      pool_mutex;
+    HANDLE      run_mutex;
+    CONDITION_VARIABLE run_condition;
+    HANDLE      work_mutex;
+#else
+    pthread_mutex_t pool_mutex;
+    pthread_mutex_t run_mutex;
+    pthread_cond_t  run_condition;
+    pthread_mutex_t work_mutex;
+#endif
+} *PFRTThreadPoolG;
+*/
+typedef struct   FRTThreadPool {
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *fnptr;
+    ft          run_value;
+    PFRTAny     thread_list;
+    PFRTAny     work_list;
+#ifdef _MSC_VER
+    HANDLE      pool_mutex;
+    HANDLE      run_mutex;
+    CONDITION_VARIABLE run_condition;
+    HANDLE      work_mutex;
+#else
+    pthread_mutex_t pool_mutex;
+    pthread_mutex_t run_mutex;
+    pthread_cond_t  run_condition;
+    pthread_mutex_t work_mutex;
+#endif
+} *PFRTThreadPool;
 
 //	Series
 
@@ -752,6 +800,7 @@ EXTERNC PFRTIOChannel   allocFileChannel(PFRTAny, PFRTAny);
 EXTERNC PFRTFuncRef2 	allocFuncRef2(void *fn, ft maxarg,invoke_funcptr ifn);
 EXTERNC void 			deallocFuncRef2(PFRTFuncRef2);
 EXTERNC PFRTWorker      allocWorker(PFRTFuncRef2);
+EXTERNC PFRTThreadPool  allocThreadPool();
 
 // Collection types
 EXTERNC PFRTList   		allocList(ft, PFRTLinkNode);

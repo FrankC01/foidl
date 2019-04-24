@@ -185,6 +185,18 @@ func wait! [wrkref]
 func work_state [wrkref]
 	foidl_work_state: wrkref
 
+func pool! []
+	foidl_create_thread_pool!:
+
+func queue_work! [poolref wrkref]
+	foidl_queue_work!: poolref wrkref
+
+func pool_exit [poolref]
+	foidl_exit_thread_pool!: poolref
+
+func pool_kill [poolref]
+	foidl_kill_thread_pool!: poolref
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Math functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -244,6 +244,17 @@ PFRTList   allocList(ft cnt, PFRTLinkNode root) {
 	return l;
 }
 
+PFRTThreadPool allocThreadPool() {
+	PFRTThreadPool tp = foidl_xall(sizeof(struct FRTThreadPool));
+	tp->fclass = function_class;
+	tp->ftype = thrdpool_type;
+	tp->count = 0;
+	tp->run_value = 0;
+	tp->fnptr = NULL;
+	tp->thread_list = (PFRTAny) allocList(0,empty_link);
+	tp->work_list = (PFRTAny) allocList(0,empty_link);
+	return tp;
+}
 
 PFRTVector allocVector(ft cnt, ft shift, PFRTHamtNode root,
 	PFRTHamtNode tail) {

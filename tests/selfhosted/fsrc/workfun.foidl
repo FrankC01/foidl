@@ -69,5 +69,4 @@ func main[argv]
     printnl!: wait!: e
     printnl!: wait!: f
     printnl!: wait!: g
-    ;start!: h
     printnl!: wait!: h
