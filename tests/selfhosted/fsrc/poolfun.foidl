@@ -23,11 +23,19 @@ func onearg[arg]
     "one"
 
 func pump_work [pt targ]
-    queue_work!: pt task!: onearg [targ]
+    queue_thread!: pt onearg [targ]
 
 func main [argv]
     let pt [] pool!:
     fold: pump_work pt [12 10 5 6 8 99 "foo"]
     reads!: cin
+    pool_pause!: pt true
+    printnl!: "Pool paused, sending work"
+    fold: pump_work pt [#{9 10 11} "frank" argv]
+    printnl!: "Press enter to resume"
+    reads!: cin
+    pool_resume!: pt
+    reads!: cin
+    pool_kill!: pt
     0
 

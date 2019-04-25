@@ -289,7 +289,8 @@ static DWORD WINAPI pool_worker(void* arg)
 static void *pool_worker(void *arg)
 #endif
 {
-    PFRTThreadPool poolref = (PFRTThreadPool) arg;
+    PFRTThread  pthrd = (PFRTThread) arg;
+    PFRTThreadPool poolref = (PFRTThreadPool) pthrd->pool_parent;
     pthread_mutex_lock(&poolref->pool_mutex);
     poolref->active_threads++;
     pthread_mutex_unlock(&poolref->pool_mutex);
@@ -335,8 +336,18 @@ static void *pool_worker(void *arg)
     poolref->active_threads--;
     pthread_mutex_unlock(&poolref->pool_mutex);
     //pthread_exit((void *) poolref);
-    return NULL;
+    return pthrd;
 #endif
+}
+
+static PFRTThread create_pool_thread(PFRTThreadPool poolref, int id) {
+    PFRTThread  pthrd = allocThread(poolref, id);
+#ifdef _MSC_VER
+    pthrd->thread_id =CreateThread(NULL,0,pool_worker, pthrd, 0, NULL);
+#else
+    pthread_create(&pthrd->thread_id, NULL, pool_worker, pthrd);
+#endif
+    return pthrd;
 }
 
 static PFRTThreadPool initialize_pool(PFRTThreadPool poolref) {
@@ -352,13 +363,8 @@ static PFRTThreadPool initialize_pool(PFRTThreadPool poolref) {
     pthread_cond_init(&poolref->run_condition,NULL);
 #endif
     for(ft x=0; x < poolref->count; ++x) {
-    //for(ft x=0; x < 2; ++x) {
-#ifdef _MSC_VER
-    HANDLE thread_id =CreateThread(NULL,0,pool_worker, poolref, 0, NULL);
-#else
-    pthread_t   thread_id;
-    pthread_create(&thread_id, NULL, pool_worker, poolref);
-#endif
+        PFRTThread pthrd = create_pool_thread(poolref,x);
+        foidl_list_extend_bang(poolref->thread_list,(PFRTAny)pthrd);
     }
     pthread_mutex_unlock(&poolref->pool_mutex);
     while(poolref->count != poolref->active_threads) {}
@@ -375,6 +381,21 @@ PFRTAny foidl_create_thread_pool_bang() {
 PFRTAny foidl_queue_work_bang(PFRTAny poolref, PFRTAny wrkref) {
     push_task((PFRTThreadPool)poolref, wrkref);
     return poolref;
+}
+
+PFRTAny foidl_queue_thread_bang(PFRTAny poolref,PFRTAny funcref, PFRTAny argcoll) {
+    PFRTAny wrkref = foidl_task_bang(funcref, argcoll);
+    push_task((PFRTThreadPool)poolref, wrkref);
+    return poolref;
+}
+
+// Pauses the workers and may block new work add
+PFRTAny foidl_pause_thread_pool_bang(PFRTAny poolref, PFRTAny blockwork) {
+    return nil;
+}
+
+PFRTAny foidl_resume_thread_pool_bang(PFRTAny poolref) {
+    return nil;
 }
 
 PFRTAny foidl_exit_thread_pool_bang(PFRTAny poolref) {

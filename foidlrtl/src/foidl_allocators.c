@@ -244,6 +244,16 @@ PFRTList   allocList(ft cnt, PFRTLinkNode root) {
 	return l;
 }
 
+EXTERNC PFRTThread      allocThread(PFRTThreadPool poolref, int id) {
+	PFRTThread pthrd = foidl_xall(sizeof(struct FRTThread));
+	pthrd->fclass = function_class;
+	pthrd->ftype = thread_type;
+	pthrd->count = 0;
+	pthrd->pool_parent = (void *)poolref;
+	pthrd->thid = id;
+	return pthrd;
+}
+
 PFRTThreadPool allocThreadPool() {
 	PFRTThreadPool tp = foidl_xall(sizeof(struct FRTThreadPool));
 	tp->fclass = function_class;

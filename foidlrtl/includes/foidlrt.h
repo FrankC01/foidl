@@ -93,6 +93,7 @@ static const ft 	lambref_type  = 0xffffffff100000ee;
 static const ft 	funcinst_type = 0xffffffff100000ed;
 static const ft     worker_type   = 0xffffffff100000ec;
 static const ft     thrdpool_type = 0xffffffff100000eb;
+static const ft     thread_type   = 0xffffffff100000ea;
 
 //	IO types
 
@@ -380,6 +381,19 @@ typedef struct   FRTWorker {
     PFRTAny 	result;
 } *PFRTWorker;
 
+typedef struct FRTThread {
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *pool_parent;
+    int         thid;
+#ifdef _MSC_VER
+    HANDLE      thread_id;
+#else
+    pthread_t   thread_id;
+#endif
+} *PFRTThread;
 
 typedef struct   FRTThreadPool {
     ft          fclass;
@@ -775,6 +789,7 @@ EXTERNC PFRTFuncRef2 	allocFuncRef2(void *fn, ft maxarg,invoke_funcptr ifn);
 EXTERNC void 			deallocFuncRef2(PFRTFuncRef2);
 EXTERNC PFRTWorker      allocWorker(PFRTFuncRef2);
 EXTERNC PFRTThreadPool  allocThreadPool();
+EXTERNC PFRTThread      allocThread(PFRTThreadPool, int);
 
 // Collection types
 EXTERNC PFRTList   		allocList(ft, PFRTLinkNode);

@@ -191,10 +191,19 @@ func pool! []
 func queue_work! [poolref wrkref]
 	foidl_queue_work!: poolref wrkref
 
-func pool_exit [poolref]
+func queue_thread! [poolref fnref argvector]
+	foidl_queue_thread!: poolref fnref argvector
+
+func pool_pause! [poolref blockwork]
+	foidl_pause_thread_pool!: poolref blockwork
+
+func pool_resume! [poolref]
 	foidl_exit_thread_pool!: poolref
 
-func pool_kill [poolref]
+func pool_exit! [poolref]
+	foidl_exit_thread_pool!: poolref
+
+func pool_kill! [poolref]
 	foidl_kill_thread_pool!: poolref
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
