@@ -236,50 +236,49 @@ PFRTAny foidl_start_bang(PFRTAny wrkref) {
 //                      Thread Pool
 ///////////////////////////////////////////////////////////////////////////////
 
-static void run_wait(PFRTThreadPool poolref) {
-    // Get lock, wait on cond, release lock
+static PFRTAny wait_for_work(PFRTThreadPool poolref) {
+    PFRTAny res = nil;
     pthread_mutex_lock(&poolref->run_mutex);
-    while(poolref->run_value != 1) {
-        pthread_cond_wait(&poolref->run_condition, &poolref->run_mutex);
-    }
-    poolref->run_value = 0;
-    pthread_mutex_unlock(&poolref->run_mutex);
-}
-
-static void run_post(PFRTThreadPool poolref) {
-    pthread_mutex_lock(&poolref->run_mutex);
-    poolref->run_value = 1;
-    pthread_cond_signal(&poolref->run_condition);
-    pthread_mutex_unlock(&poolref->run_mutex);
-}
-
-static void run_broadcast(PFRTThreadPool poolref) {
-    pthread_mutex_lock(&poolref->run_mutex);
-    poolref->run_value = 1;
-    pthread_cond_broadcast(&poolref->run_condition);
-    pthread_mutex_unlock(&poolref->run_mutex);
-}
-
-static PFRTAny  pull_task(PFRTThreadPool poolref) {
-    PFRTAny res = end;
-    pthread_mutex_lock(&poolref->work_mutex);
-    res = list_first(poolref->work_list);
-    if(res == end) {
-        printf("Last is end\n"); ;
+    if(poolref->work_list->count == 0) {
+        //printf("Wait: queue has no work\n");
+        while(!poolref->work_list->count) {
+            pthread_cond_wait(&poolref->run_condition, &poolref->run_mutex);
+        }
+        res = list_first(poolref->work_list);
+        if(res == end) {
+            printf("Last is end\n");
+        }
+        else {
+            list_pop_bang(poolref->work_list);
+        }
     }
     else {
-        list_pop_bang(poolref->work_list);
+        //printf("Nowait: queue has work\n");
+        res = list_first(poolref->work_list);
+        if(res == end) {
+            printf("Last is end\n");
+        }
+        else {
+            list_pop_bang(poolref->work_list);
+        }
     }
-    pthread_mutex_unlock(&poolref->work_mutex);
+    pthread_mutex_unlock(&poolref->run_mutex);
     return res;
 }
 
+static void run_post(PFRTThreadPool poolref) {
+    pthread_cond_signal(&poolref->run_condition);
+}
+
+static void run_broadcast(PFRTThreadPool poolref) {
+    pthread_cond_broadcast(&poolref->run_condition);
+}
+
 static void  push_task(PFRTThreadPool poolref, PFRTAny wrkref) {
-    pthread_mutex_lock(&poolref->work_mutex);
-    // Push
+    pthread_mutex_lock(&poolref->run_mutex);
     foidl_list_extend_bang(poolref->work_list,wrkref);
     run_post(poolref);
-    pthread_mutex_unlock(&poolref->work_mutex);
+    pthread_mutex_unlock(&poolref->run_mutex);
     return;
 }
 
@@ -291,14 +290,19 @@ static void *pool_worker(void *arg)
 #endif
 {
     PFRTThreadPool poolref = (PFRTThreadPool) arg;
-    printf("In worker thread\n");
+    pthread_mutex_lock(&poolref->pool_mutex);
+    poolref->active_threads++;
+    pthread_mutex_unlock(&poolref->pool_mutex);
     for(;;) {
         // Wait for work
-        run_wait(poolref);
+        PFRTAny ptsk = wait_for_work(poolref);
         // Get worker and check for end
-        PFRTAny ptsk = pull_task(poolref);
         if(ptsk == end) {
+            printf("End of queue found\n");
             break;
+        }
+        else if(ptsk == nil) {
+            printf("No queue value\n");
         }
         PFRTWorker wrk = (PFRTWorker) ptsk;
         PFRTFuncRef2 iref = (PFRTFuncRef2) wrk->fnptr;
@@ -322,13 +326,15 @@ static void *pool_worker(void *arg)
         }
         wrk->result = res;
         wrk->work_state = wrk_complete;
-        break;
     }
     printf("Exiting thread\n");
 #ifdef _MSC_VER
     return 0;
 #else
-    pthread_exit((void *) poolref);
+    pthread_mutex_lock(&poolref->pool_mutex);
+    poolref->active_threads--;
+    pthread_mutex_unlock(&poolref->pool_mutex);
+    //pthread_exit((void *) poolref);
     return NULL;
 #endif
 }
@@ -339,15 +345,14 @@ static PFRTThreadPool initialize_pool(PFRTThreadPool poolref) {
     poolref->pool_mutex = CreateMutex(NULL,FALSE,NULL);
     poolref->run_mutex = CreateMutex(NULL,FALSE,NULL);
     InitializeConditionVariable(&poolref->run_condition);
-    poolref->work_mutex = CreateMutex(NULL,FALSE,NULL);
 #else
     pthread_mutex_init(&poolref->pool_mutex, NULL);
+    pthread_mutex_lock(&poolref->pool_mutex);
     pthread_mutex_init(&poolref->run_mutex, NULL);
     pthread_cond_init(&poolref->run_condition,NULL);
-    pthread_mutex_init(&poolref->work_mutex, NULL);
 #endif
     for(ft x=0; x < poolref->count; ++x) {
-    //for(ft x=0; x < 1; ++x) {
+    //for(ft x=0; x < 2; ++x) {
 #ifdef _MSC_VER
     HANDLE thread_id =CreateThread(NULL,0,pool_worker, poolref, 0, NULL);
 #else
@@ -355,12 +360,15 @@ static PFRTThreadPool initialize_pool(PFRTThreadPool poolref) {
     pthread_create(&thread_id, NULL, pool_worker, poolref);
 #endif
     }
+    pthread_mutex_unlock(&poolref->pool_mutex);
+    while(poolref->count != poolref->active_threads) {}
     return poolref;
 }
 
 PFRTAny foidl_create_thread_pool_bang() {
     PFRTThreadPool poolref = allocThreadPool();
     poolref->count = getNumberOfCores();
+    poolref->active_threads = 0;
     return (PFRTAny) initialize_pool(poolref);
 }
 

@@ -19,9 +19,7 @@
 module poolfun
 
 func onearg[arg]
-    nap!: 50
-    print!: "In one arg with "
-    printnl!: arg
+    print!: format: "In one arg with {}`n" [arg]
     "one"
 
 func pump_work [pt targ]
@@ -29,7 +27,7 @@ func pump_work [pt targ]
 
 func main [argv]
     let pt [] pool!:
-    fold: pump_work pt [12 10 5]
+    fold: pump_work pt [12 10 5 6 8 99 "foo"]
     reads!: cin
     0
 
