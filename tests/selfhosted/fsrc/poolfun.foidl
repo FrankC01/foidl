@@ -36,6 +36,7 @@ func main [argv]
     reads!: cin
     pool_resume!: pt
     reads!: cin
-    pool_kill!: pt
+    pool_exit!: pt
+    printnl!: "Returned from exit"
     0
 

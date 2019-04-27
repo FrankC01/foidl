@@ -258,8 +258,18 @@ static PFRTAny wait_for_work(PFRTThreadPool poolref) {
             while(!poolref->work_list->count) {
                 pthread_cond_wait(&poolref->run_condition, &poolref->run_mutex);
             }
-            res = list_first(poolref->work_list);
-            list_pop_bang(poolref->work_list);
+            pthread_mutex_lock(&poolref->pool_mutex);
+            if(poolref->pause_work == true) {
+                res = pool_pause;
+            }
+            else if(poolref->stop_work == true) {
+                res = pool_exit;
+            }
+            pthread_mutex_unlock(&poolref->pool_mutex);
+            if(res == nil) {
+                res = list_first(poolref->work_list);
+                list_pop_bang(poolref->work_list);
+            }
         }
         else {
             res = list_first(poolref->work_list);
@@ -358,7 +368,6 @@ static void *pool_worker(void *arg)
             wrk->work_state = wrk_complete;
         }
     }
-    printf("Exiting thread\n");
 #ifdef _MSC_VER
     return 0;
 #else
@@ -428,7 +437,6 @@ PFRTAny foidl_queue_thread_bang(PFRTAny pool,PFRTAny funcref, PFRTAny argcoll) {
 // Pauses the workers and may block new work add
 PFRTAny foidl_pause_thread_pool_bang(PFRTAny pool, PFRTAny blockwork) {
     if(pool->fclass == worker_class && pool->ftype == thrdpool_type) {
-        printf("Pausing pool\n");
         PFRTThreadPool poolref = (PFRTThreadPool) pool;
         pthread_mutex_lock(&poolref->pool_mutex);
         poolref->pause_work = true;
@@ -458,9 +466,18 @@ PFRTAny foidl_resume_thread_pool_bang(PFRTAny pool) {
 PFRTAny foidl_exit_thread_pool_bang(PFRTAny pool) {
     if(pool->fclass == worker_class && pool->ftype == thrdpool_type) {
         PFRTThreadPool poolref = (PFRTThreadPool) pool;
+        foidl_queue_work_bang(pool,pool_exit);
         pthread_mutex_lock(&poolref->pool_mutex);
-
+        pthread_mutex_lock(&poolref->run_mutex);
+        poolref->stop_work = true;
         pthread_mutex_unlock(&poolref->pool_mutex);
+        run_broadcast(poolref);
+        pthread_mutex_unlock(&poolref->run_mutex);
+        while(poolref->active_threads > 0) {}
+    }
+    else {
+        printf("Unknown resume type\n");
+        unknown_handler();
     }
     return pool;
 }

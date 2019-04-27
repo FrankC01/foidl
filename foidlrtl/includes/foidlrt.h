@@ -34,6 +34,7 @@ typedef long long lt;
 //
 
 static const ft 	global_signature = 0xefefefef00000000;
+static const ft     alloc_signature  = 0xfefefeff00000000;
 static const ft 	scalar_class 	 = 0xfffffffffffffff1;
 static const ft 	collection_class = 0xfffffffffffffff2;
 static const ft 	function_class 	 = 0xfffffffffffffff3;
