@@ -87,6 +87,9 @@ uint32_t hash(PFRTAny p) {
   else if(p->fclass == io_class) {
     return murmur3_32((uint8_t*)p,8,0);
   }
+  else if(p->fclass == worker_class) {
+    return murmur3_32((uint8_t*)p,8,0);
+  }
 	else {
 		printf("HASH: Can't handle class of 0x%08llX\n",p->fclass);
 		//exit(-1);

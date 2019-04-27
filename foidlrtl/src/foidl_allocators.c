@@ -190,7 +190,7 @@ PFRTIOChannel allocFileChannel(PFRTAny name, PFRTAny mode) {
 	return (PFRTIOChannel) fc;
 }
 
-//	Function reference instance
+//	Function and thread/worker reference instance
 
 PFRTFuncRef2 allocFuncRef2(void *fn, ft maxarg, invoke_funcptr ifn) {
 	PFRTFuncRef2 fr = foidl_xall(sizeof (struct FRTFuncRef2));
@@ -205,12 +205,39 @@ PFRTFuncRef2 allocFuncRef2(void *fn, ft maxarg, invoke_funcptr ifn) {
 
 PFRTWorker  allocWorker(PFRTFuncRef2 ref) {
 	PFRTWorker wrk = foidl_xall(sizeof(struct FRTWorker));
-	wrk->fclass = function_class;
+	wrk->fclass = worker_class;
 	wrk->ftype = worker_type;
 	wrk->count = 0;
 	wrk->fnptr = ref;
 	wrk->work_state = wrk_alloc;
 	return wrk;
+}
+
+EXTERNC PFRTThread      allocThread(PFRTThreadPool poolref, int id) {
+	PFRTThread pthrd = foidl_xall(sizeof(struct FRTThread));
+	pthrd->fclass = worker_class;
+	pthrd->ftype = thread_type;
+	pthrd->count = 0;
+	pthrd->pool_parent = (void *)poolref;
+	pthrd->thid = id;
+	return pthrd;
+}
+
+PFRTList   allocList(ft , PFRTLinkNode);
+
+PFRTThreadPool allocThreadPool() {
+	PFRTThreadPool tp = foidl_xall(sizeof(struct FRTThreadPool));
+	tp->fclass = worker_class;
+	tp->ftype = thrdpool_type;
+	tp->count = 0;
+	tp->run_value = 0;
+	tp->fnptr = NULL;
+	tp->thread_list = (PFRTAny) allocList(0,empty_link);
+	tp->work_list = (PFRTAny) allocList(0,empty_link);
+	tp->pause_work = false;
+	tp->block_queue = false;
+	tp->stop_work = false;
+	return tp;
 }
 
 //	Collection related
@@ -242,28 +269,6 @@ PFRTList   allocList(ft cnt, PFRTLinkNode root) {
 	l->root   = root;
 	l->rest   = empty_link;
 	return l;
-}
-
-EXTERNC PFRTThread      allocThread(PFRTThreadPool poolref, int id) {
-	PFRTThread pthrd = foidl_xall(sizeof(struct FRTThread));
-	pthrd->fclass = function_class;
-	pthrd->ftype = thread_type;
-	pthrd->count = 0;
-	pthrd->pool_parent = (void *)poolref;
-	pthrd->thid = id;
-	return pthrd;
-}
-
-PFRTThreadPool allocThreadPool() {
-	PFRTThreadPool tp = foidl_xall(sizeof(struct FRTThreadPool));
-	tp->fclass = function_class;
-	tp->ftype = thrdpool_type;
-	tp->count = 0;
-	tp->run_value = 0;
-	tp->fnptr = NULL;
-	tp->thread_list = (PFRTAny) allocList(0,empty_link);
-	tp->work_list = (PFRTAny) allocList(0,empty_link);
-	return tp;
 }
 
 PFRTVector allocVector(ft cnt, ft shift, PFRTHamtNode root,

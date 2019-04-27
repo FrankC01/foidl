@@ -40,6 +40,7 @@ static const ft 	function_class 	 = 0xfffffffffffffff3;
 static const ft 	io_class 		 = 0xfffffffffffffff4;
 static const ft 	hamptnode_class  = 0xfffffffffffffff5;
 static const ft 	bitmapnode_class = 0xfffffffffffffff6;
+static const ft     worker_class     = 0xfffffffffffffff7;
 
 static const ft 	iterator_class	 = 0xfffffffffffffffe;
 
@@ -94,6 +95,7 @@ static const ft 	funcinst_type = 0xffffffff100000ed;
 static const ft     worker_type   = 0xffffffff100000ec;
 static const ft     thrdpool_type = 0xffffffff100000eb;
 static const ft     thread_type   = 0xffffffff100000ea;
+static const ft     pool_control  = 0xffffffff100000e9;
 
 //	IO types
 
@@ -403,6 +405,10 @@ typedef struct   FRTThreadPool {
     void        *fnptr;
     ft          run_value;
     ft          active_threads;
+    PFRTAny     thread_pause_timer;
+    PFRTAny     pause_work;
+    PFRTAny     block_queue;
+    PFRTAny     stop_work;
     PFRTAny     thread_list;
     PFRTAny     work_list;
 #ifdef _MSC_VER
@@ -909,6 +915,7 @@ EXTERNC PFRTAny 	dispatch2i(PFRTAny fn, PFRTAny arg1, PFRTAny arg2);
 
 // Work
 #ifndef WORK_IMPL
+EXTERNC void        foidl_rtl_init_work();
 EXTERNC PFRTAny     foidl_nap(PFRTAny);
 EXTERNC PFRTAny     wrk_alloc;
 #endif
@@ -1051,7 +1058,7 @@ EXTERNC 	PFRTAny ss_defend;
 
 //	Regex
 #ifndef REGEX_IMPL
-EXTERNC void foidl_rt_init_regex();
+EXTERNC void foidl_rtl_init_regex();
 EXTERNC PFRTAny foidl_regex_cmp_qmark(PFRTAny, PFRTAny);
 #endif
 

@@ -208,5 +208,5 @@ PFRTAny foidl_regex_cmp_qmark(PFRTAny pattern, PFRTAny arg) {
 	return res;
 }
 
-void foidl_rt_init_regex() {
+void foidl_rtl_init_regex() {
 }

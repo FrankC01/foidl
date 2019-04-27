@@ -6,6 +6,12 @@
 	All Rights Reserved
 */
 
+/*
+	Run time library entry point for most common of
+	functions, but not all. The enclosed primarily
+	focus on generic data type api
+*/
+
 #define ENTRYPOINT_IMPL
 #include <foidlrt.h>
 #include <string.h>
@@ -14,8 +20,6 @@
 static PFRTAny 	foidl_argv;
 PFRTAny 		foidl_env;
 static PFRTAny 	foidl_rtl_initialized = (PFRTAny) & _false.fclass;
-
-//	RTL Entrypoint
 
 static void genEnvMap(char **es) {
 	foidl_env = foidl_map_inst_bang();
@@ -47,7 +51,8 @@ PFRTAny 	foidl_rtl_init() {
 		foildl_rtl_init_strings();
 		foidl_rtl_init_types();
 		foidl_rtl_init_series();
-		foidl_rt_init_regex();
+		foidl_rtl_init_regex();
+		foidl_rtl_init_work();
 
 		foidl_rtl_initialized = true;
 	}
