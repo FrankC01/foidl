@@ -236,11 +236,11 @@ PFRTAny foidl_start_bang(PFRTAny wrkref) {
 //                      Thread Pool
 ///////////////////////////////////////////////////////////////////////////////
 
-globalScalarConst(pool_pause,pool_control,(void *) 0x0,1);
-globalScalarConst(pool_pause_block,pool_control,(void *) 0x1,1);
-globalScalarConst(pool_resume,pool_control,(void *) 0x2,1);
-globalScalarConst(pool_exit,pool_control,(void *) 0x3,1);
-
+globalScalarConst(pool_running,pool_control,(void *) 0x0,1);
+globalScalarConst(pool_pause,pool_control,(void *) 0x1,1);
+globalScalarConst(pool_pause_block,pool_control,(void *) 0x2,1);
+globalScalarConst(pool_resume,pool_control,(void *) 0x3,1);
+globalScalarConst(pool_exit,pool_control,(void *) 0x4,1);
 
 static PFRTAny wait_for_work(PFRTThreadPool poolref) {
     PFRTAny res = nil;
@@ -314,6 +314,12 @@ static void  push_task(PFRTThreadPool poolref, PFRTAny wrkref) {
     return;
 }
 
+globalScalarConst(pthrd_init,byte_type,(void *) 0x1,1);
+globalScalarConst(pthrd_idle,byte_type,(void *) 0x2,1);
+globalScalarConst(pthrd_running,byte_type,(void *) 0x3,1);
+globalScalarConst(pthrd_paused,byte_type,(void *) 0x4,1);
+globalScalarConst(pthrd_ended,byte_type,(void *) 0x5,1);
+
 
 #ifdef _MSC_VER
 static DWORD WINAPI pool_worker(void* arg)
@@ -325,17 +331,19 @@ static void *pool_worker(void *arg)
     PFRTThreadPool poolref = (PFRTThreadPool) pthrd->pool_parent;
     pthread_mutex_lock(&poolref->pool_mutex);
     poolref->active_threads++;
+    pthrd->thread_state = pthrd_init;
     pthread_mutex_unlock(&poolref->pool_mutex);
     for(;;) {
         // Wait for work
+        pthrd->thread_state = pthrd_idle;
         PFRTAny ptsk = wait_for_work(poolref);
-        // Get worker and check for end
+        // Check for end
         if(ptsk == pool_exit) {
-            printf("Thread exit signal\n");
             break;
         }
         else if(ptsk == pool_pause) {
             PFRTAny     pause_state = true;
+            pthrd->thread_state = pthrd_paused;
             do {
                 foidl_nap_bang(poolref->thread_pause_timer);
                 pthread_mutex_lock(&poolref->pool_mutex);
@@ -344,6 +352,7 @@ static void *pool_worker(void *arg)
             } while( pause_state == true);
         }
         else {
+            pthrd->thread_state = pthrd_running;
             PFRTWorker wrk = (PFRTWorker) ptsk;
             PFRTFuncRef2 iref = (PFRTFuncRef2) wrk->fnptr;
             PFRTAny res = (PFRTAny) iref;
@@ -373,6 +382,7 @@ static void *pool_worker(void *arg)
 #else
     pthread_mutex_lock(&poolref->pool_mutex);
     poolref->active_threads--;
+    pthrd->thread_state = pthrd_ended;
     pthread_mutex_unlock(&poolref->pool_mutex);
     //pthread_exit((void *) poolref);
     return pthrd;
@@ -407,6 +417,7 @@ static PFRTThreadPool initialize_pool(PFRTThreadPool poolref) {
     }
     pthread_mutex_unlock(&poolref->pool_mutex);
     while(poolref->count != poolref->active_threads) {}
+    poolref->pool_state = pool_running;
     return poolref;
 }
 
@@ -434,13 +445,18 @@ PFRTAny foidl_queue_thread_bang(PFRTAny pool,PFRTAny funcref, PFRTAny argcoll) {
     return nil;
 }
 
+
 // Pauses the workers and may block new work add
 PFRTAny foidl_pause_thread_pool_bang(PFRTAny pool, PFRTAny blockwork) {
     if(pool->fclass == worker_class && pool->ftype == thrdpool_type) {
         PFRTThreadPool poolref = (PFRTThreadPool) pool;
         pthread_mutex_lock(&poolref->pool_mutex);
         poolref->pause_work = true;
-        poolref->block_queue = blockwork;
+        poolref->pool_state = pool_pause;
+        if(blockwork == true) {
+            poolref->block_queue = blockwork;
+            poolref->pool_state = pool_pause_block;
+        }
         pthread_mutex_unlock(&poolref->pool_mutex);
     }
     return pool;
@@ -453,6 +469,7 @@ PFRTAny foidl_resume_thread_pool_bang(PFRTAny pool) {
         pthread_mutex_lock(&poolref->pool_mutex);
         poolref->pause_work = false;
         poolref->block_queue = false;
+        poolref->pool_state = pool_running;
         pthread_mutex_unlock(&poolref->pool_mutex);
     }
     else {
@@ -470,6 +487,7 @@ PFRTAny foidl_exit_thread_pool_bang(PFRTAny pool) {
         pthread_mutex_lock(&poolref->pool_mutex);
         pthread_mutex_lock(&poolref->run_mutex);
         poolref->stop_work = true;
+        poolref->pool_state = pool_exit;
         pthread_mutex_unlock(&poolref->pool_mutex);
         run_broadcast(poolref);
         pthread_mutex_unlock(&poolref->run_mutex);
@@ -482,15 +500,41 @@ PFRTAny foidl_exit_thread_pool_bang(PFRTAny pool) {
     return pool;
 }
 
-// Egregious kill zone
-PFRTAny foidl_kill_thread_pool_bang(PFRTAny pool) {
+PFRTAny     foidl_pool_state(PFRTAny pool) {
+    PFRTAny res = nil;
     if(pool->fclass == worker_class && pool->ftype == thrdpool_type) {
         PFRTThreadPool poolref = (PFRTThreadPool) pool;
         pthread_mutex_lock(&poolref->pool_mutex);
-
+        res = poolref->pool_state;
         pthread_mutex_unlock(&poolref->pool_mutex);
     }
-    return pool;
+    else {
+        printf("Called pool_state but target not pool\n");
+        unknown_handler();
+    }
+    return res;
+}
+
+PFRTAny     foidl_pool_thread_states(PFRTAny pool) {
+    PFRTAny tlist = nil;
+    if(pool->fclass == worker_class && pool->ftype == thrdpool_type) {
+        PFRTThreadPool poolref = (PFRTThreadPool) pool;
+        pthread_mutex_lock(&poolref->pool_mutex);
+        tlist = foidl_list_inst_bang();
+        PFRTIterator itr = iteratorFor(poolref->thread_list);
+        PFRTAny iNext;
+        while((iNext = iteratorNext(itr)) != end) {
+            PFRTThread pthrd = (PFRTThread) iNext;
+            foidl_list_extend_bang(tlist,pthrd->thread_state);
+        }
+        foidl_xdel(itr);
+        pthread_mutex_unlock(&poolref->pool_mutex);
+    }
+    else {
+        printf("Called pool_state but target not pool\n");
+        unknown_handler();
+    }
+    return tlist;
 }
 
 void foidl_rtl_init_work() {

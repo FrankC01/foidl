@@ -203,8 +203,11 @@ func pool_resume! [poolref]
 func pool_exit! [poolref]
 	foidl_exit_thread_pool!: poolref
 
-func pool_kill! [poolref]
-	foidl_kill_thread_pool!: poolref
+func pool_state [poolref]
+	foidl_pool_state: poolref
+
+func pool_thread_states [poolref]
+	foidl_pool_thread_states: poolref
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Math functions

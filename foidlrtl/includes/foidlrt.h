@@ -391,6 +391,7 @@ typedef struct FRTThread {
     uint32_t    hash;
     void        *pool_parent;
     int         thid;
+    PFRTAny     thread_state;
 #ifdef _MSC_VER
     HANDLE      thread_id;
 #else
@@ -404,6 +405,7 @@ typedef struct   FRTThreadPool {
     ft          count;
     uint32_t    hash;
     void        *fnptr;
+    PFRTAny     pool_state;
     ft          run_value;
     ft          active_threads;
     PFRTAny     thread_pause_timer;
@@ -694,7 +696,7 @@ EXTERNC PFRTAny 	nine,ten,eleven,twelve,thirteen,fourteen,fifteen,sixteen;
 EXTERNC PFRTAny 	empty_string, space_string;
 
 EXTERNC PFRTAny 	nilstr, truestr, falsestr, endstr, infserstr, seriesstr;
-EXTERNC PFRTAny     cinstr, coutstr, cerrstr, fnstr;
+EXTERNC PFRTAny     cinstr, coutstr, cerrstr, fnstr,poolstr,workstr;
 #endif
 
 #ifndef TYPE_IMPL
@@ -919,6 +921,11 @@ EXTERNC PFRTAny 	dispatch2i(PFRTAny fn, PFRTAny arg1, PFRTAny arg2);
 EXTERNC void        foidl_rtl_init_work();
 EXTERNC PFRTAny     foidl_nap(PFRTAny);
 EXTERNC PFRTAny     wrk_alloc;
+EXTERNC PFRTAny     pool_running;
+EXTERNC PFRTAny     pool_pause;
+EXTERNC PFRTAny     pool_pause_block;
+EXTERNC PFRTAny     pool_resume;
+EXTERNC PFRTAny     pool_exit;
 #endif
 
 
@@ -1051,10 +1058,10 @@ EXTERNC PFRTAny     foidl_fexists_qmark(PFRTAny);
 
 #ifndef SERIES_IMPL
 EXTERNC  const PFRTSeries infinite;
-EXTERNC 	void foidl_rtl_init_series();
-EXTERNC 	PFRTAny foidl_series(PFRTAny,PFRTAny,PFRTAny);
+EXTERNC  void foidl_rtl_init_series();
+EXTERNC  PFRTAny foidl_series(PFRTAny,PFRTAny,PFRTAny);
 EXTERNC  PFRTAny ss_defstep;
-EXTERNC 	PFRTAny ss_defend;
+EXTERNC  PFRTAny ss_defend;
 #endif
 
 //	Regex

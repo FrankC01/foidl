@@ -514,6 +514,17 @@ static PFRTAny foidl_channel_writefile(PFRTAny channel, PFRTAny el) {
         else if(el->fclass == function_class) {
             io_file_scalar_txt_writer(channel->value, fnstr);
         }
+        else if(el->fclass == worker_class) {
+            if(el->ftype == thrdpool_type) {
+                io_file_scalar_txt_writer(channel->value, poolstr);
+            }
+            else if(el->ftype == worker_type) {
+                io_file_scalar_txt_writer(channel->value, workstr);
+            }
+            else {
+                unknown_handler();
+            }
+        }
         else {
             unknown_handler();
         }

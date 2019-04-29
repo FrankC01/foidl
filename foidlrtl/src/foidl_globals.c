@@ -30,6 +30,8 @@ constString(fnstr,"function reference");
 constString(chanstr,"channel reference");
 constString(infserstr,"infinite series");
 constString(seriesstr,"series reference");
+constString(poolstr,"thread pool reference");
+constString(workstr,"worker reference");
 
 // Character types
 

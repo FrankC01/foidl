@@ -168,13 +168,22 @@ func foidl_start!       [wrkref]
 func foidl_wait!        [wrkref]
 func foidl_work_state   [wrkref]
 
+var  pool_running       Type
+var  pool_pause         Type
+var  pool_pause_block   Type
+var  pool_resume        Type
+var  pool_exit          Type
+
+
 func foidl_create_thread_pool!  [pause_timer]
 func foidl_queue_work!          [poolref wrkref]
 func foidl_queue_thread!        [poolref fnref argvector]
 func foidl_pause_thread_pool!   [poolref blockwork]
 func foidl_resume_thread_pool!  [poolref]
 func foidl_exit_thread_pool!    [poolref]
-func foidl_kill_thread_pool!    [poolref]
+
+func foidl_pool_state           [poolref]
+func foidl_pool_thread_states   [poolref]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Basic Math Functions

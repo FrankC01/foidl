@@ -19,7 +19,7 @@
 module poolfun
 
 func onearg[arg]
-    nap!: 1000
+    nap!: 500
     print!: format: "In one arg with {}`n" [arg]
     "one"
 
@@ -28,6 +28,7 @@ func pump_work [pt targ]
     pt
 
 func main [argv]
+
     let pt [] pool!: 1000
     fold: pump_work pt [12 10 5 6 8 99 "foo"]
     pool_pause!: pt false
@@ -35,8 +36,11 @@ func main [argv]
     printnl!: "Press enter to resume"
     reads!: cin
     pool_resume!: pt
+    nap!: 500
+    printnl!: "Press enter to exit pool"
     reads!: cin
     pool_exit!: pt
-    printnl!: "Returned from exit"
+    printnl!: "Pool is shutdown. Press enter to exit"
+    reads!: cin
     0
 
