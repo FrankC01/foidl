@@ -415,8 +415,8 @@ typedef struct   FRTThreadPool {
     PFRTAny     thread_list;
     PFRTAny     work_list;
 #ifdef _MSC_VER
-    HANDLE      pool_mutex;
-    HANDLE      run_mutex;
+    HANDLE             pool_mutex;
+    CRITICAL_SECTION   run_mutex;
     CONDITION_VARIABLE run_condition;
 #else
     pthread_mutex_t pool_mutex;

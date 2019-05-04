@@ -260,7 +260,7 @@ static void unlock_pool(PFRTThreadPool poolref) {
 
 static void lock_run(PFRTThreadPool poolref) {
 #ifdef _MSC_VER
-    WaitForSingleObject(poolref->run_mutex,INFINITE);
+    EnterCriticalSection(&poolref->run_mutex);
 #else
     pthread_mutex_lock(&poolref->run_mutex);
 #endif
@@ -268,10 +268,20 @@ static void lock_run(PFRTThreadPool poolref) {
 
 static void unlock_run(PFRTThreadPool poolref) {
 #ifdef _MSC_VER
-    ReleaseMutex(poolref->run_mutex);
+    LeaveCriticalSection(&poolref->run_mutex);
 #else
     pthread_mutex_unlock(&poolref->run_mutex);
 #endif
+}
+
+static void wait_for_work_to_run(PFRTThreadPool poolref) {
+    while(!poolref->work_list->count) {
+#ifdef _MSC_VER
+        SleepConditionVariableCS(&poolref->run_condition, &poolref->run_mutex,INFINITE);
+#else
+        pthread_cond_wait(&poolref->run_condition, &poolref->run_mutex);
+#endif
+    }
 }
 
 static PFRTAny wait_for_work(PFRTThreadPool poolref) {
@@ -288,9 +298,7 @@ static PFRTAny wait_for_work(PFRTThreadPool poolref) {
     unlock_pool(poolref);
     if(res == nil) {
         if(poolref->work_list->count == 0) {
-            while(!poolref->work_list->count) {
-                pthread_cond_wait(&poolref->run_condition, &poolref->run_mutex);
-            }
+            wait_for_work_to_run(poolref);
             lock_pool(poolref);
             if(poolref->pause_work == true) {
                 res = pool_pause;
@@ -314,11 +322,19 @@ static PFRTAny wait_for_work(PFRTThreadPool poolref) {
 }
 
 static void run_post(PFRTThreadPool poolref) {
+#ifdef _MSC_VER
+    WakeConditionVariable(&poolref->run_condition);
+#else
     pthread_cond_signal(&poolref->run_condition);
+#endif
 }
 
 static void run_broadcast(PFRTThreadPool poolref) {
+#ifdef _MSC_VER
+    WakeAllConditionVariable(&poolref->run_condition);
+#else
     pthread_cond_broadcast(&poolref->run_condition);
+#endif
 }
 
 static void  push_task(PFRTThreadPool poolref, PFRTAny wrkref) {
@@ -437,7 +453,7 @@ static PFRTThreadPool initialize_pool(PFRTThreadPool poolref) {
     // Mutex and semaphore
 #ifdef _MSC_VER
     poolref->pool_mutex = CreateMutex(NULL,true,NULL);
-    poolref->run_mutex = CreateMutex(NULL,FALSE,NULL);
+    InitializeCriticalSection(&poolref->run_mutex);
     InitializeConditionVariable(&poolref->run_condition);
 #else
     pthread_mutex_init(&poolref->pool_mutex, NULL);
