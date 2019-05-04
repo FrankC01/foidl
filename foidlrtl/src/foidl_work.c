@@ -74,7 +74,7 @@ PFRTAny foidl_nap_bang(PFRTAny timeout) {
         timeout->ftype == number_type) {
         ft  tmms = number_toft(timeout);
         #ifdef _MSC_VER
-        Sleep(number_toft(tmms);
+        Sleep(tmms);
         res = zero;
         #else
         struct timespec req;
@@ -426,14 +426,16 @@ static void *pool_worker(void *arg)
             wrk->work_state = wrk_complete;
         }
     }
+    printf("Shutting down thread\n");
+    lock_pool(poolref);
+    printf("Aquired shutdown lock\n");
+    poolref->active_threads--;
+    pthrd->thread_state = pthrd_ended;
+    printf("Released shutdown lock\n");
+    unlock_pool(poolref);
 #ifdef _MSC_VER
     return 0;
 #else
-    lock_pool(poolref);
-    poolref->active_threads--;
-    pthrd->thread_state = pthrd_ended;
-    unlock_pool(poolref);
-
     //pthread_exit((void *) poolref);
     return pthrd;
 #endif
@@ -452,7 +454,7 @@ static PFRTThread create_pool_thread(PFRTThreadPool poolref, int id) {
 static PFRTThreadPool initialize_pool(PFRTThreadPool poolref) {
     // Mutex and semaphore
 #ifdef _MSC_VER
-    poolref->pool_mutex = CreateMutex(NULL,true,NULL);
+    poolref->pool_mutex = CreateMutex(NULL,TRUE,NULL);
     InitializeCriticalSection(&poolref->run_mutex);
     InitializeConditionVariable(&poolref->run_condition);
 #else
@@ -500,7 +502,7 @@ PFRTAny foidl_queue_thread_bang(PFRTAny pool,PFRTAny funcref, PFRTAny argcoll) {
 PFRTAny foidl_pause_thread_pool_bang(PFRTAny pool, PFRTAny blockwork) {
     if(pool->fclass == worker_class && pool->ftype == thrdpool_type) {
         PFRTThreadPool poolref = (PFRTThreadPool) pool;
-        pthread_mutex_lock(&poolref->pool_mutex);
+        lock_pool(poolref);
         poolref->pause_work = true;
         poolref->pool_state = pool_pause;
         if(blockwork == true) {
@@ -516,7 +518,7 @@ PFRTAny foidl_pause_thread_pool_bang(PFRTAny pool, PFRTAny blockwork) {
 PFRTAny foidl_resume_thread_pool_bang(PFRTAny pool) {
     if(pool->fclass == worker_class && pool->ftype == thrdpool_type) {
         PFRTThreadPool poolref = (PFRTThreadPool) pool;
-        pthread_mutex_lock(&poolref->pool_mutex);
+        lock_pool(poolref);
         poolref->pause_work = false;
         poolref->block_queue = false;
         poolref->pool_state = pool_running;
@@ -541,6 +543,7 @@ PFRTAny foidl_exit_thread_pool_bang(PFRTAny pool) {
         unlock_pool(poolref);
         run_broadcast(poolref);
         unlock_run(poolref);
+        printf("Posted shutdown, waiting for active thread kill\n");
         while(poolref->active_threads > 0) {}
     }
     else {
