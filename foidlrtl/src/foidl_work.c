@@ -242,6 +242,20 @@ globalScalarConst(pool_pause_block,pool_control,(void *) 0x2,1);
 globalScalarConst(pool_resume,pool_control,(void *) 0x3,1);
 globalScalarConst(pool_exit,pool_control,(void *) 0x4,1);
 
+// Mutex and conditionals
+static void create_pool_controls(PFRTThreadPool poolref) {
+#ifdef _MSC_VER
+    poolref->pool_mutex = CreateMutex(NULL,TRUE,NULL);
+    InitializeCriticalSection(&poolref->run_mutex);
+    InitializeConditionVariable(&poolref->run_condition);
+#else
+    pthread_mutex_init(&poolref->pool_mutex, NULL);
+    pthread_mutex_lock(&poolref->pool_mutex);
+    pthread_mutex_init(&poolref->run_mutex, NULL);
+    pthread_cond_init(&poolref->run_condition,NULL);
+#endif
+}
+
 static void lock_pool(PFRTThreadPool poolref) {
 #ifdef _MSC_VER
     WaitForSingleObject(poolref->pool_mutex,INFINITE);
@@ -283,6 +297,28 @@ static void wait_for_work_to_run(PFRTThreadPool poolref) {
 #endif
     }
 }
+
+static void destroy_run(PFRTThreadPool poolref) {
+#ifdef _MSC_VER
+    DeleteCriticalSection(&poolref->run_condition);
+    CloseHandle(poolref->run_mutex);
+#else
+    pthread_cond_destroy(&poolref->run_condition);
+    pthread_mutex_destroy(&poolref->run_mutex);
+#endif
+}
+
+static void destroy_pool(PFRTThreadPool poolref) {
+    destroy_run(poolref);
+#ifdef _MSC_VER
+    CloseHandle(poolref->pool_mutex);
+#else
+    pthread_mutex_destroy(&poolref->pool_mutex);
+#endif
+    release_list_bang(poolref->work_list);
+    release_list_bang(poolref->thread_list);
+}
+
 
 static PFRTAny wait_for_work(PFRTThreadPool poolref) {
     PFRTAny res = nil;
@@ -434,9 +470,10 @@ static void *pool_worker(void *arg)
     printf("Released shutdown lock\n");
     unlock_pool(poolref);
 #ifdef _MSC_VER
+    ExitThread(0);
     return 0;
 #else
-    //pthread_exit((void *) poolref);
+    pthread_exit((void *) poolref);
     return pthrd;
 #endif
 }
@@ -451,18 +488,9 @@ static PFRTThread create_pool_thread(PFRTThreadPool poolref, int id) {
     return pthrd;
 }
 
+
 static PFRTThreadPool initialize_pool(PFRTThreadPool poolref) {
-    // Mutex and semaphore
-#ifdef _MSC_VER
-    poolref->pool_mutex = CreateMutex(NULL,TRUE,NULL);
-    InitializeCriticalSection(&poolref->run_mutex);
-    InitializeConditionVariable(&poolref->run_condition);
-#else
-    pthread_mutex_init(&poolref->pool_mutex, NULL);
-    pthread_mutex_lock(&poolref->pool_mutex);
-    pthread_mutex_init(&poolref->run_mutex, NULL);
-    pthread_cond_init(&poolref->run_condition,NULL);
-#endif
+    create_pool_controls(poolref);
     for(ft x=0; x < poolref->count; ++x) {
         PFRTThread pthrd = create_pool_thread(poolref,x);
         foidl_list_extend_bang(poolref->thread_list,(PFRTAny)pthrd);
@@ -535,19 +563,26 @@ PFRTAny foidl_resume_thread_pool_bang(PFRTAny pool) {
 PFRTAny foidl_exit_thread_pool_bang(PFRTAny pool) {
     if(pool->fclass == worker_class && pool->ftype == thrdpool_type) {
         PFRTThreadPool poolref = (PFRTThreadPool) pool;
-        foidl_queue_work_bang(pool,pool_exit);
-        lock_pool(poolref);
-        lock_run(poolref);
-        poolref->stop_work = true;
-        poolref->pool_state = pool_exit;
-        unlock_pool(poolref);
-        run_broadcast(poolref);
-        unlock_run(poolref);
-        printf("Posted shutdown, waiting for active thread kill\n");
-        while(poolref->active_threads > 0) {}
+        if(poolref->pool_state != pool_exit) {
+            foidl_queue_work_bang(pool,pool_exit);
+            lock_pool(poolref);
+            lock_run(poolref);
+            poolref->stop_work = true;
+            poolref->pool_state = pool_exit;
+            unlock_pool(poolref);
+            run_broadcast(poolref);
+            unlock_run(poolref);
+            printf("Posted shutdown, waiting for active thread kill\n");
+            while(poolref->active_threads > 0) {;}
+            destroy_pool(poolref);
+        }
+        else {
+            printf("Attempting to exit pool already exited\n");
+            unknown_handler();
+        }
     }
     else {
-        printf("Unknown resume type\n");
+        printf("Unknown type passed to pool_exit\n");
         unknown_handler();
     }
     return pool;
