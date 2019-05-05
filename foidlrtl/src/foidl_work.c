@@ -137,6 +137,7 @@ static void *worker(void *arg)
     }
     wrk->result = res;
 #ifdef _MSC_VER
+    ExitThread(0);
     return 0;
 #else
     pthread_exit((void *) res);
@@ -467,6 +468,7 @@ static void *pool_worker(void *arg)
     printf("Aquired shutdown lock\n");
     poolref->active_threads--;
     pthrd->thread_state = pthrd_ended;
+    printf("    Thread %d ended\n", pthrd->thid);
     printf("Released shutdown lock\n");
     unlock_pool(poolref);
 #ifdef _MSC_VER
