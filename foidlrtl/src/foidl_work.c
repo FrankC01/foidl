@@ -134,6 +134,7 @@ static void *worker(void *arg)
                 unknown_handler();
             }
         }
+        foidl_xdel(itr);
     }
     wrk->result = res;
 #ifdef _MSC_VER
@@ -458,6 +459,7 @@ static void *pool_worker(void *arg)
                         unknown_handler();
                     }
                 }
+                foidl_xdel(itr);
             }
             wrk->result = res;
             wrk->work_state = wrk_complete;

@@ -204,29 +204,32 @@ PFRTFuncRef2 allocFuncRef2(void *fn, ft maxarg, invoke_funcptr ifn) {
 }
 
 PFRTWorker  allocWorker(PFRTFuncRef2 ref) {
-	PFRTWorker wrk = foidl_xall(sizeof(struct FRTWorker));
+	PFRTWorkerG wrk = foidl_xall(sizeof(struct FRTWorkerG));
+	wrk->fsig = alloc_signature;
 	wrk->fclass = worker_class;
 	wrk->ftype = worker_type;
 	wrk->count = 0;
 	wrk->fnptr = ref;
 	wrk->work_state = wrk_alloc;
-	return wrk;
+	return (PFRTWorker) &wrk->fclass;
 }
 
 EXTERNC PFRTThread      allocThread(PFRTThreadPool poolref, int id) {
-	PFRTThread pthrd = foidl_xall(sizeof(struct FRTThread));
+	PFRTThreadG pthrd = foidl_xall(sizeof(struct FRTThreadG));
+	pthrd->fsig = alloc_signature;
 	pthrd->fclass = worker_class;
 	pthrd->ftype = thread_type;
 	pthrd->count = 0;
 	pthrd->pool_parent = (void *)poolref;
 	pthrd->thid = id;
-	return pthrd;
+	return (PFRTThread) &pthrd->fclass;
 }
 
 PFRTList   allocList(ft , PFRTLinkNode);
 
 PFRTThreadPool allocThreadPool() {
-	PFRTThreadPool tp = foidl_xall(sizeof(struct FRTThreadPool));
+	PFRTThreadPoolG tp = foidl_xall(sizeof(struct FRTThreadPoolG));
+	tp->fsig = alloc_signature;
 	tp->fclass = worker_class;
 	tp->ftype = thrdpool_type;
 	tp->count = 0;
@@ -237,7 +240,7 @@ PFRTThreadPool allocThreadPool() {
 	tp->pause_work = false;
 	tp->block_queue = false;
 	tp->stop_work = false;
-	return tp;
+	return  (PFRTThreadPool) &tp->fclass;
 }
 
 //	Collection related

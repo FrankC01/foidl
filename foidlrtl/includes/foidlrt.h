@@ -28,6 +28,18 @@
 
 typedef unsigned long long ft;
 typedef long long lt;
+#ifdef _MSC_VER
+typedef HANDLE              foidl_thread_t;
+typedef HANDLE              foidl_mutex_t;
+typedef CONDITION_VARIABLE  foidl_cond_t;
+typedef CRITICAL_SECTION    foidl_note_t;
+#else
+typedef pthread_t           foidl_thread_t;
+typedef pthread_mutex_t     foidl_mutex_t;
+typedef pthread_cond_t      foidl_cond_t;
+typedef pthread_mutex_t     foidl_note_t;
+#endif
+
 
 //
 // Class identifiers
@@ -360,11 +372,7 @@ typedef struct   FRTWorkerG {
     void        *fnptr;         // Invoication func
     PFRTAny     argcollection;
     PFRTAny     work_state;
-#ifdef _MSC_VER
-    HANDLE      thread_id;
-#else
-    pthread_t   thread_id;
-#endif
+    foidl_thread_t thread_id;
     PFRTAny 	result;
 } *PFRTWorkerG;
 
@@ -376,13 +384,21 @@ typedef struct   FRTWorker {
     void        *fnptr;         // Invoication func
     PFRTAny     argcollection;
     PFRTAny     work_state;
-#ifdef _MSC_VER
-    HANDLE      thread_id;
-#else
-    pthread_t   thread_id;
-#endif
+    foidl_thread_t thread_id;
     PFRTAny 	result;
 } *PFRTWorker;
+
+typedef struct FRTThreadG {
+    ft          fsig;
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *pool_parent;
+    int         thid;
+    PFRTAny     thread_state;
+    foidl_thread_t   thread_id;
+} *PFRTThreadG;
 
 typedef struct FRTThread {
     ft          fclass;
@@ -392,12 +408,29 @@ typedef struct FRTThread {
     void        *pool_parent;
     int         thid;
     PFRTAny     thread_state;
-#ifdef _MSC_VER
-    HANDLE      thread_id;
-#else
-    pthread_t   thread_id;
-#endif
+    foidl_thread_t   thread_id;
 } *PFRTThread;
+
+typedef struct   FRTThreadPoolG {
+    ft          fsig;
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *fnptr;
+    PFRTAny     pool_state;
+    ft          run_value;
+    ft          active_threads;
+    PFRTAny     thread_pause_timer;
+    PFRTAny     pause_work;
+    PFRTAny     block_queue;
+    PFRTAny     stop_work;
+    PFRTAny     thread_list;
+    PFRTAny     work_list;
+    foidl_mutex_t   pool_mutex;
+    foidl_note_t    run_mutex;
+    foidl_cond_t    run_condition;
+} *PFRTThreadPoolG;
 
 typedef struct   FRTThreadPool {
     ft          fclass;
@@ -414,15 +447,9 @@ typedef struct   FRTThreadPool {
     PFRTAny     stop_work;
     PFRTAny     thread_list;
     PFRTAny     work_list;
-#ifdef _MSC_VER
-    HANDLE             pool_mutex;
-    CRITICAL_SECTION   run_mutex;
-    CONDITION_VARIABLE run_condition;
-#else
-    pthread_mutex_t pool_mutex;
-    pthread_mutex_t run_mutex;
-    pthread_cond_t  run_condition;
-#endif
+    foidl_mutex_t   pool_mutex;
+    foidl_note_t    run_mutex;
+    foidl_cond_t    run_condition;
 } *PFRTThreadPool;
 
 //	Series
