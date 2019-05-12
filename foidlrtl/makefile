@@ -57,6 +57,13 @@ OBJS 	:= objs/
 LIB 	:= lib/
 HDRS   	:= headers/
 
+ifeq ($(DEBUG), 1)
+$(info Building for debugging)
+DFLAGS := -O0 -g
+else
+$(info Building for release)
+DFLAGS :=
+endif
 
 ifeq ($(OS_NAME), Windows)
 	ARCH32=x86
@@ -99,16 +106,16 @@ ifeq ($(OS_NAME), Windows)
 	SYSTEM_LIBGCC_INC_64=-L$(MSVC_LIB64) -L$(UniversalCRT_Lib64) -L$(WINSDK_LIB64)
 	SYSTEM_FLAGS=-fmsc-version=$(_MSC_VER) -fms-extensions -fms-compatibility -fdelayed-template-parsing
 	# The resulting commands
-	CL64=$(CLC) -c $(TARGET_64) -O3
-	C64=$(CLC) -c -isystem $(INC) $(TARGET_64)  $(SYSTEM_INC_64) -D_CRT_SECURE_NO_WARNINGS -std=c11 $(SYSTEM_FLAGS)
-	CPP64=$(CPPLC) -c -isystem $(INC) $(TARGET_64) $(SYSTEM_INC_64) -D_CRT_SECURE_NO_WARNINGS -std=c++14 $(SYSTEM_FLAGS)
+	CL64=$(CLC) -c $(TARGET_64) $(DFLAGS)
+	C64=$(CLC) -c -isystem $(INC) $(TARGET_64)  $(SYSTEM_INC_64) -D_CRT_SECURE_NO_WARNINGS -std=c11 $(SYSTEM_FLAGS) $(DFLAGS)
+	CPP64=$(CPPLC) -c -isystem $(INC) $(TARGET_64) $(SYSTEM_INC_64) -D_CRT_SECURE_NO_WARNINGS -std=c++14 $(SYSTEM_FLAGS) $(DFLAGS)
 	foidlrt_LIB  := libfoidlrt.lib
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
 	LIB64=$(LLLT) $(SYSTEM_LIB_INC_64) /out:$(STATIC_LIB) /nologo
 else
-	CL64=$(CLC) -c -march=x86-64 -pthread -fPIC -O3
-	C64=$(CLC) -c -isystem $(INC) -pthread -march=x86-64 -fPIC -O0 -g
-	CPP64=$(CPPLC) -c -isystem $(INC) -pthread -march=x86-64 -std=c++11 -fPIC -O0 -g
+	CL64=$(CLC) -c -march=x86-64 -pthread -fPIC $(DFLAGS)
+	C64=$(CLC) -c -isystem $(INC) -pthread -march=x86-64 -fPIC $(DFLAGS)
+	CPP64=$(CPPLC) -c -isystem $(INC) -pthread -march=x86-64 -std=c++11 -fPIC $(DFLAGS)
 	foidlrt_LIB  := libfoidlrt.a
 	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
 	LIB64=$(LLAR) --format=default -ru $(STATIC_LIB)

@@ -550,14 +550,20 @@ PFRTAny foidl_pause_thread_pool_bang(PFRTAny pool, PFRTAny blockwork) {
 PFRTAny foidl_resume_thread_pool_bang(PFRTAny pool) {
     if(pool->fclass == worker_class && pool->ftype == thrdpool_type) {
         PFRTThreadPool poolref = (PFRTThreadPool) pool;
-        lock_pool(poolref);
-        poolref->pause_work = false;
-        poolref->block_queue = false;
-        poolref->pool_state = pool_running;
-        unlock_pool(poolref);
+        if(poolref->pool_state == pool_pause) {
+            lock_pool(poolref);
+            poolref->pause_work = false;
+            poolref->block_queue = false;
+            poolref->pool_state = pool_running;
+            unlock_pool(poolref);
+        }
+        else {
+            printf("Calling resume_pool when pool not paused\n");
+            unknown_handler();
+        }
     }
     else {
-        printf("Unknown resume type\n");
+        printf("Calling resume_pool on non pool item\n");
         unknown_handler();
     }
     return pool;

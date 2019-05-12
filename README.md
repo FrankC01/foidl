@@ -17,11 +17,25 @@ My own twists:
 ## Prereqs
 * Python 3.6+
 * LLVM/Clang 7.0+
+* libcurl
 
 ### Python libraries to `pip` in
 * rply
 * colorlog
 * llvmlite
+
+## Coverage
+
+| Feature | macos | linux | windows |
+| ------- | ----- | ----- | ------- |
+| bootstrap | x | x | x |
+| self-hosted | x | x | x |
+| file channels | x | x | x |
+| http channels | | | |
+| threads | x | x | x |
+| thread-pools | x | x | |
+
+
 
 ## Building foidl
 Building the executable, self-hosted, foidl compiler (`foidlc`) is 2 step process:
