@@ -18,7 +18,7 @@
 ; limitations under the License.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module channels
+module file_chan
 
 ; Channels are how foidl communicates to the outside world.
 ; There are three (3) predefined channels:
@@ -37,7 +37,7 @@ func :private read_entire [fname]
 
 ; Function: slurp
 ; Description: Prints entire input file to console
-; Run when command line has 1 arg. E.g. 'bin/channels fsrc/channels.foidl'
+; Run when command line has 1 arg. E.g. 'bin/file_chan fsrc/channels.foidl'
 
 func :private slurp [ifile]
     print!: read_entire: ifile
@@ -45,7 +45,7 @@ func :private slurp [ifile]
 ; Function: read_write
 ; Description: Ingests a file (fname) a character at a time
 ; and writes it to output (ofile)
-; Run when command line has 2 args. E.g. 'bin/channels fsrc/channels ./dump.txt'
+; Run when command line has 2 args. E.g. 'bin/file_chan fsrc/channels ./dump.txt'
 
 func :private read_write [ifile ofile]
     let [ichan  opens!: {
@@ -71,7 +71,7 @@ func :private read_write [ifile ofile]
 
 ; Function: console_read_write
 ; Description: reads from command line (cin) and writes to standard out (cout)
-; Run when command line has 0 args. E.g. 'bin/channels
+; Run when command line has 0 args. E.g. 'bin/file_chan
 
 func :private console_read_write []
     print!: "`n> "

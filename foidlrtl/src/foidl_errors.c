@@ -47,15 +47,6 @@ PFRTAny 	foidl_fail() {
 	return nil;
 }
 
-PFRTAny 	writeCerr(PFRTAny el) {
-	return foidl_channel_write_bang((PFRTAny) cerr,el);
-}
-
-PFRTAny 	writeCerrNl(PFRTAny el) {
-	foidl_channel_write_bang((PFRTAny)cerr,el);
-	return foidl_channel_write_bang((PFRTAny)cerr,nlchr);
-}
-
 void 	foidl_ep_excp(PFRTAny estring) {
 	foidl_channel_write_bang((PFRTAny)cerr,rteprefix);
 	writeCerrNl(estring);

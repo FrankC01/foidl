@@ -113,7 +113,7 @@ static const ft     pool_control  = 0xffffffff100000e9;
 //	IO types
 
 static const ft 	file_type   = 0xffffffff100000bf;
-static const ft 	url_type    = 0xffffffff100000be;
+static const ft 	http_type   = 0xffffffff100000be;
 static const ft 	ip_type     = 0xffffffff100000bd;
 static const ft 	mem_type  	= 0xffffffff100000bc;
 static const ft 	cin_type    = 0xffffffff100000bb;
@@ -759,6 +759,8 @@ EXTERNC PFRTAny     foidl_reduced(PFRTAny);
 EXTERNC PFRTAny     foidl_split(PFRTAny,PFRTAny); 	//	May move to string
 EXTERNC PFRTAny     writeCout(PFRTAny);
 EXTERNC PFRTAny     writeCoutNl(PFRTAny);
+EXTERNC PFRTAny     writeCerr(PFRTAny);
+EXTERNC PFRTAny     writeCerrNl(PFRTAny);
 #endif
 
 #ifndef F_ASPRINTF
@@ -855,8 +857,6 @@ EXTERNC PFRTIterator    allocStringIterator(PFRTAny, itrNext);
 // Errors
 #ifndef ERRORS_IMPL
 EXTERNC PFRTAny foidl_fail();
-EXTERNC PFRTAny writeCerr(PFRTAny);
-EXTERNC PFRTAny writeCerrNl(PFRTAny);
 EXTERNC void    foidl_ep_excp(PFRTAny);
 EXTERNC void    foidl_ep_excp2(PFRTAny,PFRTAny);
 EXTERNC PFRTAny const unsupported;
@@ -1069,7 +1069,7 @@ EXTERNC  PFRTAny  write_list(PFRTAny, PFRTAny, channel_writer);
 #endif
 
 // IO
-#ifndef IO_CHANNEL
+#ifndef IO_FILE_CHANNEL
 EXTERNC void        foidl_rtl_init_channel();
 #ifndef __cplusplus
 EXTERNC PFRTAny     cout,cin,cerr;

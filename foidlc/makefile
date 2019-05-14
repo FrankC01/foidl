@@ -18,6 +18,9 @@
 
 UNAME := $(shell uname)
 
+# Get curl information
+CURL_LIB := $(shell curl-config --libs)
+
 ifeq ($(UNAME), Linux)
 	OS_NAME := $(UNAME)
 	PYTHON := python3
@@ -117,10 +120,10 @@ ifeq ($(OS_NAME), Windows)
 	SYSTEM_LIBGCC_INC_64=-L$(MSVC_LIB64) -L$(UniversalCRT_Lib64) -L$(WINSDK_LIB64)
 	SYSTEM_FLAGS=-fmsc-version=$(_MSC_VER) -fms-extensions -fms-compatibility -fdelayed-template-parsing
 	# The resulting commands
-	CL64=$(CLC) -c $(TARGET_64) -O3
+	CL64=$(CLC) -c $(TARGET_64)
 	LINK64=lld-link $(SYSTEM_LIB_INC_64) /libpath:$(RTLIB)
 else
-	CL64=$(CLC) -c -march=x86-64 -fPIC -O3
+	CL64=$(CLC) -c -march=x86-64 -fPIC
 	LINK64 := $(CPPLC) -lc++
 endif
 
@@ -136,7 +139,7 @@ $(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) $(STATIC_LIB) | $(BIN)
 	$(LINK64) $(LIBS) /subsystem:console /out:$@ $(FOBJS)
 else
 $(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) $(STATIC_LIB) | $(BIN)
-	$(LINK64) $(FOBJS) -lfoidlrt -L $(RTLIB) -o $@
+	$(LINK64) $(FOBJS) $(CURL_LIB) -lfoidlrt -L $(RTLIB) -o $@
 endif
 
 $(BIN):

@@ -18,6 +18,9 @@
 
 UNAME := $(shell uname)
 
+# Get curl information
+CURL_LIB := $(shell curl-config --libs)
+
 ifeq ($(UNAME), Linux)
 	OS_NAME := $(UNAME)
 else ifeq ($(UNAME), Solaris)
@@ -27,8 +30,6 @@ else ifeq ($(UNAME), Darwin)
 else
 	OS_NAME := Windows
 endif
-
-$(info building for $(OS_NAME))
 
 ifeq ($(OS_NAME), Windows)
 SHFOIDLC := ../../foidlc/bin/foidlc.exe
@@ -109,12 +110,12 @@ ifeq ($(OS_NAME), Windows)
 	SYSTEM_LIBGCC_INC_64=-L$(MSVC_LIB64) -L$(UniversalCRT_Lib64) -L$(WINSDK_LIB64)
 	SYSTEM_FLAGS=-fmsc-version=$(_MSC_VER) -fms-extensions -fms-compatibility -fdelayed-template-parsing
 	# The resulting commands
-	CL64=$(CLC) -c $(TARGET_64) -O3
+	CL64=$(CLC) -c $(TARGET_64)
 	foidlrt_LIB  := libfoidlrt.lib
 	STATIC_LIB  := $(RTLIB)/$(foidlrt_LIB)
 	LINK64=lld-link $(SYSTEM_LIB_INC_64) /libpath:$(RTLIB)
 else
-	CL64=$(CLC) -c -march=x86-64 -fPIC -O3
+	CL64=$(CLC) -c -march=x86-64 -fPIC
 	foidlrt_LIB  := libfoidlrt.a
 	STATIC_LIB  := $(RTLIB)/$(foidlrt_LIB)
 	LINK64 := $(CPPLC)  -lc++
@@ -133,7 +134,7 @@ bin/%.exe: objs/%.o
 	$(LINK64) $(LIBS) /subsystem:console /out:$@ $<
 else
 bin/%: objs/%.o
-	$(LINK64) $< -lfoidlrt -L $(RTLIB) -o $@
+	$(LINK64) $< $(CURL_LIB) -lfoidlrt -L $(RTLIB) -o $@
 endif
 
 $(FEXES): $(STATIC_LIB) | $(BIN)

@@ -25,7 +25,7 @@
 
 */
 
-#define IO_CHANNEL
+#define IO_FILE_CHANNEL
 #include    <foidlrt.h>
 #include    <stdio.h>
 #include    <stdlib.h>
@@ -33,6 +33,7 @@
 #include <io.h>
 #else
 #include    <unistd.h>
+#include    <curl/curl.h>
 #endif
 #include    <sys/stat.h>
 
@@ -122,6 +123,10 @@ void foidl_rtl_init_channel() {
     _cout2_base.name = coutstr;
     _cerr2_base.value = (void *) stderr;
     _cerr2_base.name = cerrstr;
+#ifdef _MSC_VER
+#else
+     curl_global_init(CURL_GLOBAL_ALL);
+#endif
 }
 
 // Utility
