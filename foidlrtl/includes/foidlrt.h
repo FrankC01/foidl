@@ -519,6 +519,30 @@ typedef struct   FRTIOFileChannel {
 } *PFRTIOFileChannel;
 
 
+typedef struct   FRTIOHttpChannelG {
+    ft          fsig;
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *value;         // Maps to curl handle
+    PFRTAny     name;
+    PFRTAny     mode;
+    PFRTAny     render;
+} *PFRTIOHttpChannelG;
+
+
+typedef struct   FRTIOHttpChannel {
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *value;         // Maps to curl handle
+    PFRTAny     name;
+    PFRTAny     mode;
+    PFRTAny     render;
+} *PFRTIOHttpChannel;
+
 //	Forward decls and macros
 
 #define globalScalar(insym,gtype,val,cnt) \
@@ -821,6 +845,7 @@ EXTERNC PFRTAny         allocRegex(PFRTAny sbase, void* regex);
 
 // IO Types
 EXTERNC PFRTIOChannel   allocFileChannel(PFRTAny, PFRTAny);
+EXTERNC PFRTIOChannel   allocHttpChannel(PFRTAny, PFRTAny);
 
 // Function types
 EXTERNC PFRTFuncRef2 	allocFuncRef2(void *fn, ft maxarg,invoke_funcptr ifn);
@@ -1070,7 +1095,7 @@ EXTERNC  PFRTAny  write_list(PFRTAny, PFRTAny, channel_writer);
 
 // IO
 #ifndef IO_FILE_CHANNEL
-EXTERNC void        foidl_rtl_init_channel();
+EXTERNC void        foidl_rtl_init_file_channel();
 #ifndef __cplusplus
 EXTERNC PFRTAny     cout,cin,cerr;
 #endif
@@ -1079,6 +1104,10 @@ EXTERNC PFRTAny     is_file_text(PFRTIOFileChannel);
 EXTERNC PFRTAny     file_channel_read_next(PFRTIterator);
 EXTERNC PFRTAny     foidl_channel_write_bang(PFRTAny, PFRTAny);
 EXTERNC PFRTAny     foidl_fexists_qmark(PFRTAny);
+#endif
+
+#ifndef IO_HTTP_CHANNEL
+EXTERNC void        foidl_rtl_init_http_channel();
 #endif
 
 // Series

@@ -46,7 +46,8 @@ PFRTAny 	foidl_rtl_init() {
 		//foidl_gc_init();
 		foidl_rtl_init_chars();
 		foidl_rtl_init_globals();
-		foidl_rtl_init_channel();
+		foidl_rtl_init_file_channel();
+		foidl_rtl_init_http_channel();
 		foidl_rtl_init_numbers(); //foidl_rtl_init_ints();
 		foildl_rtl_init_strings();
 		foidl_rtl_init_types();

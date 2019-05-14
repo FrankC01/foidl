@@ -122,11 +122,6 @@ var kwd_type 		Type
 
 var real_type 		Type 	;	Not yet
 
-var file_type		Type
-var url_type		Type
-var ip_type			Type
-var mem_type 		Type
-
 var list_type 		Type
 var vector_type 	Type
 var set_type 		Type
@@ -257,6 +252,8 @@ func  foidl_series? 	[x]
 func  foidl_function? 	[x]
 func  foidl_scalar? 	[x]
 func  foidl_io? 		[x]
+func  foidl_file?       [x]
+func  foidl_http?       [x]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Type and Coerce Function
@@ -325,6 +322,7 @@ func    foidl_zipmap    [coll1 coll2]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 var chan_file   Type
+var chan_http   Type
 var file_eof    Type
 
 var open_r      Type
@@ -355,3 +353,5 @@ func    foidl_channel_close!    [channel]
 func    foidl_channel_quaf!     [channel]
 
 func    foidl_fexists? [fname]
+
+func    foidl_open_http!        [name mode args]

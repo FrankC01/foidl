@@ -190,6 +190,15 @@ PFRTIOChannel allocFileChannel(PFRTAny name, PFRTAny mode) {
 	return (PFRTIOChannel) fc;
 }
 
+PFRTIOChannel allocHttpChannel(PFRTAny name, PFRTAny mode) {
+	PFRTIOHttpChannel fc = foidl_xall(sizeof(struct FRTIOHttpChannel));
+	fc->fclass = io_class;
+	fc->ftype  = http_type;
+	fc->name   = name;
+	fc->mode   = mode;
+	return (PFRTIOChannel) fc;
+}
+
 //	Function and thread/worker reference instance
 
 PFRTFuncRef2 allocFuncRef2(void *fn, ft maxarg, invoke_funcptr ifn) {

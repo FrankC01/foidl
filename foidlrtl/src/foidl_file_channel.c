@@ -1,5 +1,5 @@
 /*
-    foidl_channel.c
+    foidl_file_channel.c
     Library support for IO channels
 
     Copyright Frank V. Castellucci
@@ -33,7 +33,6 @@
 #include <io.h>
 #else
 #include    <unistd.h>
-#include    <curl/curl.h>
 #endif
 #include    <sys/stat.h>
 
@@ -116,17 +115,13 @@ struct FRTIOFileChannelG _cerr2_base = {
 
 PFRTAny const cerr = (PFRTAny) &_cerr2_base.fclass;
 
-void foidl_rtl_init_channel() {
+void foidl_rtl_init_file_channel() {
     _cin2_base.value = (void *) stdin;
     _cin2_base.name = cinstr;
     _cout2_base.value = (void *) stdout;
     _cout2_base.name = coutstr;
     _cerr2_base.value = (void *) stderr;
     _cerr2_base.name = cerrstr;
-#ifdef _MSC_VER
-#else
-     curl_global_init(CURL_GLOBAL_ALL);
-#endif
 }
 
 // Utility
@@ -558,7 +553,7 @@ PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el) {
     return res;
 }
 
-// Channel open entry point
+// File Channel open entry point
 
 PFRTAny foidl_open_file_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
     PFRTAny fc2 = nil; //(PFRTIOFileChannel) allocFileChannel(name,mode);

@@ -111,6 +111,11 @@ func opens! [args]
 			get: args chan_target
 			get: args chan_mode
 			args
+	| chan_http
+		foidl_open_http!:
+			get: args chan_target
+			get: args chan_mode
+			args
 	| :default nil
 
 func reads! [channel]
@@ -482,6 +487,12 @@ func scalar? 	[x]
 
 func io? 	[x]
 	foidl_io?: x
+
+func file?  [x]
+	foidl_file?: x
+
+func http? 	[x]
+	foidl_http?: x
 
 func function? 	[x]
 	foidl_function?: x
