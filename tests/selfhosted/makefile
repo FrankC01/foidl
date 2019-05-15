@@ -134,7 +134,7 @@ bin/%.exe: objs/%.o
 	$(LINK64) $(LIBS) /subsystem:console /out:$@ $<
 else
 bin/%: objs/%.o
-	$(LINK64) $< $(CURL_LIB) -lfoidlrt -L $(RTLIB) -o $@
+	$(LINK64) $< -lpthread $(CURL_LIB) -lfoidlrt -L $(RTLIB) -o $@
 endif
 
 $(FEXES): $(STATIC_LIB) | $(BIN)
