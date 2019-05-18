@@ -484,6 +484,7 @@ typedef struct   FRTIOChannelG {
     ft          count;
     uint32_t    hash;
     void        *value;         // Maps to IO handle
+    PFRTAny     ctype;
 } *PFRTIOChannelG;
 
 typedef struct   FRTIOChannel {
@@ -492,6 +493,7 @@ typedef struct   FRTIOChannel {
     ft          count;
     uint32_t    hash;
     void        *value;         // Maps to IO handle
+    PFRTAny     ctype;
 } *PFRTIOChannel;
 
 typedef struct   FRTIOFileChannelG {
@@ -501,6 +503,7 @@ typedef struct   FRTIOFileChannelG {
     ft          count;
     uint32_t    hash;
     void        *value;         // Maps to IO handle
+    PFRTAny     ctype;
     PFRTAny     name;
     PFRTAny     mode;
     PFRTAny     render;
@@ -513,6 +516,7 @@ typedef struct   FRTIOFileChannel {
     ft          count;
     uint32_t    hash;
     void        *value;         // Maps to IO handle
+    PFRTAny     ctype;
     PFRTAny     name;
     PFRTAny     mode;
     PFRTAny     render;
@@ -526,6 +530,7 @@ typedef struct   FRTIOHttpChannelG {
     ft          count;
     uint32_t    hash;
     void        *value;         // Maps to curl handle
+    PFRTAny     ctype;
     PFRTAny     name;
     PFRTAny     mode;
     PFRTAny     render;
@@ -538,6 +543,7 @@ typedef struct   FRTIOHttpChannel {
     ft          count;
     uint32_t    hash;
     void        *value;         // Maps to curl handle
+    PFRTAny     ctype;
     PFRTAny     name;
     PFRTAny     mode;
     PFRTAny     render;
@@ -729,6 +735,8 @@ EXTERNC PFRTAny end;
 #ifndef __cplusplus
 EXTERNC PFRTAny  nil,true,false;
 #endif
+
+EXTERNC PFRTAny     chan_file,chan_http;
 
 EXTERNC struct FRTTypeG _end;
 EXTERNC struct FRTTypeG _nil;

@@ -182,21 +182,25 @@ PFRTAny allocGlobalCharType(int v) {
 // New IO Channel
 
 PFRTIOChannel allocFileChannel(PFRTAny name, PFRTAny mode) {
-	PFRTIOFileChannel fc = foidl_xall(sizeof(struct FRTIOFileChannel));
+	PFRTIOFileChannelG fc = foidl_xall(sizeof(struct FRTIOFileChannelG));
+	fc->fsig   = alloc_signature;
 	fc->fclass = io_class;
 	fc->ftype  = file_type;
+	fc->ctype  = chan_file;
 	fc->name   = name;
 	fc->mode   = mode;
-	return (PFRTIOChannel) fc;
+	return (PFRTIOChannel) &fc->fclass;
 }
 
 PFRTIOChannel allocHttpChannel(PFRTAny name, PFRTAny mode) {
-	PFRTIOHttpChannel fc = foidl_xall(sizeof(struct FRTIOHttpChannel));
+	PFRTIOHttpChannelG fc = foidl_xall(sizeof(struct FRTIOHttpChannelG));
+	fc->fsig   = alloc_signature;
 	fc->fclass = io_class;
 	fc->ftype  = http_type;
+	fc->ctype  = chan_http;
 	fc->name   = name;
 	fc->mode   = mode;
-	return (PFRTIOChannel) fc;
+	return (PFRTIOChannel) &fc->fclass;
 }
 
 //	Function and thread/worker reference instance

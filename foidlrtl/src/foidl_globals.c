@@ -15,6 +15,11 @@ globalScalarConst(false,boolean_type,(void *) 0,1);
 globalScalarConst(nil,nil_type,(void *) 0,1);
 globalScalarConst(end,end_type,(void *) 0,1);
 
+// IO Channel types
+globalScalarConst(chan_file,byte_type,(void *) 0,1);
+globalScalarConst(chan_http,byte_type,(void *) 1,1);
+
+
 // String types
 globalScalarConst(empty_string,string_type,(void *) "",0);
 globalScalarConst(space_string,string_type,(void *) " ",1);

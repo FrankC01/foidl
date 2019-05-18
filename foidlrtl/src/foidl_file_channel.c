@@ -44,9 +44,6 @@ constKeyword(chan_type,":type");
 constKeyword(chan_render,":render");
 constKeyword(chan_mode,":mode");
 
-globalScalarConst(chan_file,byte_type,(void *) 0,1);
-globalScalarConst(chan_http,byte_type,(void *) 1,1);
-
 // For file disposition
 globalScalarConst(open_r,byte_type,(void *) 0x0,1);
 globalScalarConst(open_rb,byte_type,(void *) 0x1,1);
