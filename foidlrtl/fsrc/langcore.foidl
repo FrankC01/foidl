@@ -120,17 +120,17 @@ func opens! [args]
 
 func reads! [channel]
 	?: io?: channel
-		foidl_channel_read!: channel
+		foidl_channel_file_read!: channel
 		nil
 
 func writes! [channel data]
 	?: io?: channel
-		foidl_channel_write!: channel data
+		foidl_channel_file_write!: channel data
 		nil
 
 func closes! [channel]
 	?: io?: channel
-		foidl_channel_close!: channel
+		foidl_channel_file_close!: channel
 		true
 
 func file_exists? [fname]
@@ -487,6 +487,9 @@ func scalar? 	[x]
 
 func io? 	[x]
 	foidl_io?: x
+
+func channel_type? [x]
+	foidl_channel_type?: x
 
 func file?  [x]
 	foidl_file?: x

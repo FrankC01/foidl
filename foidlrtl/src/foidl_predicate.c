@@ -166,6 +166,13 @@ PFRTAny foidl_io_qmark(PFRTAny el) {
 	return (el->fclass == io_class) ? true : false;
 }
 
+PFRTAny foidl_channel_type_qmark(PFRTAny el) {
+	PFRTAny res = foidl_io_qmark(el);
+	if(res == true)
+		res = ((PFRTIOChannel)el)->ctype;
+	return res;
+}
+
 PFRTAny foidl_file_qmark(PFRTAny el) {
 	if( foidl_io_qmark(el) == true)
 		return (el->ftype == file_type) ? true :false;

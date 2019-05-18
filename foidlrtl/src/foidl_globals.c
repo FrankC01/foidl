@@ -18,6 +18,7 @@ globalScalarConst(end,end_type,(void *) 0,1);
 // IO Channel types
 globalScalarConst(chan_file,byte_type,(void *) 0,1);
 globalScalarConst(chan_http,byte_type,(void *) 1,1);
+globalScalarConst(chan_unknown,byte_type,(void *) 16,1);
 
 
 // String types

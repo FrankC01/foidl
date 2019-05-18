@@ -252,6 +252,7 @@ func  foidl_series? 	[x]
 func  foidl_function? 	[x]
 func  foidl_scalar? 	[x]
 func  foidl_io? 		[x]
+func  foidl_channel_type? [x]
 func  foidl_file?       [x]
 func  foidl_http?       [x]
 
@@ -323,6 +324,8 @@ func    foidl_zipmap    [coll1 coll2]
 
 var chan_file   Type
 var chan_http   Type
+var chan_unknown Type
+
 var file_eof    Type
 
 var open_r      Type
@@ -346,11 +349,11 @@ var chan_type   Type
 var chan_render Type
 var chan_mode   Type
 
-func    foidl_open_file!        [name mode args]
-func    foidl_channel_read!     [channel]
-func    foidl_channel_write!    [channel data]
-func    foidl_channel_close!    [channel]
-func    foidl_channel_quaf!     [channel]
+func    foidl_open_file!            [name mode args]
+func    foidl_channel_file_read!    [channel]
+func    foidl_channel_file_write!   [channel data]
+func    foidl_channel_file_close!   [channel]
+func    foidl_channel_quaf!         [channel]
 
 func    foidl_fexists? [fname]
 

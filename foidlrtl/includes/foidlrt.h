@@ -1110,7 +1110,7 @@ EXTERNC PFRTAny     cout,cin,cerr;
 EXTERNC PFRTAny     is_file_read(PFRTIOFileChannel);
 EXTERNC PFRTAny     is_file_text(PFRTIOFileChannel);
 EXTERNC PFRTAny     file_channel_read_next(PFRTIterator);
-EXTERNC PFRTAny     foidl_channel_write_bang(PFRTAny, PFRTAny);
+EXTERNC PFRTAny     foidl_channel_file_write_bang(PFRTAny, PFRTAny);
 EXTERNC PFRTAny     foidl_fexists_qmark(PFRTAny);
 #endif
 

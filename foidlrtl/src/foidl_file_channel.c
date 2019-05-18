@@ -76,6 +76,7 @@ struct FRTIOFileChannelG _cin2_base = {
     cin_type,
     0,
     0,
+    0,
     NULL,//(void *)stdin,
     NULL,
     open_r,
@@ -88,6 +89,7 @@ struct FRTIOFileChannelG _cout2_base = {
     global_signature,
     io_class,
     cout_type,
+    0,
     0,
     0,
     NULL,//(void *)stdin,
@@ -104,6 +106,7 @@ struct FRTIOFileChannelG _cerr2_base = {
     cerr_type,
     0,
     0,
+    0,
     NULL,//(void *)stdin,
     NULL,
     open_w,
@@ -115,9 +118,12 @@ PFRTAny const cerr = (PFRTAny) &_cerr2_base.fclass;
 void foidl_rtl_init_file_channel() {
     _cin2_base.value = (void *) stdin;
     _cin2_base.name = cinstr;
+    _cin2_base.ctype = chan_file;
     _cout2_base.value = (void *) stdout;
     _cout2_base.name = coutstr;
+    _cout2_base.ctype = chan_file;
     _cerr2_base.value = (void *) stderr;
+    _cerr2_base.ctype = chan_file;
     _cerr2_base.name = cerrstr;
 }
 
@@ -367,7 +373,7 @@ static PFRTAny foidl_channel_read_cin(PFRTIOFileChannel channel) {
 
 // Read entry point
 
-PFRTAny foidl_channel_read_bang(PFRTAny channel) {
+PFRTAny foidl_channel_file_read_bang(PFRTAny channel) {
     PFRTAny res = nil;
     PFRTIOFileChannel chan = (PFRTIOFileChannel) channel;
     if(chan->ftype == file_type) {
@@ -459,21 +465,21 @@ static void io_file_scalar_txt_writer(FILE *chn, PFRTAny el) {
 
 }
 
-PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el);
+PFRTAny foidl_channel_file_write_bang(PFRTAny channel, PFRTAny el);
 
 static PFRTAny io_file_compound_txt_writer(PFRTAny channel, PFRTAny el) {
     switch(el->ftype) {
         case    vector2_type:
-            write_vector(channel, el, foidl_channel_write_bang);
+            write_vector(channel, el, foidl_channel_file_write_bang);
             break;
         case    list2_type:
-            write_list(channel, el, foidl_channel_write_bang);
+            write_list(channel, el, foidl_channel_file_write_bang);
             break;
         case    set2_type:
-            write_set(channel, el, foidl_channel_write_bang);
+            write_set(channel, el, foidl_channel_file_write_bang);
             break;
         case    map2_type:
-            write_map(channel, el, foidl_channel_write_bang);
+            write_map(channel, el, foidl_channel_file_write_bang);
             break;
         case    series_type:
             if((PFRTSeries) el == infinite)
@@ -484,9 +490,9 @@ static PFRTAny io_file_compound_txt_writer(PFRTAny channel, PFRTAny el) {
         case    mapentry_type:
             {
                 io_file_scalar_txt_writer(channel->value,lbracket);
-                foidl_channel_write_bang(channel,((PFRTMapEntry)el)->key);
+                foidl_channel_file_write_bang(channel,((PFRTMapEntry)el)->key);
                 io_file_scalar_txt_writer(channel->value,spchr);
-                foidl_channel_write_bang(channel,((PFRTMapEntry)el)->value);
+                foidl_channel_file_write_bang(channel,((PFRTMapEntry)el)->value);
                 io_file_scalar_txt_writer(channel->value,rbracket);
             }
             break;
@@ -534,7 +540,7 @@ static PFRTAny foidl_channel_writefile(PFRTAny channel, PFRTAny el) {
 
 // Writes entry point
 
-PFRTAny foidl_channel_write_bang(PFRTAny channel, PFRTAny el) {
+PFRTAny foidl_channel_file_write_bang(PFRTAny channel, PFRTAny el) {
     PFRTAny res = nil;
     if(channel->ftype == file_type ) {
         if(is_file_read((PFRTIOFileChannel)channel) == false) {
@@ -595,7 +601,7 @@ static PFRTAny close_file(PFRTIOFileChannel fc) {
 
 // Close channel entry point
 
-PFRTAny foidl_channel_close_bang(PFRTAny channel) {
+PFRTAny foidl_channel_file_close_bang(PFRTAny channel) {
     PFRTAny res = true;
     if(channel->ftype == closed_type)
         return true;
