@@ -119,9 +119,10 @@ func opens! [args]
 	| :default nil
 
 func reads! [channel]
-	?: io?: channel
-		foidl_channel_file_read!: channel
-		nil
+	match channel_type?: channel
+	| chan_file foidl_channel_file_read!: channel
+	| chan_http foidl_channel_http_read!: channel
+	:default nil
 
 func writes! [channel data]
 	?: io?: channel

@@ -20,7 +20,12 @@
 
 module http_chan
 
+func gethttp [url]
+    let chan [] opens!: {chan_target url chan_type chan_http chan_mode open_r}
+    reads!: chan
+    chan
 
 func main [argv]
+    gethttp: "http://example.com"
     zero
 

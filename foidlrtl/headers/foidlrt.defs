@@ -357,4 +357,5 @@ func    foidl_channel_quaf!         [channel]
 
 func    foidl_fexists? [fname]
 
-func    foidl_open_http!        [name mode args]
+func    foidl_open_http!            [name mode args]
+func    foidl_channel_http_read!    [channel]

@@ -736,7 +736,7 @@ EXTERNC PFRTAny end;
 EXTERNC PFRTAny  nil,true,false;
 #endif
 
-EXTERNC PFRTAny     chan_file,chan_http;
+EXTERNC PFRTAny     chan_file,chan_http,chan_unknown;
 
 EXTERNC struct FRTTypeG _end;
 EXTERNC struct FRTTypeG _nil;
