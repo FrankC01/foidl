@@ -39,12 +39,34 @@ void foidl_rtl_init_http_channel() {
 #endif
 }
 
+struct Chunk {
+  char *memory;
+  size_t size;
+};
+
+static size_t http_read_handler(
+    void *contents, size_t size,size_t nmemb, void *chunk) {
+    size_t realsize = size * nmemb;
+    struct Chunk *mem = (struct Chunk *)chunk;
+    char *ptr = foidl_xreall(mem->memory, mem->size + realsize + 1);
+    mem->memory = ptr;
+    memcpy(&(mem->memory[mem->size]), contents, realsize);
+    mem->size += realsize;
+    mem->memory[mem->size] = 0;
+    return realsize;
+}
+
 PFRTAny foidl_channel_http_read_bang(PFRTAny channel) {
     PFRTIOHttpChannel http = (PFRTIOHttpChannel)channel;
     CURL *curl = http->value;
     CURLcode cres;
+    struct Chunk mem;
+    mem.memory = foidl_xall(1);
+    mem.size = 0;
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_read_handler);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&mem);
     cres = curl_easy_perform(curl);
-    return nil;
+    return allocStringWithCptr(mem.memory,strlen(mem.memory));
 }
 
 PFRTAny foidl_open_http_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {

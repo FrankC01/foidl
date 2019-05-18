@@ -122,7 +122,6 @@ func reads! [channel]
 	match channel_type?: channel
 	| chan_file foidl_channel_file_read!: channel
 	| chan_http foidl_channel_http_read!: channel
-	:default nil
 
 func writes! [channel data]
 	?: io?: channel
