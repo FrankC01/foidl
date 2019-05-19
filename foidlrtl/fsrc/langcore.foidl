@@ -129,9 +129,9 @@ func writes! [channel data]
 		nil
 
 func closes! [channel]
-	?: io?: channel
-		foidl_channel_file_close!: channel
-		true
+	match channel_type?: channel
+	| chan_file foidl_channel_file_close!: channel
+	| chan_http foidl_channel_http_close!: channel
 
 func file_exists? [fname]
 	foidl_fexists?: fname

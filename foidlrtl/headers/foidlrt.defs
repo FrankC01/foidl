@@ -359,3 +359,4 @@ func    foidl_fexists? [fname]
 
 func    foidl_open_http!            [name mode args]
 func    foidl_channel_http_read!    [channel]
+func    foidl_channel_http_close!   [channel]

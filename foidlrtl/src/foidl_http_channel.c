@@ -83,3 +83,17 @@ PFRTAny foidl_open_http_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
     }
     return res;
 }
+
+PFRTAny foidl_channel_http_close_bang(PFRTAny channel) {
+    PFRTAny res = true;
+    if(channel->ftype == closed_type) {
+        ;
+    }
+    else {
+        channel->ftype = closed_type;
+        curl_easy_cleanup((CURL*) channel->value);
+        channel->value = (void *) 0;
+    }
+
+    return res;
+}
