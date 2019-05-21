@@ -736,7 +736,10 @@ EXTERNC PFRTAny end;
 EXTERNC PFRTAny  nil,true,false;
 #endif
 
+// Channel constants
 EXTERNC PFRTAny     chan_file,chan_http,chan_unknown;
+EXTERNC PFRTAny     chan_target,chan_type,chan_render,chan_mode;
+
 
 EXTERNC struct FRTTypeG _end;
 EXTERNC struct FRTTypeG _nil;
@@ -789,10 +792,6 @@ EXTERNC PFRTAny 	foidl_fold(PFRTAny, PFRTAny, PFRTAny);
 EXTERNC PFRTAny 	foidl_reduce(PFRTAny, PFRTAny, PFRTAny);
 EXTERNC PFRTAny     foidl_reduced(PFRTAny);
 EXTERNC PFRTAny     foidl_split(PFRTAny,PFRTAny); 	//	May move to string
-EXTERNC PFRTAny     writeCout(PFRTAny);
-EXTERNC PFRTAny     writeCoutNl(PFRTAny);
-EXTERNC PFRTAny     writeCerr(PFRTAny);
-EXTERNC PFRTAny     writeCerrNl(PFRTAny);
 #endif
 
 #ifndef F_ASPRINTF
@@ -1111,8 +1110,11 @@ EXTERNC PFRTAny     cout,cin,cerr;
 EXTERNC PFRTAny     is_file_read(PFRTIOFileChannel);
 EXTERNC PFRTAny     is_file_text(PFRTIOFileChannel);
 EXTERNC PFRTAny     file_channel_read_next(PFRTIterator);
-EXTERNC PFRTAny     foidl_channel_file_write_bang(PFRTAny, PFRTAny);
 EXTERNC PFRTAny     foidl_fexists_qmark(PFRTAny);
+EXTERNC PFRTAny     writeCout(PFRTAny);
+EXTERNC PFRTAny     writeCoutNl(PFRTAny);
+EXTERNC PFRTAny     writeCerr(PFRTAny);
+EXTERNC PFRTAny     writeCerrNl(PFRTAny);
 #endif
 
 #ifndef IO_HTTP_CHANNEL

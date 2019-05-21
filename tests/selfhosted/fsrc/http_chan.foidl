@@ -27,6 +27,7 @@ func gethttp [url]
     s
 
 func main [argv]
+    printnl!: argv
     printnl!: gethttp: "http://example.com"
     zero
 

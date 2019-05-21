@@ -48,14 +48,14 @@ PFRTAny 	foidl_fail() {
 }
 
 void 	foidl_ep_excp(PFRTAny estring) {
-	foidl_channel_file_write_bang((PFRTAny)cerr,rteprefix);
+	writeCerr(rteprefix);
 	writeCerrNl(estring);
 	foidl_exit();
 }
 
 void 	foidl_ep_excp2(PFRTAny hdr,PFRTAny estring) {
-	foidl_channel_file_write_bang((PFRTAny)cerr,rteprefix);
-	foidl_channel_file_write_bang((PFRTAny)cerr,hdr);
+	writeCerr(rteprefix);
+	writeCerr(hdr);
 	writeCerrNl(estring);
 	foidl_exit();
 }

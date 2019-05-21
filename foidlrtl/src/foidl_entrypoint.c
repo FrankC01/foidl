@@ -994,22 +994,3 @@ PFRTAny foidl_dec(PFRTAny el) {
 	return nil;
 }
 
-//	Console shortcuts used in RTL
-
-PFRTAny 	writeCout(PFRTAny el) {
-	return foidl_channel_file_write_bang((PFRTAny) cout,el);
-}
-
-PFRTAny 	writeCerr(PFRTAny el) {
-	return foidl_channel_file_write_bang((PFRTAny) cerr,el);
-}
-
-PFRTAny 	writeCoutNl(PFRTAny el) {
-	foidl_channel_file_write_bang((PFRTAny) cout,el);
-	return foidl_channel_file_write_bang((PFRTAny) cout,nlchr);
-}
-
-PFRTAny 	writeCerrNl(PFRTAny el) {
-	foidl_channel_file_write_bang((PFRTAny) cerr,el);
-	return foidl_channel_file_write_bang((PFRTAny) cerr,nlchr);
-}

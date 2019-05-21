@@ -20,6 +20,11 @@ globalScalarConst(chan_file,byte_type,(void *) 0,1);
 globalScalarConst(chan_http,byte_type,(void *) 1,1);
 globalScalarConst(chan_unknown,byte_type,(void *) 16,1);
 
+constKeyword(chan_target,":target");
+constKeyword(chan_type,":type");
+constKeyword(chan_render,":render");
+constKeyword(chan_mode,":mode");
+
 
 // String types
 globalScalarConst(empty_string,string_type,(void *) "",0);

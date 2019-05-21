@@ -37,12 +37,14 @@
 #include    <sys/stat.h>
 
 
-// Common global flags
+// For file read rendering
 
-constKeyword(chan_target,":target");
-constKeyword(chan_type,":type");
-constKeyword(chan_render,":render");
-constKeyword(chan_mode,":mode");
+globalScalarConst(render_byte,byte_type,(void *) 0,1);
+globalScalarConst(render_char,byte_type,(void *) 1,1);
+globalScalarConst(render_line,byte_type,(void *) 2,1);
+globalScalarConst(render_file,byte_type,(void *) 3,1);
+
+
 
 // For file disposition
 globalScalarConst(open_r,byte_type,(void *) 0x0,1);
@@ -60,13 +62,6 @@ globalScalarConst(file_eof,byte_type,(void *) 0xF,1);
 
 
 static char *stuff[] = {"r", "rb", "w", "wb","w+","wb+","a","ab","a+","ab+"};
-
-// For read rendering
-
-globalScalarConst(render_byte,byte_type,(void *) 0,1);
-globalScalarConst(render_char,byte_type,(void *) 1,1);
-globalScalarConst(render_line,byte_type,(void *) 2,1);
-globalScalarConst(render_file,byte_type,(void *) 3,1);
 
 // stdin, stdout and stderr
 
@@ -211,6 +206,8 @@ static size_t file_size_desc(FILE *fptr) {
     return off;
 
 }
+
+PFRTAny     writeCerrNl(PFRTAny el);
 
 PFRTAny foidl_fexists_qmark(PFRTAny s) {
     PFRTAny     result = true;
@@ -613,3 +610,22 @@ PFRTAny foidl_channel_file_close_bang(PFRTAny channel) {
     return res;
 }
 
+//  Console shortcuts used in RTL
+
+PFRTAny     writeCout(PFRTAny el) {
+    return foidl_channel_file_write_bang((PFRTAny) cout,el);
+}
+
+PFRTAny     writeCoutNl(PFRTAny el) {
+    foidl_channel_file_write_bang((PFRTAny) cout,el);
+    return foidl_channel_file_write_bang((PFRTAny) cout,nlchr);
+}
+
+PFRTAny     writeCerr(PFRTAny el) {
+    return foidl_channel_file_write_bang((PFRTAny) cerr,el);
+}
+
+PFRTAny     writeCerrNl(PFRTAny el) {
+    foidl_channel_file_write_bang((PFRTAny) cerr,el);
+    return foidl_channel_file_write_bang((PFRTAny) cerr,nlchr);
+}
