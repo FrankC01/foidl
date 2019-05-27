@@ -39,10 +39,24 @@ void foidl_rtl_init_http_channel() {
 #endif
 }
 
+// Used in http_read_handler operations
+
 struct Chunk {
   char *memory;
   size_t size;
 };
+
+// Reads header information
+
+static size_t http_header_handler(char* b, size_t size, size_t nitems, void *userdata) {
+    size_t numbytes = size * nitems;
+    //printf("Hdr Size: %zu\n", size);
+    //printf("Hdr Size: %zu\n", nitems);
+    //printf("Header: %.*s\n", (int) numbytes, b);
+    return numbytes;
+}
+
+// Reads data
 
 static size_t http_read_handler(
     void *contents, size_t size,size_t nmemb, void *chunk) {
@@ -56,17 +70,33 @@ static size_t http_read_handler(
     return realsize;
 }
 
+
 PFRTAny foidl_channel_http_read_bang(PFRTAny channel) {
-    PFRTIOHttpChannel http = (PFRTIOHttpChannel)channel;
-    CURL *curl = http->value;
-    CURLcode cres;
-    struct Chunk mem;
-    mem.memory = foidl_xall(1);
-    mem.size = 0;
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_read_handler);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&mem);
-    cres = curl_easy_perform(curl);
-    return allocStringWithCptr(mem.memory,strlen(mem.memory));
+    if(channel->ftype == http_type) {
+        PFRTIOHttpChannel http = (PFRTIOHttpChannel)channel;
+        CURL *curl = http->value;
+        CURLcode cres;
+        struct Chunk mem;
+        mem.memory = foidl_xall(1);
+        mem.size = 0;
+        curl_easy_setopt(curl, CURLOPT_URL, http->name->value);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_read_handler);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&mem);
+        //curl_easy_setopt(curl, CURLOPT_HEADER, 1); // Include 1 header at end
+        //curl_easy_setopt(curl, CURLOPT_NOBODY, 1); // For debugging
+        //curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, http_header_handler);
+        cres = curl_easy_perform(curl);
+
+        if(!cres) {
+            //printf("Download size: %u\n", (int) mem.size);
+        }
+
+        return allocStringWithCptr(mem.memory,strlen(mem.memory));
+    }
+    else {
+        printf("Attempting to http read from closed channel\n");
+        return nil;
+    }
 }
 
 PFRTAny foidl_open_http_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
@@ -77,7 +107,7 @@ PFRTAny foidl_open_http_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
     }
     CURL    *curl = curl_easy_init();
     if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, name->value);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
         res = (PFRTAny) allocHttpChannel(name,mode);
         res->value = (void *)curl;
     }
