@@ -31,7 +31,7 @@ My own twists:
 | bootstrap | x | x | x |
 | self-hosted | x | x | x |
 | file channels | x | x | x |
-| http channels | | | |
+| http channels | x | | |
 | threads | x | x | x |
 | thread-pools | x | x | |
 
