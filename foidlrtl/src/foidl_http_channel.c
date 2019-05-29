@@ -46,13 +46,18 @@ struct Chunk {
   size_t size;
 };
 
+// http_header_handler
 // Reads header information
+// Data of potential persistence (map)
+// Status Code (number)
+// Content-Type (list)
+// Content-Length (number)
 
 static size_t http_header_handler(char* b, size_t size, size_t nitems, void *userdata) {
     size_t numbytes = size * nitems;
     //printf("Hdr Size: %zu\n", size);
     //printf("Hdr Size: %zu\n", nitems);
-    //printf("Header: %.*s\n", (int) numbytes, b);
+    printf("Header: %.*s\n", (int) numbytes, b);
     return numbytes;
 }
 
@@ -82,19 +87,23 @@ PFRTAny foidl_channel_http_read_bang(PFRTAny channel) {
         curl_easy_setopt(curl, CURLOPT_URL, http->name->value);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_read_handler);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&mem);
-        //curl_easy_setopt(curl, CURLOPT_HEADER, 1); // Include 1 header at end
-        //curl_easy_setopt(curl, CURLOPT_NOBODY, 1); // For debugging
-        //curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, http_header_handler);
+        //curl_easy_setopt(curl, CURLOPT_NOBODY, 1); // For debugging header only
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, http_header_handler);
         cres = curl_easy_perform(curl);
 
         if(!cres) {
             //printf("Download size: %u\n", (int) mem.size);
         }
+        else {
+            return nil;
+        }
+        // TODO: Read handler (e.g. string, json-map, json-list, html-map, html-list)
 
         return allocStringWithCptr(mem.memory,strlen(mem.memory));
     }
     else {
         printf("Attempting to http read from closed channel\n");
+        unknown_handler();
         return nil;
     }
 }
