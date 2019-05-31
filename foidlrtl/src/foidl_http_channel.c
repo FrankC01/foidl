@@ -60,7 +60,8 @@ struct Chunk {
 };
 
 // http_header_handler
-// Reads header information
+// Read header callback
+// TODO
 // Data of potential persistence (map)
 // Status Code (number)
 // Content-Type (list)
@@ -74,7 +75,8 @@ static size_t http_header_handler(char* b, size_t size, size_t nitems, void *use
     return numbytes;
 }
 
-// Reads data
+//  http_read_handler
+//  Read data callback, reads data in chunks into memory
 
 static size_t http_read_handler(
     void *contents, size_t size,size_t nmemb, void *chunk) {
@@ -88,6 +90,8 @@ static size_t http_read_handler(
     return realsize;
 }
 
+// foidl_channel_http_read_bang (<- foidl_channel_http_read! <- reads!)
+// Entry point for reading from http channel
 
 PFRTAny foidl_channel_http_read_bang(PFRTAny channel) {
     if(channel->ftype == http_type) {
@@ -121,6 +125,9 @@ PFRTAny foidl_channel_http_read_bang(PFRTAny channel) {
     }
 }
 
+// foidl_open_http_bang (<- foidl_open_http! <- opens!)
+// Entry point for opening http channel
+
 PFRTAny foidl_open_http_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
     PFRTAny res = nil;
     if( name == nil || mode == nil ) {
@@ -135,6 +142,9 @@ PFRTAny foidl_open_http_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
     }
     return res;
 }
+
+// foidl_channel_http_close_bang (<- foidl_channel_http_close! <- closes!)
+// Entry point for closing a http channel
 
 PFRTAny foidl_channel_http_close_bang(PFRTAny channel) {
     PFRTAny res = true;
