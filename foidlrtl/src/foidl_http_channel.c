@@ -119,7 +119,7 @@ PFRTAny foidl_channel_http_read_bang(PFRTAny channel) {
         return allocStringWithCptr(mem.memory,strlen(mem.memory));
     }
     else {
-        printf("Attempting to http read from closed channel\n");
+        printf("http read requires an http channel\n");
         unknown_handler();
         return nil;
     }
@@ -151,10 +151,15 @@ PFRTAny foidl_channel_http_close_bang(PFRTAny channel) {
     if(channel->ftype == closed_type) {
         ;
     }
-    else {
+    else if(channel->ftype == http_type) {
         channel->ftype = closed_type;
         curl_easy_cleanup((CURL*) channel->value);
         channel->value = (void *) 0;
+    }
+    else {
+        printf("http close requires an http channel\n");
+        unknown_handler();
+        return nil;
     }
 
     return res;
