@@ -116,7 +116,10 @@ PFRTAny foidl_channel_http_read_bang(PFRTAny channel) {
         }
         // TODO: Read handler (e.g. string, json-map, json-list, html-map, html-list)
 
-        return allocStringWithCptr(mem.memory,strlen(mem.memory));
+        return (PFRTAny)
+            allocResponse(
+                http_response_type,
+                (PFRTAny) allocStringWithCptr(mem.memory,strlen(mem.memory)));
     }
     else {
         printf("http read requires an http channel\n");
@@ -128,16 +131,16 @@ PFRTAny foidl_channel_http_read_bang(PFRTAny channel) {
 // foidl_open_http_bang (<- foidl_open_http! <- opens!)
 // Entry point for opening http channel
 
-PFRTAny foidl_open_http_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
+PFRTAny foidl_open_http_bang(PFRTAny name, PFRTAny args) {
     PFRTAny res = nil;
-    if( name == nil || mode == nil ) {
-        printf("Exception: Requires :target and :mode to open channel\n");
+    if( name == nil ) {
+        printf("Exception: Requires chan_target to open channel\n");
         foidl_error_exit(-1);
     }
     CURL    *curl = curl_easy_init();
     if(curl) {
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-        res = (PFRTAny) allocHttpChannel(name,mode);
+        res = (PFRTAny) allocHttpChannel(name,args);
         res->value = (void *)curl;
     }
     return res;

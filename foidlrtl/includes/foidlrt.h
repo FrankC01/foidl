@@ -65,6 +65,7 @@ static const ft 	io_class 		 = 0xfffffffffffffff4;
 static const ft 	hamptnode_class  = 0xfffffffffffffff5;
 static const ft 	bitmapnode_class = 0xfffffffffffffff6;
 static const ft     worker_class     = 0xfffffffffffffff7;
+static const ft     response_class   = 0xfffffffffffffff8;
 
 static const ft 	iterator_class	 = 0xfffffffffffffffe;
 
@@ -131,6 +132,10 @@ static const ft 	cin_type    = 0xffffffff100000bb;
 static const ft 	cout_type   = 0xffffffff100000ba;
 static const ft 	cerr_type   = 0xffffffff100000b9;
 static const ft 	closed_type = 0xffffffff100000b8;
+
+// Response Types
+
+static const ft     http_response_type   = 0xffffffff100000b7;
 
 // IO buffer types
 /*
@@ -496,6 +501,7 @@ typedef struct   FRTIOChannelG {
     uint32_t    hash;
     void        *value;         // Maps to IO handle
     PFRTAny     ctype;
+    PFRTAny     settings;
 } *PFRTIOChannelG;
 
 typedef struct   FRTIOChannel {
@@ -505,6 +511,7 @@ typedef struct   FRTIOChannel {
     uint32_t    hash;
     void        *value;         // Maps to IO handle
     PFRTAny     ctype;
+    PFRTAny     settings;
 } *PFRTIOChannel;
 
 typedef struct   FRTIOFileChannelG {
@@ -515,6 +522,7 @@ typedef struct   FRTIOFileChannelG {
     uint32_t    hash;
     void        *value;         // Maps to IO handle
     PFRTAny     ctype;
+    PFRTAny     settings;
     PFRTAny     name;
     PFRTAny     mode;
     PFRTAny     render;
@@ -528,6 +536,7 @@ typedef struct   FRTIOFileChannel {
     uint32_t    hash;
     void        *value;         // Maps to IO handle
     PFRTAny     ctype;
+    PFRTAny     settings;
     PFRTAny     name;
     PFRTAny     mode;
     PFRTAny     render;
@@ -542,6 +551,7 @@ typedef struct   FRTIOHttpChannelG {
     uint32_t    hash;
     void        *value;         // Maps to curl handle
     PFRTAny     ctype;
+    PFRTAny     settings;
     PFRTAny     name;
     PFRTAny     mode;
     PFRTAny     render;
@@ -555,10 +565,30 @@ typedef struct   FRTIOHttpChannel {
     uint32_t    hash;
     void        *value;         // Maps to curl handle
     PFRTAny     ctype;
+    PFRTAny     settings;
     PFRTAny     name;
     PFRTAny     mode;
     PFRTAny     render;
 } *PFRTIOHttpChannel;
+
+typedef struct  FRTResponseG {
+    ft          fsig;
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *value;         // Maps to curl handle
+    ft          resp_type;
+} *PFRTResponseG;
+
+typedef struct  FRTResponse {
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *value;         // Maps to curl handle
+    ft          resp_type;
+} *PFRTResponse;
 
 //	Forward decls and macros
 
@@ -865,6 +895,7 @@ EXTERNC PFRTAny         allocRegex(PFRTAny sbase, void* regex);
 // IO Types
 EXTERNC PFRTIOChannel   allocFileChannel(PFRTAny, PFRTAny);
 EXTERNC PFRTIOChannel   allocHttpChannel(PFRTAny, PFRTAny);
+EXTERNC PFRTResponse    allocResponse(ft,PFRTAny);
 
 // Function types
 EXTERNC PFRTFuncRef2 	allocFuncRef2(void *fn, ft maxarg,invoke_funcptr ifn);
@@ -1132,6 +1163,9 @@ EXTERNC PFRTAny     writeCerrNl(PFRTAny);
 EXTERNC void        foidl_rtl_init_http_channel();
 #endif
 
+#ifndef RESPONSE_IMPL
+EXTERNC PFRTAny     foidl_response_value(PFRTAny);
+#endif
 // Series
 
 #ifndef SERIES_IMPL

@@ -88,6 +88,7 @@ struct FRTIOFileChannelG _cin2_base = {
     0,
     NULL,//(void *)stdin,
     NULL,
+    NULL,
     open_r,
     render_line
 };
@@ -103,6 +104,7 @@ struct FRTIOFileChannelG _cout2_base = {
     0,
     NULL,//(void *)stdin,
     NULL,
+    NULL,
     open_w,
     render_line
 };
@@ -117,6 +119,7 @@ struct FRTIOFileChannelG _cerr2_base = {
     0,
     0,
     NULL,//(void *)stdin,
+    NULL,
     NULL,
     open_w,
     render_line
@@ -527,6 +530,9 @@ static PFRTAny foidl_channel_writefile(PFRTAny channel, PFRTAny el) {
         }
         else if(el->fclass == function_class) {
             io_file_scalar_txt_writer(channel->value, fnstr);
+        }
+        else if(el->fclass == response_class) {
+            foidl_channel_writefile(channel, (PFRTAny) el->value);
         }
         else if(el->fclass == worker_class) {
             if(el->ftype == thrdpool_type) {

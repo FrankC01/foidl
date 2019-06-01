@@ -1,9 +1,21 @@
 /*
-	foidl_xallators.c
-	Library support for structure allocations
-
-	Copyright Frank V. Castellucci
-	All Rights Reserved
+;	foidl_allocators.c
+;	Library support for structure allocations
+;
+; Copyright (c) Frank V. Castellucci
+; All Rights Reserved
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;     http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
 */
 
 #define ALLOC_IMPL
@@ -192,15 +204,25 @@ PFRTIOChannel allocFileChannel(PFRTAny name, PFRTAny mode) {
 	return (PFRTIOChannel) &fc->fclass;
 }
 
-PFRTIOChannel allocHttpChannel(PFRTAny name, PFRTAny mode) {
+PFRTIOChannel allocHttpChannel(PFRTAny name, PFRTAny args) {
 	PFRTIOHttpChannelG fc = foidl_xall(sizeof(struct FRTIOHttpChannelG));
 	fc->fsig   = alloc_signature;
 	fc->fclass = io_class;
 	fc->ftype  = http_type;
 	fc->ctype  = chan_http;
 	fc->name   = name;
-	fc->mode   = mode;
+	fc->settings = args;
 	return (PFRTIOChannel) &fc->fclass;
+}
+
+PFRTResponse allocResponse(ft ftype, PFRTAny resp) {
+	PFRTResponseG fc = foidl_xall(sizeof(struct FRTResponseG));
+	fc->fsig   = alloc_signature;
+	fc->fclass = response_class;
+	fc->ftype  = ftype;
+	fc->count  = 1;
+	fc->value  = (void *)resp;
+	return (PFRTResponse) &fc->fclass;
 }
 
 //	Function and thread/worker reference instance

@@ -114,7 +114,6 @@ func opens! [args]
 	| chan_http
 		foidl_open_http!:
 			get: args chan_target
-			get: args chan_mode
 			args
 	| :default nil
 
@@ -156,6 +155,13 @@ func print! [s]
 func printnl! [s]
 	writes!: cout s
 	writes!: cout nlchr
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Response functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+func response_value [resp]
+	foidl_response_value: resp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Process functions

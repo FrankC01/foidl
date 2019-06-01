@@ -1,6 +1,6 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; channels
-; IO
+/*
+;    foidl_response.c
+;    Library support for responses
 ;
 ; Copyright (c) Frank V. Castellucci
 ; All Rights Reserved
@@ -16,17 +16,11 @@
 ; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ; See the License for the specific language governing permissions and
 ; limitations under the License.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+*/
 
-module http_chan
+#define RESPONSE_IMPL
+#include    <foidlrt.h>
 
-func gethttp [url]
-    let chan [] opens!: {chan_target url chan_type chan_http chan_mode open_r}
-    let s [] reads!: chan
-    closes!: chan
-    response_value: s
-
-func main [argv]
-    printnl!: gethttp: "http://example.com"
-    zero
-
+PFRTAny     foidl_response_value(PFRTAny arg) {
+    return (PFRTAny) arg->value;
+}
