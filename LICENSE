@@ -1,4 +1,5 @@
-Copyright 2018 Frank V. Castellucci
+
+Copyright (C) 2017-2019 Frank V. Castellucci
 
 Apache License
                            Version 2.0, January 2004
@@ -201,3 +202,42 @@ Apache License
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+
+The foidl project contains open source components with separate copyright
+notices and license terms. Your use of the source code for the these
+components is subject to the terms and conditions of the following
+licenses.
+
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+
+MAPM
+Mike's Arbitrary Precision Math Library (used as foidl number type)
+For project details see: https://github.com/LuaDist/mapm
+
+***************************************************************************
+*                                                                         *
+*  Copyright (C) 1999 - 2010   Michael C. Ring                            *
+*                                                                         *
+*  This software is Freeware.                                             *
+*                                                                         *
+*  Permission to use, copy, and distribute this software and its          *
+*  documentation for any purpose with or without fee is hereby granted,   *
+*  provided that the above copyright notice appear in all copies and      *
+*  that both that copyright notice and this permission notice appear      *
+*  in supporting documentation.                                           *
+*                                                                         *
+*  Permission to modify the software is granted. Permission to distribute *
+*  the modified code is granted. Modifications are to be distributed by   *
+*  using the file 'license.txt' as a template to modify the file header.  *
+*  'license.txt' is available in the official MAPM distribution.          *
+*                                                                         *
+*  To distribute modified source code, insert the file 'license.txt'      *
+*  at the top of all modified source code files and edit accordingly.     *
+*                                                                         *
+*  This software is provided "as is" without express or implied warranty. *
+*                                                                         *
+***************************************************************************
