@@ -21,7 +21,7 @@
 module http_chan
 
 func gethttp [url]
-    let chan [] opens!: {chan_target url chan_type chan_http chan_mode open_r}
+    let chan [] opens!: {chan_target url chan_type chan_http chan_mode open_r chan_render render_string}
     let s [] reads!: chan
     closes!: chan
     response_value: s

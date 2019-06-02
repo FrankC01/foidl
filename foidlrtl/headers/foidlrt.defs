@@ -343,6 +343,7 @@ var render_byte Type
 var render_char Type
 var render_line Type
 var render_file Type
+var render_string Type
 
 var chan_target Type
 var chan_type   Type

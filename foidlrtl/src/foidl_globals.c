@@ -32,6 +32,15 @@ globalScalarConst(chan_file,byte_type,(void *) 0,1);
 globalScalarConst(chan_http,byte_type,(void *) 1,1);
 globalScalarConst(chan_unknown,byte_type,(void *) 16,1);
 
+// For channel read rendering
+
+globalScalarConst(render_byte,byte_type,(void *) 0,1);
+globalScalarConst(render_char,byte_type,(void *) 1,1);
+globalScalarConst(render_line,byte_type,(void *) 2,1);
+globalScalarConst(render_file,byte_type,(void *) 3,1);
+globalScalarConst(render_string,byte_type,(void *) 4,1);
+
+
 constKeyword(chan_target,":target");
 constKeyword(chan_type,":type");
 constKeyword(chan_render,":render");

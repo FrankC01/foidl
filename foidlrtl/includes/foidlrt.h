@@ -781,6 +781,8 @@ EXTERNC PFRTAny  nil,true,false;
 EXTERNC PFRTAny     chan_file,chan_http,chan_unknown;
 EXTERNC PFRTAny     chan_target,chan_type,chan_render,chan_mode;
 
+EXTERNC PFRTAny     render_byte,render_char,render_line,render_file;
+EXTERNC PFRTAny     render_string;
 
 EXTERNC struct FRTTypeG _end;
 EXTERNC struct FRTTypeG _nil;
@@ -1144,7 +1146,8 @@ EXTERNC  PFRTAny  write_list(PFRTAny, PFRTAny, channel_writer);
 #endif
 
 // IO
-#ifndef IO_FILE_CHANNEL
+
+#ifndef FILE_CHANNEL_IMPL
 EXTERNC void        foidl_rtl_init_file_channel();
 #ifndef __cplusplus
 EXTERNC PFRTAny     cout,cin,cerr;
@@ -1159,7 +1162,7 @@ EXTERNC PFRTAny     writeCerr(PFRTAny);
 EXTERNC PFRTAny     writeCerrNl(PFRTAny);
 #endif
 
-#ifndef IO_HTTP_CHANNEL
+#ifndef HTTP_CHANNEL_IMPL
 EXTERNC void        foidl_rtl_init_http_channel();
 #endif
 

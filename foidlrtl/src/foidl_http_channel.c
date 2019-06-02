@@ -18,27 +18,8 @@
 ; limitations under the License.
 */
 
-/*
-    The IO capability encapsulates interactions mainly with
-    the outside world via channels.
 
-    A channel can be used to interact with:
-        Files
-        Http(s)
-        Strings
-        Memory
-
-    How the individual is interacted with is through an
-    assoication with some kind of handler
-        bytes
-        characters
-        lines (as strings)
-
-    Opening a channel and it's characteristics determines
-    which implemention of a channel is used.
-*/
-
-#define IO_HTTP_CHANNEL
+#define HTTP_CHANNEL_IMPL
 #include    <foidlrt.h>
 #ifdef _MSC_VER
 #else

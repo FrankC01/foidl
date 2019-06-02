@@ -18,28 +18,7 @@
 ; limitations under the License.
 */
 
-/*
-    The IO capability encapsulates interactions mainly with
-    the outside world via channels.
-
-    A channel can be used to interact with:
-        Files
-        Http(s)
-        Strings
-        Memory
-
-    How the individual is interacted with is through an
-    assoication with some kind of handler
-        bytes
-        characters
-        lines (as strings)
-
-    Opening a channel and it's characteristics determines
-    which implemention of a channel is used.
-
-*/
-
-#define IO_FILE_CHANNEL
+#define FILE_CHANNEL_IMPL
 #include    <foidlrt.h>
 #include    <stdio.h>
 #include    <stdlib.h>
@@ -49,15 +28,6 @@
 #include    <unistd.h>
 #endif
 #include    <sys/stat.h>
-
-
-// For file read rendering
-
-globalScalarConst(render_byte,byte_type,(void *) 0,1);
-globalScalarConst(render_char,byte_type,(void *) 1,1);
-globalScalarConst(render_line,byte_type,(void *) 2,1);
-globalScalarConst(render_file,byte_type,(void *) 3,1);
-
 
 
 // For file disposition
@@ -90,7 +60,7 @@ struct FRTIOFileChannelG _cin2_base = {
     NULL,
     NULL,
     open_r,
-    render_line
+    NULL
 };
 
 PFRTAny const cin = (PFRTAny) &_cin2_base.fclass;
@@ -106,7 +76,7 @@ struct FRTIOFileChannelG _cout2_base = {
     NULL,
     NULL,
     open_w,
-    render_line
+    NULL
 };
 
 PFRTAny const cout = (PFRTAny) &_cout2_base.fclass;
@@ -122,7 +92,7 @@ struct FRTIOFileChannelG _cerr2_base = {
     NULL,
     NULL,
     open_w,
-    render_line
+    NULL
 };
 
 PFRTAny const cerr = (PFRTAny) &_cerr2_base.fclass;
@@ -131,12 +101,17 @@ void foidl_rtl_init_file_channel() {
     _cin2_base.value = (void *) stdin;
     _cin2_base.name = cinstr;
     _cin2_base.ctype = chan_file;
+    _cin2_base.render = render_line;
+
     _cout2_base.value = (void *) stdout;
     _cout2_base.name = coutstr;
     _cout2_base.ctype = chan_file;
+    _cout2_base.render = render_line;
+
     _cerr2_base.value = (void *) stderr;
     _cerr2_base.ctype = chan_file;
     _cerr2_base.name = cerrstr;
+    _cerr2_base.render = render_line;
 }
 
 // Utility
