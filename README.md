@@ -31,10 +31,18 @@ My own twists:
 | bootstrap | x | x | x |
 | self-hosted | x | x | x |
 | file channels | x | x | x |
-| http channels | x | | |
+| http channels | x | x | |
 | threads | x | x | x |
 | thread-pools | x | x | |
 
+
+## Author's Environment(s)
+
+| OS | Python | rply | colorlog | llvmlite | LLVM | libcurl |
+| -- | ------ | ---- | -------- | -------- | ---- | ------- |
+| macos 10.14.4 | 3.7.3 | 0.7.7 | 4.0.2 | 0.29.0 | 8.0.0 | 7.54.0 |
+| Ubuntu 18.04.1 (VM) | 3.6.7 | 0.7.6 | 4.0.2 | 0.27.0 | 7.1.0 | 7.58.0 |
+| Windows 10.0.17134  (VM) | 3.7.0 | 0.7.6 | 3.1.4 | 0.25.0 | 7.0.0 | 7.54.0 |
 
 
 ## Building foidl
