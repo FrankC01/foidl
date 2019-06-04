@@ -2,6 +2,8 @@
 
 Frank's Orthogonally Independent Domain Language (`foidl`) is a functional programming language.
 
+Caution: For all but the lack of garbage collection the current master is considered alpha at best and not ready for serious prime time consideration.
+
 Inspirational:
 * Homoiconicity
 * Persistent data
