@@ -360,6 +360,7 @@ func    foidl_fexists? [fname]
 
 func    foidl_open_http!            [name args]
 func    foidl_channel_http_read!    [channel]
+func    foidl_channel_http_write!   [channel data]
 func    foidl_channel_http_close!   [channel]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

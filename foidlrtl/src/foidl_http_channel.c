@@ -52,7 +52,7 @@ static size_t http_header_handler(char* b, size_t size, size_t nitems, void *use
     size_t numbytes = size * nitems;
     //printf("Hdr Size: %zu\n", size);
     //printf("Hdr Size: %zu\n", nitems);
-    printf("Header: %.*s\n", (int) numbytes, b);
+    //printf("Header: %.*s\n", (int) numbytes, b);
     return numbytes;
 }
 
@@ -71,6 +71,43 @@ static size_t http_read_handler(
     return realsize;
 }
 
+
+PFRTAny foidl_channel_http_write_bang(PFRTAny channel, PFRTAny data) {
+    if(channel->ftype == http_type) {
+        PFRTIOHttpChannel http = (PFRTIOHttpChannel)channel;
+        CURL *curl = http->value;
+        CURLcode cres;
+        struct Chunk mem;
+        mem.memory = foidl_xall(1);
+        mem.size = 0;
+        curl_easy_setopt(curl, CURLOPT_URL, http->name->value);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&mem);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data->value);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)data->count);
+        //curl_easy_setopt(curl, CURLOPT_NOBODY, 1); // For debugging header only
+        cres = curl_easy_perform(curl);
+
+        if(!cres) {
+            //printf("Download size: %u\n", (int) mem.size);
+        }
+        else {
+            return nil;
+        }
+        // TODO: Read handler (e.g. string, json-map, json-list, html-map, html-list)
+
+        PFRTAny result = (PFRTAny)
+            allocResponse(
+                http_response_type,
+                (PFRTAny) allocStringWithCptr(mem.memory,strlen(mem.memory)));
+        return result;
+    }
+    else {
+        printf("http read requires an opened http channel\n");
+        unknown_handler();
+        return nil;
+    }
+}
+
 // foidl_channel_http_read_bang (<- foidl_channel_http_read! <- reads!)
 // Entry point for reading from http channel
 
@@ -83,10 +120,8 @@ PFRTAny foidl_channel_http_read_bang(PFRTAny channel) {
         mem.memory = foidl_xall(1);
         mem.size = 0;
         curl_easy_setopt(curl, CURLOPT_URL, http->name->value);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_read_handler);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&mem);
         //curl_easy_setopt(curl, CURLOPT_NOBODY, 1); // For debugging header only
-        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, http_header_handler);
         cres = curl_easy_perform(curl);
 
         if(!cres) {
@@ -96,14 +131,14 @@ PFRTAny foidl_channel_http_read_bang(PFRTAny channel) {
             return nil;
         }
         // TODO: Read handler (e.g. string, json-map, json-list, html-map, html-list)
-
-        return (PFRTAny)
+        PFRTAny result = (PFRTAny)
             allocResponse(
                 http_response_type,
                 (PFRTAny) allocStringWithCptr(mem.memory,strlen(mem.memory)));
+        return result;
     }
     else {
-        printf("http read requires an http channel\n");
+        printf("http read requires an opened http channel\n");
         unknown_handler();
         return nil;
     }
@@ -121,6 +156,9 @@ PFRTAny foidl_open_http_bang(PFRTAny name, PFRTAny args) {
     CURL    *curl = curl_easy_init();
     if(curl) {
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_read_handler);
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, http_header_handler);
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
         res = (PFRTAny) allocHttpChannel(name,args);
         res->value = (void *)curl;
     }

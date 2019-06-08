@@ -124,7 +124,9 @@ func reads! [channel]
 
 func writes! [channel data]
 	?: io?: channel
-		foidl_channel_file_write!: channel data
+		match channel_type?: channel
+		| chan_file foidl_channel_file_write!: channel data
+		| chan_http foidl_channel_http_write!: channel data
 		nil
 
 func closes! [channel]
