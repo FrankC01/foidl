@@ -28,27 +28,57 @@ static PFRTAny gc_initialized = (PFRTAny) &_false.fclass;
 const PFRTAny emtndarray[0];// = {end,end};
 
 void * foidl_xall(uint32_t sz) {
-	if(gc_initialized == true)
-		return calloc(sz,1);
-	else {
-		return calloc(sz,1);
-	}
+	PFRTTypeG res = calloc(sz+sizeof(ft),1);
+	res->fsig = unkwn_signature;
+	return (void *)&res->fclass;
+//	return calloc(sz,1);
+}
+
+void * foidl_alloc(ft sz) {
+	void *res = foidl_xall(sz);
+	PFRTTypeG g = res - sizeof(ft);
+	g->fsig = alloc_signature;
+	return res;
+}
+
+void * foidl_galloc(ft sz) {
+	void *res = foidl_xall(sz);
+	PFRTTypeG g = res - sizeof(ft);
+	g->fsig = global_signature;
+	return res;
 }
 
 void * foidl_xreall(void *p, uint32_t newsz) {
-	if(gc_initialized == true)
-		return realloc(p, newsz);
+	PFRTTypeG g = p - sizeof(ft);
+	if(g->fsig == alloc_signature || g->fsig == unkwn_signature) {
+		PFRTTypeG newg = realloc((void *) g, newsz);
+		return (void *)&newg->fclass;
+	}
 	else {
-		return realloc(p, newsz);
+		unknown_handler();
+		return p;
+		//return realloc(p, newsz);
 	}
 }
 
 void foidl_xdel(void *v) {
-	if(gc_initialized == true)
-		return free(v);
-	else {
-		return free(v);
+	PFRTTypeG g = v - sizeof(ft);
+	if(g->fsig == alloc_signature) {
+		free(g);
 	}
+	else if(g->fsig == global_signature){
+		;
+	}
+	else if(g->fsig == unkwn_signature) {
+		free(g);
+	}
+	else {
+		unknown_handler();
+	}
+}
+
+void foidl_delete(void *v) {
+	foidl_xdel(v);
 }
 
 void foidl_gc_init() {
@@ -65,7 +95,7 @@ void foidl_release(void *v) {
 //	Object Types
 
 PFRTAny    allocAny(ft fclass, ft ftype, void *value) {
-	PFRTAny 	s = (PFRTAny) foidl_xall(sizeof (struct FRTType));
+	PFRTAny 	s = (PFRTAny) foidl_alloc(sizeof (struct FRTType));
 	s->fclass = fclass;
 	s->ftype  = ftype;
 	s->value  = value;
@@ -75,7 +105,7 @@ PFRTAny    allocAny(ft fclass, ft ftype, void *value) {
 
 
 PFRTAny allocStringWithBufferSize (uint32_t cnt) {
-	PFRTAny 	s = (PFRTAny) foidl_xall(sizeof (struct FRTType));
+	PFRTAny 	s = (PFRTAny) foidl_alloc(sizeof (struct FRTType));
 	char 		*newp = foidl_xall(cnt+1);
 	s->fclass = scalar_class;
 	s->ftype  = string_type;
@@ -85,9 +115,7 @@ PFRTAny allocStringWithBufferSize (uint32_t cnt) {
 }
 
 PFRTAny allocGlobalStringCopy(char *v) {
-	PFRTTypeG 	c0 = (PFRTTypeG) foidl_xall(sizeof (struct FRTTypeG));
-	c0->fsig = global_signature;
-	PFRTAny 	c = (PFRTAny) &c0->fclass;
+	PFRTAny 	c = (PFRTAny) foidl_galloc(sizeof (struct FRTType));
 	uint32_t plen = strlen(v);
 	char 	*newp = foidl_xall(plen+1);
 	strcpy(newp,v);
@@ -99,9 +127,7 @@ PFRTAny allocGlobalStringCopy(char *v) {
 }
 
 PFRTAny allocGlobalKeywordCopy(char *v) {
-	PFRTTypeG 	c0 = (PFRTTypeG) foidl_xall(sizeof (struct FRTTypeG));
-	c0->fsig = global_signature;
-	PFRTAny 	c = (PFRTAny) &c0->fclass;
+	PFRTAny 	c = (PFRTAny) foidl_galloc(sizeof (struct FRTType));
 	uint32_t plen = strlen(v);
 	char 	*newp = foidl_xall(plen+1);
 	strcpy(newp,v);
@@ -113,9 +139,7 @@ PFRTAny allocGlobalKeywordCopy(char *v) {
 }
 
 PFRTAny allocGlobalString(char *v) {
-	PFRTTypeG 	c0 = (PFRTTypeG) foidl_xall(sizeof (struct FRTTypeG));
-	c0->fsig = global_signature;
-	PFRTAny 	c = (PFRTAny) &c0->fclass;
+	PFRTAny 	c = (PFRTAny) foidl_galloc(sizeof (struct FRTType));
 	c->fclass = scalar_class;
 	c->ftype  = string_type;
 	c->count  = strlen(v);
@@ -126,7 +150,7 @@ PFRTAny allocGlobalString(char *v) {
 PFRTAny allocStringWithCopyCnt(uint32_t cnt, char *p) {
 	char 	*newp = foidl_xall(cnt+1);
 	strncpy(newp,p,cnt);
-	PFRTAny 	s = (PFRTAny) foidl_xall(sizeof (struct FRTType));
+	PFRTAny 	s = (PFRTAny) foidl_alloc(sizeof (struct FRTType));
 	s->fclass = scalar_class;
 	s->ftype  = string_type;
 	s->value  = (void *)newp;
@@ -135,7 +159,7 @@ PFRTAny allocStringWithCopyCnt(uint32_t cnt, char *p) {
 }
 
 PFRTAny allocStringWithCptr(char *p, long int cnt) {
-	PFRTAny 	s = (PFRTAny) foidl_xall(sizeof (struct FRTType));
+	PFRTAny 	s = (PFRTAny) foidl_alloc(sizeof (struct FRTType));
 	s->fclass = scalar_class;
 	s->ftype  = string_type;
 	s->value  = (void *)p;
@@ -147,7 +171,7 @@ PFRTAny allocStringWithCopy(char *p) {
 	uint32_t plen = strlen(p);
 	char 	*newp = foidl_xall(plen+1);
 	strcpy(newp,p);
-	PFRTAny 	s = (PFRTAny) foidl_xall(sizeof (struct FRTType));
+	PFRTAny 	s = (PFRTAny) foidl_alloc(sizeof (struct FRTType));
 	s->fclass = scalar_class;
 	s->ftype  = string_type;
 	s->value  = (void *)newp;
@@ -160,7 +184,7 @@ PFRTAny allocAndConcatString(uint32_t tlen,
 	char 	*newp = foidl_xall(tlen+1);
 	strcpy(newp,base);
 	strncpy(&newp[bcnt],p1,p1cnt);
-	PFRTAny 	s = (PFRTAny) foidl_xall(sizeof (struct FRTType));
+	PFRTAny 	s = (PFRTAny) foidl_alloc(sizeof (struct FRTType));
 	s->fclass = scalar_class;
 	s->ftype  = string_type;
 	s->value  = (void *)newp;
@@ -169,7 +193,7 @@ PFRTAny allocAndConcatString(uint32_t tlen,
 }
 
 PFRTAny allocRegex(PFRTAny sbase, void* regex) {
-	PFRTRegEx 	s = (PFRTRegEx) foidl_xall(sizeof (struct FRTRegEx));
+	PFRTRegEx 	s = (PFRTRegEx) foidl_alloc(sizeof (struct FRTRegEx));
 	s->fclass = scalar_class;
 	s->ftype  = regex_type;
 	s->value  = sbase;
@@ -181,9 +205,7 @@ PFRTAny allocRegex(PFRTAny sbase, void* regex) {
 }
 
 PFRTAny allocGlobalCharType(int v) {
-	PFRTTypeG 	c0 = (PFRTTypeG) foidl_xall(sizeof (struct FRTTypeG));
-	c0->fsig = global_signature;
-	PFRTAny 	c = (PFRTAny) &c0->fclass;
+	PFRTAny 	c = (PFRTAny) foidl_galloc(sizeof (struct FRTType));
 	c->fclass = scalar_class;
 	c->ftype  = character_type;
 	c->count  = 1;
@@ -194,41 +216,38 @@ PFRTAny allocGlobalCharType(int v) {
 // New IO Channel
 
 PFRTIOChannel allocFileChannel(PFRTAny name, PFRTAny mode) {
-	PFRTIOFileChannelG fc = foidl_xall(sizeof(struct FRTIOFileChannelG));
-	fc->fsig   = alloc_signature;
+	PFRTIOFileChannel fc = foidl_alloc(sizeof(struct FRTIOFileChannel));
 	fc->fclass = io_class;
 	fc->ftype  = file_type;
 	fc->ctype  = chan_file;
 	fc->name   = name;
 	fc->mode   = mode;
-	return (PFRTIOChannel) &fc->fclass;
+	return (PFRTIOChannel) fc;
 }
 
 PFRTIOChannel allocHttpChannel(PFRTAny name, PFRTAny args) {
-	PFRTIOHttpChannelG fc = foidl_xall(sizeof(struct FRTIOHttpChannelG));
-	fc->fsig   = alloc_signature;
+	PFRTIOHttpChannel fc = foidl_alloc(sizeof(struct FRTIOHttpChannel));
 	fc->fclass = io_class;
 	fc->ftype  = http_type;
 	fc->ctype  = chan_http;
 	fc->name   = name;
 	fc->settings = args;
-	return (PFRTIOChannel) &fc->fclass;
+	return (PFRTIOChannel) fc;
 }
 
 PFRTResponse allocResponse(ft ftype, PFRTAny resp) {
-	PFRTResponseG fc = foidl_xall(sizeof(struct FRTResponseG));
-	fc->fsig   = alloc_signature;
+	PFRTResponse fc = foidl_alloc(sizeof(struct FRTResponse));
 	fc->fclass = response_class;
 	fc->ftype  = ftype;
 	fc->count  = 1;
 	fc->value  = (void *)resp;
-	return (PFRTResponse) &fc->fclass;
+	return fc;
 }
 
 //	Function and thread/worker reference instance
 
 PFRTFuncRef2 allocFuncRef2(void *fn, ft maxarg, invoke_funcptr ifn) {
-	PFRTFuncRef2 fr = foidl_xall(sizeof (struct FRTFuncRef2));
+	PFRTFuncRef2 fr = foidl_alloc(sizeof (struct FRTFuncRef2));
 	fr->fclass = function_class;
 	fr->ftype  = funcinst_type;
 	fr->mcount = maxarg;
@@ -239,32 +258,29 @@ PFRTFuncRef2 allocFuncRef2(void *fn, ft maxarg, invoke_funcptr ifn) {
 }
 
 PFRTWorker  allocWorker(PFRTFuncRef2 ref) {
-	PFRTWorkerG wrk = foidl_xall(sizeof(struct FRTWorkerG));
-	wrk->fsig = alloc_signature;
+	PFRTWorker wrk = foidl_alloc(sizeof(struct FRTWorker));
 	wrk->fclass = worker_class;
 	wrk->ftype = worker_type;
 	wrk->count = 0;
 	wrk->fnptr = ref;
 	wrk->work_state = wrk_alloc;
-	return (PFRTWorker) &wrk->fclass;
+	return wrk;
 }
 
 EXTERNC PFRTThread      allocThread(PFRTThreadPool poolref, int id) {
-	PFRTThreadG pthrd = foidl_xall(sizeof(struct FRTThreadG));
-	pthrd->fsig = alloc_signature;
+	PFRTThread pthrd = foidl_alloc(sizeof(struct FRTThread));
 	pthrd->fclass = worker_class;
 	pthrd->ftype = thread_type;
 	pthrd->count = 0;
 	pthrd->pool_parent = (void *)poolref;
 	pthrd->thid = id;
-	return (PFRTThread) &pthrd->fclass;
+	return pthrd;
 }
 
 PFRTList   allocList(ft , PFRTLinkNode);
 
 PFRTThreadPool allocThreadPool() {
-	PFRTThreadPoolG tp = foidl_xall(sizeof(struct FRTThreadPoolG));
-	tp->fsig = alloc_signature;
+	PFRTThreadPool tp = foidl_alloc(sizeof(struct FRTThreadPool));
 	tp->fclass = worker_class;
 	tp->ftype = thrdpool_type;
 	tp->count = 0;
@@ -275,13 +291,13 @@ PFRTThreadPool allocThreadPool() {
 	tp->pause_work = false;
 	tp->block_queue = false;
 	tp->stop_work = false;
-	return  (PFRTThreadPool) &tp->fclass;
+	return  tp;
 }
 
 //	Collection related
 
 PFRTLinkNode   allocLinkNode() {
-	PFRTLinkNode l = (PFRTLinkNode) foidl_xall(sizeof(struct FRTLinkNode));
+	PFRTLinkNode l = (PFRTLinkNode) foidl_alloc(sizeof(struct FRTLinkNode));
 	l->fclass = collection_class;
 	l->ftype  = linknode_type;
 	l->data   = end;
@@ -299,7 +315,7 @@ PFRTLinkNode   allocLinkNodeWith(PFRTAny data, PFRTLinkNode nextNode) {
 }
 
 PFRTList   allocList(ft cnt, PFRTLinkNode root) {
-	PFRTList 	l = (PFRTList) foidl_xall(sizeof(struct FRTList));
+	PFRTList 	l = (PFRTList) foidl_alloc(sizeof(struct FRTList));
 	l->fclass = collection_class;
 	l->ftype  = list2_type;
 	l->count  = cnt;
@@ -311,7 +327,7 @@ PFRTList   allocList(ft cnt, PFRTLinkNode root) {
 
 PFRTVector allocVector(ft cnt, ft shift, PFRTHamtNode root,
 	PFRTHamtNode tail) {
-	PFRTVector a = (PFRTVector) foidl_xall(sizeof(struct FRTVector));
+	PFRTVector a = (PFRTVector) foidl_alloc(sizeof(struct FRTVector));
 	a->fclass = collection_class;
 	a->ftype  = vector2_type;
 	a->count  = cnt;
@@ -324,7 +340,7 @@ PFRTVector allocVector(ft cnt, ft shift, PFRTHamtNode root,
 }
 
 PFRTSet allocSet(ft cnt, ft shift, PFRTBitmapNode root) {
-	PFRTSet a = (PFRTSet) foidl_xall(sizeof(struct FRTSet));
+	PFRTSet a = (PFRTSet) foidl_alloc(sizeof(struct FRTSet));
 	a->fclass = collection_class;
 	a->ftype  = set2_type;
 	a->count  = cnt;
@@ -335,7 +351,7 @@ PFRTSet allocSet(ft cnt, ft shift, PFRTBitmapNode root) {
 }
 
 PFRTMap allocMap(ft cnt, ft shift, PFRTBitmapNode root) {
-	PFRTMap a = (PFRTMap) foidl_xall(sizeof(struct FRTMap));
+	PFRTMap a = (PFRTMap) foidl_alloc(sizeof(struct FRTMap));
 	a->fclass = collection_class;
 	a->ftype  = map2_type;
 	a->count  = cnt;
@@ -346,7 +362,7 @@ PFRTMap allocMap(ft cnt, ft shift, PFRTBitmapNode root) {
 }
 
 PFRTMapEntry allocMapEntryWith(PFRTAny key, PFRTAny value) {
-	PFRTMapEntry me = (PFRTMapEntry) foidl_xall(sizeof(struct FRTMapEntry));
+	PFRTMapEntry me = (PFRTMapEntry) foidl_alloc(sizeof(struct FRTMapEntry));
 	me->fclass = collection_class;
 	me->ftype  = mapentry_type;
 	me->key    = key;
@@ -355,7 +371,7 @@ PFRTMapEntry allocMapEntryWith(PFRTAny key, PFRTAny value) {
 }
 
 PFRTSeries 	allocSeries() {
-	PFRTSeries s = (PFRTSeries) foidl_xall(sizeof(struct FRTSeries));
+	PFRTSeries s = (PFRTSeries) foidl_alloc(sizeof(struct FRTSeries));
 	s->fclass = collection_class;
 	s->ftype  = series_type;
 	return s;
@@ -364,14 +380,14 @@ PFRTSeries 	allocSeries() {
 //	Generic array allocator
 
 PFRTAny 	*allocRawAnyArray(ft cnt) {
-	PFRTAny *res = (PFRTAny *) foidl_xall(cnt * sizeof(PFRTAny));
+	PFRTAny *res = (PFRTAny *) foidl_alloc(cnt * sizeof(PFRTAny));
 	for(ft i = 0; i < cnt;i++) res[i] = end;
 	return res;
 }
 
 PFRTBitmapNode allocNode() {
 	PFRTBitmapNode a = (PFRTBitmapNode)
-		foidl_xall(sizeof(struct FRTBitmapNode));
+		foidl_alloc(sizeof(struct FRTBitmapNode));
 	a->fclass = bitmapnode_class;
 	a->datamap = 0;
 	a->nodemap = 0;
@@ -380,7 +396,7 @@ PFRTBitmapNode allocNode() {
 }
 
 PFRTHamtNode allocHamtNode() {
-	PFRTHamtNode a = (PFRTHamtNode) foidl_xall(sizeof(struct FRTHamtNode));
+	PFRTHamtNode a = (PFRTHamtNode) foidl_alloc(sizeof(struct FRTHamtNode));
 	a->fclass = hamptnode_class;
 	for(ft i=0; i < WCNT; i++) a->slots[i] = end;
 	return a;
@@ -416,7 +432,7 @@ PFRTBitmapNode allocNodeWithAll(uint32_t datamap,
 //	Iterators
 
 PFRTIterator allocStringIterator(PFRTAny str, itrNext next) {
-	PFRTString_Iterator i = foidl_xall(sizeof(struct FRTString_Iterator));
+	PFRTString_Iterator i = foidl_alloc(sizeof(struct FRTString_Iterator));
 	i->fclass = iterator_class;
 	i->ftype  = string_iterator_type;
     i->next =  next;
@@ -429,7 +445,7 @@ PFRTIterator allocStringIterator(PFRTAny str, itrNext next) {
 PFRTIterator allocTrieIterator(PFRTAssocType base,itrNext next) {
 	uint32_t node_arity = nodeArity(base->root);
 	uint32_t payload_arity = payloadArity(base->root);
-	PFRTTrie_Iterator i = foidl_xall(sizeof(struct FRTTrie_Iterator));
+	PFRTTrie_Iterator i = foidl_alloc(sizeof(struct FRTTrie_Iterator));
 	i->fclass = iterator_class;
 	i->ftype  = base->ftype == map2_type ?
 		map_iterator_type : set_iterator_type;
@@ -452,7 +468,7 @@ PFRTIterator allocTrieIterator(PFRTAssocType base,itrNext next) {
 
 PFRTIterator allocVectorIterator(PFRTVector v,itrNext next) {
 	PFRTVector_Iterator	vi = (PFRTVector_Iterator)
-		foidl_xall(sizeof(struct FRTVector_Iterator));
+		foidl_alloc(sizeof(struct FRTVector_Iterator));
 	PFRTHamtNode vn = (PFRTHamtNode)vectorGetDefault((PFRTAny)  v,0);
 	vi->fclass = iterator_class;
 	vi->ftype  = vector_iterator_type;
@@ -467,7 +483,7 @@ PFRTIterator allocVectorIterator(PFRTVector v,itrNext next) {
 
 PFRTIterator allocListIterator(PFRTList l, itrNext next) {
 	PFRTList_Iterator li = (PFRTList_Iterator)
-		foidl_xall(sizeof(struct FRTList_Iterator));
+		foidl_alloc(sizeof(struct FRTList_Iterator));
 	li->fclass = iterator_class;
 	li->ftype  = vector_iterator_type;
 	li->next   = next;
@@ -478,7 +494,7 @@ PFRTIterator allocListIterator(PFRTList l, itrNext next) {
 
 PFRTIterator allocSeriesIterator(PFRTSeries s, itrNext next) {
 	PFRTSeries_Iterator li = (PFRTSeries_Iterator)
-		foidl_xall(sizeof(struct FRTSeries_Iterator));
+		foidl_alloc(sizeof(struct FRTSeries_Iterator));
 	li->fclass = iterator_class;
 	li->ftype  = series_iterator_type;
 	li->next   = next;
@@ -492,7 +508,7 @@ PFRTIterator allocSeriesIterator(PFRTSeries s, itrNext next) {
 
 PFRTIterator allocChannelIterator(PFRTIOChannel cb, itrNext next) {
 	PFRTChannel_Iterator ci = (PFRTChannel_Iterator)
-		foidl_xall(sizeof(struct FRTChannel_Iterator));
+		foidl_alloc(sizeof(struct FRTChannel_Iterator));
 	ci->fclass = iterator_class;
 	ci->ftype  = channel_iterator_type;
 	ci->next   = next;
@@ -513,12 +529,12 @@ PFRTIterator allocChannelIterator(PFRTIOChannel cb, itrNext next) {
 
 void deallocFuncRef2(PFRTFuncRef2 fref) {
 	PFRTVector pv = (PFRTVector) fref->args;
-	foidl_xdel(fref);
+	foidl_delete(fref);
 	if(pv != empty_vector) {
 		if(pv->tail != empty_node)
-			foidl_xdel(pv->tail);
+			foidl_delete(pv->tail);
 		if(pv->root != empty_node)
-			foidl_xdel(pv->root);
-		foidl_xdel(pv);
+			foidl_delete(pv->root);
+		foidl_delete(pv);
 	}
 }
