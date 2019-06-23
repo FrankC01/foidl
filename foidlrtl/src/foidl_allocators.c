@@ -27,9 +27,30 @@ static PFRTAny gc_initialized = (PFRTAny) &_false.fclass;
 
 const PFRTAny emtndarray[0];// = {end,end};
 
+static ft unknown_allocs = 0;
+static ft general_allocs = 0;
+static ft global_allocs = 0;
+
+static ft unknown_free = 0;
+static ft general_free = 0;
+static ft global_free = 0;
+
+void foidl_memstats() {
+	printf("--------------- Allc ----------------------\n");
+	printf("Unknown allocations %llu\n", unknown_allocs);
+	printf("General allocations %llu\n", general_allocs);
+	printf("Global allocations %llu\n", global_allocs);
+	printf("--------------- Free ----------------------\n");
+	printf("Unknown frees %llu\n", unknown_free);
+	printf("General frees %llu\n", general_free);
+	printf("Global frees %llu\n", global_free);
+	printf("-------------------------------------------\n");
+}
+
 void * foidl_xall(uint32_t sz) {
 	PFRTTypeG res = calloc(sz+sizeof(ft),1);
 	res->fsig = unkwn_signature;
+	++unknown_allocs;
 	return (void *)&res->fclass;
 //	return calloc(sz,1);
 }
@@ -38,6 +59,8 @@ void * foidl_alloc(ft sz) {
 	void *res = foidl_xall(sz);
 	PFRTTypeG g = res - sizeof(ft);
 	g->fsig = alloc_signature;
+	--unknown_allocs;
+	++general_allocs;
 	return res;
 }
 
@@ -45,6 +68,8 @@ void * foidl_galloc(ft sz) {
 	void *res = foidl_xall(sz);
 	PFRTTypeG g = res - sizeof(ft);
 	g->fsig = global_signature;
+	--unknown_allocs;
+	++global_allocs;
 	return res;
 }
 
@@ -64,12 +89,14 @@ void * foidl_xreall(void *p, uint32_t newsz) {
 void foidl_xdel(void *v) {
 	PFRTTypeG g = v - sizeof(ft);
 	if(g->fsig == alloc_signature) {
+		++general_free;
 		free(g);
 	}
 	else if(g->fsig == global_signature){
-		;
+		++global_free;
 	}
 	else if(g->fsig == unkwn_signature) {
+		++unknown_free;
 		free(g);
 	}
 	else {

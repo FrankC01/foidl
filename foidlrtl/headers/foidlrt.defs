@@ -138,6 +138,8 @@ func  foidl_retain 		[obj]
 func  foidl_release 	[obj]
 func  foidl_heap_setup 	[]
 func  foidl_fail 		[]
+func  foidl_memstats    []
+
 ;func  foidl_failWith 	[msg] - REMOVE FROM ASM
 ;func  foidl_system_getenv [x]
 
