@@ -1164,6 +1164,10 @@ EXTERNC PFRTAny     writeCerr(PFRTAny);
 EXTERNC PFRTAny     writeCerrNl(PFRTAny);
 #endif
 
+#ifndef EXTENSION_IMPL
+void foidl_rtl_init_extensions();
+#endif
+
 #ifndef HTTP_CHANNEL_IMPL
 EXTERNC void        foidl_rtl_init_http_channel();
 #endif

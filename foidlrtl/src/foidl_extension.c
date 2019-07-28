@@ -39,16 +39,20 @@
 // Descriptor keys
 
 // ext_type describes the core type (e.g. channel)
-globalScalarConst(ext_type,byte_type,(void *) 0,1);
+constKeyword(ext_type,":extension_type");
 // ext_subtype describes the unique descriptor (e.g. http_chan)
-globalScalarConst(ext_subtype,byte_type,(void *) 1,1);
+constKeyword(ext_subtype,":extension_subtype");
 // ext_interface describes the interface calling type
-globalScalarConst(ext_interface,byte_type,(void *) 2,1);
+constKeyword(ext_interface,":extension_interface");
 // ext_functions describes the interface functions
-globalScalarConst(ext_functions,byte_type,(void *) 3,1);
+constKeyword(ext_functions,":extension_functions");
 
 // Exensible types
-globalScalarConst(channel,byte_type,(void *) 0,1);
+constKeyword(channel_ext,":channel_extension");
+
+void foidl_rtl_init_extensions() {
+    printf("Initializing extension support\n");
+}
 
 PFRTAny register_extension(PFRTAny descriptor) {
     printf("register_extension called\n");

@@ -366,6 +366,21 @@ func    foidl_channel_http_write!   [channel data]
 func    foidl_channel_http_close!   [channel]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Extensions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Registration keys
+
+var ext_type        Type
+var ext_subtype     Type
+var ext_interface   Type
+var ext_functions   Type
+
+; Extension Types
+
+var channel_ext     Type
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Response object
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
