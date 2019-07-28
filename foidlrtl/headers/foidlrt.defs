@@ -352,6 +352,11 @@ var chan_type   Type
 var chan_render Type
 var chan_mode   Type
 
+func    foidl_open_channel!  [cdesc]
+func    foidl_channel_read!  [channel]
+func    foidl_channel_write! [channel]
+func    foidl_channel_close! [channel]
+
 func    foidl_open_file!            [name mode args]
 func    foidl_channel_file_read!    [channel]
 func    foidl_channel_file_write!   [channel data]

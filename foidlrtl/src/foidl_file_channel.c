@@ -565,7 +565,7 @@ PFRTAny foidl_open_file_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
         fptr = fopen(name->value, stuff[imode]);
         if(fptr == NULL)
             unknown_handler();
-        PFRTIOFileChannel fc1 = (PFRTIOFileChannel) allocFileChannel(name,mode);
+        PFRTIOFileChannel fc1 = (PFRTIOFileChannel) allocFileChannel(name,mode,args);
         fc1->value = (void *) fptr;
         // If reading, check for render statement
         if( imode == 0 || imode == 1) {

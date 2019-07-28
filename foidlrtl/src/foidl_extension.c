@@ -50,11 +50,39 @@ constKeyword(ext_functions,":extension_functions");
 // Exensible types
 constKeyword(channel_ext,":channel_extension");
 
-void foidl_rtl_init_extensions() {
-    printf("Initializing extension support\n");
+/*
+    Collection 'registrar' is a map containing keyed
+    typed entries with value being a map of subtypes e.g.:
+    {(ext_type)'channel': map of channel subtypes}
+*/
+
+static PFRTMap registrar;
+
+// Get's the registrar subtype map for type argument
+// If does not exist, creates the type entry with empty
+// map to hold subtypes
+
+static PFRTAny subtype_map_for_type(PFRTAny type_extension) {
+    PFRTAny result = nil;
+    result = map_get((PFRTAny)registrar, type_extension);
+    if(result == nil) {
+        result = foidl_map_inst_bang();
+        foidl_map_extend_bang((PFRTAny)registrar,type_extension,result);
+    }
+    return result;
 }
 
+// Registers or balks at request to added extension to the
+// registrar
+
 PFRTAny register_extension(PFRTAny descriptor) {
-    printf("register_extension called\n");
+    subtype_map_for_type(channel_ext);
     return nil;
 }
+
+// Pre-main initializer
+
+void foidl_rtl_init_extensions() {
+    registrar = (PFRTMap) foidl_map_inst_bang();
+}
+

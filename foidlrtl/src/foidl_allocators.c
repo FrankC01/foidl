@@ -242,13 +242,14 @@ PFRTAny allocGlobalCharType(int v) {
 
 // New IO Channel
 
-PFRTIOChannel allocFileChannel(PFRTAny name, PFRTAny mode) {
+PFRTIOChannel allocFileChannel(PFRTAny name, PFRTAny mode, PFRTAny args) {
 	PFRTIOFileChannel fc = foidl_alloc(sizeof(struct FRTIOFileChannel));
 	fc->fclass = io_class;
 	fc->ftype  = file_type;
 	fc->ctype  = chan_file;
 	fc->name   = name;
 	fc->mode   = mode;
+	fc->settings = args;
 	return (PFRTIOChannel) fc;
 }
 

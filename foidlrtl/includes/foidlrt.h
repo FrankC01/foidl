@@ -897,7 +897,7 @@ EXTERNC PFRTAny 		allocGlobalCharType(int);
 EXTERNC PFRTAny         allocRegex(PFRTAny sbase, void* regex);
 
 // IO Types
-EXTERNC PFRTIOChannel   allocFileChannel(PFRTAny, PFRTAny);
+EXTERNC PFRTIOChannel   allocFileChannel(PFRTAny, PFRTAny, PFRTAny);
 EXTERNC PFRTIOChannel   allocHttpChannel(PFRTAny, PFRTAny);
 EXTERNC PFRTResponse    allocResponse(ft,PFRTAny);
 
@@ -1147,7 +1147,18 @@ EXTERNC  PFRTAny  release_list_bang(PFRTAny);
 EXTERNC  PFRTAny  write_list(PFRTAny, PFRTAny, channel_writer);
 #endif
 
+// Extensions
+
+#ifndef EXTENSION_IMPL
+EXTERNC void foidl_rtl_init_extensions();
+EXTERNC PFRTAny register_extension(PFRTAny descriptor);
+#endif
+
+
 // IO
+
+#ifndef CHANNEL_IMPL
+#endif
 
 #ifndef FILE_CHANNEL_IMPL
 EXTERNC void        foidl_rtl_init_file_channel();
@@ -1164,10 +1175,6 @@ EXTERNC PFRTAny     writeCerr(PFRTAny);
 EXTERNC PFRTAny     writeCerrNl(PFRTAny);
 #endif
 
-#ifndef EXTENSION_IMPL
-void foidl_rtl_init_extensions();
-#endif
-
 #ifndef HTTP_CHANNEL_IMPL
 EXTERNC void        foidl_rtl_init_http_channel();
 #endif
@@ -1175,6 +1182,7 @@ EXTERNC void        foidl_rtl_init_http_channel();
 #ifndef RESPONSE_IMPL
 EXTERNC PFRTAny     foidl_response_value(PFRTAny);
 #endif
+
 // Series
 
 #ifndef SERIES_IMPL
