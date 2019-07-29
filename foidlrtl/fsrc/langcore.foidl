@@ -105,34 +105,16 @@ func  gteq [x, y]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 func opens! [args]
-	match get: args chan_type
-	| chan_file
-		foidl_open_file!:
-			get: args chan_target
-			get: args chan_mode
-			args
-	| chan_http
-		foidl_open_http!:
-			get: args chan_target
-			args
-	| :default nil
+	foidl_open_channel!: args
 
 func reads! [channel]
-	match channel_type?: channel
-	| chan_file foidl_channel_file_read!: channel
-	| chan_http foidl_channel_http_read!: channel
+	foidl_channel_read!: channel
 
 func writes! [channel data]
-	?: io?: channel
-		match channel_type?: channel
-		| chan_file foidl_channel_file_write!: channel data
-		| chan_http foidl_channel_http_write!: channel data
-		nil
+	foidl_channel_write!: channel data
 
 func closes! [channel]
-	match channel_type?: channel
-	| chan_file foidl_channel_file_close!: channel
-	| chan_http foidl_channel_http_close!: channel
+	foidl_channel_close!: channel
 
 func file_exists? [fname]
 	foidl_fexists?: fname

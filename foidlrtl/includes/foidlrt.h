@@ -863,6 +863,7 @@ EXTERNC PFRTAny foidl_function_qmark(PFRTAny);
 EXTERNC PFRTAny foidl_number_qmark(PFRTAny);
 EXTERNC PFRTAny foidl_collection_qmark(PFRTAny);
 EXTERNC PFRTAny foidl_extendable_qmark(PFRTAny);
+EXTERNC PFRTAny foidl_channel_type_qmark(PFRTAny);
 EXTERNC PFRTAny function_strict_arg(PFRTAny, PFRTAny);
 EXTERNC PFRTAny string_type_qmark(PFRTAny);
 #endif
@@ -1162,6 +1163,10 @@ EXTERNC PFRTAny register_extension(PFRTAny descriptor);
 
 #ifndef FILE_CHANNEL_IMPL
 EXTERNC void        foidl_rtl_init_file_channel();
+EXTERNC PFRTAny     foidl_open_file_bang(PFRTAny, PFRTAny, PFRTAny);
+EXTERNC PFRTAny     foidl_channel_file_read_bang(PFRTAny);
+EXTERNC PFRTAny     foidl_channel_file_write_bang(PFRTAny, PFRTAny);
+EXTERNC PFRTAny     foidl_channel_file_close_bang(PFRTAny);
 #ifndef __cplusplus
 EXTERNC PFRTAny     cout,cin,cerr;
 #endif
@@ -1177,6 +1182,10 @@ EXTERNC PFRTAny     writeCerrNl(PFRTAny);
 
 #ifndef HTTP_CHANNEL_IMPL
 EXTERNC void        foidl_rtl_init_http_channel();
+EXTERNC PFRTAny     foidl_open_http_bang(PFRTAny, PFRTAny);
+EXTERNC PFRTAny     foidl_channel_http_read_bang(PFRTAny);
+EXTERNC PFRTAny     foidl_channel_http_write_bang(PFRTAny, PFRTAny);
+EXTERNC PFRTAny     foidl_channel_http_close_bang(PFRTAny);
 #endif
 
 #ifndef RESPONSE_IMPL

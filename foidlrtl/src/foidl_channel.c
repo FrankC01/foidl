@@ -21,19 +21,52 @@
 #define CHANNEL_IMPL
 #include <foidlrt.h>
 
-PFRTAny     foidl_open_channel_bang(PFRTAny chan_desc) {
+PFRTAny     foidl_open_channel_bang(PFRTAny chan_args) {
+    PFRTAny chan_t = foidl_get(chan_args, chan_type);
+    if( chan_t == chan_file) {
+        return foidl_open_file_bang(
+            foidl_get(chan_args, chan_target),
+            foidl_get(chan_args, chan_mode),
+            chan_args);
+    }
+    else if( chan_t == chan_http) {
+        return foidl_open_http_bang(
+            foidl_get(chan_args, chan_target),
+            chan_args);
+    }
     return nil;
 }
 
-PFRTAny     foidl_channel_read_bang(PFRTAny chan_desc) {
+PFRTAny     foidl_channel_read_bang(PFRTAny chan) {
+    PFRTAny chan_t = foidl_channel_type_qmark(chan);
+    if( chan_t == chan_file ) {
+        return foidl_channel_file_read_bang(chan);
+    }
+    else if( chan_t == chan_http) {
+        return foidl_channel_http_read_bang(chan);
+    }
     return nil;
 }
 
-PFRTAny     foidl_channel_write_bang(PFRTAny chan_desc) {
+PFRTAny     foidl_channel_write_bang(PFRTAny chan, PFRTAny data) {
+    PFRTAny chan_t = foidl_channel_type_qmark(chan);
+    if( chan_t == chan_file ) {
+        return foidl_channel_file_write_bang(chan, data);
+    }
+    else if( chan_t == chan_http) {
+        return foidl_channel_http_write_bang(chan, data);
+    }
     return nil;
 }
 
-PFRTAny     foidl_channel_close_bang(PFRTAny chan_desc) {
+PFRTAny     foidl_channel_close_bang(PFRTAny chan) {
+    PFRTAny chan_t = foidl_channel_type_qmark(chan);
+    if( chan_t == chan_file ) {
+        return foidl_channel_file_close_bang(chan);
+    }
+    else if( chan_t == chan_http) {
+        return foidl_channel_http_close_bang(chan);
+    }
     return nil;
 }
 
