@@ -863,6 +863,7 @@ EXTERNC PFRTAny foidl_function_qmark(PFRTAny);
 EXTERNC PFRTAny foidl_number_qmark(PFRTAny);
 EXTERNC PFRTAny foidl_collection_qmark(PFRTAny);
 EXTERNC PFRTAny foidl_extendable_qmark(PFRTAny);
+EXTERNC PFRTAny foidl_io_qmark(PFRTAny);
 EXTERNC PFRTAny foidl_channel_type_qmark(PFRTAny);
 EXTERNC PFRTAny function_strict_arg(PFRTAny, PFRTAny);
 EXTERNC PFRTAny string_type_qmark(PFRTAny);

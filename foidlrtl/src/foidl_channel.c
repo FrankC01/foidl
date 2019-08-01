@@ -20,6 +20,14 @@
 
 #define CHANNEL_IMPL
 #include <foidlrt.h>
+#include <stdio.h>
+
+PFRTAny     foidl_channel_extension(PFRTAny descriptor) {
+    printf("Channel extension invoked\n");
+    return nil;
+}
+
+// Indirect call to underlying channel type 'open!'
 
 PFRTAny     foidl_open_channel_bang(PFRTAny chan_args) {
     PFRTAny chan_t = foidl_get(chan_args, chan_type);
@@ -37,35 +45,47 @@ PFRTAny     foidl_open_channel_bang(PFRTAny chan_args) {
     return nil;
 }
 
+// Indirect call to underlying channel 'read!'
+
 PFRTAny     foidl_channel_read_bang(PFRTAny chan) {
-    PFRTAny chan_t = foidl_channel_type_qmark(chan);
-    if( chan_t == chan_file ) {
-        return foidl_channel_file_read_bang(chan);
-    }
-    else if( chan_t == chan_http) {
-        return foidl_channel_http_read_bang(chan);
+    if( foidl_io_qmark(chan) == true) {
+        PFRTAny chan_t = foidl_channel_type_qmark(chan);
+        if( chan_t == chan_file ) {
+            return foidl_channel_file_read_bang(chan);
+        }
+        else if( chan_t == chan_http) {
+            return foidl_channel_http_read_bang(chan);
+        }
     }
     return nil;
 }
+
+// Indirect call to underlying channel 'write!'
 
 PFRTAny     foidl_channel_write_bang(PFRTAny chan, PFRTAny data) {
-    PFRTAny chan_t = foidl_channel_type_qmark(chan);
-    if( chan_t == chan_file ) {
-        return foidl_channel_file_write_bang(chan, data);
-    }
-    else if( chan_t == chan_http) {
-        return foidl_channel_http_write_bang(chan, data);
+    if( foidl_io_qmark(chan) == true) {
+        PFRTAny chan_t = foidl_channel_type_qmark(chan);
+        if( chan_t == chan_file ) {
+            return foidl_channel_file_write_bang(chan, data);
+        }
+        else if( chan_t == chan_http) {
+            return foidl_channel_http_write_bang(chan, data);
+        }
     }
     return nil;
 }
 
+// Indirect call to underlying channel 'close!'
+
 PFRTAny     foidl_channel_close_bang(PFRTAny chan) {
-    PFRTAny chan_t = foidl_channel_type_qmark(chan);
-    if( chan_t == chan_file ) {
-        return foidl_channel_file_close_bang(chan);
-    }
-    else if( chan_t == chan_http) {
-        return foidl_channel_http_close_bang(chan);
+    if( foidl_io_qmark(chan) == true) {
+        PFRTAny chan_t = foidl_channel_type_qmark(chan);
+        if( chan_t == chan_file ) {
+            return foidl_channel_file_close_bang(chan);
+        }
+        else if( chan_t == chan_http) {
+            return foidl_channel_http_close_bang(chan);
+        }
     }
     return nil;
 }

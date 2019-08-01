@@ -47,9 +47,6 @@ constKeyword(ext_interface,":extension_interface");
 // ext_functions describes the interface functions
 constKeyword(ext_functions,":extension_functions");
 
-// Exensible types
-constKeyword(channel_ext,":channel_extension");
-
 /*
     Collection 'registrar' is a map containing keyed
     typed entries with value being a map of subtypes e.g.:
@@ -76,7 +73,7 @@ static PFRTAny subtype_map_for_type(PFRTAny type_extension) {
 // registrar
 
 PFRTAny register_extension(PFRTAny descriptor) {
-    subtype_map_for_type(channel_ext);
+
     return nil;
 }
 

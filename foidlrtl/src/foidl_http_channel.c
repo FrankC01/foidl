@@ -26,12 +26,8 @@
 #include    <curl/curl.h>
 #endif
 
-void foidl_rtl_init_http_channel() {
-#ifdef _MSC_VER
-#else
-     curl_global_init(CURL_GLOBAL_ALL);
-#endif
-}
+// Exensible types
+constKeyword(channel_ext,":channel_extension");
 
 // Used in http_read_handler operations
 
@@ -185,4 +181,14 @@ PFRTAny foidl_channel_http_close_bang(PFRTAny channel) {
     }
 
     return res;
+}
+
+// Setup curl initialization
+// Register extension
+
+void foidl_rtl_init_http_channel() {
+#ifdef _MSC_VER
+#else
+     curl_global_init(CURL_GLOBAL_ALL);
+#endif
 }
