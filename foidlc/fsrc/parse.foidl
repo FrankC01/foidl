@@ -259,8 +259,16 @@ func :private symbol_handler [mmodule ast_tree token srcname]
             type_instance: :symbol srcname token
             NAME get: token :token_str
 
+; Function: include_handler
+; Description: NOP - Includes already registered in symbol table
+; Syntax:
+
+func :private include_handler [mmodule ast_tree token srcname]
+    pop!: ast_tree
+
 var :private parse_map {
     :module         module_handler
+    :include        include_handler
     :variable       variable_handler
     :function       function_handler
     :if_expr        if_handler
