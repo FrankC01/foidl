@@ -20,7 +20,4 @@
 
 module curl_http
 
-var creg    @(
-                printnl!: "Kickin' it baby"
-                foidl_channel_extension: {}
-            )
+var creg    foidl_channel_extension: {}

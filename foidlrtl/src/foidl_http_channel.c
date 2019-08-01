@@ -26,9 +26,6 @@
 #include    <curl/curl.h>
 #endif
 
-// Exensible types
-constKeyword(channel_ext,":channel_extension");
-
 // Used in http_read_handler operations
 
 struct Chunk {
@@ -84,7 +81,7 @@ PFRTAny foidl_channel_http_write_bang(PFRTAny channel, PFRTAny data) {
         cres = curl_easy_perform(curl);
 
         if(!cres) {
-            //printf("Download size: %u\n", (int) mem.size);
+            ; //printf("Download size: %u\n", (int) mem.size);
         }
         else {
             return nil;

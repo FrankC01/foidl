@@ -22,6 +22,10 @@
 #include <foidlrt.h>
 #include <stdio.h>
 
+// Exensible types
+constKeyword(channel_ext,":channel_extension");
+
+
 PFRTAny     foidl_channel_extension(PFRTAny descriptor) {
     printf("Channel extension invoked\n");
     return nil;
