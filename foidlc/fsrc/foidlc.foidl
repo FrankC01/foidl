@@ -23,7 +23,7 @@ module foidlc
 include cmdline
 include handler
 
-var version "foidlc version 0.1.0-alpha (Self-hosted)"
+var version "foidlc version 0.4.0-alpha (Self-hosted)"
 
 ; Function: execute
 ; Description: Core compiler execution. If version (-v)
