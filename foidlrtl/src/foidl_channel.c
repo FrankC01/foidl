@@ -67,16 +67,17 @@ PFRTAny     foidl_channel_read_bang(PFRTAny chan) {
 // Indirect call to underlying channel 'write!'
 
 PFRTAny     foidl_channel_write_bang(PFRTAny chan, PFRTAny data) {
+    PFRTAny res = nil;
     if( foidl_io_qmark(chan) == true) {
         PFRTAny chan_t = foidl_channel_type_qmark(chan);
         if( chan_t == chan_file ) {
-            return foidl_channel_file_write_bang(chan, data);
+            res = foidl_channel_file_write_bang(chan, data);
         }
         else if( chan_t == chan_http) {
-            return foidl_channel_http_write_bang(chan, data);
+            res = foidl_channel_http_write_bang(chan, data);
         }
     }
-    return nil;
+    return res;
 }
 
 // Indirect call to underlying channel 'close!'

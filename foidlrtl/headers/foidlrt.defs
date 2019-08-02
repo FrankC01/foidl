@@ -354,7 +354,7 @@ var chan_mode   Type
 
 func    foidl_open_channel!  [cdesc]
 func    foidl_channel_read!  [channel]
-func    foidl_channel_write! [channel]
+func    foidl_channel_write! [channel data]
 func    foidl_channel_close! [channel]
 
 func    foidl_channel_extension [descriptor]
