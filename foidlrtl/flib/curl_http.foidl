@@ -20,4 +20,5 @@
 
 module curl_http
 
-var creg    foidl_channel_extension: {}
+func init_curl_http []
+    foidl_register_curl_http:

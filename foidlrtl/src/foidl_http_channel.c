@@ -181,11 +181,25 @@ PFRTAny foidl_channel_http_close_bang(PFRTAny channel) {
 }
 
 // Setup curl initialization
-// Register extension
+
+static int inited = 0;
 
 void foidl_rtl_init_http_channel() {
 #ifdef _MSC_VER
 #else
      curl_global_init(CURL_GLOBAL_ALL);
 #endif
+}
+
+// Register extension
+PFRTAny     foidl_register_curl_http() {
+    if( ! inited ) {
+        printf("Registering curl http\n");
+        foidl_channel_extension(nil);
+        inited=1;
+    }
+    else {
+        printf("Curl http already initialized\n");
+    }
+    return nil;
 }

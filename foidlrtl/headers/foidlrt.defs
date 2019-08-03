@@ -357,7 +357,7 @@ func    foidl_channel_read!  [channel]
 func    foidl_channel_write! [channel data]
 func    foidl_channel_close! [channel]
 
-func    foidl_channel_extension [descriptor]
+func    foidl_register_curl_http []
 
 func    foidl_channel_quaf! [channel]
 func    foidl_fexists?      [fname]

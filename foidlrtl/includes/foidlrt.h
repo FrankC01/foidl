@@ -1160,6 +1160,15 @@ EXTERNC PFRTAny register_extension(PFRTAny descriptor);
 // IO
 
 #ifndef CHANNEL_IMPL
+EXTERNC PFRTAny   channel_ext;
+EXTERNC PFRTAny   channel_ext_init;
+EXTERNC PFRTAny   channel_ext_open;
+EXTERNC PFRTAny   channel_ext_read;
+EXTERNC PFRTAny   channel_ext_write;
+EXTERNC PFRTAny   channel_ext_close;
+EXTERNC PFRTAny   channel_ext_iterator;
+EXTERNC PFRTAny   channel_ext_iterator_next;
+EXTERNC PFRTAny   foidl_channel_extension(PFRTAny descriptor);
 #endif
 
 #ifndef FILE_CHANNEL_IMPL

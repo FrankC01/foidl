@@ -22,12 +22,26 @@
 #include <foidlrt.h>
 #include <stdio.h>
 
-// Exensible types
+// Exensible type keys
 constKeyword(channel_ext,":channel_extension");
+
+globalScalarConst(channel_ext_init,byte_type,(void *) 1,1);
+globalScalarConst(channel_ext_open,byte_type,(void *) 2,1);
+globalScalarConst(channel_ext_read,byte_type,(void *) 3,1);
+globalScalarConst(channel_ext_write,byte_type,(void *) 4,1);
+globalScalarConst(channel_ext_close,byte_type,(void *) 5,1);
+
+globalScalarConst(channel_ext_iterator,byte_type,(void *) 10,1);
+globalScalarConst(channel_ext_iterator_next,byte_type,(void *) 11,1);
 
 
 PFRTAny     foidl_channel_extension(PFRTAny descriptor) {
     printf("Channel extension invoked\n");
+    return nil;
+}
+
+PFRTAny     foidl_channel_get_extension(PFRTAny esubtype) {
+    printf("Channel extension subtype invoked\n");
     return nil;
 }
 
