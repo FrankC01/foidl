@@ -550,8 +550,10 @@ PFRTAny foidl_channel_file_write_bang(PFRTAny channel, PFRTAny el) {
 
 // File Channel open entry point
 
-PFRTAny foidl_open_file_bang(PFRTAny name, PFRTAny mode, PFRTAny args) {
+PFRTAny foidl_open_file_bang(PFRTAny args) {
     PFRTAny fc2 = nil; //(PFRTIOFileChannel) allocFileChannel(name,mode);
+    PFRTAny name = foidl_get(args, chan_target);
+    PFRTAny mode = foidl_get(args, chan_mode);
     FILE    *fptr;
     ft      imode = (ft) mode->value;
     if( name == nil || mode == nil ) {

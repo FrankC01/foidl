@@ -100,6 +100,7 @@ PFRTAny foidl_channel_http_write_bang(PFRTAny channel, PFRTAny data) {
         return nil;
     }
 }
+localFunc(curl_ch_write,2,foidl_channel_http_write_bang);
 
 // foidl_channel_http_read_bang (<- foidl_channel_http_read! <- reads!)
 // Entry point for reading from http channel
@@ -136,12 +137,14 @@ PFRTAny foidl_channel_http_read_bang(PFRTAny channel) {
         return nil;
     }
 }
+localFunc(curl_ch_read,1,foidl_channel_http_read_bang);
 
 // foidl_open_http_bang (<- foidl_open_http! <- opens!)
 // Entry point for opening http channel
 
-PFRTAny foidl_open_http_bang(PFRTAny name, PFRTAny args) {
+PFRTAny foidl_open_http_bang(PFRTAny args) {
     PFRTAny res = nil;
+    PFRTAny name = foidl_get(args, chan_target);
     if( name == nil ) {
         printf("Exception: Requires chan_target to open channel\n");
         foidl_error_exit(-1);
@@ -157,6 +160,7 @@ PFRTAny foidl_open_http_bang(PFRTAny name, PFRTAny args) {
     }
     return res;
 }
+localFunc(curl_ch_open,1,foidl_open_http_bang);
 
 // foidl_channel_http_close_bang (<- foidl_channel_http_close! <- closes!)
 // Entry point for closing a http channel
@@ -179,10 +183,9 @@ PFRTAny foidl_channel_http_close_bang(PFRTAny channel) {
 
     return res;
 }
+localFunc(curl_ch_close,1,foidl_channel_http_close_bang);
 
 // Setup curl initialization
-
-static int inited = 0;
 
 void foidl_rtl_init_http_channel() {
 #ifdef _MSC_VER
@@ -191,15 +194,37 @@ void foidl_rtl_init_http_channel() {
 #endif
 }
 
+// Setup the extension
+
+static int inited = 0;
+
+static PFRTAny chttp_desc;
+
+static void setup_desc() {
+    chttp_desc = foidl_map_inst_bang();
+    foidl_map_extend_bang(chttp_desc, ext_type, channel_ext);
+    foidl_map_extend_bang(chttp_desc, ext_subtype, chan_http);
+    foidl_map_extend_bang(chttp_desc, ext_interface, nil);
+    PFRTAny func_map = foidl_map_inst_bang();
+    foidl_map_extend_bang(func_map, channel_ext_open, (PFRTAny) curl_ch_open);
+    foidl_map_extend_bang(func_map, channel_ext_read, (PFRTAny) curl_ch_read);
+    foidl_map_extend_bang(func_map, channel_ext_write, (PFRTAny) curl_ch_write);
+    foidl_map_extend_bang(func_map, channel_ext_close, (PFRTAny) curl_ch_close);
+    foidl_map_extend_bang(chttp_desc, ext_functions, func_map);
+    //writeCoutNl(chttp_desc);
+    return;
+}
+
 // Register extension
 PFRTAny     foidl_register_curl_http() {
     if( ! inited ) {
-        printf("Registering curl http\n");
-        foidl_channel_extension(nil);
         inited=1;
+        foidl_rtl_init_http_channel();
+        setup_desc();
+        foidl_channel_extension(chttp_desc);
     }
     else {
         printf("Curl http already initialized\n");
     }
-    return nil;
+    return chttp_desc;
 }

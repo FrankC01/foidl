@@ -30,8 +30,6 @@ globalScalarConst(end,end_type,(void *) 0,1);
 // IO Channel types
 constKeyword(chan_file,":channel_file");
 constKeyword(chan_http,":channel_http");
-//globalScalarConst(chan_file,byte_type,(void *) 0,1);
-//globalScalarConst(chan_http,byte_type,(void *) 1,1);
 globalScalarConst(chan_unknown,byte_type,(void *) 16,1);
 
 // For channel read rendering

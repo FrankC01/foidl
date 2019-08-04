@@ -1154,6 +1154,10 @@ EXTERNC  PFRTAny  write_list(PFRTAny, PFRTAny, channel_writer);
 #ifndef EXTENSION_IMPL
 EXTERNC void foidl_rtl_init_extensions();
 EXTERNC PFRTAny register_extension(PFRTAny descriptor);
+EXTERNC PFRTAny ext_type;
+EXTERNC PFRTAny ext_subtype;
+EXTERNC PFRTAny ext_interface;
+EXTERNC PFRTAny ext_functions;
 #endif
 
 
@@ -1173,7 +1177,7 @@ EXTERNC PFRTAny   foidl_channel_extension(PFRTAny descriptor);
 
 #ifndef FILE_CHANNEL_IMPL
 EXTERNC void        foidl_rtl_init_file_channel();
-EXTERNC PFRTAny     foidl_open_file_bang(PFRTAny, PFRTAny, PFRTAny);
+EXTERNC PFRTAny     foidl_open_file_bang(PFRTAny);
 EXTERNC PFRTAny     foidl_channel_file_read_bang(PFRTAny);
 EXTERNC PFRTAny     foidl_channel_file_write_bang(PFRTAny, PFRTAny);
 EXTERNC PFRTAny     foidl_channel_file_close_bang(PFRTAny);
@@ -1191,8 +1195,7 @@ EXTERNC PFRTAny     writeCerrNl(PFRTAny);
 #endif
 
 #ifndef HTTP_CHANNEL_IMPL
-EXTERNC void        foidl_rtl_init_http_channel();
-EXTERNC PFRTAny     foidl_open_http_bang(PFRTAny, PFRTAny);
+EXTERNC PFRTAny     foidl_open_http_bang(PFRTAny);
 EXTERNC PFRTAny     foidl_channel_http_read_bang(PFRTAny);
 EXTERNC PFRTAny     foidl_channel_http_write_bang(PFRTAny, PFRTAny);
 EXTERNC PFRTAny     foidl_channel_http_close_bang(PFRTAny);

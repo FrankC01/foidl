@@ -24,20 +24,17 @@
 
 // Exensible type keys
 constKeyword(channel_ext,":channel_extension");
-
-globalScalarConst(channel_ext_init,byte_type,(void *) 1,1);
-globalScalarConst(channel_ext_open,byte_type,(void *) 2,1);
-globalScalarConst(channel_ext_read,byte_type,(void *) 3,1);
-globalScalarConst(channel_ext_write,byte_type,(void *) 4,1);
-globalScalarConst(channel_ext_close,byte_type,(void *) 5,1);
-
-globalScalarConst(channel_ext_iterator,byte_type,(void *) 10,1);
-globalScalarConst(channel_ext_iterator_next,byte_type,(void *) 11,1);
+constKeyword(channel_ext_init,":channel_ext_init");
+constKeyword(channel_ext_open,":channel_ext_open");
+constKeyword(channel_ext_read,":channel_ext_read");
+constKeyword(channel_ext_write,":channel_ext_write");
+constKeyword(channel_ext_close,":channel_ext_close");
+constKeyword(channel_ext_iterator,":channel_ext_iterator");
+constKeyword(channel_ext_iterator_next,":channel_ext_iterator_next");
 
 
 PFRTAny     foidl_channel_extension(PFRTAny descriptor) {
-    printf("Channel extension invoked\n");
-    return nil;
+    return register_extension(descriptor);
 }
 
 PFRTAny     foidl_channel_get_extension(PFRTAny esubtype) {
@@ -50,15 +47,10 @@ PFRTAny     foidl_channel_get_extension(PFRTAny esubtype) {
 PFRTAny     foidl_open_channel_bang(PFRTAny chan_args) {
     PFRTAny chan_t = foidl_get(chan_args, chan_type);
     if( chan_t == chan_file) {
-        return foidl_open_file_bang(
-            foidl_get(chan_args, chan_target),
-            foidl_get(chan_args, chan_mode),
-            chan_args);
+        return foidl_open_file_bang(chan_args);
     }
     else if( chan_t == chan_http) {
-        return foidl_open_http_bang(
-            foidl_get(chan_args, chan_target),
-            chan_args);
+        return foidl_open_http_bang(chan_args);
     }
     return nil;
 }

@@ -33,7 +33,7 @@ func rwhttp [url]
     response_value: rds
 
 func main [argv]
-    init_curl_http:
+    printnl!: init_curl_http:
     rwhttp: "http://example.com"
     zero
 

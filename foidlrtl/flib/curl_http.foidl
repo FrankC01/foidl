@@ -20,5 +20,7 @@
 
 module curl_http
 
+var :private ch_desc foidl_register_curl_http:
+
 func init_curl_http []
-    foidl_register_curl_http:
+    ch_desc
