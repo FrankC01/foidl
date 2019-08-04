@@ -127,7 +127,7 @@ static const ft     pool_control  = 0xffffffff100000e9;
 //	IO types
 
 static const ft 	file_type   = 0xffffffff100000bf;
-static const ft 	http_type   = 0xffffffff100000be;
+//static const ft 	http_type   = 0xffffffff100000be;
 static const ft 	ip_type     = 0xffffffff100000bd;
 static const ft 	mem_type  	= 0xffffffff100000bc;
 static const ft 	cin_type    = 0xffffffff100000bb;
@@ -137,14 +137,7 @@ static const ft 	closed_type = 0xffffffff100000b8;
 
 // Response Types
 
-static const ft     http_response_type   = 0xffffffff100000b7;
-
-// IO buffer types
-/*
-static const ft 	mem_map_buffer   = 0xffffffff100000b6;
-static const ft 	mem_block_buffer = 0xffffffff100000b5;
-static const ft 	no_buffer        = 0xffffffff100000b4;
-*/
+//static const ft     http_response_type   = 0xffffffff100000b7;
 
 //	Other constants
 
@@ -530,7 +523,6 @@ typedef struct   FRTIOFileChannelG {
     PFRTAny     render;
 } *PFRTIOFileChannelG;
 
-
 typedef struct   FRTIOFileChannel {
     ft          fclass;
     ft          ftype;
@@ -544,34 +536,6 @@ typedef struct   FRTIOFileChannel {
     PFRTAny     render;
 } *PFRTIOFileChannel;
 
-
-typedef struct   FRTIOHttpChannelG {
-    ft          fsig;
-    ft          fclass;
-    ft          ftype;
-    ft          count;
-    uint32_t    hash;
-    void        *value;         // Maps to curl handle
-    PFRTAny     ctype;
-    PFRTAny     settings;
-    PFRTAny     name;
-    PFRTAny     mode;
-    PFRTAny     render;
-} *PFRTIOHttpChannelG;
-
-
-typedef struct   FRTIOHttpChannel {
-    ft          fclass;
-    ft          ftype;
-    ft          count;
-    uint32_t    hash;
-    void        *value;         // Maps to curl handle
-    PFRTAny     ctype;
-    PFRTAny     settings;
-    PFRTAny     name;
-    PFRTAny     mode;
-    PFRTAny     render;
-} *PFRTIOHttpChannel;
 
 typedef struct  FRTResponseG {
     ft          fsig;
@@ -780,7 +744,7 @@ EXTERNC PFRTAny  nil,true,false;
 #endif
 
 // Channel constants
-EXTERNC PFRTAny     chan_file,chan_http,chan_unknown;
+EXTERNC PFRTAny     chan_file,chan_unknown;
 EXTERNC PFRTAny     chan_target,chan_type,chan_render,chan_mode;
 
 EXTERNC PFRTAny     render_byte,render_char,render_line,render_file;
@@ -900,7 +864,6 @@ EXTERNC PFRTAny         allocRegex(PFRTAny sbase, void* regex);
 
 // IO Types
 EXTERNC PFRTIOChannel   allocFileChannel(PFRTAny, PFRTAny, PFRTAny);
-EXTERNC PFRTIOChannel   allocHttpChannel(PFRTAny, PFRTAny);
 EXTERNC PFRTResponse    allocResponse(ft,PFRTAny);
 
 // Function types
@@ -1154,6 +1117,7 @@ EXTERNC  PFRTAny  write_list(PFRTAny, PFRTAny, channel_writer);
 #ifndef EXTENSION_IMPL
 EXTERNC void foidl_rtl_init_extensions();
 EXTERNC PFRTAny register_extension(PFRTAny descriptor);
+EXTERNC PFRTAny extension_functions_for(PFRTAny base_type, PFRTAny sub_type);
 EXTERNC PFRTAny ext_type;
 EXTERNC PFRTAny ext_subtype;
 EXTERNC PFRTAny ext_interface;
@@ -1192,13 +1156,6 @@ EXTERNC PFRTAny     writeCout(PFRTAny);
 EXTERNC PFRTAny     writeCoutNl(PFRTAny);
 EXTERNC PFRTAny     writeCerr(PFRTAny);
 EXTERNC PFRTAny     writeCerrNl(PFRTAny);
-#endif
-
-#ifndef HTTP_CHANNEL_IMPL
-EXTERNC PFRTAny     foidl_open_http_bang(PFRTAny);
-EXTERNC PFRTAny     foidl_channel_http_read_bang(PFRTAny);
-EXTERNC PFRTAny     foidl_channel_http_write_bang(PFRTAny, PFRTAny);
-EXTERNC PFRTAny     foidl_channel_http_close_bang(PFRTAny);
 #endif
 
 #ifndef RESPONSE_IMPL

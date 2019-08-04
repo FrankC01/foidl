@@ -256,7 +256,6 @@ func  foidl_scalar? 	[x]
 func  foidl_io? 		[x]
 func  foidl_channel_type? [x]
 func  foidl_file?       [x]
-func  foidl_http?       [x]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Type and Coerce Function
@@ -357,7 +356,7 @@ func    foidl_channel_read!  [channel]
 func    foidl_channel_write! [channel data]
 func    foidl_channel_close! [channel]
 
-func    foidl_register_curl_http []
+func    foidl_register_curl_http [type]
 
 func    foidl_channel_quaf! [channel]
 func    foidl_fexists?      [fname]

@@ -53,7 +53,7 @@ constKeyword(ext_functions,":extension_functions");
     {(ext_type)'channel': map of channel subtypes}
 */
 
-static PFRTMap registrar;
+static PFRTAny registrar;
 
 // Get's the registrar subtype map for type argument
 // If does not exist, creates the type entry with empty
@@ -61,25 +61,62 @@ static PFRTMap registrar;
 
 static PFRTAny subtype_map_for_type(PFRTAny type_extension) {
     PFRTAny result = nil;
-    result = map_get((PFRTAny)registrar, type_extension);
+    result = map_get(registrar, type_extension);
     if(result == nil) {
         result = foidl_map_inst_bang();
-        foidl_map_extend_bang((PFRTAny)registrar,type_extension,result);
+        foidl_map_extend_bang(registrar,type_extension,result);
     }
     return result;
+}
+
+PFRTAny extension_functions_for(PFRTAny base_type, PFRTAny sub_type) {
+    PFRTAny etype_map = map_get(registrar, base_type);
+    if( etype_map == nil ) {
+        printf("Extension type %s not registered\n", base_type->value);
+        unknown_handler();
+    }
+    PFRTAny subtype_map = map_get(etype_map, sub_type);
+    if( subtype_map == nil ) {
+        printf("Extension subtype %s not registered\n", subtype_map->value);
+        unknown_handler();
+    }
+    return map_get(subtype_map, ext_functions);
 }
 
 // Registers or balks at request to added extension to the
 // registrar
 
 PFRTAny register_extension(PFRTAny descriptor) {
-
-    return nil;
+    PFRTAny base_type = map_get(descriptor, ext_type);
+    PFRTAny sub_type = map_get(descriptor, ext_subtype);
+    if ( base_type == nil || sub_type == nil ) {
+        printf("Register an extension requires a type and subtype. Found ...\n");
+        writeCoutNl(base_type);
+        writeCoutNl(sub_type);
+        unknown_handler();
+    }
+    else {
+        PFRTAny etype_map = map_get(registrar, base_type);
+        if( etype_map == nil ) {
+            etype_map = foidl_map_inst_bang();
+            foidl_map_extend_bang((PFRTAny)registrar,base_type,etype_map);
+        }
+        PFRTAny subtype_map = map_get(etype_map, sub_type);
+        if( subtype_map == nil ) {
+            foidl_map_extend_bang(etype_map,sub_type,descriptor);
+        }
+        else {
+            printf("Extension subtype %s already exists\n", sub_type->value);
+            unknown_handler();
+        }
+    }
+    //writeCoutNl(registrar);
+    return descriptor;
 }
 
 // Pre-main initializer
 
 void foidl_rtl_init_extensions() {
-    registrar = (PFRTMap) foidl_map_inst_bang();
+    registrar = foidl_map_inst_bang();
 }
 

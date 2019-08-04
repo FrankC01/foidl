@@ -33,71 +33,100 @@ constKeyword(channel_ext_iterator,":channel_ext_iterator");
 constKeyword(channel_ext_iterator_next,":channel_ext_iterator_next");
 
 
+// Register a channel extension
 PFRTAny     foidl_channel_extension(PFRTAny descriptor) {
     return register_extension(descriptor);
 }
 
-PFRTAny     foidl_channel_get_extension(PFRTAny esubtype) {
-    printf("Channel extension subtype invoked\n");
-    return nil;
+// Resolve function lookup in extension
+static PFRTAny channel_get_extended_function(PFRTAny esubtype, PFRTAny func_type) {
+    PFRTAny func_map = extension_functions_for(channel_ext, esubtype);
+    if( func_map == nil ) {
+        printf("No channel extension exists for %s\n", esubtype->value);
+        unknown_handler();
+    }
+    PFRTAny func_ref = map_get(func_map, func_type);
+    if( func_ref == nil ) {
+        printf("Function %s not defined in channel extensions for %s\n",
+            func_type->value,
+            esubtype->value);
+        unknown_handler();
+    }
+    return func_ref;
 }
 
-// Indirect call to underlying channel type 'open!'
+// Invoke single argument indirect function
+static PFRTAny call_extension_1(PFRTAny subtype, PFRTAny func_type, PFRTAny arg1) {
+    PFRTAny ext_func = channel_get_extended_function(subtype, func_type);
+    return dispatch1i(ext_func, arg1);
+}
+
+// Invoke two argument indirect function
+static PFRTAny call_extension_2(PFRTAny subtype, PFRTAny func_type,
+    PFRTAny arg1, PFRTAny arg2) {
+    PFRTAny ext_func = channel_get_extended_function(subtype, func_type);
+    return dispatch2i(ext_func, arg1, arg2);
+}
+
+// Call to underlying channel type 'open!'
 
 PFRTAny     foidl_open_channel_bang(PFRTAny chan_args) {
     PFRTAny chan_t = foidl_get(chan_args, chan_type);
+    PFRTAny result = nil;
     if( chan_t == chan_file) {
-        return foidl_open_file_bang(chan_args);
+        result = foidl_open_file_bang(chan_args);
     }
-    else if( chan_t == chan_http) {
-        return foidl_open_http_bang(chan_args);
+    else {
+        result = call_extension_1(chan_t, channel_ext_open, chan_args);
     }
-    return nil;
+    return result;
 }
 
-// Indirect call to underlying channel 'read!'
+// Call to underlying channel 'read!'
 
 PFRTAny     foidl_channel_read_bang(PFRTAny chan) {
+    PFRTAny result = nil;
     if( foidl_io_qmark(chan) == true) {
         PFRTAny chan_t = foidl_channel_type_qmark(chan);
         if( chan_t == chan_file ) {
-            return foidl_channel_file_read_bang(chan);
+            result = foidl_channel_file_read_bang(chan);
         }
-        else if( chan_t == chan_http) {
-            return foidl_channel_http_read_bang(chan);
+        else {
+            result = call_extension_1(chan_t, channel_ext_read, chan);
         }
     }
-    return nil;
+    return result;
 }
 
-// Indirect call to underlying channel 'write!'
+// Call to underlying channel 'write!'
 
 PFRTAny     foidl_channel_write_bang(PFRTAny chan, PFRTAny data) {
-    PFRTAny res = nil;
+    PFRTAny result = nil;
     if( foidl_io_qmark(chan) == true) {
         PFRTAny chan_t = foidl_channel_type_qmark(chan);
         if( chan_t == chan_file ) {
-            res = foidl_channel_file_write_bang(chan, data);
+            result = foidl_channel_file_write_bang(chan, data);
         }
-        else if( chan_t == chan_http) {
-            res = foidl_channel_http_write_bang(chan, data);
+        else {
+            result = call_extension_2(chan_t, channel_ext_write, chan, data);
         }
     }
-    return res;
+    return result;
 }
 
-// Indirect call to underlying channel 'close!'
+// Call to underlying channel 'close!'
 
 PFRTAny     foidl_channel_close_bang(PFRTAny chan) {
+    PFRTAny result = nil;
     if( foidl_io_qmark(chan) == true) {
         PFRTAny chan_t = foidl_channel_type_qmark(chan);
         if( chan_t == chan_file ) {
-            return foidl_channel_file_close_bang(chan);
+            result = foidl_channel_file_close_bang(chan);
         }
-        else if( chan_t == chan_http) {
-            return foidl_channel_http_close_bang(chan);
+        else {
+            result = call_extension_1(chan_t, channel_ext_close, chan);
         }
     }
-    return nil;
+    return result;
 }
 

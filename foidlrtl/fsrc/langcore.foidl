@@ -484,8 +484,5 @@ func channel_type? [x]
 func file?  [x]
 	foidl_file?: x
 
-func http? 	[x]
-	foidl_http?: x
-
 func function? 	[x]
 	foidl_function?: x

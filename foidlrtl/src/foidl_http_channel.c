@@ -26,6 +26,35 @@
 #include    <curl/curl.h>
 #endif
 
+static int inited = 0;
+
+static PFRTAny chttp_desc;
+static PFRTAny curl_http_type_identifier;
+static ft curl_http_type_hash;
+
+typedef struct   FRTIOHttpChannel {
+    ft          fclass;
+    ft          ftype;
+    ft          count;
+    uint32_t    hash;
+    void        *value;         // Maps to curl handle
+    PFRTAny     ctype;
+    PFRTAny     settings;
+    PFRTAny     name;
+    PFRTAny     mode;
+    PFRTAny     render;
+} *PFRTIOHttpChannel;
+
+static PFRTAny allocHttpChannel(PFRTAny name, PFRTAny args) {
+    PFRTIOHttpChannel fc = foidl_alloc(sizeof(struct FRTIOHttpChannel));
+    fc->fclass = io_class;
+    fc->ftype  = curl_http_type_hash;
+    fc->ctype  = curl_http_type_identifier;
+    fc->name   = name;
+    fc->settings = args;
+    return (PFRTAny) fc;
+}
+
 // Used in http_read_handler operations
 
 struct Chunk {
@@ -64,41 +93,31 @@ static size_t http_read_handler(
     return realsize;
 }
 
-
 PFRTAny foidl_channel_http_write_bang(PFRTAny channel, PFRTAny data) {
-    if(channel->ftype == http_type) {
-        PFRTIOHttpChannel http = (PFRTIOHttpChannel)channel;
-        CURL *curl = http->value;
-        CURLcode cres;
-        struct Chunk mem;
-        mem.memory = foidl_xall(1);
-        mem.size = 0;
-        curl_easy_setopt(curl, CURLOPT_URL, http->name->value);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&mem);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data->value);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)data->count);
-        //curl_easy_setopt(curl, CURLOPT_NOBODY, 1); // For debugging header only
-        cres = curl_easy_perform(curl);
+    PFRTAny result = nil;
+    PFRTIOHttpChannel http = (PFRTIOHttpChannel)channel;
+    CURL *curl = http->value;
+    CURLcode cres;
+    struct Chunk mem;
+    mem.memory = foidl_xall(1);
+    mem.size = 0;
+    curl_easy_setopt(curl, CURLOPT_URL, http->name->value);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&mem);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data->value);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)data->count);
+    //curl_easy_setopt(curl, CURLOPT_NOBODY, 1); // For debugging header only
+    cres = curl_easy_perform(curl);
 
-        if(!cres) {
-            ; //printf("Download size: %u\n", (int) mem.size);
-        }
-        else {
-            return nil;
-        }
-        // TODO: Read handler (e.g. string, json-map, json-list, html-map, html-list)
-
-        PFRTAny result = (PFRTAny)
+    if(!cres) {
+        result = (PFRTAny)
             allocResponse(
-                http_response_type,
+                http->ftype,
                 (PFRTAny) allocStringWithCptr(mem.memory,strlen(mem.memory)));
-        return result;
     }
     else {
-        printf("http read requires an opened http channel\n");
-        unknown_handler();
-        return nil;
+        ;
     }
+    return result;
 }
 localFunc(curl_ch_write,2,foidl_channel_http_write_bang);
 
@@ -106,36 +125,29 @@ localFunc(curl_ch_write,2,foidl_channel_http_write_bang);
 // Entry point for reading from http channel
 
 PFRTAny foidl_channel_http_read_bang(PFRTAny channel) {
-    if(channel->ftype == http_type) {
-        PFRTIOHttpChannel http = (PFRTIOHttpChannel)channel;
-        CURL *curl = http->value;
-        CURLcode cres;
-        struct Chunk mem;
-        mem.memory = foidl_xall(1);
-        mem.size = 0;
-        curl_easy_setopt(curl, CURLOPT_URL, http->name->value);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&mem);
-        //curl_easy_setopt(curl, CURLOPT_NOBODY, 1); // For debugging header only
-        cres = curl_easy_perform(curl);
+    PFRTAny result = nil;
+    PFRTIOHttpChannel http = (PFRTIOHttpChannel)channel;
+    CURL *curl = http->value;
+    CURLcode cres;
+    struct Chunk mem;
+    mem.memory = foidl_xall(1);
+    mem.size = 0;
+    curl_easy_setopt(curl, CURLOPT_URL, http->name->value);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&mem);
+    //curl_easy_setopt(curl, CURLOPT_NOBODY, 1); // For debugging header only
+    cres = curl_easy_perform(curl);
 
-        if(!cres) {
-            //printf("Download size: %u\n", (int) mem.size);
-        }
-        else {
-            return nil;
-        }
-        // TODO: Read handler (e.g. string, json-map, json-list, html-map, html-list)
-        PFRTAny result = (PFRTAny)
+    if(!cres) {
+        result = (PFRTAny)
             allocResponse(
-                http_response_type,
+                http->ftype,
                 (PFRTAny) allocStringWithCptr(mem.memory,strlen(mem.memory)));
-        return result;
+        //printf("Download size: %u\n", (int) mem.size);
     }
     else {
-        printf("http read requires an opened http channel\n");
-        unknown_handler();
-        return nil;
+        ;
     }
+    return result;
 }
 localFunc(curl_ch_read,1,foidl_channel_http_read_bang);
 
@@ -155,7 +167,7 @@ PFRTAny foidl_open_http_bang(PFRTAny args) {
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_read_handler);
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, http_header_handler);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-        res = (PFRTAny) allocHttpChannel(name,args);
+        res = allocHttpChannel(name,args);
         res->value = (void *)curl;
     }
     return res;
@@ -170,17 +182,11 @@ PFRTAny foidl_channel_http_close_bang(PFRTAny channel) {
     if(channel->ftype == closed_type) {
         ;
     }
-    else if(channel->ftype == http_type) {
+    else {
         channel->ftype = closed_type;
         curl_easy_cleanup((CURL*) channel->value);
         channel->value = (void *) 0;
     }
-    else {
-        printf("http close requires an http channel\n");
-        unknown_handler();
-        return nil;
-    }
-
     return res;
 }
 localFunc(curl_ch_close,1,foidl_channel_http_close_bang);
@@ -196,31 +202,32 @@ void foidl_rtl_init_http_channel() {
 
 // Setup the extension
 
-static int inited = 0;
-
-static PFRTAny chttp_desc;
-
-static void setup_desc() {
-    chttp_desc = foidl_map_inst_bang();
-    foidl_map_extend_bang(chttp_desc, ext_type, channel_ext);
-    foidl_map_extend_bang(chttp_desc, ext_subtype, chan_http);
-    foidl_map_extend_bang(chttp_desc, ext_interface, nil);
+static void setup_desc(PFRTAny tname) {
+    // Setup function indirects
     PFRTAny func_map = foidl_map_inst_bang();
     foidl_map_extend_bang(func_map, channel_ext_open, (PFRTAny) curl_ch_open);
     foidl_map_extend_bang(func_map, channel_ext_read, (PFRTAny) curl_ch_read);
     foidl_map_extend_bang(func_map, channel_ext_write, (PFRTAny) curl_ch_write);
     foidl_map_extend_bang(func_map, channel_ext_close, (PFRTAny) curl_ch_close);
+
+    // Build descriptor
+    chttp_desc = foidl_map_inst_bang();
+    foidl_map_extend_bang(chttp_desc, ext_type, channel_ext);
+    foidl_map_extend_bang(chttp_desc, ext_subtype, tname);
+    foidl_map_extend_bang(chttp_desc, ext_interface, nil);
     foidl_map_extend_bang(chttp_desc, ext_functions, func_map);
     //writeCoutNl(chttp_desc);
     return;
 }
 
 // Register extension
-PFRTAny     foidl_register_curl_http() {
+PFRTAny     foidl_register_curl_http(PFRTAny tname) {
     if( ! inited ) {
         inited=1;
+        curl_http_type_identifier = tname;
+        curl_http_type_hash = (ft) hash(tname);
         foidl_rtl_init_http_channel();
-        setup_desc();
+        setup_desc(tname);
         foidl_channel_extension(chttp_desc);
     }
     else {

@@ -253,16 +253,6 @@ PFRTIOChannel allocFileChannel(PFRTAny name, PFRTAny mode, PFRTAny args) {
 	return (PFRTIOChannel) fc;
 }
 
-PFRTIOChannel allocHttpChannel(PFRTAny name, PFRTAny args) {
-	PFRTIOHttpChannel fc = foidl_alloc(sizeof(struct FRTIOHttpChannel));
-	fc->fclass = io_class;
-	fc->ftype  = http_type;
-	fc->ctype  = chan_http;
-	fc->name   = name;
-	fc->settings = args;
-	return (PFRTIOChannel) fc;
-}
-
 PFRTResponse allocResponse(ft ftype, PFRTAny resp) {
 	PFRTResponse fc = foidl_alloc(sizeof(struct FRTResponse));
 	fc->fclass = response_class;
