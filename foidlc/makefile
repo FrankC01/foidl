@@ -19,7 +19,7 @@
 UNAME := $(shell uname)
 
 # Get curl information
-CURL_LIB := $(shell curl-config --libs)
+#CURL_LIB := $(shell curl-config --libs)
 
 ifeq ($(UNAME), Linux)
 	OS_NAME := $(UNAME)
@@ -139,7 +139,7 @@ $(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) $(STATIC_LIB) | $(BIN)
 	$(LINK64) $(LIBS) /subsystem:console /out:$@ $(FOBJS)
 else
 $(FOIDLC): $(FHDRS) $(FOBJS) $(FLLS) $(STATIC_LIB) | $(BIN)
-	$(LINK64) $(FOBJS) $(CURL_LIB) -lpthread -lfoidlrt -L $(RTLIB) -o $@
+	$(LINK64) $(FOBJS) -lpthread -lfoidlrt -L $(RTLIB) -o $@
 endif
 
 $(BIN):
