@@ -21,22 +21,20 @@ UNAME := $(shell uname)
 
 ifeq ($(UNAME), Linux)
 	OS_NAME := $(UNAME)
-	PYTHON := python3
 else ifeq ($(UNAME), Solaris)
 	OS_NAME := $(UNAME)
 else ifeq ($(UNAME), Darwin)
 	OS_NAME := $(UNAME)
-	PYTHON := python3
 else
 	OS_NAME := Windows
-	PYTHON := python
 endif
 
 $(info Building for $(OS_NAME))
-
-# Bootstrap
-
-BSTRP 	:= $(PYTHON) ../bin/fbstrp
+ifeq ($(OS_NAME), Windows)
+SHFOIDLC := ../../foidlc/bin/foidlc.exe
+else
+SHFOIDLC := ../../foidlc/bin/foidlc
+endif
 
 # llvm toolchain executables
 
@@ -48,14 +46,18 @@ CPPLC   = clang++
 # FOIDL Runtime generation settings
 
 FSRC  	:= fsrc/
-FLIB 	:= flib/
 SRC  	:= src/
-NSRC 	:= numsrc/
-INC 	:= includes/
 LLS 	:= ll/
 OBJS 	:= objs/
-LIB 	:= lib/
-HDRS   	:= headers/
+LIB 	:= ../lib/
+HDRS   	:= ../headers/
+RTHDRS  := ../../foidlrtl/headers/
+RTINC 	:= ../../foidlrtl/includes/
+
+# Substitutions for recipe patterns
+FOIDL  	:= .foidl
+LL 		:= .ll
+OBJ 	:= .o
 
 ifeq ($(DEBUG), 1)
 $(info Building for debugging)
@@ -64,6 +66,10 @@ else
 $(info Building for release)
 DFLAGS :=
 endif
+
+FSRCS 	:= $(wildcard $(FSRC)*$(FOIDL))
+FLLS	:= $(subst $(FSRC), $(LLS), $(FSRCS:$(FOIDL)=$(LL)))
+FOBJS 	:= $(subst $(FSRC), $(OBJS), $(FSRCS:$(FOIDL)=$(OBJ)))
 
 ifeq ($(OS_NAME), Windows)
 	ARCH32=x86
@@ -107,17 +113,17 @@ ifeq ($(OS_NAME), Windows)
 	SYSTEM_FLAGS=-fmsc-version=$(_MSC_VER) -fms-extensions -fms-compatibility -fdelayed-template-parsing
 	# The resulting commands
 	CL64=$(CLC) -c $(TARGET_64) $(DFLAGS)
-	C64=$(CLC) -c -isystem $(INC) $(TARGET_64)  $(SYSTEM_INC_64) -D_CRT_SECURE_NO_WARNINGS -std=c11 $(SYSTEM_FLAGS) $(DFLAGS)
-	CPP64=$(CPPLC) -c -isystem $(INC) $(TARGET_64) $(SYSTEM_INC_64) -D_CRT_SECURE_NO_WARNINGS -std=c++14 $(SYSTEM_FLAGS) $(DFLAGS)
-	foidlrt_LIB  := libfoidlrt.lib
-	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
+	C64=$(CLC) -c -isystem $(RTINC) $(TARGET_64)  $(SYSTEM_INC_64) -D_CRT_SECURE_NO_WARNINGS -std=c11 $(SYSTEM_FLAGS) $(DFLAGS)
+	CPP64=$(CPPLC) -c -isystem $(RTINC) $(TARGET_64) $(SYSTEM_INC_64) -D_CRT_SECURE_NO_WARNINGS -std=c++14 $(SYSTEM_FLAGS) $(DFLAGS)
+	ext_LIB  := libhttp_curl.lib
+	STATIC_LIB  := $(LIB)$(ext_LIB)
 	LIB64=$(LLLT) $(SYSTEM_LIB_INC_64) /out:$(STATIC_LIB) /nologo
 else
 	CL64=$(CLC) -c -march=x86-64 -pthread -fPIC $(DFLAGS)
-	C64=$(CLC) -c -isystem $(INC) -pthread -march=x86-64 -fPIC $(DFLAGS)
-	CPP64=$(CPPLC) -c -isystem $(INC) -pthread -march=x86-64 -std=c++11 -fPIC $(DFLAGS)
-	foidlrt_LIB  := libfoidlrt.a
-	STATIC_LIB  := $(LIB)$(foidlrt_LIB)
+	C64=$(CLC) -c -isystem $(RTINC) -pthread -march=x86-64 -fPIC $(DFLAGS)
+	CPP64=$(CPPLC) -c -isystem $(RTINC) -pthread -march=x86-64 -std=c++11 -fPIC $(DFLAGS)
+	ext_LIB  := libhttp_curl.a
+	STATIC_LIB  := $(LIB)$(ext_LIB)
 	LIB64=$(LLAR) --format=default -ru $(STATIC_LIB)
 endif
 
@@ -143,53 +149,35 @@ FHDRS   := $(subst $(FSRC), $(HDRS), $(FSRCS:$(FOIDL)=$(FDEFS)))
 FLLS	:= $(subst $(FSRC), $(LLS), $(FSRCS:$(FOIDL)=$(LL)))
 FOBJS	:= $(subst $(FSRC), $(OBJS), $(FSRCS:$(FOIDL)=$(OBJ)))
 
-FLIBSS 		:= $(wildcard $(FLIB)*$(FOIDL))
-FLIBHDRS   	:= $(subst $(FLIB), $(HDRS), $(FLIBSS:$(FOIDL)=$(FDEFS)))
-FLIBLLS		:= $(subst $(FLIB), $(LLS), $(FLIBSS:$(FOIDL)=$(LL)))
-FLIBOBJS	:= $(subst $(FLIB), $(OBJS), $(FLIBSS:$(FOIDL)=$(OBJ)))
-
 SRCS	:= $(wildcard $(SRC)*$(CSRC))
 SOBJS	:= $(subst $(SRC),$(OBJS), $(SRCS:$(CSRC)=$(OBJ)))
 
-NSRCS	:= $(wildcard $(NSRC)*$(CSRC))
-NSOBJS	:= $(subst $(NSRC),$(OBJS), $(NSRCS:$(CSRC)=$(OBJ)))
-
 SRCPPS  := $(wildcard $(SRC)*$(CPPSRC))
 SPPOBJS := $(subst $(SRC),$(OBJS),$(SRCPPS:$(CPPSRC)=$(OBJ)))
+
+SHFLAGS := -I $(RTHDRS)
 
 all: $(STATIC_LIB) | $(FLLS) $(FLIBLLS) $(OBJS)
 
 # all: $(SOBJS)
 
-$(STATIC_LIB): $(SOBJS) $(NSOBJS) $(SPPOBJS) $(FOBJS) $(FLIBOBJS) | $(LIB)
-	$(LIB64) $(SOBJS) $(NSOBJS) $(SPPOBJS) $(FOBJS) $(FLIBOBJS)
+$(STATIC_LIB): $(SOBJS) $(FOBJS) | $(LIB)
+	$(LIB64) $(SOBJS) $(FOBJS)
 
 $(LIB):
 	mkdir lib
 
-# FOIDL RTL Source -> headers and -> ll
+# Extension foidl Source -> headers and -> ll
 
 headers/%.defs : fsrc/%.foidl
-	$(BSTRP) -s $< $(BHDRFLAGS) -o $@
+	$(SHFOIDLC) -c $< $(BHDRFLAGS) -o $@
 
 $(FHDRS):
 
-ll/%.ll : fsrc/%.foidl
-	$(BSTRP) -s $< $(BCFLAGS) -o $@
+ll/%.ll : fsrc/%.foidl $(SHFOIDLC)
+	$(SHFOIDLC) $(SHFLAGS) -c $<  -o $@
 
 $(FLLS): | $(FHDRS) $(LLS)
-
-# FOIDL RTL Source -> headers and -> ll
-
-headers/%.defs : flib/%.foidl
-	$(BSTRP) -s $< $(BHDRLIBFLAGS) -o $@
-
-$(FLIBHDRS):
-
-ll/%.ll : flib/%.foidl
-	$(BSTRP) -s $< $(BLIBCFLAGS) -o $@
-
-$(FLIBLLS): | $(FLIBHDRS) $(LLS)
 
 $(LLS):
 	mkdir ll
@@ -200,8 +188,6 @@ objs/%.o : ll/%.ll
 	$(CL64) $< -o $@
 
 $(FOBJS): | $(OBJS)
-
-$(FLIBOBJS): | $(OBJS)
 
 # CPP file compilations
 
@@ -220,8 +206,6 @@ $(OBJS)%.o: $(NSRC)%.c
 	$(C64) $< -o $@
 
 $(SOBJS): | $(OBJS)
-
-$(NSOBJS): | $(OBJS)
 
 $(OBJS):
 	mkdir objs
