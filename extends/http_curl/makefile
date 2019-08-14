@@ -134,14 +134,6 @@ OBJ 	:= .o
 CSRC	:= .c
 CPPSRC  := .cpp
 
-# Flags for compilation of all types
-
-BHDRFLAGS := -I $(HDRS) -r -a hdr
-BCFLAGS := -I $(HDRS) -r
-
-BHDRLIBFLAGS := -I $(HDRS) -a hdr
-BLIBCFLAGS := -I $(HDRS)
-
 # Substitutions for recipe patterns
 
 FSRCS 	:= $(wildcard $(FSRC)*$(FOIDL))
@@ -169,8 +161,8 @@ $(LIB):
 
 # Extension foidl Source -> headers and -> ll
 
-headers/%.defs : fsrc/%.foidl
-	$(SHFOIDLC) -c $< $(BHDRFLAGS) -o $@
+$(HDRS)%.defs : fsrc/%.foidl
+	$(SHFOIDLC) -g $< -o $@
 
 $(FHDRS):
 
@@ -210,5 +202,6 @@ $(SOBJS): | $(OBJS)
 $(OBJS):
 	mkdir objs
 
+.PHONY: clean
 clean:
-	$(RM) -r $(FHDRS) $(FLIBHDRS) $(LLS) $(OBJS) $(LIB)
+	$(RM) -r $(STATIC_LIB) $(FHDRS) $(LLS) $(OBJS)
