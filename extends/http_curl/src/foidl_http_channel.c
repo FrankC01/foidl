@@ -18,7 +18,6 @@
 ; limitations under the License.
 */
 
-
 #define HTTP_CHANNEL_IMPL
 #include    <foidlrt.h>
 #ifdef _MSC_VER
