@@ -14,34 +14,15 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-# Get OS information
-
-UNAME := $(shell uname)
-
 # Get curl information
 CURL_LIB := $(shell curl-config --libs)
 
-ifeq ($(UNAME), Linux)
-	OS_NAME := $(UNAME)
-else ifeq ($(UNAME), Solaris)
-	OS_NAME := $(UNAME)
-else ifeq ($(UNAME), Darwin)
-	OS_NAME := $(UNAME)
-else
-	OS_NAME := Windows
-endif
-
-ifeq ($(OS_NAME), Windows)
-SHFOIDLC := ../../../foidlc/bin/foidlc.exe
-else
-SHFOIDLC := ../../../foidlc/bin/foidlc
-endif
-# llvm toolchain executables
-
-CLC 	:= clang
-CPPLC   := clang++
-CLINK   := lld-link
-
+SHFOIDLC := ../$(SHFOIDLC)
+RTHDRS   := ../$(RTHDRS)
+RTLIB 	 := ../$(RTLIB)
+RTINC	 := ../$(RTINC)
+EXTS_LIB := ../$(EXTS_LIB)
+EXTS_HDR := ../$(EXTS_HDR)
 
 # FOIDL Runtime generation settings
 
@@ -49,9 +30,6 @@ FSRC  	:= fsrc/
 LLS 	:= ll/
 OBJS 	:= objs/
 BIN 	:= bin/
-RTHDRS  := ../../../foidlrtl/headers/
-RTLIB 	:= ../../../foidlrtl/lib
-HCHANDIR := ../../lib
 
 # Substitutions for recipe patterns
 FOIDL  	:= .foidl
@@ -116,7 +94,7 @@ ifeq ($(OS_NAME), Windows)
 	foidlrt_LIB  := libfoidlrt.lib
 	httpchan_LIB := libhttp_curl.lib
 	STATIC_LIB  := $(RTLIB)/$(foidlrt_LIB)
-	LINK64=lld-link $(SYSTEM_LIB_INC_64) /libpath:$(RTLIB) /libpath:$(HCHANDIR)
+	LINK64=lld-link $(SYSTEM_LIB_INC_64) /libpath:$(RTLIB) /libpath:$(EXTS_LIB)
 else
 	LIBS := -lpthread -lhttp_curl $(CURL_LIB) -lfoidlrt
 	CL64=$(CLC) -c -march=x86-64 -fPIC
@@ -138,7 +116,7 @@ bin/%.exe: objs/%.o
 	$(LINK64) $(LIBS) /subsystem:console /out:$@ $<
 else
 bin/%: objs/%.o
-	$(LINK64) $< $(LIBS) -L $(RTLIB) -L $(HCHANDIR) -o $@
+	$(LINK64) $< $(LIBS) -L $(RTLIB) -L $(EXTS_LIB) -o $@
 endif
 
 $(FEXES): $(STATIC_LIB) | $(BIN)

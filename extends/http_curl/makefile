@@ -15,33 +15,19 @@
 # ------------------------------------------------------------------------------
 
 
-# Get OS information
+export SHFOIDLC := ../$(SHFOIDLC)
+export RTHDRS   := ../$(RTHDRS)
+export RTLIB 	:= ../$(RTLIB)
+export RTINC 	:= ../$(RTINC)
+export EXTS_LIB := ../$(EXTS_LIB)
+export EXTS_HDR := ../$(EXTS_HDR)
 
-UNAME := $(shell uname)
-
-ifeq ($(UNAME), Linux)
-	OS_NAME := $(UNAME)
-else ifeq ($(UNAME), Solaris)
-	OS_NAME := $(UNAME)
-else ifeq ($(UNAME), Darwin)
-	OS_NAME := $(UNAME)
-else
-	OS_NAME := Windows
-endif
-
-$(info Building for $(OS_NAME))
-ifeq ($(OS_NAME), Windows)
-SHFOIDLC := ../../foidlc/bin/foidlc.exe
-else
-SHFOIDLC := ../../foidlc/bin/foidlc
-endif
+$(info Build using $(SHFOIDLC))
 
 # llvm toolchain executables
 
 LLLT 	= llvm-lib
 LLAR	= llvm-ar
-CLC 	= clang
-CPPLC   = clang++
 
 # FOIDL Runtime generation settings
 
@@ -49,10 +35,6 @@ FSRC  	:= fsrc/
 SRC  	:= src/
 LLS 	:= ll/
 OBJS 	:= objs/
-LIB 	:= ../lib/
-HDRS   	:= ../headers/
-RTHDRS  := ../../foidlrtl/headers/
-RTINC 	:= ../../foidlrtl/includes/
 
 # Substitutions for recipe patterns
 FOIDL  	:= .foidl
@@ -60,10 +42,8 @@ LL 		:= .ll
 OBJ 	:= .o
 
 ifeq ($(DEBUG), 1)
-$(info Building for debugging)
 DFLAGS := -O0 -g
 else
-$(info Building for release)
 DFLAGS :=
 endif
 
@@ -115,15 +95,15 @@ ifeq ($(OS_NAME), Windows)
 	CL64=$(CLC) -c $(TARGET_64) $(DFLAGS)
 	C64=$(CLC) -c -isystem $(RTINC) $(TARGET_64)  $(SYSTEM_INC_64) -D_CRT_SECURE_NO_WARNINGS -std=c11 $(SYSTEM_FLAGS) $(DFLAGS)
 	CPP64=$(CPPLC) -c -isystem $(RTINC) $(TARGET_64) $(SYSTEM_INC_64) -D_CRT_SECURE_NO_WARNINGS -std=c++14 $(SYSTEM_FLAGS) $(DFLAGS)
-	ext_LIB  := libhttp_curl.lib
-	STATIC_LIB  := $(LIB)$(ext_LIB)
+	http_LIB  := libhttp_curl.lib
+	STATIC_LIB  := $(EXTS_LIB)$(http_LIB)
 	LIB64=$(LLLT) $(SYSTEM_LIB_INC_64) /out:$(STATIC_LIB) /nologo
 else
 	CL64=$(CLC) -c -march=x86-64 -pthread -fPIC $(DFLAGS)
 	C64=$(CLC) -c -isystem $(RTINC) -pthread -march=x86-64 -fPIC $(DFLAGS)
 	CPP64=$(CPPLC) -c -isystem $(RTINC) -pthread -march=x86-64 -std=c++11 -fPIC $(DFLAGS)
-	ext_LIB  := libhttp_curl.a
-	STATIC_LIB  := $(LIB)$(ext_LIB)
+	http_LIB  := libhttp_curl.a
+	STATIC_LIB  := $(EXTS_LIB)$(http_LIB)
 	LIB64=$(LLAR) --format=default -ru $(STATIC_LIB)
 endif
 
@@ -137,7 +117,7 @@ CPPSRC  := .cpp
 # Substitutions for recipe patterns
 
 FSRCS 	:= $(wildcard $(FSRC)*$(FOIDL))
-FHDRS   := $(subst $(FSRC), $(HDRS), $(FSRCS:$(FOIDL)=$(FDEFS)))
+FHDRS   := $(subst $(FSRC), $(EXTS_HDR), $(FSRCS:$(FOIDL)=$(FDEFS)))
 FLLS	:= $(subst $(FSRC), $(LLS), $(FSRCS:$(FOIDL)=$(LL)))
 FOBJS	:= $(subst $(FSRC), $(OBJS), $(FSRCS:$(FOIDL)=$(OBJ)))
 
@@ -149,9 +129,16 @@ SPPOBJS := $(subst $(SRC),$(OBJS),$(SRCPPS:$(CPPSRC)=$(OBJ)))
 
 SHFLAGS := -I $(RTHDRS)
 
+SUBDIRS := test
+TOPTARGETS := all clean
+
+.PHONY: $(TOPTARGETS) $(SUBDIRS)
+
 all: $(STATIC_LIB) | $(FLLS) $(FLIBLLS) $(OBJS)
 
-# all: $(SOBJS)
+$(TOPTARGETS): $(SUBDIRS)
+$(SUBDIRS):
+	$(MAKE) -C $@ $(MAKECMDGOALS)
 
 $(STATIC_LIB): $(SOBJS) $(FOBJS) | $(LIB)
 	$(LIB64) $(SOBJS) $(FOBJS)
@@ -161,7 +148,7 @@ $(LIB):
 
 # Extension foidl Source -> headers and -> ll
 
-$(HDRS)%.defs : fsrc/%.foidl
+$(EXTS_HDR)%.defs : fsrc/%.foidl
 	$(SHFOIDLC) -g $< -o $@
 
 $(FHDRS):
@@ -202,6 +189,5 @@ $(SOBJS): | $(OBJS)
 $(OBJS):
 	mkdir objs
 
-.PHONY: clean
 clean:
 	$(RM) -r $(STATIC_LIB) $(FHDRS) $(LLS) $(OBJS)

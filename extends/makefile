@@ -20,19 +20,34 @@
 UNAME := $(shell uname)
 
 ifeq ($(UNAME), Linux)
-	OS_NAME := $(UNAME)
-	PYTHON := python3
+	export OS_NAME := $(UNAME)
 else ifeq ($(UNAME), Solaris)
-	OS_NAME := $(UNAME)
+	export OS_NAME := $(UNAME)
 else ifeq ($(UNAME), Darwin)
-	OS_NAME := $(UNAME)
-	PYTHON := python3
+	export OS_NAME := $(UNAME)
 else
-	OS_NAME := Windows
-	PYTHON := python
+	export OS_NAME := Windows
 endif
 
 $(info Building for $(OS_NAME))
+
+ifeq ($(OS_NAME), Windows)
+	export SHFOIDLC := ../foidlc/bin/foidlc.exe
+	export PYTHON := python
+else
+	export SHFOIDLC := ../foidlc/bin/foidlc
+	export PYTHON := python3
+endif
+
+export CLC    := clang
+export CPPLC  := clang++
+export CLINK  := lld-link
+export RTHDRS := ../foidlrtl/headers/
+export RTLIB  := ../foidlrtl/lib
+export RTINC  := ../foidlrtl/includes
+export EXTS_LIB := lib/
+export EXTS_HDR := headers/
+
 
 TOPTARGETS := all clean
 
@@ -40,7 +55,6 @@ SUBDIRS := http_curl
 
 $(TOPTARGETS): $(SUBDIRS)
 $(SUBDIRS):
-	$(info $(PWD))
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
