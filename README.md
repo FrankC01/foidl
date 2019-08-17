@@ -19,7 +19,7 @@ My own twists:
 ## Prereqs
 * Python 3.6+
 * LLVM/Clang 7.0+
-* libcurl
+* libcurl (if using extensions)
 
 ### Python libraries to `pip` in
 * rply
@@ -61,6 +61,13 @@ make
 cd foidlc
 make clean
 make
+```
+
+The folder `extends` is the location for any runtime library/language extensions. Once you build the compiler, you can build extensions to be used in user programs. Each extension is it's own folder and will automatically be built with:
+```
+cd extends
+make clean
+make all
 ```
 
 The folder `tests/selfhosted` contains a few contrived foidl examples. Once the foidl compiler is built it will be used to build them. After building the compiler do:

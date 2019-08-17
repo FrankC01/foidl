@@ -20,10 +20,10 @@
 
 module http_chan
 
-include curl_http
+include http_curl
 
 func rwhttp [url]
-    let chan [] opens!: {chan_target url chan_type curl_http_type chan_mode open_r chan_render render_string}
+    let chan [] opens!: {chan_target url chan_type http_curl_type chan_mode open_r chan_render render_string}
     let rds  [] reads!: chan
     printnl!: "Results of read " printnl!: rds
     printnl!: "Results of write "
@@ -33,7 +33,7 @@ func rwhttp [url]
     response_value: rds
 
 func main [argv]
-    init_curl_http:
+    init_http_curl:
     rwhttp: "http://example.com"
     zero
 

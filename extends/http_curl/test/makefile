@@ -105,7 +105,7 @@ endif
 
 # Flags for compilation of all types
 
-SHFLAGS := -I $(RTHDRS)
+SHFLAGS := -I $(RTHDRS) $(EXTS_HDR)
 
 all: $(FEXES) | $(BIN) $(OBJS) $(LLS)
 

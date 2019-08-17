@@ -1,5 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; curl_http_channel
+; http_curl_channel
 ; Channel extension supporting http using curl
 ;
 ; Copyright (c) Frank V. Castellucci
@@ -18,10 +18,10 @@
 ; limitations under the License.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module curl_http
+module http_curl
 
-var curl_http_type :channel_curl_http
-var :private ch_desc foidl_register_curl_http: curl_http_type
+var http_curl_type :channel_http_curl
+var :private ch_desc foidl_register_curl_http: http_curl_type
 
-func init_curl_http []
+func init_http_curl []
     ch_desc

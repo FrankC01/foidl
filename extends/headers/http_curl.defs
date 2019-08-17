@@ -4,7 +4,7 @@
 ; All rights reserved
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-module curl_http
-var curl_http_type any
-func init_curl_http []
+module http_curl
+var http_curl_type any
+func init_http_curl []
 
